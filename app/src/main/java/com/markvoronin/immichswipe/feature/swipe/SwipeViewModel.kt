@@ -525,6 +525,15 @@ class SwipeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val success = albumRepository.addAssetToAlbum(targetAlbum.id, asset.id)
+                if (success) {
+                    val config = sessionRepository.sessionConfig.first()
+                    if (config != null) {
+                        assetRepository.deleteAlbumAssets(Album.VIRTUAL_ORPHANS_ID, config.userId, listOf(asset.id))
+                    }
+                    if (_uiState.value.albumId == Album.VIRTUAL_ORPHANS_ID) {
+                        allAssetsFoundFlow.value = allAssetsFoundFlow.value.filter { it.id != asset.id }
+                    }
+                }
                 onResult(success, targetAlbum.albumName)
             } catch (e: Exception) {
                 AppLogger.e("SwipeViewModel", "Error adding asset to album ${targetAlbum.albumName}", e)

@@ -165,38 +165,68 @@ class AssetRepository @Inject constructor(
         // Use the higher of the two totals if they differ
         val effectiveTotal = maxOf(totalFromServer, firstPageResp.assets.total)
         
-        // Use total DB count rather than capped cachedEntities.size
         val totalInDb = albumAssetDao.getAssetCountForAlbum(albumId, userId)
-        val isCacheComplete = totalInDb >= (effectiveTotal - 10) && effectiveTotal > 0
-        
-        if (isCacheComplete) {
-            // Check if Page 1 has any new items
-            val fetchedIds = cachedEntities.map { it.assetId }.toSet()
-            val newFromPage1 = firstPageResp.assets.items.filter { it.id !in fetchedIds }
-            if (newFromPage1.isNotEmpty()) {
+        val page1ServerItems = firstPageResp.assets.items
+        val page1ServerIds = page1ServerItems.map { it.id }.toSet()
+        val cachedIds = cachedEntities.map { it.assetId }.toSet()
+
+        // 3a. Single-page case: Server returned all assets in page 1
+        if (firstPageResp.assets.nextPage == null) {
+            val staleIds = cachedEntities.map { it.assetId }.filter { it !in page1ServerIds }
+            val newFromPage1 = page1ServerItems.filter { it.id !in cachedIds }
+
+            if (staleIds.isNotEmpty()) {
                 withContext(Dispatchers.IO) {
-                    albumAssetDao.insertAlbumAssets(newFromPage1.map { asset ->
-                        AlbumAssetEntity(
-                            albumId = albumId,
-                            assetId = asset.id,
-                            userId = userId,
-                            type = asset.type,
-                            fileCreatedAt = asset.effectiveDate,
-                            originalFileName = asset.originalFileName,
-                            fileSizeInBytes = asset.exifInfo?.fileSizeInBytes,
-                            imageWidth = asset.exifInfo?.imageWidth,
-                            imageHeight = asset.exifInfo?.imageHeight
-                        )
-                    })
+                    staleIds.chunked(500).forEach { chunk ->
+                        albumAssetDao.deleteAlbumAssets(albumId, userId, chunk)
+                    }
                 }
             }
+            if (newFromPage1.isNotEmpty()) {
+                withContext(Dispatchers.IO) {
+                    newFromPage1.chunked(500).forEach { chunk ->
+                        albumAssetDao.insertAlbumAssets(chunk.map { asset ->
+                            AlbumAssetEntity(
+                                albumId = albumId,
+                                assetId = asset.id,
+                                userId = userId,
+                                type = asset.type,
+                                fileCreatedAt = asset.effectiveDate,
+                                originalFileName = asset.originalFileName,
+                                fileSizeInBytes = asset.exifInfo?.fileSizeInBytes,
+                                imageWidth = asset.exifInfo?.imageWidth,
+                                imageHeight = asset.exifInfo?.imageHeight
+                            )
+                        })
+                    }
+                }
+            }
+
+            val finalItems = applySort(page1ServerItems, sortOrder, shuffleSeed)
+            send(AssetBatch(finalItems, effectiveTotal, isLocalCache = false, isSyncing = false))
+            return@channelFlow
+        }
+
+        // 3b. Multi-page case: Check if local cache is complete and up to date
+        val cachedTopPage1Ids = cachedEntities.take(page1ServerItems.size).map { it.assetId }.toSet()
+        val staleFromPage1 = cachedTopPage1Ids.filter { it !in page1ServerIds }
+        val newFromPage1 = page1ServerItems.filter { it.id !in cachedIds }
+        
+        val isCacheComplete = totalInDb >= (effectiveTotal - 10) &&
+                totalInDb <= effectiveTotal &&
+                effectiveTotal > 0 &&
+                newFromPage1.isEmpty() &&
+                staleFromPage1.isEmpty()
+
+        if (isCacheComplete) {
             send(AssetBatch(mappedLocal, maxOf(effectiveTotal, mappedLocal.size), isLocalCache = true, isSyncing = false))
             return@channelFlow
         }
 
-        // 4. Background Sync (only if cache is incomplete)
+        // 4. Background Sync (multi-page)
         val allFetchedAssets = mappedLocal.toMutableList()
         val fetchedIds = cachedEntities.map { it.assetId }.toMutableSet()
+        val allServerFetchedIds = mutableSetOf<String>()
         
         var nextPage: String? = "1"
         while (nextPage != null) {
@@ -209,6 +239,7 @@ class AssetRepository @Inject constructor(
                 val items = resp.assets.items
                 
                 if (items.isNotEmpty()) {
+                    allServerFetchedIds.addAll(items.map { it.id })
                     val newItems = items.filter { !fetchedIds.contains(it.id) }
                     if (newItems.isNotEmpty()) {
                         fetchedIds.addAll(newItems.map { it.id })
@@ -242,6 +273,18 @@ class AssetRepository @Inject constructor(
             } catch (e: Exception) {
                 AppLogger.e("AssetRepo", "Error page sync: ${e.message}")
                 break
+            }
+        }
+
+        // Purge stale items that were in local DB but no longer returned by the server
+        if (allServerFetchedIds.isNotEmpty()) {
+            val allStaleIds = cachedEntities.map { it.assetId }.filter { it !in allServerFetchedIds }
+            if (allStaleIds.isNotEmpty()) {
+                withContext(Dispatchers.IO) {
+                    allStaleIds.chunked(500).forEach { chunk ->
+                        albumAssetDao.deleteAlbumAssets(albumId, userId, chunk)
+                    }
+                }
             }
         }
 
@@ -383,6 +426,14 @@ class AssetRepository @Inject constructor(
         if (assetIds.isNotEmpty()) {
             assetIds.chunked(500).forEach { chunk ->
                 albumAssetDao?.deleteAssets(chunk)
+            }
+        }
+    }
+
+    suspend fun deleteAlbumAssets(albumId: String, userId: String, assetIds: List<String>) {
+        if (assetIds.isNotEmpty()) {
+            assetIds.chunked(500).forEach { chunk ->
+                albumAssetDao?.deleteAlbumAssets(albumId, userId, chunk)
             }
         }
     }
