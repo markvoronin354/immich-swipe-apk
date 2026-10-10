@@ -147,5 +147,5 @@ data class SwipeUiState(
         return hasIncompletePile || hasNonLoadedAssets
     }
 
-    val progress: Float get() = if (remoteTotalCount > 0) processedCount.toFloat() / remoteTotalCount else 0f
+    val progress: Float get() = if (remoteTotalCount > 0) processedCount.coerceAtMost(remoteTotalCount).toFloat() / remoteTotalCount else 0f
 }

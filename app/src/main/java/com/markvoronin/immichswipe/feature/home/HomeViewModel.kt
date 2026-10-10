@@ -176,7 +176,8 @@ class HomeViewModel @Inject constructor(
 
                     val completedCount = albums.count { album ->
                         val treated = treatedCounts[album.id] ?: 0
-                        (treated >= album.assetCount) && (album.assetCount > 0)
+                        val effectiveTreated = if (album.assetCount > 0) treated.coerceAtMost(album.assetCount) else treated
+                        (effectiveTreated >= album.assetCount) && (album.assetCount > 0)
                     }
 
                     val newStats = StatsUiData(

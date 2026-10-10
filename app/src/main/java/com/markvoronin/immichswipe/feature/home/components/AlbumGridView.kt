@@ -254,8 +254,9 @@ fun AlbumGridItem(
 ) {
     val context = LocalContext.current
     val baseUrlClean = baseUrl.removeSuffix("/")
-    val progress = if (album.assetCount > 0) treatedCount.toFloat() / album.assetCount else 0f
-    val isCompleted = album.assetCount in 1..treatedCount
+    val effectiveTreatedCount = if (album.assetCount > 0) treatedCount.coerceAtMost(album.assetCount) else treatedCount
+    val progress = if (album.assetCount > 0) effectiveTreatedCount.toFloat() / album.assetCount else 0f
+    val isCompleted = album.assetCount in 1..effectiveTreatedCount
     val hasUnsyncedChanges = unsyncedCount > 0
 
     val isRecentExpansion = remember(album.id, expansionTime) {
@@ -396,7 +397,7 @@ fun AlbumGridItem(
                     maxLines = 1
                 )
                 Text(
-                    text = stringResource(R.string.home_sorted_count, treatedCount, album.assetCount),
+                    text = stringResource(R.string.home_sorted_count, effectiveTreatedCount, album.assetCount),
                     color = Color.White.copy(alpha = 0.8f),
                     fontSize = 11.sp
                 )

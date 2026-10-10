@@ -246,9 +246,10 @@ fun AlbumItem(
 ) {
     val context = LocalContext.current
     val baseUrlClean = baseUrl.removeSuffix("/")
-    val progress = if (album.assetCount > 0) treatedCount.toFloat() / album.assetCount else 0f
-    val isCompleted = album.assetCount in 1..treatedCount
-    val isNotStarted = treatedCount == 0
+    val effectiveTreatedCount = if (album.assetCount > 0) treatedCount.coerceAtMost(album.assetCount) else treatedCount
+    val progress = if (album.assetCount > 0) effectiveTreatedCount.toFloat() / album.assetCount else 0f
+    val isCompleted = album.assetCount in 1..effectiveTreatedCount
+    val isNotStarted = effectiveTreatedCount == 0
     val hasUnsyncedChanges = unsyncedCount > 0
 
     val isRecentExpansion = remember(album.id, expansionTime) {
@@ -378,7 +379,7 @@ fun AlbumItem(
                         Text(text = album.description, fontSize = 11.sp, color = MaterialTheme.colorScheme.outline, maxLines = 3, lineHeight = 14.sp)
                     }
                     Text(
-                        text = stringResource(R.string.home_sorted_count, treatedCount, album.assetCount),
+                        text = stringResource(R.string.home_sorted_count, effectiveTreatedCount, album.assetCount),
                         fontSize = 12.sp,
                         color = if (isCompleted) Color(0xFF388E3C) else MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium

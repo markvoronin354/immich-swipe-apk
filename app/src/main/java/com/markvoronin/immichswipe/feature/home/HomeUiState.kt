@@ -116,9 +116,10 @@ data class HomeUiState(
                 }
                 
                 val treated = albumTreatedCounts[album.id] ?: 0
+                val effectiveTreated = if (album.assetCount > 0) treated.coerceAtMost(album.assetCount) else treated
                 when {
-                    treated == 0 -> AlbumStatus.NOT_STARTED
-                    treated >= album.assetCount -> AlbumStatus.COMPLETED
+                    effectiveTreated == 0 -> AlbumStatus.NOT_STARTED
+                    effectiveTreated >= album.assetCount -> AlbumStatus.COMPLETED
                     else -> AlbumStatus.IN_PROGRESS
                 }
             }
@@ -152,9 +153,9 @@ data class StatsUiData(
 }
 
 
-enum class AlbumStatus(val label: String) {
-    IN_PROGRESS("En cours"),
-    NOT_STARTED("Pas commencé"),
-    COMPLETED("Terminés"),
-    VIRTUAL("Collections")
+enum class AlbumStatus {
+    IN_PROGRESS,
+    NOT_STARTED,
+    COMPLETED,
+    VIRTUAL
 }
