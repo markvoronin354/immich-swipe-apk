@@ -89,7 +89,7 @@ dependencies {
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-    debugImplementation(libs.leakcanary)
+    // debugImplementation(libs.leakcanary)
     ksp(libs.room.compiler)
 
     // Navigation 3
