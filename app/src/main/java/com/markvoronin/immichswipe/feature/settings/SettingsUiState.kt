@@ -39,7 +39,6 @@ data class SettingsUiState(
     val showMuteButton: Boolean = false,
     val showDownloadButton: Boolean = true,
     val showShareButton: Boolean = true,
-    val isDefaultLayoutGrid: Boolean = false,
     val showFavoriteButton: Boolean = true,
     val autoNextOnFav: Boolean = false,
     val includeArchived: Boolean = false,

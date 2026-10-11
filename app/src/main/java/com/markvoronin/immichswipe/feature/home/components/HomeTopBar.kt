@@ -31,9 +31,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.AdsClick
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -79,9 +81,10 @@ fun HomeTopBar(
     user: User?,
     connectionStatus: ConnectionStatus,
     onOpenStats: () -> Unit,
-    onGlobalReset: () -> Unit,
-    onSwipeReset: () -> Unit,
-    onOpenProfile: () -> Unit,
+    isGridView: Boolean = false,
+    onToggleLayout: () -> Unit = {},
+    onSwipeReset: () -> Unit = {},
+    onOpenProfile: () -> Unit = {},
     modifier: Modifier = Modifier,
     isSettingsTab: Boolean = false,
     isDuplicatesTab: Boolean = false,
@@ -238,8 +241,28 @@ fun HomeTopBar(
                         }
                     }
 
-                    // 2. Reset Icon (Home or Swipe or Duplicates tab) - Stays 100% static when navigating!
-                    val showReset = isHome || isSwipeTab || isDuplicatesTab
+                    // 2. Layout Mode Toggle Icon (Home screen only)
+                    AnimatedVisibility(
+                        visible = isHome,
+                        enter = fadeIn(animationSpec = tween(280, easing = FastOutSlowInEasing)) +
+                                expandHorizontally(animationSpec = tween(280, easing = FastOutSlowInEasing), expandFrom = Alignment.Start) +
+                                scaleIn(initialScale = 0.8f, animationSpec = tween(280, easing = FastOutSlowInEasing)),
+                        exit = fadeOut(animationSpec = tween(220, easing = FastOutSlowInEasing)) +
+                               shrinkHorizontally(animationSpec = tween(220, easing = FastOutSlowInEasing), shrinkTowards = Alignment.Start) +
+                               scaleOut(targetScale = 0.8f, animationSpec = tween(220, easing = FastOutSlowInEasing))
+                    ) {
+                        IconButton(onClick = onToggleLayout) {
+                            Icon(
+                                imageVector = if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
+                                contentDescription = stringResource(
+                                    if (isGridView) R.string.settings_layout_list else R.string.settings_layout_grid
+                                )
+                            )
+                        }
+                    }
+
+                    // 3. Reset Icon (Swipe or Duplicates tab)
+                    val showReset = isSwipeTab || isDuplicatesTab
                     AnimatedVisibility(
                         visible = showReset,
                         enter = fadeIn(animationSpec = tween(280, easing = FastOutSlowInEasing)) +
@@ -249,17 +272,11 @@ fun HomeTopBar(
                                shrinkHorizontally(animationSpec = tween(220, easing = FastOutSlowInEasing), shrinkTowards = Alignment.Start) +
                                scaleOut(targetScale = 0.8f, animationSpec = tween(220, easing = FastOutSlowInEasing))
                     ) {
-                        IconButton(
-                            onClick = {
-                                if (isHome) onGlobalReset() else onSwipeReset()
-                            }
-                        ) {
+                        IconButton(onClick = onSwipeReset) {
                             Icon(
                                 imageVector = Icons.Default.RestartAlt,
-                                contentDescription = stringResource(
-                                    if (isHome) R.string.home_global_reset_button else R.string.swipe_reset_button
-                                ),
-                                tint = MaterialTheme.colorScheme.error.copy(alpha = if (isHome) 0.7f else 0.8f)
+                                contentDescription = stringResource(R.string.swipe_reset_button),
+                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
                             )
                         }
                     }

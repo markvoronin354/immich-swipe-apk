@@ -149,11 +149,6 @@ class SettingsViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            sessionRepository.defaultLayoutGrid.collect { isGrid ->
-                _uiState.value = _uiState.value.copy(isDefaultLayoutGrid = isGrid)
-            }
-        }
-        viewModelScope.launch {
             sessionRepository.showFavoriteButton.collect { show ->
                 _uiState.value = _uiState.value.copy(showFavoriteButton = show)
             }
@@ -313,12 +308,6 @@ class SettingsViewModel @Inject constructor(
 
     fun setShowShareButton(show: Boolean) {
         viewModelScope.launch { sessionRepository.saveShowShareButton(show) }
-    }
-
-    fun setDefaultLayoutGrid(isGrid: Boolean) {
-        viewModelScope.launch {
-            sessionRepository.saveDefaultLayoutGrid(isGrid)
-        }
     }
 
     fun setShowFavorite(show: Boolean) {

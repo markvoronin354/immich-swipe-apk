@@ -31,7 +31,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AdsClick
@@ -43,7 +42,6 @@ import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
@@ -247,35 +245,6 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.outline,
                         modifier = Modifier.padding(start = 40.dp, end = 16.dp)
-                    )
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(R.string.settings_layout_label),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    ThemeButton(
-                        text = stringResource(R.string.settings_layout_list),
-                        icon = Icons.AutoMirrored.Filled.ViewList,
-                        selected = !uiState.isDefaultLayoutGrid,
-                        onClick = { viewModel.setDefaultLayoutGrid(false) },
-                        modifier = Modifier.weight(1f)
-                    )
-                    ThemeButton(
-                        text = stringResource(R.string.settings_layout_grid),
-                        icon = Icons.Default.GridView,
-                        selected = uiState.isDefaultLayoutGrid,
-                        onClick = { viewModel.setDefaultLayoutGrid(true) },
-                        modifier = Modifier.weight(1f)
                     )
                 }
             }

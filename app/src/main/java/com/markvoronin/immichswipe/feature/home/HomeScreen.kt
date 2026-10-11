@@ -193,7 +193,8 @@ fun HomeScreen(
                         baseUrl = uiState.baseUrl,
                         apiKey = uiState.apiKey,
                         onOpenStats = { viewModel.toggleStatsPopup(visible = true) },
-                        onGlobalReset = { viewModel.toggleGlobalResetConfirmation(true) },
+                        isGridView = uiState.isGridView,
+                        onToggleLayout = { viewModel.toggleLayoutMode() },
                         onSwipeReset = { viewModel.requestReset() },
                         onOpenProfile = { viewModel.toggleProfilePopup(visible = true) },
                         onBack = {

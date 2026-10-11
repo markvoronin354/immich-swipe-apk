@@ -354,6 +354,13 @@ class HomeViewModel @Inject constructor(
 
     fun onSearchQueryChanged(query: String) = _uiState.update { it.copy(searchQuery = query) }
     
+    fun toggleLayoutMode() {
+        viewModelScope.launch {
+            val newIsGrid = !_uiState.value.isGridView
+            sessionRepository.saveDefaultLayoutGrid(newIsGrid)
+        }
+    }
+    
     fun updateVirtualNames(id: String, name: String, description: String? = null) {
         _uiState.update { 
             val newNames = it.virtualNames.toMutableMap()
