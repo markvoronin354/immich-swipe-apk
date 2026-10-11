@@ -1,5 +1,6 @@
 package com.markvoronin.immichswipe.feature.tutorial
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -85,6 +86,10 @@ fun TutorialOverlay(
     modifier: Modifier = Modifier
 ) {
     if (!controller.isVisible) return
+
+    BackHandler(enabled = true) {
+        controller.dismissTutorial()
+    }
 
     val currentStep = controller.currentStep() ?: return
     val totalSteps = controller.activeSteps.size

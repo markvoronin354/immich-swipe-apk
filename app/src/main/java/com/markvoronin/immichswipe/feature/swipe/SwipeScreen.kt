@@ -123,6 +123,14 @@ fun SwipeScreen(
         }
     }
 
+    DisposableEffect(Unit) {
+        onDispose {
+            if (tutorialController.phase == TutorialPhase.SWIPE && tutorialController.isVisible) {
+                tutorialController.dismissTutorial()
+            }
+        }
+    }
+
     BackHandler(enabled = true) {
         val state = viewModel.uiState.value
         when {

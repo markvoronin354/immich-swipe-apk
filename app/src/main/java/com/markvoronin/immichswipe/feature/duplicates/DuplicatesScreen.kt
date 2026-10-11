@@ -1,6 +1,7 @@
 package com.markvoronin.immichswipe.feature.duplicates
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -124,6 +125,14 @@ fun DuplicatesScreen(
                 steps = duplicatesTutorialSteps,
                 onComplete = { viewModel.completeDuplicatesTutorial() }
             )
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            if (tutorialController.phase == TutorialPhase.DUPLICATES && tutorialController.isVisible) {
+                tutorialController.dismissTutorial()
+            }
         }
     }
 

@@ -69,6 +69,10 @@ class TutorialController {
         finishTutorial()
     }
 
+    fun dismissTutorial() {
+        finishTutorial()
+    }
+
     private fun finishTutorial() {
         isVisible = false
         val callback = onCompleteCallback
