@@ -310,4 +310,7 @@
     <string name="login_api_key_tutorial_step3">3. Click \"New API Key\" and name it \"Immich Swipe\".</string>
     <string name="login_api_key_tutorial_step4">4. Under Permissions, select:\n• Asset (All)\n• Album (Read, Update)\n• Duplicate (Read)\n• User (Read)\n• userProfileImage (Read)</string>
     <string name="login_api_key_tutorial_step5">5. Click Create, then copy and paste the key here.</string>
+
+    <string name="duplicates_keep_all">Keep all</string>
+    <string name="duplicates_delete_all">Delete all</string>
 </resources>

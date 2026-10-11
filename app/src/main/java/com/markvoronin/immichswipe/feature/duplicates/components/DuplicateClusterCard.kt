@@ -2,9 +2,9 @@ package com.markvoronin.immichswipe.feature.duplicates.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,73 +43,117 @@ fun DuplicateClusterCard(
     baseUrl: String = "",
     apiKey: String = "",
     onDecisionToggle: (String) -> Unit,
+    onKeepAll: () -> Unit = {},
+    onDeleteAll: () -> Unit = {},
     onAssetLongPress: (Asset) -> Unit,
     onZoomStateUpdate: (ZoomData?) -> Unit,
     onOpenFullScreen: () -> Unit = {
         cluster.assets.firstOrNull()?.let { onAssetLongPress(it) }
     }
 ) {
+    val unsortedInCluster = cluster.assets.count { asset ->
+        decisions[asset.id] == null || decisions[asset.id] == DuplicateDecision.NONE
+    }
+    val isSorted = unsortedInCluster == 0
+    val sortedInCluster = cluster.assets.size - unsortedInCluster
+    val isAllKeep = cluster.assets.isNotEmpty() && cluster.assets.all { decisions[it.id] == DuplicateDecision.KEEP }
+    val isAllDelete = cluster.assets.isNotEmpty() && cluster.assets.all { decisions[it.id] == DuplicateDecision.DELETE }
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+        border = if (isSorted) {
+            BorderStroke(1.dp, Color(0xFF4CAF50).copy(alpha = 0.85f))
+        } else {
+            BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+        }
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            val unsortedInCluster = cluster.assets.count { asset ->
-                decisions[asset.id] == null || decisions[asset.id] == DuplicateDecision.NONE
-            }
-            val sortedInCluster = cluster.assets.size - unsortedInCluster
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "$sortedInCluster/${cluster.assets.size}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(
+                        text = "$sortedInCluster/${cluster.assets.size}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (unsortedInCluster == 0) {
-                        Surface(
-                            color = Color(0xFF4CAF50).copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(12.dp)
+                    Surface(
+                        onClick = onKeepAll,
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isAllKeep) Color(0xFF4CAF50) else Color(0xFF4CAF50).copy(alpha = 0.15f),
+                        contentColor = if (isAllKeep) Color.White else Color(0xFF4CAF50)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.CheckCircle,
-                                    contentDescription = null,
-                                    tint = Color(0xFF4CAF50),
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = "Sorted",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Color(0xFF4CAF50),
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.duplicates_keep_all),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
+
+                    Surface(
+                        onClick = onDeleteAll,
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isAllDelete) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
+                        contentColor = if (isAllDelete) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.error
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.duplicates_delete_all),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
                     IconButton(
                         onClick = onOpenFullScreen,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Fullscreen,
                             contentDescription = stringResource(R.string.settings_fullscreen_pos_label),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(28.dp)
                         )
                     }
                 }

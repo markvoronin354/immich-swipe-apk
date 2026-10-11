@@ -354,6 +354,8 @@ fun DuplicatesScreen(
                                     apiKey = uiState.apiKey,
                                     modifier = if (index == 0) Modifier.tutorialTarget("dup_photos", tutorialController) else Modifier,
                                     onDecisionToggle = { assetId -> viewModel.toggleDecision(assetId) },
+                                    onKeepAll = { viewModel.setClusterDecisions(cluster, DuplicateDecision.KEEP) },
+                                    onDeleteAll = { viewModel.setClusterDecisions(cluster, DuplicateDecision.DELETE) },
                                     onAssetLongPress = { clickedAsset ->
                                         val clusterIdx = uiState.clusters.indexOfFirst { it.clusterId == cluster.clusterId }.coerceAtLeast(0)
                                         val initialIdx = cluster.assets.indexOfFirst { it.id == clickedAsset.id }.coerceAtLeast(0)

@@ -183,6 +183,49 @@ class DuplicatesViewModel @Inject constructor(
         }
     }
 
+    fun setClusterDecisions(cluster: DuplicateClusterUiModel, targetDecision: DuplicateDecision) {
+        val assetIds = cluster.assets.map { it.id }
+        if (assetIds.isEmpty()) return
+
+        val currentDecisions = _uiState.value.decisions
+        val allTarget = assetIds.all { currentDecisions[it] == targetDecision }
+        val newDecision = if (allTarget) DuplicateDecision.NONE else targetDecision
+
+        _uiState.update { state ->
+            val updatedMap = state.decisions.toMutableMap()
+            assetIds.forEach { assetId ->
+                if (newDecision == DuplicateDecision.NONE) {
+                    updatedMap.remove(assetId)
+                } else {
+                    updatedMap[assetId] = newDecision
+                }
+            }
+            state.copy(decisions = updatedMap)
+        }
+
+        viewModelScope.launch {
+            val userId = sessionManager.getUserId() ?: return@launch
+            val allAssetsMap = _uiState.value.clusters.flatMap { it.assets }.associateBy { it.id }
+
+            if (newDecision == DuplicateDecision.NONE) {
+                swipeDecisionRepository.removeDecisions(assetIds, userId)
+            } else {
+                val entities = assetIds.map { assetId ->
+                    val asset = allAssetsMap[assetId]
+                    SwipeDecisionEntity(
+                        assetId = assetId,
+                        albumId = Album.VIRTUAL_DUPLICATES_ID,
+                        userId = userId,
+                        decision = newDecision.name,
+                        fileSize = asset?.exifInfo?.fileSizeInBytes,
+                        createdAt = System.currentTimeMillis()
+                    )
+                }
+                swipeDecisionRepository.saveDecisions(entities)
+            }
+        }
+    }
+
     fun clearAllDecisions() {
         val currentDecidedAssetIds = _uiState.value.decisions.keys.toList()
         _uiState.update { state ->
