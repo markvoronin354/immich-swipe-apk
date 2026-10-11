@@ -25,4 +25,6 @@ data class TutorialStep(
     val targetKey: String? = null,
     val placement: TooltipPlacement = TooltipPlacement.AUTO,
     val gestureAnimation: GestureAnimationType = GestureAnimationType.NONE,
+    val targetPaddingDp: Int? = null,
+    val targetCornerRadiusDp: Int? = null,
 )

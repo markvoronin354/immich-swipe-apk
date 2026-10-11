@@ -96,7 +96,9 @@ fun SwipeScreen(
                 descriptionRes = R.string.tutorial_swipe_gestures_desc,
                 targetKey = "swipe_deck",
                 placement = TooltipPlacement.TOP,
-                gestureAnimation = GestureAnimationType.NONE
+                gestureAnimation = GestureAnimationType.NONE,
+                targetPaddingDp = 0,
+                targetCornerRadiusDp = 16
             ),
             TutorialStep(
                 id = "header",

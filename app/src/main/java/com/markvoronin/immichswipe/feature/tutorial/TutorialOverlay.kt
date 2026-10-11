@@ -111,10 +111,27 @@ fun TutorialOverlay(
     )
 
     val density = LocalDensity.current
-    val minExpansionPx = with(density) { 2.dp.toPx() }
-    val maxExpansionPx = with(density) { 5.dp.toPx() }
-    val minScreenMargin = with(density) { 8.dp.toPx() }
-    val strokeMargin = with(density) { 4.dp.toPx() }
+
+    val paddingPx = with(density) {
+        currentStep.targetPaddingDp?.dp?.toPx()
+            ?: when (currentStep.targetKey) {
+                "swipe_deck" -> 0.dp.toPx()
+                "swipe_header" -> 4.dp.toPx()
+                else -> 6.dp.toPx()
+            }
+    }
+
+    val cornerRadiusPx = with(density) {
+        currentStep.targetCornerRadiusDp?.dp?.toPx()
+            ?: 16.dp.toPx()
+    }
+
+    val isExactFit = paddingPx == 0f
+    val minScreenMargin = if (isExactFit) 0f else with(density) { 8.dp.toPx() }
+    val strokeMargin = if (isExactFit) 0f else with(density) { 4.dp.toPx() }
+
+    val minExpansionPx = if (isExactFit) 0f else with(density) { 2.dp.toPx() }
+    val maxExpansionPx = if (isExactFit) 0f else with(density) { 5.dp.toPx() }
 
     val pulseExpansionPx by infiniteTransition.animateFloat(
         initialValue = minExpansionPx,
@@ -128,17 +145,14 @@ fun TutorialOverlay(
 
     // Calculate local target bounds relative to the overlay Box position
     val localTargetRect = if (targetBoundsInWindow != null) {
-        val padding = with(density) {
-            if (currentStep.targetKey == "swipe_header") 4.dp.toPx() else 6.dp.toPx()
-        }
-        val rawLeft = targetBoundsInWindow.left - overlayWindowOffset.x - padding
-        val rawRight = targetBoundsInWindow.right - overlayWindowOffset.x + padding
+        val rawLeft = targetBoundsInWindow.left - overlayWindowOffset.x - paddingPx
+        val rawRight = targetBoundsInWindow.right - overlayWindowOffset.x + paddingPx
 
         Rect(
             left = rawLeft.coerceAtLeast(minScreenMargin),
-            top = targetBoundsInWindow.top - overlayWindowOffset.y - padding,
+            top = targetBoundsInWindow.top - overlayWindowOffset.y - paddingPx,
             right = rawRight,
-            bottom = targetBoundsInWindow.bottom - overlayWindowOffset.y + padding
+            bottom = targetBoundsInWindow.bottom - overlayWindowOffset.y + paddingPx
         )
     } else {
         null
@@ -182,7 +196,7 @@ fun TutorialOverlay(
                     addRoundRect(
                         RoundRect(
                             rect = boundedCutoutRect,
-                            cornerRadius = CornerRadius(16.dp.toPx(), 16.dp.toPx())
+                            cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx)
                         )
                     )
                 }
@@ -204,7 +218,7 @@ fun TutorialOverlay(
                     color = Color(0xFF38BDF8).copy(alpha = pulseAlpha),
                     topLeft = frameRect.topLeft,
                     size = frameRect.size,
-                    cornerRadius = CornerRadius(18.dp.toPx(), 18.dp.toPx()),
+                    cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx),
                     style = Stroke(width = strokeWidth)
                 )
             } else {
