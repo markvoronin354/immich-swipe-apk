@@ -30,6 +30,7 @@ class SessionDataStore(private val context: Context) {
         private val KEY_MUTE_ICON_POS = stringPreferencesKey("mute_icon_pos")
         private val KEY_DOWNLOAD_ICON_POS = stringPreferencesKey("download_icon_pos")
         private val KEY_SHARE_ICON_POS = stringPreferencesKey("share_icon_pos")
+        private val KEY_BUTTON_STACK_ORIENTATION = stringPreferencesKey("button_stack_orientation")
         private val KEY_SHOW_FULLSCREEN_ICON = booleanPreferencesKey("show_fullscreen_icon")
         private val KEY_SHOW_IMMICH_ICON = booleanPreferencesKey("show_immich_icon")
         private val KEY_SHOW_CARD_DISPLAY_ICON = booleanPreferencesKey("show_card_display_icon")
@@ -165,6 +166,12 @@ class SessionDataStore(private val context: Context) {
 
     suspend fun saveShareIconPosition(pos: String) {
         context.dataStore.edit { it[KEY_SHARE_ICON_POS] = pos }
+    }
+
+    fun getButtonStackOrientation(): Flow<String?> = context.dataStore.data.map { it[KEY_BUTTON_STACK_ORIENTATION] }
+
+    suspend fun saveButtonStackOrientation(orientation: String) {
+        context.dataStore.edit { it[KEY_BUTTON_STACK_ORIENTATION] = orientation }
     }
 
     fun isShowFullscreenIcon(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_FULLSCREEN_ICON] ?: true }

@@ -119,6 +119,11 @@ class SettingsViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            sessionRepository.buttonStackOrientation.collect { orientation ->
+                _uiState.value = _uiState.value.copy(buttonStackOrientation = orientation)
+            }
+        }
+        viewModelScope.launch {
             sessionRepository.showFullscreenButton.collect { show ->
                 _uiState.value = _uiState.value.copy(showFullscreenButton = show)
             }
@@ -241,6 +246,12 @@ class SettingsViewModel @Inject constructor(
     fun setFullscreenButtonPosition(pos: IconPosition) {
         viewModelScope.launch {
             sessionRepository.saveFullscreenButtonPosition(pos)
+        }
+    }
+
+    fun setButtonStackOrientation(orientation: com.markvoronin.immichswipe.core.ButtonStackOrientation) {
+        viewModelScope.launch {
+            sessionRepository.saveButtonStackOrientation(orientation)
         }
     }
 

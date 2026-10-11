@@ -106,6 +106,10 @@
     <string name="settings_action_buttons_label">Swipe card action buttons</string>
     <string name="settings_action_buttons_desc">Customize visibility and position of overlay buttons</string>
     <string name="settings_action_buttons_dialog_title">Action Buttons</string>
+    <string name="settings_button_stacking_label">Button stacking direction</string>
+    <string name="settings_button_stacking_desc">How buttons stack when placed in the same corner position</string>
+    <string name="settings_button_stacking_horizontal">Horizontally</string>
+    <string name="settings_button_stacking_vertical">Vertically</string>
     <string name="settings_fullscreen_pos_label">Fullscreen</string>
     <string name="settings_immich_pos_label">Button position</string>
     <string name="settings_card_immich">Open in Immich</string>

@@ -2,6 +2,7 @@ package com.markvoronin.immichswipe.data.repository
 
 import android.content.Context
 import com.markvoronin.immichswipe.core.AppTheme
+import com.markvoronin.immichswipe.core.ButtonStackOrientation
 import com.markvoronin.immichswipe.core.CardDisplayMode
 import com.markvoronin.immichswipe.core.DoubleTapAction
 import com.markvoronin.immichswipe.core.IconPosition
@@ -107,6 +108,10 @@ class SessionRepository @Inject constructor(
         it?.let { try { IconPosition.valueOf(it) } catch(_: Exception) { IconPosition.BOTTOM_RIGHT } } ?: IconPosition.BOTTOM_RIGHT
     }
 
+    val buttonStackOrientation: Flow<ButtonStackOrientation> = dataStore.getButtonStackOrientation().map {
+        it?.let { try { ButtonStackOrientation.valueOf(it) } catch(_: Exception) { ButtonStackOrientation.VERTICAL } } ?: ButtonStackOrientation.VERTICAL
+    }
+
     val showFullscreenButton: Flow<Boolean> = dataStore.isShowFullscreenIcon()
     val showImmichButton: Flow<Boolean> = dataStore.isShowImmichIcon()
     val showRotationButton: Flow<Boolean> = dataStore.isShowCardDisplayIcon()
@@ -199,6 +204,10 @@ class SessionRepository @Inject constructor(
 
     suspend fun saveShareButtonPosition(pos: IconPosition) {
         dataStore.saveShareIconPosition(pos.name)
+    }
+
+    suspend fun saveButtonStackOrientation(orientation: ButtonStackOrientation) {
+        dataStore.saveButtonStackOrientation(orientation.name)
     }
 
     suspend fun saveShowFullscreenButton(show: Boolean) { dataStore.saveShowFullscreenIcon(show) }

@@ -1,6 +1,7 @@
 package com.markvoronin.immichswipe.feature.settings
 
 import com.markvoronin.immichswipe.core.AppTheme
+import com.markvoronin.immichswipe.core.ButtonStackOrientation
 import com.markvoronin.immichswipe.core.CardDisplayMode
 import com.markvoronin.immichswipe.core.DoubleTapAction
 import com.markvoronin.immichswipe.core.IconPosition
@@ -33,6 +34,7 @@ data class SettingsUiState(
     val muteButtonPosition: IconPosition = IconPosition.BOTTOM_RIGHT,
     val downloadButtonPosition: IconPosition = IconPosition.BOTTOM_LEFT,
     val shareButtonPosition: IconPosition = IconPosition.BOTTOM_RIGHT,
+    val buttonStackOrientation: ButtonStackOrientation = ButtonStackOrientation.VERTICAL,
     val showFullscreenButton: Boolean = true,
     val showImmichButton: Boolean = false,
     val showRotationButton: Boolean = true,

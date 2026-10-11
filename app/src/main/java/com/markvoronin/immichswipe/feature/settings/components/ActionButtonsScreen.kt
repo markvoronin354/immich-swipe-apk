@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.TouchApp
@@ -43,11 +45,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.markvoronin.immichswipe.R
+import com.markvoronin.immichswipe.core.ButtonStackOrientation
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichOpenMode
 import com.markvoronin.immichswipe.feature.settings.SettingsUiState
@@ -79,6 +84,11 @@ fun ActionButtonsScreen(
         Column(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            StackOrientationPickerCard(
+                orientation = uiState.buttonStackOrientation,
+                onOrientationSelected = { viewModel.setButtonStackOrientation(it) }
+            )
+
             IconPositionPickerCard(
                 title = stringResource(R.string.settings_fullscreen_pos_label),
                 icon = Icons.Default.Fullscreen,
@@ -549,5 +559,161 @@ fun BetaBadge(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
         )
+    }
+}
+
+@Composable
+fun StackOrientationPickerCard(
+    orientation: ButtonStackOrientation,
+    onOrientationSelected: (ButtonStackOrientation) -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 0.dp,
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Layers,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.settings_button_stacking_label),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_button_stacking_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            )
+            Spacer(Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+            ) {
+                StackOrientationButton(
+                    text = stringResource(R.string.settings_button_stacking_horizontal),
+                    selected = orientation == ButtonStackOrientation.HORIZONTAL,
+                    isHorizontal = true,
+                    onClick = { onOrientationSelected(ButtonStackOrientation.HORIZONTAL) },
+                    modifier = Modifier.weight(1f)
+                )
+                StackOrientationButton(
+                    text = stringResource(R.string.settings_button_stacking_vertical),
+                    selected = orientation == ButtonStackOrientation.VERTICAL,
+                    isHorizontal = false,
+                    onClick = { onOrientationSelected(ButtonStackOrientation.VERTICAL) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun HorizontalCirclesIcon(
+    tint: Color,
+    modifier: Modifier = Modifier.size(18.dp)
+) {
+    Canvas(modifier = modifier) {
+        val radius = size.height * 0.16f
+        val cy = size.height / 2f
+        val cx1 = size.width * 0.22f
+        val cx2 = size.width * 0.78f
+        drawCircle(color = tint, radius = radius, center = Offset(cx1, cy))
+        drawCircle(color = tint, radius = radius, center = Offset(cx2, cy))
+    }
+}
+
+@Composable
+fun VerticalCirclesIcon(
+    tint: Color,
+    modifier: Modifier = Modifier.size(18.dp)
+) {
+    Canvas(modifier = modifier) {
+        val radius = size.width * 0.16f
+        val cx = size.width / 2f
+        val cy1 = size.height * 0.22f
+        val cy2 = size.height * 0.78f
+        drawCircle(color = tint, radius = radius, center = Offset(cx, cy1))
+        drawCircle(color = tint, radius = radius, center = Offset(cx, cy2))
+    }
+}
+
+@Composable
+fun StackOrientationButton(
+    text: String,
+    selected: Boolean,
+    isHorizontal: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val tint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.outline
+
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(42.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(
+            width = if (selected) 1.5.dp else 1.dp,
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (isHorizontal) {
+                HorizontalCirclesIcon(tint = tint)
+            } else {
+                VerticalCirclesIcon(tint = tint)
+            }
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }

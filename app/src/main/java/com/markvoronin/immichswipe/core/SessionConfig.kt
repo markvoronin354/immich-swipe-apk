@@ -20,6 +20,11 @@ enum class IconPosition {
     BOTTOM_RIGHT
 }
 
+enum class ButtonStackOrientation {
+    VERTICAL,
+    HORIZONTAL
+}
+
 
 enum class DoubleTapAction {
     FULLSCREEN,

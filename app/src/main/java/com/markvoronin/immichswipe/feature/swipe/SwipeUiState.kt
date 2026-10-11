@@ -42,6 +42,7 @@ data class SwipeUiState(
     val muteButtonPosition: IconPosition = IconPosition.BOTTOM_RIGHT,
     val downloadButtonPosition: IconPosition = IconPosition.BOTTOM_LEFT,
     val shareButtonPosition: IconPosition = IconPosition.BOTTOM_RIGHT,
+    val buttonStackOrientation: com.markvoronin.immichswipe.core.ButtonStackOrientation = com.markvoronin.immichswipe.core.ButtonStackOrientation.VERTICAL,
     val showFullscreenButton: Boolean = true,
     val showImmichButton: Boolean = false,
     val showRotationButton: Boolean = true,

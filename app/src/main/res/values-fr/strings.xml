@@ -107,6 +107,10 @@
     <string name="settings_action_buttons_label">Boutons d\'action à l\'écran</string>
     <string name="settings_action_buttons_desc">Personnaliser la visibilité et la position des boutons superposés</string>
     <string name="settings_action_buttons_dialog_title">Boutons d\'Action</string>
+    <string name="settings_button_stacking_label">Empilement des boutons</string>
+    <string name="settings_button_stacking_desc">Comment empiler les boutons situés dans la même position</string>
+    <string name="settings_button_stacking_horizontal">Horizontalement</string>
+    <string name="settings_button_stacking_vertical">Verticalement</string>
     <string name="settings_fullscreen_pos_label">Position du bouton Plein Écran</string>
     <string name="settings_immich_pos_label">Position du bouton Ouvrir dans Immich</string>
     <string name="settings_card_immich">Ouvrir dans Immich</string>

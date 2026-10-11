@@ -106,6 +106,10 @@
     <string name="settings_action_buttons_label">Botones de acción en pantalla</string>
     <string name="settings_action_buttons_desc">Personalizar la visibilidad y posición de los botones superpuestos</string>
     <string name="settings_action_buttons_dialog_title">Botones de Acción</string>
+    <string name="settings_button_stacking_label">Alineación de botones</string>
+    <string name="settings_button_stacking_desc">Cómo apilar los botones colocados en la misma posición</string>
+    <string name="settings_button_stacking_horizontal">Horizontal</string>
+    <string name="settings_button_stacking_vertical">Vertical</string>
     <string name="settings_fullscreen_pos_label">Posición del botón de pantalla completa</string>
     <string name="settings_immich_pos_label">Posición del botón Abrir en Immich</string>
     <string name="settings_card_immich">Abrir en Immich</string>
