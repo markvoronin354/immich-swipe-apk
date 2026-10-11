@@ -132,8 +132,30 @@ class SwipeDecisionRepository @Inject constructor(
     suspend fun getAllSyncHistoryRaw() = swipeDecisionDao.getAllSyncHistoryRaw()
     suspend fun getAllSyncHistoryForUserRaw(userId: String) = swipeDecisionDao.getAllSyncHistoryForUserRaw(userId)
 
-    suspend fun importData(decisions: List<SwipeDecisionEntity>, history: List<SyncHistoryEntity>) {
-        swipeDecisionDao.insertDecisions(decisions)
-        swipeDecisionDao.insertSyncHistoryList(history)
+    suspend fun importData(
+        decisions: List<SwipeDecisionEntity>,
+        history: List<SyncHistoryEntity>,
+        skipAssetIds: List<String> = emptyList()
+    ) {
+        val validDecisions = decisions.filter { !it.decision.equals("SKIP", ignoreCase = true) }
+        val allSkipIds = (skipAssetIds + decisions.filter { it.decision.equals("SKIP", ignoreCase = true) }.map { it.assetId }).distinct()
+
+        if (allSkipIds.isNotEmpty()) {
+            allSkipIds.chunked(500).forEach { chunk ->
+                swipeDecisionDao.deleteDecisionsForAssets(chunk)
+            }
+        }
+        swipeDecisionDao.deleteSkipDecisions()
+
+        if (validDecisions.isNotEmpty()) {
+            validDecisions.chunked(500).forEach { chunk ->
+                swipeDecisionDao.insertDecisions(chunk)
+            }
+        }
+        if (history.isNotEmpty()) {
+            history.chunked(500).forEach { chunk ->
+                swipeDecisionDao.insertSyncHistoryList(chunk)
+            }
+        }
     }
 }

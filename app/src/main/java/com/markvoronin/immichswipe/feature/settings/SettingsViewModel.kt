@@ -432,11 +432,12 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val userId = sessionManager.getUserId()
-                val decisions = if (scope == DatabaseScope.ALL) {
+                val rawDecisions = if (scope == DatabaseScope.ALL) {
                     swipeDecisionRepository.getAllDecisionsRaw()
                 } else {
                     userId?.let { swipeDecisionRepository.getAllDecisionsForUserRaw(it) } ?: emptyList()
                 }
+                val decisions = rawDecisions.filter { !it.decision.equals("SKIP", ignoreCase = true) }
                 val history = if (scope == DatabaseScope.ALL) {
                     swipeDecisionRepository.getAllSyncHistoryRaw()
                 } else {
@@ -472,10 +473,21 @@ class SettingsViewModel @Inject constructor(
                 val json = inputStream.bufferedReader().use { it.readText() }
                 val export = com.google.gson.Gson().fromJson(json, DatabaseExport::class.java)
 
-                swipeDecisionRepository.importData(export.swipeDecisions, export.syncHistory)
+                val rawDecisions = export?.swipeDecisions ?: emptyList()
+                val rawHistory = export?.syncHistory ?: emptyList()
+
+                val nonSkipDecisions = rawDecisions.filter { !it.decision.equals("SKIP", ignoreCase = true) }
+                val skipAssetIds = rawDecisions.filter { it.decision.equals("SKIP", ignoreCase = true) }.map { it.assetId }
+                val cleanedHistory = rawHistory.map { it.copy(skippedCount = 0) }
+
+                swipeDecisionRepository.importData(nonSkipDecisions, cleanedHistory, skipAssetIds)
 
                 _uiState.value = _uiState.value.copy(
-                    databaseActionStatus = context.resources.getQuantityString(R.plurals.settings_db_import_success, export.swipeDecisions.size, export.swipeDecisions.size)
+                    databaseActionStatus = context.resources.getQuantityString(
+                        R.plurals.settings_db_import_success,
+                        nonSkipDecisions.size,
+                        nonSkipDecisions.size
+                    )
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
