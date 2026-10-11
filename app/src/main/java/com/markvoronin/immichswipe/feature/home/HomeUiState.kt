@@ -90,7 +90,7 @@ data class HomeUiState(
                 ))
             }
 
-            val baseList = virtuals + albums
+            val baseList = virtuals + if (Album.IS_SKIP_FEATURE_ENABLED) albums else albums.filter { !it.albumName.equals("SKIP", ignoreCase = true) }
 
             return if (searchQuery.isBlank()) {
                 baseList
@@ -109,10 +109,7 @@ data class HomeUiState(
         get() {
             val filtered = filteredAlbums
             return filtered.groupBy { album ->
-                if (album.id == Album.VIRTUAL_ALL_ID || 
-                    album.id == Album.VIRTUAL_ORPHANS_ID ||
-                    album.id == Album.VIRTUAL_DUPLICATES_ID ||
-                    album.albumName.equals("SKIP", ignoreCase = true)) {
+                if (album.isVirtual) {
                     return@groupBy AlbumStatus.VIRTUAL
                 }
                 

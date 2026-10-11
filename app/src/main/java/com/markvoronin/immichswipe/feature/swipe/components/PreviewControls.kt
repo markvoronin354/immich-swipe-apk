@@ -20,8 +20,6 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -32,7 +30,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.markvoronin.immichswipe.core.IconPosition
 
 @Composable
 fun PreviewControls(
@@ -46,13 +43,7 @@ fun PreviewControls(
     showMuteButton: Boolean,
     isMuted: Boolean,
     onToggleMute: () -> Unit,
-    assetType: String,
-    showDownloadButton: Boolean,
-    downloadButtonPosition: IconPosition,
-    onDownload: () -> Unit,
-    showShareButton: Boolean,
-    shareButtonPosition: IconPosition,
-    onShare: () -> Unit
+    assetType: String
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -132,68 +123,6 @@ fun PreviewControls(
                     Icon(
                         imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                         contentDescription = "Mute",
-                        tint = Color.White
-                    )
-                }
-            }
-
-            // Download Button
-            if (showDownloadButton) {
-                val dlAlign = when (downloadButtonPosition) {
-                    IconPosition.TOP_LEFT -> Alignment.TopStart
-                    IconPosition.TOP_RIGHT -> Alignment.TopEnd
-                    IconPosition.BOTTOM_LEFT -> Alignment.BottomStart
-                    IconPosition.BOTTOM_RIGHT -> Alignment.BottomEnd
-                }
-
-                val dlPadding = when (downloadButtonPosition) {
-                    IconPosition.TOP_LEFT -> Modifier.padding(top = 50.dp, start = 20.dp)
-                    IconPosition.TOP_RIGHT -> Modifier.padding(top = 110.dp, end = 20.dp)
-                    IconPosition.BOTTOM_LEFT -> Modifier.padding(bottom = (if (isLandscape) 80.dp else 160.dp) + controlsOffset, start = 24.dp)
-                    IconPosition.BOTTOM_RIGHT -> Modifier.padding(bottom = (if (isLandscape) 20.dp else 100.dp) + controlsOffset, end = 24.dp)
-                }
-
-                IconButton(
-                    onClick = onDownload,
-                    modifier = Modifier
-                        .align(dlAlign)
-                        .then(dlPadding)
-                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.FileDownload,
-                        contentDescription = "Download",
-                        tint = Color.White
-                    )
-                }
-            }
-
-            // Share Button
-            if (showShareButton) {
-                val shareAlign = when (shareButtonPosition) {
-                    IconPosition.TOP_LEFT -> Alignment.TopStart
-                    IconPosition.TOP_RIGHT -> Alignment.TopEnd
-                    IconPosition.BOTTOM_LEFT -> Alignment.BottomStart
-                    IconPosition.BOTTOM_RIGHT -> Alignment.BottomEnd
-                }
-
-                val sharePadding = when (shareButtonPosition) {
-                    IconPosition.TOP_LEFT -> Modifier.padding(top = 50.dp, start = 20.dp)
-                    IconPosition.TOP_RIGHT -> Modifier.padding(top = 110.dp, end = 20.dp)
-                    IconPosition.BOTTOM_LEFT -> Modifier.padding(bottom = (if (isLandscape) 80.dp else 160.dp) + controlsOffset, start = 24.dp)
-                    IconPosition.BOTTOM_RIGHT -> Modifier.padding(bottom = (if (isLandscape) 20.dp else 100.dp) + controlsOffset, end = 24.dp)
-                }
-
-                IconButton(
-                    onClick = onShare,
-                    modifier = Modifier
-                        .align(shareAlign)
-                        .then(sharePadding)
-                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Share,
-                        contentDescription = "Share",
                         tint = Color.White
                     )
                 }

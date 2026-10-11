@@ -74,7 +74,6 @@ import coil.request.ImageRequest
 import coil.size.Precision
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
-import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
@@ -95,9 +94,11 @@ fun FullscreenViewer(
     asset: Asset,
     nextAsset: Asset? = null,
     isFavorite: Boolean,
+    isNextFavorite: Boolean = false,
     onSwipe: (SwipeDecision) -> Unit,
     onUndo: () -> Unit,
     onToggleFavorite: () -> Unit = {},
+    onToggleFavoriteNext: () -> Unit = {},
     onClose: () -> Unit,
     tapToSwipeEnabled: Boolean = false,
     providedPlayer: ExoPlayer? = null,
@@ -105,12 +106,6 @@ fun FullscreenViewer(
     isMuted: Boolean = false,
     onToggleMute: () -> Unit = {},
     showMuteButton: Boolean = true,
-    downloadButtonPosition: IconPosition = IconPosition.TOP_LEFT,
-    showDownloadButton: Boolean = false,
-    shareButtonPosition: IconPosition = IconPosition.TOP_RIGHT,
-    showShareButton: Boolean = false,
-    onDownload: (Asset) -> Unit = {},
-    onShare: (Asset) -> Unit = {},
     rotation: Int = 0,
     baseUrl: String = "",
     apiKey: String = ""
@@ -323,6 +318,44 @@ fun FullscreenViewer(
                         error = {
                             AssetErrorView()
                         }
+                    )
+
+                    if (showSizeIndicator && nextAsset.type != "VIDEO") {
+                        AnimatedVisibility(
+                            visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
+                            enter = fadeIn(),
+                            exit = fadeOut(),
+                            modifier = Modifier.align(Alignment.BottomCenter)
+                        ) {
+                            Surface(
+                                modifier = Modifier
+                                    .padding(bottom = (if (isLandscape) 80.dp else 80.dp) + controlsOffset),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = formatSize(nextAsset.exifInfo?.fileSizeInBytes ?: 0L),
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    PreviewControls(
+                        visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
+                        isFavorite = isNextFavorite,
+                        onToggleFavorite = onToggleFavoriteNext,
+                        onClose = onClose,
+                        onUndo = onUndo,
+                        isLandscape = isLandscape,
+                        controlsOffset = controlsOffset,
+                        showMuteButton = showMuteButton,
+                        isMuted = isMuted,
+                        onToggleMute = onToggleMute,
+                        assetType = nextAsset.type
                     )
                 }
             }
@@ -644,13 +677,7 @@ fun FullscreenViewer(
                     showMuteButton = showMuteButton,
                     isMuted = isMuted,
                     onToggleMute = onToggleMute,
-                    assetType = asset.type,
-                    showDownloadButton = showDownloadButton,
-                    downloadButtonPosition = downloadButtonPosition,
-                    onDownload = { onDownload(asset) },
-                    showShareButton = showShareButton,
-                    shareButtonPosition = shareButtonPosition,
-                    onShare = { onShare(asset) }
+                    assetType = asset.type
                 )
 
             // Mute/Unmute popup indicator

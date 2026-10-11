@@ -143,6 +143,11 @@ class SwipeViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            sessionRepository.buttonStackOrientation.collect { orientation ->
+                _uiState.update { it.copy(buttonStackOrientation = orientation) }
+            }
+        }
+        viewModelScope.launch {
             sessionRepository.hasCompletedSwipeTutorial.collect { completed ->
                 _uiState.update { it.copy(hasCompletedSwipeTutorial = completed) }
             }
@@ -495,17 +500,21 @@ class SwipeViewModel @Inject constructor(
     }
 
     fun retryLoading() { loadAssetsAndDecisions() }
-    fun toggleFavorite() {
-        val asset = _uiState.value.currentAsset ?: return
-        val current = _uiState.value.isFavorite(asset.id)
+    fun toggleFavoriteFor(assetId: String) {
+        val current = _uiState.value.isFavorite(assetId)
         val newFav = !current
         val newFavs = _uiState.value.localFavorites.toMutableMap()
-        newFavs[asset.id] = newFav
+        newFavs[assetId] = newFav
         _uiState.update { it.copy(localFavorites = newFavs) }
 
-        if (newFav && _uiState.value.autoNextOnFav) {
+        if (newFav && _uiState.value.autoNextOnFav && assetId == _uiState.value.currentAsset?.id) {
             onSwipe(SwipeDecision.KEEP)
         }
+    }
+
+    fun toggleFavorite() {
+        val asset = _uiState.value.currentAsset ?: return
+        toggleFavoriteFor(asset.id)
     }
     fun toggleSummary(visible: Boolean) { _uiState.update { it.copy(showSummary = visible) } }
     fun toggleFullscreen(visible: Boolean) { _uiState.update { it.copy(isFullscreenMode = visible) } }
@@ -516,11 +525,7 @@ class SwipeViewModel @Inject constructor(
         _uiState.update { it.copy(showAddToAlbumDialog = true, isFetchingAlbumsForDialog = true) }
         viewModelScope.launch {
             try {
-                val albums = albumRepository.getAlbumsRaw().filter { album ->
-                    album.id != Album.VIRTUAL_ALL_ID &&
-                    album.id != Album.VIRTUAL_ORPHANS_ID &&
-                    album.id != Album.VIRTUAL_DUPLICATES_ID
-                }
+                val albums = albumRepository.getAlbumsRaw().filter { !it.isVirtual }
                 _uiState.update { it.copy(albumsForAddToAlbum = albums, isFetchingAlbumsForDialog = false) }
             } catch (e: Exception) {
                 AppLogger.e("SwipeViewModel", "Error loading albums for dialog", e)

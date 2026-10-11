@@ -84,12 +84,13 @@ fun AddToAlbumDialog(
     val focusManager = LocalFocusManager.current
 
     val filteredAlbums = remember(albums, searchQuery) {
+        val validAlbums = albums.filter { !it.isVirtual }
         val trimmed = searchQuery.trim()
         if (trimmed.isEmpty()) {
-            albums
+            validAlbums
         } else {
             val queryNormalized = trimmed.normalizeForSearch()
-            albums.filter { album ->
+            validAlbums.filter { album ->
                 album.albumName.normalizeForSearch().contains(queryNormalized)
             }
         }
@@ -321,10 +322,7 @@ private fun AlbumSelectionItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Cover Thumbnail
-            val isVirtual = album.id == Album.VIRTUAL_ALL_ID ||
-                    album.id == Album.VIRTUAL_ORPHANS_ID ||
-                    album.id == Album.VIRTUAL_DUPLICATES_ID ||
-                    album.albumName.equals("SKIP", ignoreCase = true)
+            val isVirtual = album.isVirtual
 
             Surface(
                 modifier = Modifier.size(52.dp),

@@ -38,9 +38,11 @@ fun SwipeScreenDialogs(
             asset = currentAsset,
             nextAsset = nextAsset,
             isFavorite = uiState.isFavorite(currentAsset.id),
+            isNextFavorite = nextAsset?.let { uiState.isFavorite(it.id) } ?: false,
             onSwipe = { viewModel.onSwipe(it) },
             onUndo = { viewModel.undo() },
             onToggleFavorite = { viewModel.toggleFavorite() },
+            onToggleFavoriteNext = { nextAsset?.let { viewModel.toggleFavoriteFor(it.id) } },
             onClose = { viewModel.toggleFullscreen(false) },
             tapToSwipeEnabled = uiState.tapToSwipeEnabled,
             providedPlayer = sharedPlayer,
@@ -48,12 +50,6 @@ fun SwipeScreenDialogs(
             isMuted = uiState.isMuted,
             onToggleMute = { viewModel.toggleMute() },
             showMuteButton = true, // Mute button is always shown in fullscreen for videos
-            downloadButtonPosition = uiState.downloadButtonPosition,
-            showDownloadButton = false, // Download button hidden in fullscreen mode as requested
-            onDownload = { viewModel.downloadAsset(it) },
-            shareButtonPosition = uiState.shareButtonPosition,
-            showShareButton = false, // Share button hidden in fullscreen mode for consistency
-            onShare = { viewModel.shareAsset(it) },
             rotation = uiState.getRotation(currentAsset.id),
             baseUrl = uiState.baseUrl,
             apiKey = uiState.apiKey
