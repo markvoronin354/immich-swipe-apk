@@ -92,14 +92,18 @@ import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import coil.compose.AsyncImage
+import coil.imageLoader
 import coil.request.ImageRequest
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.ImmichLauncher
+import com.markvoronin.immichswipe.core.cache.VideoPreloader
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
 import com.markvoronin.immichswipe.feature.settings.components.horizontalFadingEdges
 import com.markvoronin.immichswipe.feature.swipe.components.ZoomableBox
 import kotlin.math.abs
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.delay
 
 @Composable
 fun FullScreenPreviewModal(
@@ -140,6 +144,54 @@ fun FullScreenPreviewModal(
         }
     }
     var selectedIndex by remember(currentCluster.clusterId) { mutableIntStateOf(initialIndex) }
+
+    LaunchedEffect(selectedIndex, currentClusterIdx, baseUrlClean, apiKey) {
+        if (baseUrlClean.isEmpty() || apiKey.isEmpty()) return@LaunchedEffect
+
+        // Small delay to allow the current full screen asset's main request to start first
+        delay(150.milliseconds)
+
+        val nextAsset = assets.getOrNull(selectedIndex + 1)
+            ?: clusters.getOrNull(currentClusterIdx + 1)?.assets?.firstOrNull()
+        val prevAsset = assets.getOrNull(selectedIndex - 1)
+            ?: clusters.getOrNull(currentClusterIdx - 1)?.assets?.lastOrNull()
+
+        val targetsToPreload = listOfNotNull(nextAsset, prevAsset).distinct()
+
+        targetsToPreload.forEach { targetAsset ->
+            if (targetAsset.type == "VIDEO") {
+                val videoUrl = "$baseUrlClean/api/assets/${targetAsset.id}/video/playback"
+                VideoPreloader.preload(
+                    context = context.applicationContext,
+                    assetId = targetAsset.id,
+                    videoUrl = videoUrl,
+                    apiKey = apiKey
+                )
+                val thumbUrl = "$baseUrlClean/api/assets/${targetAsset.id}/thumbnail?format=WEBP&size=preview"
+                val thumbRequest = ImageRequest.Builder(context)
+                    .data(thumbUrl)
+                    .addHeader("x-api-key", apiKey)
+                    .build()
+                context.imageLoader.enqueue(thumbRequest)
+            } else {
+                val imageUrl = "$baseUrlClean/api/assets/${targetAsset.id}/original"
+                val imageRequest = ImageRequest.Builder(context)
+                    .data(imageUrl)
+                    .addHeader("x-api-key", apiKey)
+                    .build()
+                context.imageLoader.enqueue(imageRequest)
+
+                if (!targetAsset.isGif) {
+                    val thumbUrl = "$baseUrlClean/api/assets/${targetAsset.id}/thumbnail?format=WEBP&size=preview"
+                    val thumbRequest = ImageRequest.Builder(context)
+                        .data(thumbUrl)
+                        .addHeader("x-api-key", apiKey)
+                        .build()
+                    context.imageLoader.enqueue(thumbRequest)
+                }
+            }
+        }
+    }
     val carouselState = remember(currentCluster.clusterId) {
         LazyListState(firstVisibleItemIndex = initialIndex)
     }
