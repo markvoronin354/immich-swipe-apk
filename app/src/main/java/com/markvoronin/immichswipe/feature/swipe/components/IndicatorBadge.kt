@@ -20,7 +20,8 @@ import androidx.compose.ui.unit.sp
 fun IndicatorBadge(text: String, color: Color, align: Alignment, alpha: () -> Float) {
     Box(
         modifier = Modifier
-            .padding(horizontal = 70.dp, vertical = 35.dp)
+            .padding(horizontal = 60.dp)
+            .padding(top = 60.dp, bottom = 28.dp)
             .fillMaxSize()
             .graphicsLayer { this.alpha = alpha() },
         contentAlignment = align
