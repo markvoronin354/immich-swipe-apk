@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -563,6 +564,7 @@ fun SwipeScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                         .tutorialTarget("swipe_deck", tutorialController)
+                        .zIndex(1f)
                 )
 
                 Column(

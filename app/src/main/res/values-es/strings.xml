@@ -49,6 +49,7 @@
     <string name="home_virtual_orphans_desc">Colección de medios que no están en ningún álbum</string>
     <string name="home_virtual_duplicates">Duplicados</string>
     <string name="home_virtual_duplicates_desc">Fotos exactamente o casi idénticas encontradas por el servidor Immich</string>
+    <string name="home_virtual_skip_desc">Colección de archivos que has saltado</string>
     <string name="home_user_fallback">Usuario</string>
 
     <!-- Ventana de perfil y diagnóstico -->

@@ -1,6 +1,7 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,6 +60,7 @@ import coil.request.ImageRequest
 import coil.size.Precision
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Album
+import com.markvoronin.immichswipe.feature.home.components.getVirtualCollectionStyle
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
 import java.text.Normalizer
 
@@ -319,12 +321,17 @@ private fun AlbumSelectionItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Cover Thumbnail
+            val isVirtual = album.id == Album.VIRTUAL_ALL_ID ||
+                    album.id == Album.VIRTUAL_ORPHANS_ID ||
+                    album.id == Album.VIRTUAL_DUPLICATES_ID ||
+                    album.albumName.equals("SKIP", ignoreCase = true)
+
             Surface(
                 modifier = Modifier.size(52.dp),
                 shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.primaryContainer
             ) {
-                if ((album.albumThumbnailAssetId != null) && (baseUrl != null)) {
+                if (!isVirtual && (album.albumThumbnailAssetId != null) && (baseUrl != null)) {
                     val imageUrl = "$baseUrl/api/assets/${album.albumThumbnailAssetId}/thumbnail?format=WEBP&size=thumbnail"
                     val imageRequest = remember(album.albumThumbnailAssetId, baseUrl, apiKey) {
                         ImageRequest.Builder(context)
@@ -345,14 +352,15 @@ private fun AlbumSelectionItem(
                         error = rememberVectorPainter(Icons.Default.PhotoLibrary)
                     )
                 } else {
+                    val (icon, brush, tint) = getVirtualCollectionStyle(album.id, album.albumName)
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().background(brush),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.PhotoLibrary,
+                            imageVector = icon,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            tint = tint,
                             modifier = Modifier.size(24.dp)
                         )
                     }

@@ -12,7 +12,7 @@ import com.markvoronin.immichswipe.domain.model.Asset
 
 
 enum class SwipeDecision {
-    KEEP, DELETE, ARCHIVE, LOCK
+    KEEP, DELETE, ARCHIVE, LOCK, SKIP
 }
 
 
@@ -114,6 +114,7 @@ data class SwipeUiState(
     val deletedCount: Int get() = decisions.values.count { it == SwipeDecision.DELETE }
     val archiveCount: Int get() = decisions.values.count { it == SwipeDecision.ARCHIVE }
     val lockedCount: Int get() = decisions.values.count { it == SwipeDecision.LOCK }
+    val skippedCount: Int get() = decisions.values.count { it == SwipeDecision.SKIP }
 
     private fun getEffectiveSize(assetId: String): Long {
         return assetSizes[assetId]

@@ -302,6 +302,17 @@ class SwipeViewModel @Inject constructor(
         }.collect {}
     }
 
+    private val isSkipAlbum: Boolean
+        get() = currentAlbum?.albumName?.equals("SKIP", ignoreCase = true) == true || _uiState.value.albumName.equals("SKIP", ignoreCase = true)
+
+    private fun SwipeDecision?.isFinalProcessed(): Boolean {
+        if (this == null) return false
+        if (isSkipAlbum) {
+            return this == SwipeDecision.KEEP || this == SwipeDecision.DELETE || this == SwipeDecision.ARCHIVE || this == SwipeDecision.LOCK
+        }
+        return true
+    }
+
     private fun refreshSortedWorkPile(
         jumpToFirstUnprocessed: Boolean = false,
         overrideDecisions: Map<String, SwipeDecision>? = null,
@@ -326,14 +337,14 @@ class SwipeViewModel @Inject constructor(
                 val shouldForceJump = jumpToFirstUnprocessed || pendingJumpToFirstUnprocessed || state.sortOrder != order
                 
                 var nextIndex = if (shouldForceJump) {
-                    sorted.indexOfFirst { !decisions.containsKey(it.id) }
+                    sorted.indexOfFirst { !decisions[it.id].isFinalProcessed() }
                 } else {
                     val indexInNewList = if (currentAssetId != null) sorted.indexOfFirst { it.id == currentAssetId } else -1
                     
-                    if (indexInNewList != -1 && !decisions.containsKey(currentAssetId)) {
+                    if (indexInNewList != -1 && !decisions[currentAssetId].isFinalProcessed()) {
                         indexInNewList
                     } else {
-                        sorted.indexOfFirst { !decisions.containsKey(it.id) }
+                        sorted.indexOfFirst { !decisions[it.id].isFinalProcessed() }
                     }
                 }
 
@@ -415,7 +426,7 @@ class SwipeViewModel @Inject constructor(
         
         // Find next unprocessed
         val nextIndex = currentState.assets.indices.firstOrNull { i ->
-            i > currentState.currentIndex && !newDecisions.containsKey(currentState.assets[i].id)
+            i > currentState.currentIndex && !newDecisions[currentState.assets[i].id].isFinalProcessed()
         } ?: currentState.assets.size
 
         _uiState.update { it.copy(
@@ -574,7 +585,7 @@ class SwipeViewModel @Inject constructor(
     }
     fun getNextUnprocessedIndex(): Int {
         val s = _uiState.value
-        return s.assets.indices.firstOrNull { i -> i > s.currentIndex && !s.decisions.containsKey(s.assets[i].id) } ?: -1
+        return s.assets.indices.firstOrNull { i -> i > s.currentIndex && !s.decisions[s.assets[i].id].isFinalProcessed() } ?: -1
     }
 
     fun resetAlbumDecisions() {
@@ -666,9 +677,10 @@ class SwipeViewModel @Inject constructor(
                 val toDelete = currentDecisions.filter { it.value == SwipeDecision.DELETE }.keys.toList()
                 val toArchive = currentDecisions.filter { it.value == SwipeDecision.ARCHIVE }.keys.toList()
                 val toLock = currentDecisions.filter { it.value == SwipeDecision.LOCK }.keys.toList()
+                val toSkip = currentDecisions.filter { it.value == SwipeDecision.SKIP }.keys.toList()
                 val allSwipedIds = currentDecisions.keys.toList()
                 
-                AppLogger.i("SwipeViewModel", "Applying changes: ${toDelete.size} to delete, ${currentState.keptCount} kept, ${currentState.archiveCount} archive, ${currentState.lockedCount} locked")
+                AppLogger.i("SwipeViewModel", "Applying changes: ${toDelete.size} to delete, ${currentState.keptCount} kept, ${currentState.archiveCount} archive, ${currentState.lockedCount} locked, ${toSkip.size} skipped")
 
                 // 1. Delete on server (and local cache via AssetRepository)
                 if (toDelete.isNotEmpty()) {
@@ -701,7 +713,43 @@ class SwipeViewModel @Inject constructor(
                     }
                 }
                 
-                // 2. Mark remaining decisions as synced in DB (KEPT, ARCHIVE)
+                // 1d. Add skipped assets to SKIP album on server and local DB
+                if (toSkip.isNotEmpty()) {
+                    try {
+                        val albums = albumRepository.getAlbumsRaw()
+                        var existingSkipAlbum = albums.find { it.albumName.equals("SKIP", ignoreCase = true) }
+                        if (existingSkipAlbum == null) {
+                            existingSkipAlbum = albumRepository.createAlbum("SKIP", toSkip)
+                        } else {
+                            albumRepository.addAssetsToAlbum(existingSkipAlbum.id, toSkip)
+                        }
+                        if (existingSkipAlbum != null) {
+                            val assetsToInsert = currentState.assets.filter { it.id in toSkip }
+                            if (assetsToInsert.isNotEmpty()) {
+                                assetRepository.insertAlbumAssetsLocally(existingSkipAlbum.id, config.userId, assetsToInsert)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        AppLogger.e("SwipeViewModel", "Failed to add skipped assets to SKIP album: ${e.message}", e)
+                    }
+                }
+
+                // 1e. Remove assets that received a decision OTHER than SKIP from the SKIP album on server and local DB
+                val nonSkipDecidedIds = currentDecisions.filter { it.value != SwipeDecision.SKIP }.keys.toList()
+                if (nonSkipDecidedIds.isNotEmpty()) {
+                    try {
+                        val albums = albumRepository.getAlbumsRaw()
+                        val existingSkipAlbum = albums.find { it.albumName.equals("SKIP", ignoreCase = true) }
+                        if (existingSkipAlbum != null) {
+                            albumRepository.removeAssetsFromAlbum(existingSkipAlbum.id, nonSkipDecidedIds)
+                            assetRepository.removeAlbumAssetsLocally(existingSkipAlbum.id, config.userId, nonSkipDecidedIds)
+                        }
+                    } catch (e: Exception) {
+                        AppLogger.e("SwipeViewModel", "Failed to remove non-skipped assets from SKIP album: ${e.message}", e)
+                    }
+                }
+                
+                // 2. Mark remaining decisions as synced in DB (KEPT, ARCHIVE, SKIP)
                 val toMarkSynced = allSwipedIds.filter { it !in toDelete && it !in toLock }
                 if (toMarkSynced.isNotEmpty()) {
                     swipeDecisionRepository.markAsSynced(toMarkSynced, config.userId)
@@ -760,8 +808,13 @@ class SwipeViewModel @Inject constructor(
                     lockedCount = currentState.lockedCount
                 )
 
-                // 4. Update local work pile to remove deleted and locked assets permanently for this session
-                val toRemoveFromWorkPile = (toDelete + toLock).toSet()
+                // 4. Update local work pile to remove deleted and locked assets (and non-SKIP decided assets if in SKIP album)
+                val toRemoveFromWorkPile = if (isSkipAlbum) {
+                    (toDelete + toLock + nonSkipDecidedIds).toSet()
+                } else {
+                    (toDelete + toLock).toSet()
+                }
+
                 if (toRemoveFromWorkPile.isNotEmpty()) {
                     masterWorkPile = masterWorkPile.filter { it.id !in toRemoveFromWorkPile }
                     val updatedWorkPile = allAssetsFoundFlow.value.filter { it.id !in toRemoveFromWorkPile }

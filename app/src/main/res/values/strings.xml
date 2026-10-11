@@ -49,6 +49,7 @@
     <string name="home_virtual_orphans_desc">Collection of assets that are not in any album</string>
     <string name="home_virtual_duplicates">Duplicates</string>
     <string name="home_virtual_duplicates_desc">Exact and near-exact duplicate photos found by Immich server</string>
+    <string name="home_virtual_skip_desc">Collection of assets that you have skipped</string>
     <string name="home_user_fallback">User</string>
 
     <!-- Profile Popup & Diag -->
@@ -143,6 +144,8 @@
     <!-- Swipe Screen -->
     <string name="swipe_keep">Keep</string>
     <string name="swipe_keep_upper">KEEP</string>
+    <string name="swipe_skip" translatable="false">Skip</string>
+    <string name="swipe_skip_upper" translatable="false">SKIP</string>
     <string name="swipe_delete">Delete</string>
     <string name="swipe_delete_upper">DELETE</string>
     <string name="swipe_remaining">Remaining</string>

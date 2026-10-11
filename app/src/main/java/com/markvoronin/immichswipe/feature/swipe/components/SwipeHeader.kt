@@ -164,6 +164,9 @@ fun SwipeHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             StatBadge(label = stringResource(R.string.swipe_keep), count = uiState.allKeptCount, color = MaterialGreen)
+            if (uiState.skippedCount > 0) {
+                StatBadge(label = stringResource(R.string.swipe_skip), count = uiState.skippedCount, color = Color(0xFFFFA500))
+            }
             StatBadge(label = stringResource(R.string.swipe_delete), count = uiState.deletedCount, color = MaterialRed)
             StatBadge(label = stringResource(R.string.swipe_remaining), count = uiState.remainingCount, color = MaterialTheme.colorScheme.outline)
         }

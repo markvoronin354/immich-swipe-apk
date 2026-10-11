@@ -19,8 +19,22 @@ interface ImmichApi {
     @GET("api/albums")
     suspend fun getAlbums(): List<Album>
 
+    @GET("api/albums/{id}")
+    suspend fun getAlbumDetail(@Path("id") albumId: String): AlbumDetailResponse
+
+    @POST("api/albums")
+    suspend fun createAlbum(
+        @Body request: CreateAlbumRequest
+    ): Album
+
     @PUT("api/albums/{id}/assets")
     suspend fun addAssetsToAlbum(
+        @Path("id") albumId: String,
+        @Body request: AddAssetsToAlbumRequest
+    ): Response<Unit>
+
+    @HTTP(method = "DELETE", path = "api/albums/{id}/assets", hasBody = true)
+    suspend fun removeAssetsFromAlbum(
         @Path("id") albumId: String,
         @Body request: AddAssetsToAlbumRequest
     ): Response<Unit>
@@ -128,4 +142,19 @@ data class DuplicateCluster(
 
 data class AddAssetsToAlbumRequest(
     val ids: List<String>
+)
+
+data class CreateAlbumRequest(
+    val albumName: String,
+    val description: String? = null,
+    val assetIds: List<String>? = null
+)
+
+data class AlbumDetailResponse(
+    val id: String,
+    val albumName: String,
+    val description: String? = null,
+    val assetCount: Int = 0,
+    val albumThumbnailAssetId: String? = null,
+    val assets: List<Asset> = emptyList()
 )

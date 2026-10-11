@@ -31,10 +31,15 @@ fun IndicatorBadge(text: String, color: Color, align: Alignment, alpha: () -> Fl
             shape = RoundedCornerShape(8.dp),
             border = BorderStroke(2.dp, color.copy(alpha = 0.9f))
         ) {
+            val rotationZValue = when (align) {
+                Alignment.TopStart -> -15f
+                Alignment.TopEnd -> 15f
+                else -> 0f
+            }
             Text(
                 text = text, fontSize = 32.sp, fontWeight = FontWeight.Black,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                    .graphicsLayer { rotationZ = if (align == Alignment.TopStart) -15f else 15f }
+                    .graphicsLayer { rotationZ = rotationZValue }
             )
         }
     }

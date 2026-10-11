@@ -122,6 +122,44 @@ class AssetRepository @Inject constructor(
             return@channelFlow
         }
 
+        val isRealAlbum = albumId != Album.VIRTUAL_ALL_ID &&
+                albumId != Album.VIRTUAL_ORPHANS_ID
+
+        if (isRealAlbum) {
+            try {
+                val albumDetail = api.getAlbumDetail(albumId)
+                val serverItems = albumDetail.assets
+                val finalItems = applySort(serverItems, sortOrder, shuffleSeed)
+
+                withContext(Dispatchers.IO) {
+                    albumAssetDao.clearAlbumRelations(albumId, userId)
+                    if (serverItems.isNotEmpty()) {
+                        serverItems.chunked(500).forEach { chunk ->
+                            albumAssetDao.insertAlbumAssets(chunk.map { asset ->
+                                AlbumAssetEntity(
+                                    albumId = albumId,
+                                    assetId = asset.id,
+                                    userId = userId,
+                                    type = asset.type,
+                                    fileCreatedAt = asset.effectiveDate,
+                                    originalFileName = asset.originalFileName,
+                                    fileSizeInBytes = asset.exifInfo?.fileSizeInBytes,
+                                    imageWidth = asset.exifInfo?.imageWidth,
+                                    imageHeight = asset.exifInfo?.imageHeight,
+                                    rotation = asset.rotation
+                                )
+                            })
+                        }
+                    }
+                }
+
+                send(AssetBatch(finalItems, finalItems.size, isLocalCache = false, isSyncing = false))
+                return@channelFlow
+            } catch (e: Exception) {
+                AppLogger.w("AssetRepo", "GET api/albums/$albumId detail failed, falling back to search API: ${e.message}")
+            }
+        }
+
         val apiOrder = when (sortOrder) {
             SortOrder.CHRONOLOGICAL_ASC,
             SortOrder.TYPE_VIDEO_FIRST_ASC,
@@ -133,13 +171,13 @@ class AssetRepository @Inject constructor(
         val baseRequest = when (albumId) {
             Album.VIRTUAL_ALL_ID -> SearchAssetsRequest(visibility = visibility, withExif = needsExif, order = apiOrder)
             Album.VIRTUAL_ORPHANS_ID -> SearchAssetsRequest(isNotInAlbum = true, visibility = visibility, withExif = needsExif, order = apiOrder)
-            else -> SearchAssetsRequest(albumIds = listOf(albumId), visibility = visibility, withExif = needsExif, order = apiOrder)
+            else -> SearchAssetsRequest(albumIds = listOf(albumId), visibility = null, withExif = needsExif, order = apiOrder)
         }
 
         val statsRequest = when (albumId) {
             Album.VIRTUAL_ALL_ID -> SearchAssetsRequest(visibility = visibility)
             Album.VIRTUAL_ORPHANS_ID -> SearchAssetsRequest(isNotInAlbum = true, visibility = visibility)
-            else -> SearchAssetsRequest(albumIds = listOf(albumId), visibility = visibility)
+            else -> SearchAssetsRequest(albumIds = listOf(albumId), visibility = null)
         }
 
         // 2. Fetch statistics to get the TRUE total (Search metadata total can be capped or inaccurate on some versions)
@@ -520,6 +558,33 @@ class AssetRepository @Inject constructor(
             clusters.sumOf { it.assets.size }
         } catch (_: Exception) {
             0
+        }
+    }
+
+    suspend fun insertAlbumAssetsLocally(albumId: String, userId: String, assets: List<Asset>) {
+        if (albumAssetDao == null || assets.isEmpty()) return
+        withContext(Dispatchers.IO) {
+            albumAssetDao.insertAlbumAssets(assets.map { asset ->
+                AlbumAssetEntity(
+                    albumId = albumId,
+                    assetId = asset.id,
+                    userId = userId,
+                    type = asset.type,
+                    fileCreatedAt = asset.fileCreatedAt,
+                    originalFileName = asset.originalFileName,
+                    fileSizeInBytes = asset.exifInfo?.fileSizeInBytes,
+                    imageWidth = asset.exifInfo?.imageWidth,
+                    imageHeight = asset.exifInfo?.imageHeight,
+                    rotation = asset.rotation
+                )
+            })
+        }
+    }
+
+    suspend fun removeAlbumAssetsLocally(albumId: String, userId: String, assetIds: List<String>) {
+        if (albumAssetDao == null || assetIds.isEmpty()) return
+        withContext(Dispatchers.IO) {
+            albumAssetDao.deleteAlbumAssets(albumId, userId, assetIds)
         }
     }
 

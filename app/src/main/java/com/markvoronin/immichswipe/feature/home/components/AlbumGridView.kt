@@ -299,7 +299,12 @@ fun AlbumGridItem(
         border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
         Box(modifier = modifier.fillMaxSize()) {
-            if (album.albumThumbnailAssetId != null && baseUrlClean.isNotEmpty()) {
+            val isVirtualCollection = album.id == Album.VIRTUAL_ALL_ID ||
+                    album.id == Album.VIRTUAL_ORPHANS_ID ||
+                    album.id == Album.VIRTUAL_DUPLICATES_ID ||
+                    album.albumName.equals("SKIP", ignoreCase = true)
+
+            if (!isVirtualCollection && album.albumThumbnailAssetId != null && baseUrlClean.isNotEmpty()) {
                 val imageRequest = remember(album.albumThumbnailAssetId, baseUrlClean, apiKey) {
                     ImageRequest.Builder(context)
                         .data("$baseUrlClean/api/assets/${album.albumThumbnailAssetId}/thumbnail?format=WEBP")
@@ -333,7 +338,7 @@ fun AlbumGridItem(
                     }
                 )
             } else {
-                val (icon, brush, tint) = getVirtualCollectionStyle(album.id)
+                val (icon, brush, tint) = getVirtualCollectionStyle(album.id, album.albumName)
                 Box(
                     modifier = Modifier.fillMaxSize().background(brush),
                     contentAlignment = Alignment.Center

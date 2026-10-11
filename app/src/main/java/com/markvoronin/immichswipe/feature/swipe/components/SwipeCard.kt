@@ -154,10 +154,11 @@ fun SwipeCard(
 
     val scope = rememberCoroutineScope()
     val offsetX = remember(asset.id) { Animatable(0f) }
+    val offsetY = remember(asset.id) { Animatable(0f) }
     val panelProgress = remember(asset.id) { Animatable(0f) }
 
     // Directional lock for gestures
-    var dragDirection by remember { mutableIntStateOf(0) } // 0: undecided, 1: horizontal, 2: vertical
+    var dragDirection by remember { mutableIntStateOf(0) } // 0: undecided, 1: horizontal, 2: vertical (up/metadata), 3: downward (skip)
 
     var isHoldingByPress by remember(asset.id) { mutableStateOf(value = false) }
     var wasHoldDetected by remember(asset.id) { mutableStateOf(value = false) }
@@ -310,7 +311,11 @@ fun SwipeCard(
 
     LaunchedEffect(isNext) {
         if (!isNext) {
-            snapshotFlow { offsetX.value }.collect { offset ->
+            snapshotFlow {
+                val x = offsetX.value
+                val y = offsetY.value
+                if (abs(y) > abs(x)) y else x
+            }.collect { offset ->
                 actions.onSwipeOffsetChanged(offset)
             }
         }
@@ -356,6 +361,7 @@ fun SwipeCard(
                             scope.launch {
                                 if (currentIsHolding) {
                                     offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
+                                    offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
                                     panelProgress.animateTo(startProgress, spring(dampingRatio = Spring.DampingRatioLowBouncy))
                                     dragDirection = 0
                                     wasHoldDetected = false
@@ -363,6 +369,7 @@ fun SwipeCard(
                                     return@launch
                                 }
                                 val currentX = offsetX.value
+                                val currentY = offsetY.value
                                 val currentProgress = panelProgress.value
                                 val velocity = velocityTracker.calculateVelocity()
                                 val velocityY = velocity.y
@@ -379,6 +386,14 @@ fun SwipeCard(
                                         actions.onSwipe(com.markvoronin.immichswipe.feature.swipe.SwipeDecision.DELETE)
                                     } else {
                                         offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
+                                    }
+                                } else if (dragDirection == 3) { // Downward swipe (SKIP)
+                                    val isFlickDown = velocityY > 1000f && currentY >= -50f
+                                    if (currentY > 250 || isFlickDown) {
+                                        offsetY.animateTo(1500f, tween(150))
+                                        actions.onSwipe(com.markvoronin.immichswipe.feature.swipe.SwipeDecision.SKIP)
+                                    } else {
+                                        offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
                                     }
                                 } else if (dragDirection == 2) { // Vertical metadata
                                     if (offsetX.value != 0f) {
@@ -405,6 +420,7 @@ fun SwipeCard(
                                 } else {
                                     // Small movement, reset both
                                     offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
+                                    offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
                                     panelProgress.animateTo(startProgress, spring(dampingRatio = Spring.DampingRatioLowBouncy))
                                 }
                                 dragDirection = 0
@@ -414,6 +430,7 @@ fun SwipeCard(
                             scope.launch {
                                 if (currentIsHolding) {
                                     offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
+                                    offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
                                     panelProgress.animateTo(startProgress, spring(dampingRatio = Spring.DampingRatioLowBouncy))
                                     dragDirection = 0
                                     wasHoldDetected = false
@@ -424,8 +441,16 @@ fun SwipeCard(
                                 val velocity = velocityTracker.calculateVelocity()
                                 val velocityY = velocity.y
 
-                                if (offsetX.value != 0f) {
-                                    offsetX.snapTo(0f)
+                                if (dragDirection == 1 || dragDirection == 3) {
+                                    offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
+                                    offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
+                                } else {
+                                    if (offsetX.value != 0f) {
+                                        offsetX.snapTo(0f)
+                                    }
+                                    if (offsetY.value != 0f) {
+                                        offsetY.snapTo(0f)
+                                    }
                                 }
                                 if (dragDirection == 2 || currentProgress > 0.1f) {
                                     val heightPx = if (metadataHeightPx > 0f) metadataHeightPx else maxHeightPx
@@ -454,24 +479,40 @@ fun SwipeCard(
                             val accumulatedDX = abs(totalDX)
                             val accumulatedDY = abs(totalDY)
 
+                            val downSwipeGestureEnabled = false
+
                             if (dragDirection == 0) {
                                 // Decision threshold: 12 pixels of movement
                                 if (accumulatedDX > 12f || accumulatedDY > 12f) {
                                     dragDirection = if (startProgress > 0.1f && accumulatedDY > 5f) {
                                         2
+                                    } else if (accumulatedDY > accumulatedDX) {
+                                        if (totalDY > 0) {
+                                            if (downSwipeGestureEnabled) 3 else 0
+                                        } else 2 // 3 is down, 2 is up (metadata)
                                     } else {
-                                        if (accumulatedDY > accumulatedDX) 2 else 1
+                                        1
                                     }
 
                                     if (dragDirection == 1) {
                                         scope.launch {
                                             panelProgress.snapTo(startProgress)
+                                            if (offsetY.value != 0f) offsetY.snapTo(0f)
                                             offsetX.snapTo(totalDX)
+                                        }
+                                    } else if (dragDirection == 3) {
+                                        scope.launch {
+                                            panelProgress.snapTo(startProgress)
+                                            if (offsetX.value != 0f) offsetX.snapTo(0f)
+                                            offsetY.snapTo(totalDY)
                                         }
                                     } else {
                                         scope.launch {
                                             if (offsetX.value != 0f) {
                                                 offsetX.snapTo(0f)
+                                            }
+                                            if (offsetY.value != 0f) {
+                                                offsetY.snapTo(0f)
                                             }
                                             val heightPx = if (metadataHeightPx > 0f) metadataHeightPx else maxHeightPx
                                             if (heightPx > 0f) {
@@ -484,7 +525,11 @@ fun SwipeCard(
                             } else {
                                 scope.launch {
                                     if (dragDirection == 1) {
+                                        if (offsetY.value != 0f) offsetY.snapTo(0f)
                                         offsetX.snapTo(totalDX)
+                                    } else if (dragDirection == 3) {
+                                        if (offsetX.value != 0f) offsetX.snapTo(0f)
+                                        offsetY.snapTo(totalDY)
                                     } else if (dragDirection == 2) {
                                         val heightPx = if (metadataHeightPx > 0f) metadataHeightPx else maxHeightPx
                                         if (heightPx > 0f) {
@@ -502,6 +547,7 @@ fun SwipeCard(
                     scaleY = animatedScale
                     if (!isNext) {
                         translationX = offsetX.value
+                        translationY = offsetY.value
                         rotationZ = offsetX.value / 40f
                     }
                 },
@@ -919,18 +965,27 @@ fun SwipeCard(
                         }
                     }
 
-                    if (offsetX.value > 0f) {
+                    val currentX = offsetX.value
+                    val currentY = offsetY.value
+
+                    if (dragDirection == 3 || (dragDirection == 0 && currentY > 0f && currentY > abs(currentX))) {
+                        IndicatorBadge(
+                            stringResource(R.string.swipe_skip_upper),
+                            Color(0xFFFFA500), // Orange for skip
+                            Alignment.TopCenter
+                        ) { (currentY / 200f).coerceIn(0f, 1f) * 0.9f }
+                    } else if (currentX > 0f) {
                         IndicatorBadge(
                             stringResource(R.string.swipe_keep_upper),
                             MaterialGreen,
                             Alignment.TopStart
-                        ) { (offsetX.value / 200f).coerceIn(0f, 1f) * 0.9f }
-                    } else if (offsetX.value < 0f) {
+                        ) { (currentX / 200f).coerceIn(0f, 1f) * 0.9f }
+                    } else if (currentX < 0f) {
                         IndicatorBadge(
                             stringResource(R.string.swipe_delete_upper),
                             MaterialRed,
                             Alignment.TopEnd
-                        ) { (-offsetX.value / 200f).coerceIn(0f, 1f) * 0.9f }
+                        ) { (-currentX / 200f).coerceIn(0f, 1f) * 0.9f }
                     }
                 }
 

@@ -99,11 +99,11 @@ interface SwipeDecisionDao {
             SELECT aa.albumId AS albumId, sd.assetId AS assetId, sd.isSynced AS isSynced
             FROM album_assets aa
             JOIN swipe_decisions sd ON aa.assetId = sd.assetId AND aa.userId = sd.userId
-            WHERE sd.userId = :userId
+            WHERE sd.userId = :userId AND sd.decision != 'SKIP'
             UNION
             SELECT sd.albumId AS albumId, sd.assetId AS assetId, sd.isSynced AS isSynced
             FROM swipe_decisions sd
-            WHERE sd.userId = :userId
+            WHERE sd.userId = :userId AND sd.decision != 'SKIP'
         )
         SELECT albumId,
                COUNT(DISTINCT assetId) AS totalCount,

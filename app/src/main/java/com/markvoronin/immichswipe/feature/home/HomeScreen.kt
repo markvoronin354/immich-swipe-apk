@@ -29,7 +29,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -102,9 +101,8 @@ private val navKeySaver = Saver<SnapshotStateList<NavKey>, List<String>>(
     }
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun homeScreen(
+fun HomeScreen(
     viewModel: HomeViewModel,
     sessionKey: String,
     modifier: Modifier = Modifier,
@@ -113,7 +111,7 @@ fun homeScreen(
     val uiState: HomeUiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val backStack = rememberSaveable(inputs = arrayOf(sessionKey), saver = navKeySaver) {
-        mutableStateListOf<NavKey>(NavKey.Home)
+        mutableStateListOf(NavKey.Home)
     }
 
     LaunchedEffect(deepLinkIntent) {
@@ -136,6 +134,12 @@ fun homeScreen(
 
     LaunchedEffect(Unit) {
         viewModel.loadUser()
+    }
+
+    LaunchedEffect(isHome) {
+        if (isHome) {
+            viewModel.refreshAlbums()
+        }
     }
 
     val virtualAllName = stringResource(R.string.home_virtual_all_assets)

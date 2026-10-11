@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
@@ -322,6 +323,7 @@ private fun AssetTimelineItem(
                                 SwipeDecision.DELETE -> MaterialRed
                                 SwipeDecision.ARCHIVE -> MaterialTheme.colorScheme.primary
                                 SwipeDecision.LOCK -> MaterialTheme.colorScheme.outline
+                                SwipeDecision.SKIP -> Color(0xFFFFA500)
                             }
                         ),
                     contentAlignment = Alignment.Center
@@ -332,6 +334,7 @@ private fun AssetTimelineItem(
                             SwipeDecision.DELETE -> Icons.Default.Delete
                             SwipeDecision.ARCHIVE -> Icons.Default.Archive
                             SwipeDecision.LOCK -> Icons.Default.Lock
+                            SwipeDecision.SKIP -> Icons.Default.ArrowDownward
                         },
                         contentDescription = null,
                         tint = Color.White,

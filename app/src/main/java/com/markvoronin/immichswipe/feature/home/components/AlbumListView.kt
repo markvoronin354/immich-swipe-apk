@@ -296,12 +296,17 @@ fun AlbumItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(modifier = Modifier.size(60.dp)) {
+                    val isVirtualCollection = album.id == Album.VIRTUAL_ALL_ID ||
+                            album.id == Album.VIRTUAL_ORPHANS_ID ||
+                            album.id == Album.VIRTUAL_DUPLICATES_ID ||
+                            album.albumName.equals("SKIP", ignoreCase = true)
+
                     Surface(
                         modifier = Modifier.fillMaxSize(),
                         shape = MaterialTheme.shapes.small,
                         color = MaterialTheme.colorScheme.primaryContainer
                     ) {
-                        if (album.albumThumbnailAssetId != null && baseUrlClean.isNotEmpty()) {
+                        if (!isVirtualCollection && album.albumThumbnailAssetId != null && baseUrlClean.isNotEmpty()) {
                             val imageRequest = remember(album.albumThumbnailAssetId, baseUrlClean, apiKey) {
                                 ImageRequest.Builder(context)
                                     .data("$baseUrlClean/api/assets/${album.albumThumbnailAssetId}/thumbnail?format=WEBP&size=thumbnail")
@@ -321,7 +326,7 @@ fun AlbumItem(
                                 error = rememberVectorPainter(Icons.Default.PhotoLibrary)
                             )
                         } else {
-                            val (icon, brush, tint) = getVirtualCollectionStyle(album.id)
+                            val (icon, brush, tint) = getVirtualCollectionStyle(album.id, album.albumName)
                             Box(
                                 modifier = Modifier.fillMaxSize().background(brush),
                                 contentAlignment = Alignment.Center
@@ -375,8 +380,13 @@ fun AlbumItem(
                             fontWeight = FontWeight.Bold
                         )
                     }
-                    if (!album.description.isNullOrBlank()) {
-                        Text(text = album.description, fontSize = 11.sp, color = MaterialTheme.colorScheme.outline, maxLines = 3, lineHeight = 14.sp)
+                    val displayDescription = if (album.albumName.equals("SKIP", ignoreCase = true) && album.description.isNullOrBlank()) {
+                        stringResource(R.string.home_virtual_skip_desc)
+                    } else {
+                        album.description
+                    }
+                    if (!displayDescription.isNullOrBlank()) {
+                        Text(text = displayDescription, fontSize = 11.sp, color = MaterialTheme.colorScheme.outline, maxLines = 3, lineHeight = 14.sp)
                     }
                     Text(
                         text = stringResource(R.string.home_sorted_count, effectiveTreatedCount, album.assetCount),

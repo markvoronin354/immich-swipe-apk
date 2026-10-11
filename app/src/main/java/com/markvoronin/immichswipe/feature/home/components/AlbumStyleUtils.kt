@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.AutoAwesomeMotion
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Extension
@@ -37,7 +38,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Album
@@ -137,11 +137,16 @@ fun ErrorView(
     }
 }
 
-/**
- * Retourne le style visuel pour une collection virtuelle.
- */
+
 @Composable
-fun getVirtualCollectionStyle(albumId: String): Triple<ImageVector, Brush, Color> {
+fun getVirtualCollectionStyle(albumId: String, albumName: String = ""): Triple<ImageVector, Brush, Color> {
+    if (albumName.equals("SKIP", ignoreCase = true)) {
+        return Triple(
+            Icons.Default.ArrowDownward,
+            Brush.linearGradient(listOf(Color(0xFFa18cd1), Color(0xFFfbc2eb))),
+            Color.White
+        )
+    }
     return when (albumId) {
         Album.VIRTUAL_ALL_ID -> Triple(
             Icons.Default.AutoAwesomeMotion,
@@ -166,9 +171,7 @@ fun getVirtualCollectionStyle(albumId: String): Triple<ImageVector, Brush, Color
     }
 }
 
-/**
- * Retourne la couleur Compose correspondant au nom de couleur Immich.
- */
+
 fun getAvatarColor(colorName: String?): Color {
     return when (colorName?.lowercase()) {
         "primary" -> Color(0xFFadcbfa)
@@ -185,19 +188,6 @@ fun getAvatarColor(colorName: String?): Color {
         "indigo" -> Color(0xFF3F51B5)
         "lime" -> Color(0xFFCDDC39)
         "teal" -> Color(0xFF009688)
-        else -> Color(0xFF9C27B0) // Valeur par défaut (violet)
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun ErrorViewPreview() {
-    MaterialTheme {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            ErrorView(
-                error = "Unable to resolve host \"photos.marksoft.net\": No address associated with hostname",
-                onRetry = {}
-            )
-        }
+        else -> Color(0xFF9C27B0)
     }
 }

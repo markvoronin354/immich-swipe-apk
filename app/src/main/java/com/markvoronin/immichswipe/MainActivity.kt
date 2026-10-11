@@ -22,7 +22,7 @@ import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.SessionManager
 import com.markvoronin.immichswipe.feature.auth.AuthScreen
 import com.markvoronin.immichswipe.feature.common.LoadingScreen
-import com.markvoronin.immichswipe.feature.home.homeScreen
+import com.markvoronin.immichswipe.feature.home.HomeScreen
 import com.markvoronin.immichswipe.ui.theme.ImmichSwipeTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
                                 val sessionKey = "$activeUserId-$baseUrl-$apiKey"
                                 
                                 key(sessionKey) {
-                                    homeScreen(
+                                    HomeScreen(
                                         viewModel = hiltViewModel(key = sessionKey),
                                         sessionKey = sessionKey,
                                         deepLinkIntent = intent

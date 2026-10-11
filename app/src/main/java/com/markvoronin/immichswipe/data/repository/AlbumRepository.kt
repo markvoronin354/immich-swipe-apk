@@ -53,21 +53,44 @@ class AlbumRepository @Inject constructor(
     }
 
 
-    suspend fun refreshAlbums(includeArchived: Boolean = false): List<Album> {
-        val albums = getAlbumsRaw()
-        if (includeArchived) return albums
-        return refineAlbumCounts(albums)
+
+
+    suspend fun createAlbum(albumName: String, assetIds: List<String>? = null): Album? {
+        return try {
+            api.createAlbum(com.markvoronin.immichswipe.data.api.CreateAlbumRequest(
+                albumName = albumName,
+                assetIds = assetIds
+            ))
+        } catch (e: Exception) {
+            AppLogger.e("AlbumRepository", "Error creating album $albumName", e)
+            null
+        }
     }
 
-
     suspend fun addAssetToAlbum(albumId: String, assetId: String): Boolean {
+        return addAssetsToAlbum(albumId, listOf(assetId))
+    }
+
+    suspend fun addAssetsToAlbum(albumId: String, assetIds: List<String>): Boolean {
         return try {
             val response = api.addAssetsToAlbum(albumId,
-                AddAssetsToAlbumRequest(ids = listOf(assetId))
+                AddAssetsToAlbumRequest(ids = assetIds)
             )
             response.isSuccessful
         } catch (e: Exception) {
-            AppLogger.e("AlbumRepository", "Error adding asset to album $albumId", e)
+            AppLogger.e("AlbumRepository", "Error adding assets to album $albumId", e)
+            false
+        }
+    }
+
+    suspend fun removeAssetsFromAlbum(albumId: String, assetIds: List<String>): Boolean {
+        return try {
+            val response = api.removeAssetsFromAlbum(albumId,
+                AddAssetsToAlbumRequest(ids = assetIds)
+            )
+            response.isSuccessful
+        } catch (e: Exception) {
+            AppLogger.e("AlbumRepository", "Error removing assets from album $albumId", e)
             false
         }
     }

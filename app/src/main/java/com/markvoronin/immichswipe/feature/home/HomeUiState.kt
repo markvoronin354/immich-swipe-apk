@@ -111,7 +111,8 @@ data class HomeUiState(
             return filtered.groupBy { album ->
                 if (album.id == Album.VIRTUAL_ALL_ID || 
                     album.id == Album.VIRTUAL_ORPHANS_ID ||
-                    album.id == Album.VIRTUAL_DUPLICATES_ID) {
+                    album.id == Album.VIRTUAL_DUPLICATES_ID ||
+                    album.albumName.equals("SKIP", ignoreCase = true)) {
                     return@groupBy AlbumStatus.VIRTUAL
                 }
                 
