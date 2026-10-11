@@ -1,6 +1,5 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
-import com.markvoronin.immichswipe.core.DoubleTapAction
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -44,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.media3.exoplayer.ExoPlayer
 import com.markvoronin.immichswipe.R
+import com.markvoronin.immichswipe.core.DoubleTapAction
 import com.markvoronin.immichswipe.core.SortOrder
 import com.markvoronin.immichswipe.feature.home.components.ErrorView
 import com.markvoronin.immichswipe.feature.swipe.SwipeUiState

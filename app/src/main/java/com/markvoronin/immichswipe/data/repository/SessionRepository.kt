@@ -3,8 +3,8 @@ package com.markvoronin.immichswipe.data.repository
 import android.content.Context
 import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.CardDisplayMode
-import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.DoubleTapAction
+import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichOpenMode
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.SessionConfig

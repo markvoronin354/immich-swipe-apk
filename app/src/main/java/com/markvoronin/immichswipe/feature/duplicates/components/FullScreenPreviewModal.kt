@@ -3,7 +3,6 @@ package com.markvoronin.immichswipe.feature.duplicates.components
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -102,7 +101,6 @@ import com.markvoronin.immichswipe.feature.settings.components.horizontalFadingE
 import com.markvoronin.immichswipe.feature.swipe.components.ZoomableBox
 import kotlin.math.abs
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FullScreenPreviewModal(
     previewData: FullScreenPreviewData?,
@@ -178,14 +176,14 @@ fun FullScreenPreviewModal(
                 }?.index
             } else null
         }.collect { closestIndex ->
-            if (closestIndex != null && closestIndex in 0 until assets.size && closestIndex != selectedIndex) {
+            if (closestIndex != null && closestIndex in assets.indices && closestIndex != selectedIndex) {
                 selectedIndex = closestIndex
             }
         }
     }
 
     LaunchedEffect(selectedIndex, carouselWidthPx) {
-        if (carouselWidthPx > 0 && !carouselState.isScrollInProgress && selectedIndex in 0 until assets.size) {
+        if (carouselWidthPx > 0 && !carouselState.isScrollInProgress && selectedIndex in assets.indices) {
             carouselState.scrollToItem(selectedIndex, 0)
         }
     }
@@ -205,7 +203,7 @@ fun FullScreenPreviewModal(
                         val itemCenter = contentStart + item.offset + item.size / 2
                         abs(itemCenter - viewportCenter)
                     }?.index
-                    if (closest != null && closest in 0 until assets.size) {
+                    if (closest != null && closest in assets.indices) {
                         selectedIndex = closest
                         carouselState.animateScrollToItem(closest, 0)
                     }

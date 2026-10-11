@@ -35,9 +35,7 @@ class SwipeDecisionRepository @Inject constructor(
         return swipeDecisionDao.getAllDecisionsForUser(userId)
     }
 
-    /**
-     * Enregistre un nouveau swipe en base locale.
-     */
+
     suspend fun saveDecision(assetId: String, albumId: String, userId: String, decision: String, fileSize: Long? = null, isSynced: Boolean = false) {
         val entity = SwipeDecisionEntity(
             assetId = assetId,

@@ -11,17 +11,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -32,12 +21,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -60,28 +45,18 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.ConnectionLevel
 import com.markvoronin.immichswipe.core.PlaybackBehavior
-import com.markvoronin.immichswipe.core.SortOrder
 import com.markvoronin.immichswipe.core.cache.VideoCache
 import com.markvoronin.immichswipe.core.cache.VideoPreloader
 import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
 import com.markvoronin.immichswipe.domain.model.Album
-import com.markvoronin.immichswipe.feature.swipe.components.AddToAlbumDialog
-import com.markvoronin.immichswipe.feature.swipe.components.AssetTimeline
-import com.markvoronin.immichswipe.feature.swipe.components.ResetConfirmationDialog
-import com.markvoronin.immichswipe.feature.swipe.components.SuccessAnimationOverlay
-import com.markvoronin.immichswipe.feature.swipe.components.SummaryDialog
-import com.markvoronin.immichswipe.feature.swipe.components.SwipeActionBar
-import com.markvoronin.immichswipe.feature.swipe.components.SwipeBulkOverlay
-import com.markvoronin.immichswipe.feature.swipe.components.SwipeCardDeck
-import com.markvoronin.immichswipe.feature.swipe.components.SwipeHeader
+import com.markvoronin.immichswipe.feature.swipe.components.SwipeScreenContent
+import com.markvoronin.immichswipe.feature.swipe.components.SwipeScreenDialogs
 import com.markvoronin.immichswipe.feature.tutorial.GestureAnimationType
 import com.markvoronin.immichswipe.feature.tutorial.LocalTutorialController
-import com.markvoronin.immichswipe.feature.tutorial.ProvideTutorialController
 import com.markvoronin.immichswipe.feature.tutorial.TooltipPlacement
 import com.markvoronin.immichswipe.feature.tutorial.TutorialPhase
 import com.markvoronin.immichswipe.feature.tutorial.TutorialStep
 import com.markvoronin.immichswipe.feature.tutorial.rememberTutorialController
-import com.markvoronin.immichswipe.feature.tutorial.tutorialTarget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -518,175 +493,23 @@ fun SwipeScreen(
         }
     }
 
-    ProvideTutorialController(tutorialController) {
-        Box(modifier = modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Box(modifier = Modifier.tutorialTarget("swipe_header", tutorialController)) {
-                    SwipeHeader(
-                        uiState = uiState,
-                        onSummaryClick = { viewModel.toggleSummary(visible = true) }
-                    )
-                }
+    var topCardSwipeOffset by remember(uiState.currentIndex) { mutableFloatStateOf(0f) }
 
-                val nextUnprocessedIndex = viewModel.getNextUnprocessedIndex()
-                var topCardSwipeOffset by remember(uiState.currentIndex) { mutableFloatStateOf(0f) }
+    SwipeScreenContent(
+        uiState = uiState,
+        viewModel = viewModel,
+        sharedPlayer = sharedPlayer,
+        tutorialController = tutorialController,
+        showSortMenu = showSortMenu,
+        onSortMenuToggle = { showSortMenu = it },
+        topCardSwipeOffset = topCardSwipeOffset,
+        onTopCardSwipeOffsetChanged = { topCardSwipeOffset = it },
+        modifier = modifier
+    )
 
-                AssetTimeline(
-                    assets = uiState.assets,
-                    decisions = uiState.decisions,
-                    currentIndex = uiState.currentIndex,
-                    isFavorite = { uiState.isFavorite(it) },
-                    isArchived = { uiState.isArchived(it) },
-                    isLocked = { uiState.isLocked(it) },
-                    onAssetClick = { viewModel.onMoveToAsset(it) },
-                    baseUrl = uiState.baseUrl,
-                    apiKey = uiState.apiKey,
-                    isBulkMode = uiState.isBulkDeleteMode || uiState.isBulkKeepMode,
-                    bulkSelection = uiState.bulkSelection,
-                    isBulkDelete = uiState.isBulkDeleteMode,
-                    getRotation = { uiState.getRotation(it) },
-                    swipeOffset = topCardSwipeOffset,
-                    nextIndex = nextUnprocessedIndex
-                )
-
-                SwipeCardDeck(
-                    uiState = uiState,
-                    viewModel = viewModel,
-                    sharedPlayer = sharedPlayer,
-                    onTopCardSwipeOffsetChanged = { offset ->
-                        topCardSwipeOffset = offset
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                        .tutorialTarget("swipe_deck", tutorialController)
-                        .zIndex(1f)
-                )
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight()
-                        .navigationBarsPadding(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Spacer(Modifier.height(16.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .tutorialTarget("swipe_actions", tutorialController)
-                    ) {
-                        SwipeActionBar(
-                            uiState = uiState,
-                            viewModel = viewModel,
-                            showSortMenu = showSortMenu,
-                            onSortMenuToggle = { showSortMenu = it }
-                        )
-                    }
-
-                    Spacer(Modifier.height(30.dp))
-                }
-            }
-        }
-    }
-
-    if (uiState.showSummary) {
-        SummaryDialog(
-            uiState = uiState,
-            onDismiss = { viewModel.toggleSummary(false) },
-            onApply = { viewModel.applyChanges() },
-            onUndoDecision = { viewModel.undoSpecificDecision(it) }
-        )
-    }
-
-    if (uiState.isFullscreenMode && uiState.currentAsset != null) {
-        val currentAsset = uiState.currentAsset!!
-        val nextUnprocessedIndex = viewModel.getNextUnprocessedIndex()
-        val nextAsset = if (nextUnprocessedIndex != -1 && nextUnprocessedIndex < uiState.assets.size) {
-            uiState.assets[nextUnprocessedIndex]
-        } else null
-
-        FullscreenViewer(
-            asset = currentAsset,
-            nextAsset = nextAsset,
-            isFavorite = uiState.isFavorite(currentAsset.id),
-            onSwipe = {
-                viewModel.onSwipe(it)
-            },
-            onUndo = { viewModel.undo() },
-            onToggleFavorite = { viewModel.toggleFavorite() },
-            onClose = { viewModel.toggleFullscreen(false) },
-            tapToSwipeEnabled = uiState.tapToSwipeEnabled,
-            providedPlayer = sharedPlayer,
-            showSizeIndicator = uiState.sortOrder == SortOrder.SIZE_DESC || uiState.sortOrder == SortOrder.SIZE_ASC,
-            isMuted = uiState.isMuted,
-            onToggleMute = { viewModel.toggleMute() },
-            showMuteButton = true, // Mute button is always shown in fullscreen for videos
-            downloadButtonPosition = uiState.downloadButtonPosition,
-            showDownloadButton = false, // Download button hidden in fullscreen mode as requested
-            onDownload = { viewModel.downloadAsset(it) },
-            shareButtonPosition = uiState.shareButtonPosition,
-            showShareButton = false, // Share button hidden in fullscreen mode for consistency
-            onShare = { viewModel.shareAsset(it) },
-            rotation = uiState.getRotation(currentAsset.id),
-            baseUrl = uiState.baseUrl,
-            apiKey = uiState.apiKey
-        )
-    }
-
-    if (uiState.showSuccessAnimation) {
-        SuccessAnimationOverlay()
-    }
-
-    if (uiState.showResetConfirmation) {
-        ResetConfirmationDialog(
-            onDismiss = { viewModel.toggleResetConfirmation(false) },
-            onConfirm = { viewModel.resetAlbumDecisions() }
-        )
-    }
-
-    if (uiState.isBulkDeleteMode || uiState.isBulkKeepMode) {
-        val isDelete = uiState.isBulkDeleteMode
-        SwipeBulkOverlay(
-            isDelete = isDelete,
-            selectionCount = uiState.bulkSelection.size,
-            onDismiss = { viewModel.exitBulkMode() }
-        )
-    }
-
-    if (uiState.showAddToAlbumDialog) {
-        val successTemplate = stringResource(R.string.add_to_album_success)
-        val errorTemplate = stringResource(R.string.add_to_album_error)
-        val lockSuccessMessage = stringResource(R.string.add_to_album_lock_success)
-
-        AddToAlbumDialog(
-            albums = uiState.albumsForAddToAlbum,
-            isLoading = uiState.isFetchingAlbumsForDialog,
-            showLockButton = uiState.showLockButton,
-            baseUrl = uiState.baseUrl,
-            apiKey = uiState.apiKey,
-            onAlbumSelect = { targetAlbum ->
-                viewModel.addCurrentAssetToAlbum(targetAlbum) { success, albumName ->
-                    viewModel.dismissAddToAlbumDialog()
-                    val message = if (success) {
-                        successTemplate.format(albumName)
-                    } else {
-                        errorTemplate.format(albumName)
-                    }
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                }
-            },
-            onLockSelect = {
-                viewModel.toggleLock()
-                viewModel.dismissAddToAlbumDialog()
-                Toast.makeText(context, lockSuccessMessage, Toast.LENGTH_SHORT).show()
-            },
-            onDismiss = { viewModel.dismissAddToAlbumDialog() }
-        )
-    }
+    SwipeScreenDialogs(
+        uiState = uiState,
+        viewModel = viewModel,
+        sharedPlayer = sharedPlayer
+    )
 }

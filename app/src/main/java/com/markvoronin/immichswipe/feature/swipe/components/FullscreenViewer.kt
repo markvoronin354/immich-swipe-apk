@@ -1,4 +1,5 @@
-package com.markvoronin.immichswipe.feature.swipe
+package com.markvoronin.immichswipe.feature.swipe.components
+
 
 import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
@@ -16,7 +17,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.GestureCancellationException
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
@@ -28,17 +28,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -55,18 +48,15 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -86,43 +76,18 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.domain.model.Asset
-import com.markvoronin.immichswipe.feature.swipe.components.AssetErrorView
-import com.markvoronin.immichswipe.feature.swipe.components.IndicatorBadge
-import com.markvoronin.immichswipe.feature.swipe.components.SharedVideoPlayer
-import com.markvoronin.immichswipe.feature.swipe.components.ZoomableBox
+import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import com.markvoronin.immichswipe.feature.swipe.utils.findActivity
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
+import com.markvoronin.immichswipe.feature.swipe.utils.rotateLayout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
-
-
-private fun Modifier.rotateLayout(rotation: Int) = layout { measurable, constraints ->
-    val isRotated = rotation % 180 != 0
-    val newConstraints = if (isRotated) {
-        Constraints(
-            minWidth = constraints.minHeight,
-            maxWidth = constraints.maxHeight,
-            minHeight = constraints.minWidth,
-            maxHeight = constraints.maxWidth
-        )
-    } else constraints
-    val placeable = measurable.measure(newConstraints)
-    if (isRotated) {
-        layout(placeable.height, placeable.width) {
-            placeable.place((placeable.height - placeable.width) / 2, (placeable.width - placeable.height) / 2)
-        }
-    } else {
-        layout(placeable.width, placeable.height) {
-            placeable.place(0, 0)
-        }
-    }
-}
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -218,7 +183,6 @@ fun FullscreenViewer(
     )
 
     val baseUrlClean = baseUrl.removeSuffix("/")
-    val apiKeyLocal = apiKey
 
     val exoPlayer = providedPlayer // Use shared player exclusively for Fullscreen to avoid heavy instantiations
 
@@ -327,13 +291,13 @@ fun FullscreenViewer(
                 val nextScale = 0.85f + (0.15f * swipeProgress)
                 val nextAlpha = (0.6f + (0.4f * swipeProgress)) * fadeAlpha
 
-                val nextPhotoRequest = remember(nextAsset.id, baseUrlClean, apiKeyLocal, nextAsset.isGif) {
+                val nextPhotoRequest = remember(nextAsset.id, baseUrlClean, apiKey, nextAsset.isGif) {
                     ImageRequest.Builder(context)
                         .data(
                             if (nextAsset.isGif) "$baseUrlClean/api/assets/${nextAsset.id}/original"
                             else "$baseUrlClean/api/assets/${nextAsset.id}/thumbnail?format=WEBP&size=preview&edited=true"
                         )
-                        .addHeader("x-api-key", apiKeyLocal)
+                        .addHeader("x-api-key", apiKey)
                         .memoryCacheKey("${nextAsset.id}-preview")
                         .placeholderMemoryCacheKey("${nextAsset.id}-preview")
                         .crossfade(false)
@@ -428,7 +392,7 @@ fun FullscreenViewer(
                     isFullscreen = true,
                     assetId = asset.id,
                     baseUrl = baseUrlClean,
-                    apiKey = apiKeyLocal,
+                    apiKey = apiKey,
                     isMuted = isMuted,
                     isPaused = pausedByHoldState,
                     isVideoReady = isVideoReady,
@@ -449,8 +413,10 @@ fun FullscreenViewer(
                                         val width = size.width.toFloat()
                                         if (tapToSwipeEnabled && !isZoomedIn && (offset.x < width * 0.3f || offset.x > width * 0.7f)) {
                                             when {
-                                                offset.x < width * 0.3f -> performSwipe(SwipeDecision.DELETE)
-                                                offset.x > width * 0.7f -> performSwipe(SwipeDecision.KEEP)
+                                                offset.x < width * 0.3f -> performSwipe(
+                                                    SwipeDecision.DELETE)
+                                                offset.x > width * 0.7f -> performSwipe(
+                                                    SwipeDecision.KEEP)
                                             }
                                         } else if (asset.type == "VIDEO") {
                                             onToggleMute()
@@ -603,13 +569,13 @@ fun FullscreenViewer(
                         label = "FullscreenRotation"
                     )
 
-                    val photoRequest = remember(asset.id, baseUrlClean, apiKeyLocal, asset.isGif) {
+                    val photoRequest = remember(asset.id, baseUrlClean, apiKey, asset.isGif) {
                         ImageRequest.Builder(context)
                             .data(
                                 if (asset.isGif) "$baseUrlClean/api/assets/${asset.id}/original"
                                 else "$baseUrlClean/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview&edited=true"
                             )
-                            .addHeader("x-api-key", apiKeyLocal)
+                            .addHeader("x-api-key", apiKey)
                             .memoryCacheKey("${asset.id}-preview")
                             .placeholderMemoryCacheKey("${asset.id}-preview")
                             .crossfade(false)
@@ -667,136 +633,25 @@ fun FullscreenViewer(
                 Alignment.TopEnd
             ) { (-swipeX.value / 200f).coerceIn(0f, 1f) * 0.9f }
 
-                AnimatedVisibility(
+                PreviewControls(
                     visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                         val heartScale = animateFloatAsState(if (isFavorite) 1.2f else 1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy), label = "HeartScale").value
-
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(bottom = (if (isLandscape) 20.dp else 106.dp) + controlsOffset)
-                                .graphicsLayer {
-                                    scaleX = heartScale
-                                    scaleY = heartScale
-                                }
-                                .background(Color.Black.copy(alpha = 0.3f), CircleShape)
-                                .clip(CircleShape)
-                                .clickable { onToggleFavorite() }
-                                .padding(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = null,
-                                tint = if (isFavorite) Color.Red else Color.White.copy(alpha = 0.7f),
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-
-                        IconButton(
-                            onClick = onClose,
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(vertical = 50.dp, horizontal = 20.dp)
-                                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                        ) {
-                            Icon(Icons.Default.Close, stringResource(R.string.common_close), tint = Color.White)
-                        }
-
-                        IconButton(
-                            onClick = onUndo,
-                            modifier = Modifier
-                                .align(Alignment.BottomStart)
-                                .padding(start = 24.dp, bottom = (if (isLandscape) 20.dp else 100.dp) + controlsOffset)
-                                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Undo,
-                                contentDescription = stringResource(R.string.nav_back),
-                                tint = Color.White
-                            )
-                        }
-
-                        if (showMuteButton && asset.type == "VIDEO") {
-                            IconButton(
-                                onClick = onToggleMute,
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(bottom = (if (isLandscape) 20.dp else 100.dp) + controlsOffset, end = 24.dp)
-                                    .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                            ) {
-                                Icon(
-                                    imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
-                                    contentDescription = "Mute",
-                                    tint = Color.White
-                                )
-                            }
-                        }
-
-                        if (showDownloadButton) {
-                            val dlAlign = when (downloadButtonPosition) {
-                                IconPosition.TOP_LEFT -> Alignment.TopStart
-                                IconPosition.TOP_RIGHT -> Alignment.TopEnd
-                                IconPosition.BOTTOM_LEFT -> Alignment.BottomStart
-                                IconPosition.BOTTOM_RIGHT -> Alignment.BottomEnd
-                            }
-
-                            val dlPadding = when (downloadButtonPosition) {
-                                IconPosition.TOP_LEFT -> Modifier.padding(top = 50.dp, start = 20.dp)
-                                IconPosition.TOP_RIGHT -> Modifier.padding(top = 110.dp, end = 20.dp)
-                                IconPosition.BOTTOM_LEFT -> Modifier.padding(bottom = (if (isLandscape) 80.dp else 160.dp) + controlsOffset, start = 24.dp)
-                                IconPosition.BOTTOM_RIGHT -> Modifier.padding(bottom = (if (isLandscape) 20.dp else 100.dp) + controlsOffset, end = 24.dp)
-                            }
-
-                            IconButton(
-                                onClick = { onDownload(asset) },
-                                modifier = Modifier
-                                    .align(dlAlign)
-                                    .then(dlPadding)
-                                    .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.FileDownload,
-                                    contentDescription = "Download",
-                                    tint = Color.White
-                                )
-                            }
-                        }
-
-                        if (showShareButton) {
-                            val shareAlign = when (shareButtonPosition) {
-                                IconPosition.TOP_LEFT -> Alignment.TopStart
-                                IconPosition.TOP_RIGHT -> Alignment.TopEnd
-                                IconPosition.BOTTOM_LEFT -> Alignment.BottomStart
-                                IconPosition.BOTTOM_RIGHT -> Alignment.BottomEnd
-                            }
-
-                            val sharePadding = when (shareButtonPosition) {
-                                IconPosition.TOP_LEFT -> Modifier.padding(top = 50.dp, start = 20.dp)
-                                IconPosition.TOP_RIGHT -> Modifier.padding(top = 110.dp, end = 20.dp)
-                                IconPosition.BOTTOM_LEFT -> Modifier.padding(bottom = (if (isLandscape) 80.dp else 160.dp) + controlsOffset, start = 24.dp)
-                                IconPosition.BOTTOM_RIGHT -> Modifier.padding(bottom = (if (isLandscape) 20.dp else 100.dp) + controlsOffset, end = 24.dp)
-                            }
-
-                            IconButton(
-                                onClick = { onShare(asset) },
-                                modifier = Modifier
-                                    .align(shareAlign)
-                                    .then(sharePadding)
-                                    .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Share,
-                                    contentDescription = "Share",
-                                    tint = Color.White
-                                )
-                            }
-                        }
-                    }
-                }
+                    isFavorite = isFavorite,
+                    onToggleFavorite = onToggleFavorite,
+                    onClose = onClose,
+                    onUndo = onUndo,
+                    isLandscape = isLandscape,
+                    controlsOffset = controlsOffset,
+                    showMuteButton = showMuteButton,
+                    isMuted = isMuted,
+                    onToggleMute = onToggleMute,
+                    assetType = asset.type,
+                    showDownloadButton = showDownloadButton,
+                    downloadButtonPosition = downloadButtonPosition,
+                    onDownload = { onDownload(asset) },
+                    showShareButton = showShareButton,
+                    shareButtonPosition = shareButtonPosition,
+                    onShare = { onShare(asset) }
+                )
 
             // Mute/Unmute popup indicator
                 AnimatedVisibility(

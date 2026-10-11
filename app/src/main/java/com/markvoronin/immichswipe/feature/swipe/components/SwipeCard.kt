@@ -1,6 +1,6 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
-import android.content.Context
+
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -18,8 +18,6 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -30,13 +28,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.Fullscreen
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.VideocamOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,7 +39,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -66,18 +59,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -85,7 +74,6 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.compose.material.icons.outlined.VideocamOff
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
@@ -93,8 +81,6 @@ import coil.size.Precision
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.CardDisplayMode
-import com.markvoronin.immichswipe.core.IconPosition
-import com.markvoronin.immichswipe.core.ImmichLauncher
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.cache.VideoCache
 import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
@@ -104,35 +90,12 @@ import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardConfig
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
-import com.markvoronin.immichswipe.feature.swipe.utils.toHorizontalAlignment
+import com.markvoronin.immichswipe.feature.swipe.utils.rotateLayout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
-
-
-private fun Modifier.rotateLayout(rotation: Int) = layout { measurable, constraints ->
-    val isRotated = (rotation % 180) != 0
-    val newConstraints = if (isRotated) {
-        Constraints(
-            minWidth = constraints.minHeight,
-            maxWidth = constraints.maxHeight,
-            minHeight = constraints.minWidth,
-            maxHeight = constraints.maxWidth,
-        )
-    } else constraints
-    val placeable = measurable.measure(newConstraints)
-    if (isRotated) {
-        layout(placeable.height, placeable.width) {
-            placeable.place((placeable.height - placeable.width) / 2, (placeable.width - placeable.height) / 2)
-        }
-    } else {
-        layout(placeable.width, placeable.height) {
-            placeable.place(0, 0)
-        }
-    }
-}
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -249,65 +212,17 @@ fun SwipeCard(
         }
     }
 
-    DisposableEffect(exoPlayer, lifecycleOwner, asset.id) {
-        val listener = object : Player.Listener {
-            override fun onRenderedFirstFrame() {
-                val isSameAsset = exoPlayer?.currentMediaItem?.mediaId == asset.id
-                if (isSameAsset) {
-                    isVideoReady = true
-                    showLoadingIndicator = false
-                }
-            }
-            override fun onPlaybackStateChanged(state: Int) {
-                val isSameAsset = exoPlayer?.currentMediaItem?.mediaId == asset.id
-                if (state == Player.STATE_READY && isSameAsset) {
-                    if ((exoPlayer.videoSize.height) == 0) {
-                        isVideoReady = true
-                    }
-                    showLoadingIndicator = false
-                } else if (state == Player.STATE_BUFFERING) {
-                    // Only show indicator if buffering the correct asset, but keep isVideoReady true if it was already ready
-                    if (isSameAsset) showLoadingIndicator = true
-                } else if (state == Player.STATE_ENDED || state == Player.STATE_IDLE) {
-                    showLoadingIndicator = false
-                }
-            }
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                val isSameAsset = exoPlayer?.currentMediaItem?.mediaId == asset.id
-                if (isPlaying && isSameAsset) {
-                    showLoadingIndicator = false
-                }
-            }
-        }
-        exoPlayer?.addListener(listener)
-        var wasPlayingBeforeAppPause = false
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_PAUSE -> {
-                    if (!isFullscreenOpen) {
-                        wasPlayingBeforeAppPause = exoPlayer?.playWhenReady == true
-                        exoPlayer?.playWhenReady = false
-                    }
-                }
-                Lifecycle.Event.ON_RESUME -> {
-                    if (!isNext && !isFullscreenOpen && wasPlayingBeforeAppPause) {
-                        exoPlayer?.playWhenReady = true
-                    }
-                }
-                else -> {}
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-
-        exoPlayer?.volume = if (isMuted) 0f else 1f
-
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-            exoPlayer?.removeListener(listener)
-            internalExoPlayer?.stop()
-            internalExoPlayer?.release()
-        }
-    }
+    rememberExoPlayerWithLifecycle(
+        exoPlayer = exoPlayer,
+        assetId = asset.id,
+        lifecycleOwner = lifecycleOwner,
+        isFullscreenOpen = isFullscreenOpen,
+        isNext = isNext,
+        isMuted = isMuted,
+        internalExoPlayer = internalExoPlayer,
+        onVideoReadyChange = { isVideoReady = it },
+        onShowLoadingIndicatorChange = { showLoadingIndicator = it }
+    )
 
     LaunchedEffect(isNext) {
         if (!isNext) {
@@ -1015,150 +930,6 @@ fun SwipeCard(
     }
 }
 
-@Composable
-private fun ActionButtonsOverlay(
-    visible: Boolean,
-    isNext: Boolean,
-    asset: Asset,
-    config: SwipeCardConfig,
-    actions: SwipeCardActions,
-    isMuted: Boolean,
-    baseUrl: String,
-    context: Context,
-    onToggleMuteWithIndicator: () -> Unit
-) {
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(),
-        exit = fadeOut(),
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            listOf(Alignment.Start, Alignment.End).forEach { side ->
-                Column(
-                    modifier = Modifier
-                        .align(if (side == Alignment.Start) Alignment.TopStart else Alignment.TopEnd)
-                        .fillMaxHeight()
-                        .padding(8.dp),
-                    horizontalAlignment = side
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (config.showFullscreenButton && config.fullscreenButtonPosition.toHorizontalAlignment() == side && (config.fullscreenButtonPosition == IconPosition.TOP_LEFT || config.fullscreenButtonPosition == IconPosition.TOP_RIGHT)) {
-                            SwipeActionIconButton(
-                                icon = Icons.Default.Fullscreen,
-                                contentDescription = stringResource(R.string.settings_fullscreen_pos_label),
-                                enabled = !isNext,
-                                onClick = actions.onOpenFullscreen
-                            )
-                        }
-                        if (config.showRotationButton && asset.type != "VIDEO" && config.rotationButtonPosition.toHorizontalAlignment() == side && (config.rotationButtonPosition == IconPosition.TOP_LEFT || config.rotationButtonPosition == IconPosition.TOP_RIGHT)) {
-                            SwipeActionIconButton(
-                                icon = Icons.AutoMirrored.Filled.RotateRight,
-                                contentDescription = stringResource(R.string.swipe_rotate_asset),
-                                enabled = !isNext,
-                                onClick = actions.onRotateAsset
-                            )
-                        }
-                        if (config.showImmichButton && config.immichButtonPosition.toHorizontalAlignment() == side && (config.immichButtonPosition == IconPosition.TOP_LEFT || config.immichButtonPosition == IconPosition.TOP_RIGHT)) {
-                            SwipeActionIconButton(
-                                icon = Icons.AutoMirrored.Filled.OpenInNew,
-                                contentDescription = stringResource(R.string.settings_immich_pos_label),
-                                enabled = !isNext,
-                                onClick = {
-                                    ImmichLauncher.openAssetInImmich(context, baseUrl, asset.id, mode = config.immichOpenMode)
-                                },
-                                onLongClick = if (config.immichLongPressWeb && baseUrl.isNotBlank()) {
-                                    { ImmichLauncher.openInWeb(context, baseUrl, asset.id) }
-                                } else null
-                            )
-                        }
-                        if (config.showMuteButton && config.muteButtonPosition.toHorizontalAlignment() == side && (config.muteButtonPosition == IconPosition.TOP_LEFT || config.muteButtonPosition == IconPosition.TOP_RIGHT) && asset.type == "VIDEO") {
-                            SwipeActionIconButton(
-                                icon = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
-                                contentDescription = "Mute",
-                                enabled = !isNext,
-                                onClick = onToggleMuteWithIndicator
-                            )
-                        }
-                        if (config.showDownloadButton && config.downloadButtonPosition.toHorizontalAlignment() == side && (config.downloadButtonPosition == IconPosition.TOP_LEFT || config.downloadButtonPosition == IconPosition.TOP_RIGHT)) {
-                            SwipeActionIconButton(
-                                icon = Icons.Default.FileDownload,
-                                contentDescription = "Download",
-                                enabled = !isNext,
-                                onClick = { actions.onDownload(asset) }
-                            )
-                        }
-                        if (config.showShareButton && config.shareButtonPosition.toHorizontalAlignment() == side && (config.shareButtonPosition == IconPosition.TOP_LEFT || config.shareButtonPosition == IconPosition.TOP_RIGHT)) {
-                            SwipeActionIconButton(
-                                icon = Icons.Default.Share,
-                                contentDescription = "Share",
-                                enabled = !isNext,
-                                onClick = { actions.onShare(asset) }
-                            )
-                        }
-                    }
 
-                    Spacer(Modifier.weight(1f))
-
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (config.showFullscreenButton && config.fullscreenButtonPosition.toHorizontalAlignment() == side && (config.fullscreenButtonPosition == IconPosition.BOTTOM_LEFT || config.fullscreenButtonPosition == IconPosition.BOTTOM_RIGHT)) {
-                            SwipeActionIconButton(
-                                icon = Icons.Default.Fullscreen,
-                                contentDescription = stringResource(R.string.settings_fullscreen_pos_label),
-                                enabled = !isNext,
-                                onClick = actions.onOpenFullscreen
-                            )
-                        }
-                        if (config.showRotationButton && asset.type != "VIDEO" && config.rotationButtonPosition.toHorizontalAlignment() == side && (config.rotationButtonPosition == IconPosition.BOTTOM_LEFT || config.rotationButtonPosition == IconPosition.BOTTOM_RIGHT)) {
-                            SwipeActionIconButton(
-                                icon = Icons.AutoMirrored.Filled.RotateRight,
-                                contentDescription = stringResource(R.string.swipe_rotate_asset),
-                                enabled = !isNext,
-                                onClick = actions.onRotateAsset
-                            )
-                        }
-                        if (config.showImmichButton && config.immichButtonPosition.toHorizontalAlignment() == side && (config.immichButtonPosition == IconPosition.BOTTOM_LEFT || config.immichButtonPosition == IconPosition.BOTTOM_RIGHT)) {
-                            SwipeActionIconButton(
-                                icon = Icons.AutoMirrored.Filled.OpenInNew,
-                                contentDescription = stringResource(R.string.settings_immich_pos_label),
-                                enabled = !isNext,
-                                onClick = {
-                                    ImmichLauncher.openAssetInImmich(context, baseUrl, asset.id, mode = config.immichOpenMode)
-                                },
-                                onLongClick = if (config.immichLongPressWeb && baseUrl.isNotBlank()) {
-                                    { ImmichLauncher.openInWeb(context, baseUrl, asset.id) }
-                                } else null
-                            )
-                        }
-                        if (config.showMuteButton && config.muteButtonPosition.toHorizontalAlignment() == side && (config.muteButtonPosition == IconPosition.BOTTOM_LEFT || config.muteButtonPosition == IconPosition.BOTTOM_RIGHT) && asset.type == "VIDEO") {
-                            SwipeActionIconButton(
-                                icon = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
-                                contentDescription = "Mute",
-                                enabled = !isNext,
-                                onClick = onToggleMuteWithIndicator
-                            )
-                        }
-                        if (config.showDownloadButton && config.downloadButtonPosition.toHorizontalAlignment() == side && (config.downloadButtonPosition == IconPosition.BOTTOM_LEFT || config.downloadButtonPosition == IconPosition.BOTTOM_RIGHT)) {
-                            SwipeActionIconButton(
-                                icon = Icons.Default.FileDownload,
-                                contentDescription = "Download",
-                                enabled = !isNext,
-                                onClick = { actions.onDownload(asset) }
-                            )
-                        }
-                        if (config.showShareButton && config.shareButtonPosition.toHorizontalAlignment() == side && (config.shareButtonPosition == IconPosition.BOTTOM_LEFT || config.shareButtonPosition == IconPosition.BOTTOM_RIGHT)) {
-                            SwipeActionIconButton(
-                                icon = Icons.Default.Share,
-                                contentDescription = "Share",
-                                enabled = !isNext,
-                                onClick = { actions.onShare(asset) }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 

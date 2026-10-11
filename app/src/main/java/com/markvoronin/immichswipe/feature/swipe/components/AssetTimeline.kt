@@ -46,11 +46,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
@@ -58,32 +56,11 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import coil.size.Precision
 import com.markvoronin.immichswipe.domain.model.Asset
+import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
-import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
+import com.markvoronin.immichswipe.feature.swipe.utils.rotateLayout
 import kotlin.math.abs
-
-private fun Modifier.rotateLayout(rotation: Int) = layout { measurable, constraints ->
-    val isRotated = rotation % 180 != 0
-    val newConstraints = if (isRotated) {
-        Constraints(
-            minWidth = constraints.minHeight,
-            maxWidth = constraints.maxHeight,
-            minHeight = constraints.minWidth,
-            maxHeight = constraints.maxWidth
-        )
-    } else constraints
-    val placeable = measurable.measure(newConstraints)
-    if (isRotated) {
-        layout(placeable.height, placeable.width) {
-            placeable.place((placeable.height - placeable.width) / 2, (placeable.width - placeable.height) / 2)
-        }
-    } else {
-        layout(placeable.width, placeable.height) {
-            placeable.place(0, 0)
-        }
-    }
-}
 
 @Composable
 fun AssetTimeline(

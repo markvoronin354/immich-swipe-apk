@@ -83,9 +83,9 @@ import coil.size.Precision
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.duplicates.components.DuplicateVideoPlayer
+import com.markvoronin.immichswipe.feature.swipe.SwipeUiState
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
-import com.markvoronin.immichswipe.feature.swipe.SwipeUiState
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 import kotlinx.coroutines.launch
 
@@ -673,8 +673,7 @@ fun SummaryFullscreenPreviewDialog(
             ) {
                 Button(
                     onClick = {
-                        val assetToRevert = currentAsset
-                        onRevert(assetToRevert)
+                        onRevert(currentAsset)
                         if (assets.size <= 1) {
                             onDismiss()
                         } else {

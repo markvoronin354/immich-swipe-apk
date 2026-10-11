@@ -233,7 +233,7 @@ fun HomeTopBar(
                         IconButton(onClick = onOpenStats) {
                             Icon(
                                 imageVector = Icons.Default.BarChart,
-                                contentDescription = "Statistiques"
+                                contentDescription = stringResource(R.string.stats_popup_title)
                             )
                         }
                     }

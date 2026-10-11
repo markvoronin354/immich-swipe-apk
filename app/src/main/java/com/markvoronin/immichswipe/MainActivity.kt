@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
             val appViewModel: AppViewModel = hiltViewModel()
             val state by appViewModel.uiState.collectAsStateWithLifecycle()
 
-            // Détermination du thème à appliquer
+
             val useDarkTheme = when (state.themeMode) {
                 AppTheme.LIGHT -> false
                 AppTheme.DARK -> true
