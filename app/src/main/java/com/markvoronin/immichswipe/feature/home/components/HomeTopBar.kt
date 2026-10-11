@@ -1,5 +1,6 @@
 package com.markvoronin.immichswipe.feature.home.components
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -56,9 +58,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.markvoronin.immichswipe.R
@@ -69,10 +73,11 @@ import com.markvoronin.immichswipe.feature.settings.SettingsSubMenu
 private sealed interface TopBarTitleState {
     data class Settings(val subMenu: SettingsSubMenu) : TopBarTitleState
     data object Duplicates : TopBarTitleState
-    data object Swipe : TopBarTitleState
+    data class Swipe(val albumName: String?) : TopBarTitleState
     data object Home : TopBarTitleState
 }
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTopBar(
@@ -88,6 +93,7 @@ fun HomeTopBar(
     modifier: Modifier = Modifier,
     isSettingsTab: Boolean = false,
     isDuplicatesTab: Boolean = false,
+    swipeAlbumName: String? = null,
     activeSubMenu: SettingsSubMenu = SettingsSubMenu.NONE,
     baseUrl: String = "",
     apiKey: String = "",
@@ -120,7 +126,7 @@ fun HomeTopBar(
                 val titleState = when {
                     isSettingsTab -> TopBarTitleState.Settings(activeSubMenu)
                     isDuplicatesTab -> TopBarTitleState.Duplicates
-                    isSwipeTab -> TopBarTitleState.Swipe
+                    isSwipeTab -> TopBarTitleState.Swipe(swipeAlbumName)
                     else -> TopBarTitleState.Home
                 }
 
@@ -201,8 +207,18 @@ fun HomeTopBar(
                                     fontWeight = FontWeight.Bold
                                 )
                             }
-                            TopBarTitleState.Swipe -> {
-                                // Empty title container filling width to prevent layout pops
+                            is TopBarTitleState.Swipe -> {
+                                state.albumName?.let { name ->
+                                    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+                                    Text(
+                                        text = name,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.widthIn(max = screenWidth * 0.6f)
+                                    )
+                                }
                             }
                             TopBarTitleState.Home -> {
                                 val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f

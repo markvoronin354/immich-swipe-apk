@@ -129,8 +129,22 @@ fun HomeScreen(
         }
     }
 
+    val virtualAllName = stringResource(R.string.home_virtual_all_assets)
+    val virtualAllDesc = stringResource(R.string.home_virtual_all_assets_desc)
+    val virtualOrphansName = stringResource(R.string.home_virtual_orphans)
+    val virtualOrphansDesc = stringResource(R.string.home_virtual_orphans_desc)
+    val virtualDuplicatesName = stringResource(R.string.home_virtual_duplicates)
+    val virtualDuplicatesDesc = stringResource(R.string.home_virtual_duplicates_desc)
+
     val currentTopKey = backStack.lastOrNull() ?: NavKey.Home
     val isHome = currentTopKey is NavKey.Home
+
+    val swipeAlbumName = if (currentTopKey is NavKey.Swipe) {
+        val albumId = currentTopKey.albumId
+        uiState.filteredAlbums.firstOrNull { it.id == albumId }?.albumName
+            ?: uiState.selectedAlbum?.takeIf { it.id == albumId }?.albumName
+            ?: if (albumId == Album.VIRTUAL_ALL_ID) virtualAllName else (uiState.virtualNames[albumId] ?: "Album")
+    } else null
 
     LaunchedEffect(Unit) {
         viewModel.loadUser()
@@ -141,13 +155,6 @@ fun HomeScreen(
             viewModel.refreshAlbums()
         }
     }
-
-    val virtualAllName = stringResource(R.string.home_virtual_all_assets)
-    val virtualAllDesc = stringResource(R.string.home_virtual_all_assets_desc)
-    val virtualOrphansName = stringResource(R.string.home_virtual_orphans)
-    val virtualOrphansDesc = stringResource(R.string.home_virtual_orphans_desc)
-    val virtualDuplicatesName = stringResource(R.string.home_virtual_duplicates)
-    val virtualDuplicatesDesc = stringResource(R.string.home_virtual_duplicates_desc)
 
     LaunchedEffect(virtualAllName, virtualAllDesc, virtualOrphansName, virtualOrphansDesc, virtualDuplicatesName, virtualDuplicatesDesc) {
         viewModel.updateVirtualNames(Album.VIRTUAL_ALL_ID, virtualAllName, virtualAllDesc)
@@ -188,6 +195,7 @@ fun HomeScreen(
                         isDuplicatesTab = currentTopKey is NavKey.Duplicates,
                         isSettingsTab = currentTopKey is NavKey.Settings,
                         activeSubMenu = activeSubMenu,
+                        swipeAlbumName = swipeAlbumName,
                         user = uiState.user,
                         connectionStatus = uiState.connectionStatus,
                         baseUrl = uiState.baseUrl,

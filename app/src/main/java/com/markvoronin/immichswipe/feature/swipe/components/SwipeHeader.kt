@@ -2,7 +2,10 @@ package com.markvoronin.immichswipe.feature.swipe.components
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,10 +39,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -53,7 +58,6 @@ import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 fun SwipeHeader(
     uiState: SwipeUiState,
     onSummaryClick: () -> Unit,
-    titleFontSize: TextUnit = 13.sp,
     infoFontSize: TextUnit = 13.sp,
     iconSize: Dp = 20.dp
 ) {
@@ -77,26 +81,51 @@ fun SwipeHeader(
                 .background(MaterialTheme.colorScheme.surfaceVariant)
                 .clickable { onSummaryClick() }
         ) {
+            val totalWidth = constraints.maxWidth.toFloat()
+            val progressWidth = totalWidth * animatedProgress
             val fullWidth = maxWidth
+
+            val density = LocalDensity.current
+            val paddingPx = with(density) { 16.dp.toPx() }
+            val infoWidthPx = with(density) { 54.dp.toPx() }
+            
+            val staticInfoX = totalWidth - infoWidthPx - paddingPx
+            val infoIsInside = progressWidth > staticInfoX
+            
+            val infoTranslationX by animateFloatAsState(
+                targetValue = if (infoIsInside) {
+                    (progressWidth - infoWidthPx - paddingPx).coerceAtLeast(paddingPx)
+                } else {
+                    staticInfoX
+                },
+                animationSpec = spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
+                label = "InfoTranslation"
+            )
 
             // Layer 1: Dark Text (Background)
             Box(modifier = Modifier.fillMaxSize()) {
-                HeaderTitle(
-                    text = uiState.albumName,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = titleFontSize,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = 16.dp)
-                )
+                Box(modifier = Modifier.align(Alignment.CenterStart).padding(start = 16.dp)) {
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = (uiState.isFetchingAssets || uiState.isLoading) && uiState.assets.isNotEmpty(),
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        FetchingAssetsIndicator(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = infoFontSize,
+                            iconSize = 16.dp
+                        )
+                    }
+                }
+
                 HeaderInfo(
                     progressText = "${(uiState.progress * 100).toInt()}%",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = infoFontSize,
                     iconSize = iconSize,
                     modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .padding(end = 16.dp)
+                        .align(Alignment.CenterStart)
+                        .graphicsLayer { translationX = infoTranslationX }
                 )
             }
 
@@ -105,7 +134,7 @@ fun SwipeHeader(
                 modifier = Modifier
                     .fillMaxHeight()
                     .layout { measurable, constraints ->
-                        val targetWidth = (constraints.maxWidth * animatedProgress).toInt().coerceIn(0, constraints.maxWidth)
+                        val targetWidth = progressWidth.toInt().coerceIn(0, constraints.maxWidth)
                         val placeable = measurable.measure(
                             constraints.copy(
                                 minWidth = targetWidth,
@@ -135,22 +164,28 @@ fun SwipeHeader(
                         .wrapContentWidth(unbounded = true, align = Alignment.Start)
                         .requiredWidth(fullWidth)
                 ) {
-                    HeaderTitle(
-                        text = uiState.albumName,
-                        color = Color.White,
-                        fontSize = titleFontSize,
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                            .padding(start = 16.dp)
-                    )
+                    Box(modifier = Modifier.align(Alignment.CenterStart).padding(start = 16.dp)) {
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = (uiState.isFetchingAssets || uiState.isLoading) && uiState.assets.isNotEmpty(),
+                            enter = fadeIn(),
+                            exit = fadeOut()
+                        ) {
+                            FetchingAssetsIndicator(
+                                color = Color.White,
+                                fontSize = infoFontSize,
+                                iconSize = 16.dp
+                            )
+                        }
+                    }
+
                     HeaderInfo(
                         progressText = "${(uiState.progress * 100).toInt()}%",
                         color = Color.White,
                         fontSize = infoFontSize,
                         iconSize = iconSize,
                         modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .padding(end = 16.dp)
+                            .align(Alignment.CenterStart)
+                            .graphicsLayer { translationX = infoTranslationX }
                     )
                 }
             }
@@ -171,25 +206,6 @@ fun SwipeHeader(
             StatBadge(label = stringResource(R.string.swipe_remaining), count = uiState.remainingCount, color = MaterialTheme.colorScheme.outline)
         }
     }
-}
-
-@Composable
-fun HeaderTitle(
-    text: String,
-    color: Color,
-    modifier: Modifier = Modifier,
-    fontSize: TextUnit = TextUnit.Unspecified
-) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelMedium,
-        fontSize = fontSize,
-        fontWeight = FontWeight.Bold,
-        color = color,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        modifier = modifier
-    )
 }
 
 @Composable
@@ -236,6 +252,33 @@ fun StatBadge(label: String, count: Int, color: Color) {
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
+        )
+    }
+}
+
+@Composable
+fun FetchingAssetsIndicator(
+    color: Color,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 13.sp,
+    iconSize: Dp = 16.dp
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(iconSize),
+            strokeWidth = 2.dp,
+            color = color
+        )
+        Text(
+            text = stringResource(R.string.swipe_fetching_assets),
+            style = MaterialTheme.typography.labelSmall,
+            fontSize = fontSize,
+            color = color,
+            fontWeight = FontWeight.Bold
         )
     }
 }
