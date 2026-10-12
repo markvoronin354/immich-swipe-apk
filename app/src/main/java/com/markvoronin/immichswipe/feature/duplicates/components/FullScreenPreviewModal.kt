@@ -101,9 +101,9 @@ import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
 import com.markvoronin.immichswipe.feature.settings.components.horizontalFadingEdges
 import com.markvoronin.immichswipe.feature.swipe.components.ZoomableBox
+import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
-import kotlinx.coroutines.delay
 
 @Composable
 fun FullScreenPreviewModal(
@@ -178,6 +178,7 @@ fun FullScreenPreviewModal(
                 val imageRequest = ImageRequest.Builder(context)
                     .data(imageUrl)
                     .addHeader("x-api-key", apiKey)
+                    .size(coil.size.Size.ORIGINAL)
                     .build()
                 context.imageLoader.enqueue(imageRequest)
 
@@ -665,6 +666,7 @@ fun FullScreenPreviewModal(
                                     ImageRequest.Builder(context)
                                         .data("$baseUrlClean/api/assets/${currentAsset.id}/original")
                                         .addHeader("x-api-key", apiKey)
+                                        .size(coil.size.Size.ORIGINAL)
                                         .crossfade(false)
                                         .build()
                                 }
