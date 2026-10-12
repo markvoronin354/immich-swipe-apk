@@ -205,13 +205,9 @@ class AssetRepository @Inject constructor(
         val page1ServerIds = page1ServerItems.map { it.id }.toSet()
         val cachedIds = cachedEntities.map { it.assetId }.toSet()
 
-        val effectiveTotal = if (firstPageResp.assets.nextPage == null) {
-            page1ServerItems.size
-        } else if (firstPageResp.assets.total > 0) {
-            firstPageResp.assets.total
-        } else {
-            totalFromServer
-        }
+        // Use the higher of the two totals if they differ. 
+        // totalFromServer comes from the statistics endpoint which is more reliable for large libraries.
+        val effectiveTotal = maxOf(totalFromServer, firstPageResp.assets.total)
 
         // 3a. Single-page case: Server returned all assets in page 1
         if (firstPageResp.assets.nextPage == null) {
@@ -432,19 +428,12 @@ class AssetRepository @Inject constructor(
         return try {
             if (includeArchived) {
                 coroutineScope {
-                    val timeline = async {
-                        val resp = api.searchAssets(SearchAssetsRequest(visibility = "timeline", withExif = false, size = 500))
-                        if (resp.assets.nextPage == null) resp.assets.items.size else resp.assets.total
-                    }
-                    val archive = async {
-                        val resp = api.searchAssets(SearchAssetsRequest(visibility = "archive", withExif = false, size = 500))
-                        if (resp.assets.nextPage == null) resp.assets.items.size else resp.assets.total
-                    }
+                    val timeline = async { api.getSearchStatistics(SearchAssetsRequest(visibility = "timeline")).total }
+                    val archive = async { api.getSearchStatistics(SearchAssetsRequest(visibility = "archive")).total }
                     timeline.await() + archive.await()
                 }
             } else {
-                val resp = api.searchAssets(SearchAssetsRequest(visibility = "timeline", withExif = false, size = 500))
-                if (resp.assets.nextPage == null) resp.assets.items.size else resp.assets.total
+                api.getSearchStatistics(SearchAssetsRequest(visibility = "timeline")).total
             }
         } catch (_: Exception) {
             0
@@ -455,19 +444,12 @@ class AssetRepository @Inject constructor(
         return try {
             if (includeArchived) {
                 coroutineScope {
-                    val timeline = async {
-                        val resp = api.searchAssets(SearchAssetsRequest(isNotInAlbum = true, visibility = "timeline", withExif = false, size = 500))
-                        if (resp.assets.nextPage == null) resp.assets.items.size else resp.assets.total
-                    }
-                    val archive = async {
-                        val resp = api.searchAssets(SearchAssetsRequest(isNotInAlbum = true, visibility = "archive", withExif = false, size = 500))
-                        if (resp.assets.nextPage == null) resp.assets.items.size else resp.assets.total
-                    }
+                    val timeline = async { api.getSearchStatistics(SearchAssetsRequest(isNotInAlbum = true, visibility = "timeline")).total }
+                    val archive = async { api.getSearchStatistics(SearchAssetsRequest(isNotInAlbum = true, visibility = "archive")).total }
                     timeline.await() + archive.await()
                 }
             } else {
-                val resp = api.searchAssets(SearchAssetsRequest(isNotInAlbum = true, visibility = "timeline", withExif = false, size = 500))
-                if (resp.assets.nextPage == null) resp.assets.items.size else resp.assets.total
+                api.getSearchStatistics(SearchAssetsRequest(isNotInAlbum = true, visibility = "timeline")).total
             }
         } catch (_: Exception) {
             0
