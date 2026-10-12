@@ -1,6 +1,6 @@
 # Privacy Policy for Immich Swipe
 
-**Last Updated:** October 1, 2026
+**Last Updated:** October 11, 2026
 
 ## 1. Overview
 
@@ -20,7 +20,7 @@ Your privacy is extremely important to us. **Immich Swipe does not collect, stor
 ### B. Photos, Videos, and Media Metadata
 * **What is processed:** Thumbnails, photo/video files, EXIF metadata, asset IDs, album information, and duplicate detection metrics.
 * **How it is used:** Used locally within the application to display media cards, handle swipe decisions (keep, delete, favorite, archive, add to album), and show duplicate clusters.
-* **Network Transmission:** Media files and metadata are fetched directly from your Immich server and sent back to your Immich server when performing sync actions (such as deleting, favoriting, or archiving media).
+* **Network Transmission:** Media files and metadata are fetched directly from your Immich server to display in the app. When you perform sync actions (such as deleting, favoriting, archiving, or adding assets to albums), API commands and status updates are sent directly to your Immich server. The application never re-uploads or automatically transmits your media files to any third party; if you explicitly use the in-app Share feature, individual media items are handed off locally to the destination app you choose via Android's system share menu.
 
 ### C. Local Storage & Cache
 * **Database:** Temporary swipe decisions, album cache, and duplicate cluster data are stored locally in a SQLite database on your device via Android Room.
@@ -35,7 +35,6 @@ To function properly, Immich Swipe requests the following Android permissions:
 
 * **Internet Access (`INTERNET`)**: Required to communicate with your self-hosted Immich server instance over HTTP or HTTPS.
 * **Read External Storage (`READ_MEDIA_IMAGES`, `READ_MEDIA_VIDEO`, `READ_EXTERNAL_STORAGE`)**: Optional/Requested if you enable local sync deletion. This allows the application to synchronize photo/video deletions made in the app with your device's local gallery storage.
-* **Access Media Location (`ACCESS_MEDIA_LOCATION`)**: Used solely to read location metadata from local media if local synchronization is enabled.
 
 ---
 
