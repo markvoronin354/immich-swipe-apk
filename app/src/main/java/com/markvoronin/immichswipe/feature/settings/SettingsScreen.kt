@@ -415,7 +415,7 @@ fun SettingsScreen(
                     title = stringResource(R.string.settings_privacy_policy_label),
                     subtitle = stringResource(R.string.settings_privacy_policy_desc),
                     icon = Icons.Default.PrivacyTip,
-                    onClick = { uriHandler.openUri("https://github.com/markvoronin354/immich-swipe-android/blob/main/PRIVACY_POLICY.md") }
+                    onClick = { uriHandler.openUri("https://github.com/markvoronin354/immich-swipe-android/blob/HEAD/PRIVACY_POLICY.md") }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
                 SettingsClickableItem(
