@@ -59,10 +59,10 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
             }
         }
 
-        // 1c. Sync lock decisions to Immich server (Immich API expects "hidden" for locked/hidden assets)
+        // 1c. Sync lock decisions to Immich server (Immich API expects "locked" for locked/hidden assets)
         if (toLock.isNotEmpty()) {
             try {
-                assetRepository.updateAssets(toLock, visibility = "hidden")
+                assetRepository.updateAssets(toLock, visibility = "locked")
                 assetRepository.deleteLocalAssets(toLock)
                 swipeDecisionRepository.removeDecisions(toLock, userId)
             } catch (e: Exception) {
