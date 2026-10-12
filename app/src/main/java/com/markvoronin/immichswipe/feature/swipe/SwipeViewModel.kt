@@ -10,6 +10,7 @@ import com.markvoronin.immichswipe.core.SortCategory
 import com.markvoronin.immichswipe.core.SortOrder
 import com.markvoronin.immichswipe.data.repository.AlbumRepository
 import com.markvoronin.immichswipe.data.repository.AssetRepository
+import com.markvoronin.immichswipe.data.repository.LocalMediaRepository
 import com.markvoronin.immichswipe.data.repository.SessionRepository
 import com.markvoronin.immichswipe.data.repository.SwipeDecisionRepository
 import com.markvoronin.immichswipe.domain.model.Album
@@ -40,7 +41,8 @@ class SwipeViewModel @Inject constructor(
     private val swipeDecisionRepository: SwipeDecisionRepository,
     private val albumRepository: AlbumRepository,
     private val sessionManager: SessionManager,
-    private val applySwipeDecisionsUseCase: ApplySwipeDecisionsUseCase
+    private val applySwipeDecisionsUseCase: ApplySwipeDecisionsUseCase,
+    private val localMediaRepository: LocalMediaRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SwipeUiState())
@@ -723,12 +725,29 @@ class SwipeViewModel @Inject constructor(
                     _uiState.update { it.copy(remoteTotalCount = (it.remoteTotalCount - toRemoveFromWorkPile.size).coerceAtLeast(0)) }
                 }
 
+                // 4b. Local device deletion sync if enabled
+                var pendingDeleteIntent: android.app.PendingIntent? = null
+                if (currentState.syncLocalDeletion && result.deletedAssets.isNotEmpty()) {
+                    try {
+                        val localUris = localMediaRepository.findLocalMediaUris(result.deletedAssets)
+                        if (localUris.isNotEmpty()) {
+                            pendingDeleteIntent = localMediaRepository.createDeletePendingIntent(
+                                uris = localUris,
+                                trash = currentState.trashLocalDeletion
+                            )
+                        }
+                    } catch (e: Exception) {
+                        AppLogger.e("SwipeViewModel", "Error resolving local media for deletion: ${e.message}", e)
+                    }
+                }
+
                 // 5. Success state
                 val remainingDecisions = currentState.decisions.filterKeys { id -> id !in toRemoveFromWorkPile }
                 _uiState.update { it.copy(
                     isSyncing = false, 
                     showSummary = false, 
                     showSuccessAnimation = true,
+                    localDeletePendingIntent = pendingDeleteIntent,
                     // Remove deleted & locked assets from current UI decisions too
                     decisions = remainingDecisions,
                     history = emptyList(), // Reset history for undo after sync

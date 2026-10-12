@@ -199,7 +199,7 @@
     <string name="common_loading">Cargando…</string>
     <string name="common_beta">BETA</string>
     <string name="backup_warning_title">Sincronización de almacenamiento</string>
-    <string name="backup_warning_msg">Para evitar que Immich vuelva a subir automáticamente las fotos que eliminas, ahora puedes activar la **\"Sincronización de eliminación local\"** en Ajustes.\n\nEsto intentará eliminar la copia local de tu teléfono cada vez que elimines una foto del servidor.</string>
+    <string name="backup_warning_msg">Para evitar que Immich vuelva a subir automáticamente las fotos que eliminas, puedes activar la **\"Sincronización de eliminación local\"** en Ajustes (una función similar también está disponible en la app oficial de Immich).\n\nEsto intentará eliminar la copia local de tu teléfono cada vez que elimines una foto del servidor.</string>
     <string name="backup_warning_settings">Ir a Ajustes</string>
     <string name="swipe_reset_button">Reiniciar álbum</string>
     <string name="swipe_reset_confirm_title">¿Reiniciar ordenación?</string>

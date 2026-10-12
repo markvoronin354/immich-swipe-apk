@@ -152,16 +152,20 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
             lockedCount = lockedCount
         )
 
+        val deletedAssets = currentAssets.filter { it.id in toDelete }
+
         return@withContext ApplyResult(
             toDelete = toDelete,
             toLock = toLock,
-            nonSkipDecidedIds = nonSkipDecidedIds
+            nonSkipDecidedIds = nonSkipDecidedIds,
+            deletedAssets = deletedAssets
         )
     }
 
     data class ApplyResult(
         val toDelete: List<String>,
         val toLock: List<String>,
-        val nonSkipDecidedIds: List<String>
+        val nonSkipDecidedIds: List<String>,
+        val deletedAssets: List<Asset> = emptyList()
     )
 }
