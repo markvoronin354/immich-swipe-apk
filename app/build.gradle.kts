@@ -12,8 +12,9 @@ android {
     defaultConfig {
         applicationId = "com.markvoronin.immichswipe"
         minSdk = 26
+        //noinspection OldTargetApi
         targetSdk = 36
-        versionCode = 40
+        versionCode = 400
         versionName = "4.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
