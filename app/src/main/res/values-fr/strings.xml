@@ -315,7 +315,7 @@
     <string name="login_api_key_tutorial_step1">1. Ouvrez l\'interface web Immich (impossible via l\'application mobile).</string>
     <string name="login_api_key_tutorial_step2">2. Allez dans Paramètres du compte > Clés d\'API.</string>
     <string name="login_api_key_tutorial_step3">3. Cliquez sur \"Nouvelle clé d\'API\" et nommez-la \"Immich Swipe\".</string>
-    <string name="login_api_key_tutorial_step4">4. Dans les permissions, sélectionnez:\n• Asset (Tous)\n• Album (Read, Update)\n• Duplicate (Read)\n• User (Read)\n• userProfileImage (Read)</string>
+    <string name="login_api_key_tutorial_step4">4. Dans les permissions, sélectionnez:\n• Asset (Tous)\n• album.read\n• album.update\n• albumAsset.create\n• duplicate.read\n• user.read\n• userProfileImage.read</string>
     <string name="login_api_key_tutorial_step5">5. Cliquez sur Créer, puis copiez et collez la clé ici.</string>
 
     <string name="duplicates_keep_all">Tout garder</string>

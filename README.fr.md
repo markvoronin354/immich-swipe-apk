@@ -17,17 +17,8 @@ Ce projet est un fork basé sur le projet original [Minos2020/immich-swipe-andro
 
 |                                         Écran d'accueil                                         |                                     La pile de tri                                      |                                        Mode Revue                                        |
 |:-----------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------:|
-| <img src="metadata/en-US/images/phoneScreenshots/10_Light_HomeScreen_Listview.jpg" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/09_Dark_SwipeScreen.jpg" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/11_Dark_ReviewScreen.jpg" width="200"> |
+| <img src="metadata/en-US/images/phoneScreenshots/05_Light_home_screen.jpg" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/02_ Light_swipe_screen.jpg" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/04_Light_review_screen.jpg" width="200"> |
 |                                     *Parcourez vos albums*                                      |                                  *Swipez pour décider*                                  |                              *Vérifiez avant de supprimer*                               |
-
-<details>
-<summary>🌙 <b>Voir la galerie en Mode Sombre</b></summary>
-
-|                                        Écran d'accueil                                         |                                     La pile de tri                                     |                                       Mode Revue                                        |                                       Paramètres                                       |
-|:----------------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------------------:|
-| <img src="metadata/en-US/images/phoneScreenshots/05_Dark_HomeScreen_GridView.png" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/07_Dark_SwipeScreen.png" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/08_Dark_ReviewScreen.jpg" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/Dark_SettingsScreen.png" width="200"> |
-
-</details>
 
 ## ✨ Fonctionnalités
 
@@ -51,26 +42,27 @@ Ce projet est un fork basé sur le projet original [Minos2020/immich-swipe-andro
 
 Afin d'assurer le bon fonctionnement tout en respectant le **Principe de Moindre Privilège**, configurez votre clé API avec les permissions suivantes sur votre serveur Immich :
 
-- `Asset.read` – Parcourir vos médias et métadonnées (`/api/search/metadata`, `/api/assets/{id}`).
-- `Asset.statistics` – Calculer les statistiques et compter les médias (`/api/search/statistics`).
-- `Asset.download` – Afficher les photos en haute résolution et lire les vidéos (`/api/assets/{id}/original`, `/video/playback`).
-- `Asset.update` – Archiver, mettre en favori, verrouiller ou modifier des médias (`/api/assets`, `/api/assets/{id}`).
-- `Asset.edit.create` – Appliquer des éditions ou rotations sur les médias (`/api/assets/{id}/edits`).
-- `Asset.delete` – Déplacer les médias supprimés vers la corbeille Immich lors de la synchronisation (`/api/assets`).
-- `Asset.view` – Afficher les miniatures des médias (`/api/assets/{id}/thumbnail`).
-- `Album.read` – Récupérer la liste de vos albums (`/api/albums`).
-- `Album.update` – Ajouter directement un média à un album existant (`/api/albums/{id}/assets`).
-- `Duplicate.read` – Scanner et résoudre les clusters de photos dupliquées (`/api/duplicates`).
-- `User.read` – Récupérer les informations du profil utilisateur (`/api/users/me`).
-- `userProfileImage.read` – Afficher la photo de profil dans le menu de changement de compte (`/api/users/{id}/profile-image`).
+- `asset.read`
+- `asset.statistics`
+- `asset.download`
+- `asset.update`
+- `asset.edit.create`
+- `asset.delete`
+- `asset.view`
+- `album.read`
+- `album.update`
+- `albumAsset.create`
+- `duplicate.read`
+- `user.read`
+- `userProfileImage.read`
 
 3. Sélectionnez un album ou une collection virtuelle et commencez à trier !
 
 ## 📦 Installation
 
-|                                                                                                                       **Orion Store**                                                                                                                        |   **Téléchargement Direct**   |  **IzzyOnDroid / F-Droid**    |
-|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------:|:----------------------------:|
-| [<img src="https://github.com/RookieEnough/Orion-Store/blob/main/assets/graphics/orion-badge.png?raw=true"  alt="Get it on Orion Store" height="50">](https://rookieenough.github.io/Orion-Data/redirect.html?id=immich-swipe-android) | Récupérez le dernier APK dans la section [Releases](https://github.com/markvoronin354/immich-swipe-android/releases)   |  Prochainement disponible |
+|                                                                                                                       **Orion Store**                                                                                                                        |   **Téléchargement Direct**   |      **Play Store**      |
+|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------:|:------------------------:|
+| [<img src="https://github.com/RookieEnough/Orion-Store/blob/main/assets/graphics/orion-badge.png?raw=true"  alt="Get it on Orion Store" height="50">](https://rookieenough.github.io/Orion-Data/redirect.html?id=immich-swipe-android) | Récupérez le dernier APK dans la section [Releases](https://github.com/markvoronin354/immich-swipe-android/releases)   | Prochainement disponible |
 
 ## 🛠️ Build
 

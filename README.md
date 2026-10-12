@@ -17,17 +17,8 @@ This project is a fork based on the original project at [Minos2020/immich-swipe-
 
 |                                         Home Screen                                          |                                    Sorting Stack                                     |                                       Review Mode                                        |
 |:--------------------------------------------------------------------------------------------:|:------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------:|
-| <img src="metadata/en-US/images/phoneScreenshots/10_Light_HomeScreen_Listview.jpg" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/09_Dark_SwipeScreen.jpg" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/11_Dark_ReviewScreen.jpg" width="200"> |
+| <img src="metadata/en-US/images/phoneScreenshots/05_Light_home_screen.jpg" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/02_ Light_swipe_screen.jpg" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/04_Light_review_screen.jpg" width="200"> |
 |                                     *Browse your albums*                                     |                                  *Swipe to decide*                                   |                                 *Check before deleting*                                  |
-
-<details>
-<summary>🌙 <b>View Dark Mode Gallery</b></summary>
-
-|                                        Home Screen                                         |                                     Sorting Stack                                      |                                       Review Mode                                        |                                       Settings                                         |
-|:------------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------:|
-| <img src="metadata/en-US/images/phoneScreenshots/05_Dark_HomeScreen_GridView.png" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/07_Dark_SwipeScreen.png" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/08_Dark_ReviewScreen.jpg" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/Dark_SettingsScreen.png" width="200"> |
-
-</details>
 
 ## ✨ Features
 
@@ -51,26 +42,27 @@ This project is a fork based on the original project at [Minos2020/immich-swipe-
 
 To ensure proper functionality while adhering to the **Principle of Least Privilege**, configure your API key with the following permissions on your Immich server:
 
-- `Asset.read` – Browse assets and asset metadata (`/api/search/metadata`, `/api/assets/{id}`).
-- `Asset.statistics` – Fetch search statistics and count assets (`/api/search/statistics`).
-- `Asset.download` – View high-resolution photos and stream videos (`/api/assets/{id}/original`, `/video/playback`).
-- `Asset.update` – Archive, favorite, lock, or update assets (`/api/assets`, `/api/assets/{id}`).
-- `Asset.edit.create` – Apply edits or rotations to assets (`/api/assets/{id}/edits`).
-- `Asset.delete` – Move photos/videos to Immich trash upon syncing (`/api/assets`).
-- `Asset.view` – View asset thumbnails (`/api/assets/{id}/thumbnail`).
-- `Album.read` – Fetch user's albums list (`/api/albums`).
-- `Album.update` – Add assets directly to an existing album (`/api/albums/{id}/assets`).
-- `Duplicate.read` – Scan and resolve duplicate asset clusters (`/api/duplicates`).
-- `User.read` – Fetch profile details for current user authentication (`/api/users/me`).
-- `userProfileImage.read` – Display user avatar image in the account switcher popup (`/api/users/{id}/profile-image`).
+- `asset.read`
+- `asset.statistics`
+- `asset.download`
+- `asset.update`
+- `asset.edit.create`
+- `asset.delete`
+- `asset.view`
+- `album.read`
+- `album.update`
+- `albumAsset.create`
+- `duplicate.read`
+- `user.read`
+- `userProfileImage.read`
 
 3. Select an album or virtual collection and start sorting!
 
 ## 📦 Installation
 
-|                                                                                                                       **Orion Store**                                                                                                                        |   **Direct Download**   |  **IzzyOnDroid / F-Droid**    |
-|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------:|:----------------------------:|
-| [<img src="https://github.com/RookieEnough/Orion-Store/blob/main/assets/orion-badge.png?raw=true"  alt="Get it on Orion Store" height="50">](https://rookieenough.github.io/Orion-Data/redirect.html?id=immich-swipe-android) | Get the latest APK from the [Releases](https://github.com/markvoronin354/immich-swipe-android/releases) section   |  Coming soon, hopefully |
+|                                                                                                                       **Orion Store**                                                                                                                        |   **Direct Download**   |     **Play Store**     |
+|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------:|:----------------------:|
+| [<img src="https://github.com/RookieEnough/Orion-Store/blob/main/assets/orion-badge.png?raw=true"  alt="Get it on Orion Store" height="50">](https://rookieenough.github.io/Orion-Data/redirect.html?id=immich-swipe-android) | Get the latest APK from the [Releases](https://github.com/markvoronin354/immich-swipe-android/releases) section   | Coming soon, hopefully |
 
 ## 🛠️ Build
 
