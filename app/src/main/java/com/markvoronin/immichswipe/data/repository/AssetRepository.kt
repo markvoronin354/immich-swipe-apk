@@ -200,13 +200,18 @@ class AssetRepository @Inject constructor(
             return@channelFlow
         }
 
-        // Use the higher of the two totals if they differ
-        val effectiveTotal = maxOf(totalFromServer, firstPageResp.assets.total)
-        
         val totalInDb = albumAssetDao.getAssetCountForAlbum(albumId, userId)
         val page1ServerItems = firstPageResp.assets.items
         val page1ServerIds = page1ServerItems.map { it.id }.toSet()
         val cachedIds = cachedEntities.map { it.assetId }.toSet()
+
+        val effectiveTotal = if (firstPageResp.assets.nextPage == null) {
+            page1ServerItems.size
+        } else if (firstPageResp.assets.total > 0) {
+            firstPageResp.assets.total
+        } else {
+            totalFromServer
+        }
 
         // 3a. Single-page case: Server returned all assets in page 1
         if (firstPageResp.assets.nextPage == null) {
@@ -250,8 +255,7 @@ class AssetRepository @Inject constructor(
         val staleFromPage1 = cachedTopPage1Ids.filter { it !in page1ServerIds }
         val newFromPage1 = page1ServerItems.filter { it.id !in cachedIds }
         
-        val isCacheComplete = totalInDb >= (effectiveTotal - 10) &&
-                totalInDb <= effectiveTotal &&
+        val isCacheComplete = totalInDb == effectiveTotal &&
                 effectiveTotal > 0 &&
                 newFromPage1.isEmpty() &&
                 staleFromPage1.isEmpty()
@@ -428,12 +432,19 @@ class AssetRepository @Inject constructor(
         return try {
             if (includeArchived) {
                 coroutineScope {
-                    val timeline = async { api.getSearchStatistics(SearchAssetsRequest(visibility = "timeline")).total }
-                    val archive = async { api.getSearchStatistics(SearchAssetsRequest(visibility = "archive")).total }
+                    val timeline = async {
+                        val resp = api.searchAssets(SearchAssetsRequest(visibility = "timeline", withExif = false, size = 500))
+                        if (resp.assets.nextPage == null) resp.assets.items.size else resp.assets.total
+                    }
+                    val archive = async {
+                        val resp = api.searchAssets(SearchAssetsRequest(visibility = "archive", withExif = false, size = 500))
+                        if (resp.assets.nextPage == null) resp.assets.items.size else resp.assets.total
+                    }
                     timeline.await() + archive.await()
                 }
             } else {
-                api.getSearchStatistics(SearchAssetsRequest(visibility = "timeline")).total
+                val resp = api.searchAssets(SearchAssetsRequest(visibility = "timeline", withExif = false, size = 500))
+                if (resp.assets.nextPage == null) resp.assets.items.size else resp.assets.total
             }
         } catch (_: Exception) {
             0
@@ -444,12 +455,19 @@ class AssetRepository @Inject constructor(
         return try {
             if (includeArchived) {
                 coroutineScope {
-                    val timeline = async { api.getSearchStatistics(SearchAssetsRequest(isNotInAlbum = true, visibility = "timeline")).total }
-                    val archive = async { api.getSearchStatistics(SearchAssetsRequest(isNotInAlbum = true, visibility = "archive")).total }
+                    val timeline = async {
+                        val resp = api.searchAssets(SearchAssetsRequest(isNotInAlbum = true, visibility = "timeline", withExif = false, size = 500))
+                        if (resp.assets.nextPage == null) resp.assets.items.size else resp.assets.total
+                    }
+                    val archive = async {
+                        val resp = api.searchAssets(SearchAssetsRequest(isNotInAlbum = true, visibility = "archive", withExif = false, size = 500))
+                        if (resp.assets.nextPage == null) resp.assets.items.size else resp.assets.total
+                    }
                     timeline.await() + archive.await()
                 }
             } else {
-                api.getSearchStatistics(SearchAssetsRequest(isNotInAlbum = true, visibility = "timeline")).total
+                val resp = api.searchAssets(SearchAssetsRequest(isNotInAlbum = true, visibility = "timeline", withExif = false, size = 500))
+                if (resp.assets.nextPage == null) resp.assets.items.size else resp.assets.total
             }
         } catch (_: Exception) {
             0

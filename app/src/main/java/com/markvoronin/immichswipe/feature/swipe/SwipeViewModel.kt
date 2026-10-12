@@ -51,7 +51,11 @@ class SwipeViewModel @Inject constructor(
     private var currentAlbum: Album? = null
 
     fun initAlbum(album: Album, userQuotaBytes: Long? = null) {
-        if (this.currentAlbum?.id == album.id) return
+        val isSameAlbum = this.currentAlbum?.id == album.id
+        val isSameCount = this.currentAlbum?.assetCount == album.assetCount
+
+        if (isSameAlbum && isSameCount && allAssetsFoundFlow.value.isNotEmpty()) return
+
         this.currentAlbum = album
         _uiState.update {
             it.copy(
