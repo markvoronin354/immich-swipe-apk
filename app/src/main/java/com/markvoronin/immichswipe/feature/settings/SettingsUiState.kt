@@ -54,7 +54,7 @@ data class SettingsUiState(
     val syncLocalDeletion: Boolean = false,
     val trashLocalDeletion: Boolean = true,
     val tapToSwipeEnabled: Boolean = false,
-    val doubleTapEnabled: Boolean = false,
+    val doubleTapEnabled: Boolean = true,
     val doubleTapAction: DoubleTapAction = DoubleTapAction.FULLSCREEN,
     val showActionButtonsDialog: Boolean = false,
     val showInteractionsDialog: Boolean = false,

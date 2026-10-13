@@ -234,7 +234,7 @@ class SessionDataStore(private val context: Context) {
     fun isTapToSwipeEnabled(): Flow<Boolean> = context.dataStore.data.map { it[KEY_TAP_TO_SWIPE] ?: false }
     suspend fun saveTapToSwipeEnabled(enabled: Boolean) { context.dataStore.edit { it[KEY_TAP_TO_SWIPE] = enabled } }
 
-    fun isDoubleTapEnabled(): Flow<Boolean> = context.dataStore.data.map { it[KEY_DOUBLE_TAP_ENABLED] ?: false }
+    fun isDoubleTapEnabled(): Flow<Boolean> = context.dataStore.data.map { it[KEY_DOUBLE_TAP_ENABLED] ?: true }
     suspend fun saveDoubleTapEnabled(enabled: Boolean) { context.dataStore.edit { it[KEY_DOUBLE_TAP_ENABLED] = enabled } }
 
     fun getDoubleTapAction(): Flow<String?> = context.dataStore.data.map { it[KEY_DOUBLE_TAP_ACTION] }

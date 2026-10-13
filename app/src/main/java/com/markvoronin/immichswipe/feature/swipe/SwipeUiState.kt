@@ -73,7 +73,7 @@ data class SwipeUiState(
     val syncLocalDeletion: Boolean = false,
     val trashLocalDeletion: Boolean = true,
     val tapToSwipeEnabled: Boolean = false,
-    val doubleTapEnabled: Boolean = false,
+    val doubleTapEnabled: Boolean = true,
     val doubleTapAction: DoubleTapAction = DoubleTapAction.FULLSCREEN,
     val localDeletePendingIntent: android.app.PendingIntent? = null,
     val userQuotaBytes: Long? = null,
