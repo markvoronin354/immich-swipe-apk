@@ -17,7 +17,7 @@ Ce projet est un fork basé sur le projet original [Minos2020/immich-swipe-andro
 
 |                                         Écran d'accueil                                         |                                     La pile de tri                                      |                                        Mode Revue                                        |
 |:-----------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------:|
-| <img src="metadata/en-US/images/phoneScreenshots/05_Light_home_screen.jpg" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/02_ Light_swipe_screen.jpg" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/04_Light_review_screen.jpg" width="200"> |
+| <img src="metadata/en-US/images/phoneScreenshots/05_Light_home_screen.png" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/02_Light_swipe_screen.png" width="200"> | <img src="metadata/en-US/images/phoneScreenshots/04_Light_review_screen.png" width="200"> |
 |                                     *Parcourez vos albums*                                      |                                  *Swipez pour décider*                                  |                              *Vérifiez avant de supprimer*                               |
 
 ## ✨ Fonctionnalités
