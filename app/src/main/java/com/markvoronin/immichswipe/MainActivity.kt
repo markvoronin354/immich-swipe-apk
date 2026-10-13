@@ -1,8 +1,6 @@
 package com.markvoronin.immichswipe
 
-import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -39,12 +37,6 @@ class MainActivity : ComponentActivity() {
         AppLogger.i("MainActivity", "Application started")
 
         enableEdgeToEdge()
-
-
-        @SuppressLint("SourceLockedOrientationActivity")
-        if (savedInstanceState == null) {
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        }
 
         setContent {
             val appViewModel: AppViewModel = hiltViewModel()

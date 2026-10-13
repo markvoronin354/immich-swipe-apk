@@ -212,7 +212,7 @@ fun FullscreenViewer(
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
         onDispose {
             @SuppressLint("SourceLockedOrientationActivity")
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
 
