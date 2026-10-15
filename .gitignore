@@ -24,11 +24,12 @@ secrets.xml
 *.p12
 
 # --- CONFIGURATION DE L'IDE ---
-# Paramètres spécifiques à Android Studio / IntelliJ (peuvent varier d'un développeur à l'autre)
+# Paramètres spécifiques à Android Studio / IntelliJ / AI Agent (peuvent varier d'un développeur à l'autre)
 *.iml
 *.ipr
 *.iws
 .idea/
+.artifacts/
 
 # --- SYSTÈME D'EXPLOITATION ---
 # Fichiers temporaires créés par macOS

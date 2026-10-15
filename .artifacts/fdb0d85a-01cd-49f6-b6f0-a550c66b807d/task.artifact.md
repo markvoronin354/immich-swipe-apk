@@ -1,5 +1,0 @@
-- [x] Optimize settings flows in `SwipeViewModel.kt` using `combine`
-- [x] Optimize local decision lookup in `SwipeViewModel.kt` using a `Map`
-- [x] Optimize `IndicatorBadge` in `SwipeScreen.kt` (lambda-based alpha)
-- [x] Optimize `SharedVideoPlayer` progress loop in `SwipeScreen.kt`
-- [x] Optimize thumbnail loading in `SwipeScreen.kt` and `HomeScreen.kt`
