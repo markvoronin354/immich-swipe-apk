@@ -60,9 +60,9 @@ To ensure proper functionality while adhering to the **Principle of Least Privil
 
 ## 📦 Installation
 
-|                                                                                                                       **Orion Store**                                                                                                                        |   **Direct Download**   |     **Play Store**     |
-|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------:|:----------------------:|
-| [<img src="https://github.com/RookieEnough/Orion-Store/blob/main/assets/orion-badge.png?raw=true"  alt="Get it on Orion Store" height="50">](https://rookieenough.github.io/Orion-Data/redirect.html?id=immich-swipe-android) | Get the latest APK from the [Releases](https://github.com/markvoronin354/immich-swipe-android/releases) section   | Coming soon, hopefully |
+|                                                                                                                       **Orion Store**                                                                                                                        |   **Direct Download**   |     **Play Store**     |     **F-Droid**     |
+|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------:|:----------------------:|:-------------------:|
+| [<img src="https://github.com/RookieEnough/Orion-Store/blob/main/assets/orion-badge.png?raw=true"  alt="Get it on Orion Store" height="50">](https://rookieenough.github.io/Orion-Data/redirect.html?id=immich-swipe-android) | Get the latest APK from the [Releases](https://github.com/markvoronin354/immich-swipe-android/releases) section   | Coming soon, hopefully | Coming soon |
 
 ## 🛠️ Build
 

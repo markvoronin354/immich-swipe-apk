@@ -60,9 +60,9 @@ Afin d'assurer le bon fonctionnement tout en respectant le **Principe de Moindre
 
 ## 📦 Installation
 
-|                                                                                                                       **Orion Store**                                                                                                                        |   **Téléchargement Direct**   |      **Play Store**      |
-|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------:|:------------------------:|
-| [<img src="https://github.com/RookieEnough/Orion-Store/blob/main/assets/graphics/orion-badge.png?raw=true"  alt="Get it on Orion Store" height="50">](https://rookieenough.github.io/Orion-Data/redirect.html?id=immich-swipe-android) | Récupérez le dernier APK dans la section [Releases](https://github.com/markvoronin354/immich-swipe-android/releases)   | Prochainement disponible |
+|                                                                                                                       **Orion Store**                                                                                                                        |   **Téléchargement Direct**   |      **Play Store**      |     **F-Droid**     |
+|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------:|:------------------------:|:-------------------:|
+| [<img src="https://github.com/RookieEnough/Orion-Store/blob/main/assets/graphics/orion-badge.png?raw=true"  alt="Get it on Orion Store" height="50">](https://rookieenough.github.io/Orion-Data/redirect.html?id=immich-swipe-android) | Récupérez le dernier APK dans la section [Releases](https://github.com/markvoronin354/immich-swipe-android/releases)   | Prochainement disponible | Prochainement disponible |
 
 ## 🛠️ Build
 
