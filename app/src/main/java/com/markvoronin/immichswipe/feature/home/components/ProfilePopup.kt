@@ -2,6 +2,7 @@ package com.markvoronin.immichswipe.feature.home.components
 
 import android.content.Intent
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -48,7 +49,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
@@ -67,6 +70,7 @@ import com.markvoronin.immichswipe.core.ConnectionStatus
 import com.markvoronin.immichswipe.data.local.entity.UserAccountEntity
 import com.markvoronin.immichswipe.domain.model.User
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
+import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 
 @Composable
 fun ProfilePopup(
@@ -165,6 +169,91 @@ fun ProfilePopup(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.outline
                 )
+
+                val quotaUsage = user?.quotaUsageInBytes
+                if (quotaUsage != null) {
+                    Spacer(Modifier.height(16.dp))
+
+                    val quotaSize = user.quotaSizeInBytes
+                    val usageStr = formatSize(quotaUsage)
+                    val quotaStr = if (quotaSize != null && quotaSize > 0L) {
+                        formatSize(quotaSize)
+                    } else {
+                        stringResource(R.string.profile_storage_unlimited)
+                    }
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.profile_storage_usage),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                            Text(
+                                text = "$usageStr / $quotaStr",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        if (quotaSize != null && quotaSize > 0L) {
+                            Spacer(Modifier.height(8.dp))
+                            val progress = (quotaUsage.toFloat() / quotaSize.toFloat()).coerceIn(0f, 1f)
+                            val barColor = MaterialTheme.colorScheme.primary
+                            val trackColor = barColor.copy(alpha = 0.2f)
+
+                            Canvas(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(10.dp)
+                            ) {
+                                val barHeight = 6.dp.toPx()
+                                val dotRadius = 3.dp.toPx()
+                                val yCenter = size.height / 2f
+                                val endX = size.width - dotRadius
+                                val trackWidth = endX - dotRadius
+
+                                drawLine(
+                                    color = trackColor,
+                                    start = Offset(dotRadius, yCenter),
+                                    end = Offset(endX, yCenter),
+                                    strokeWidth = barHeight,
+                                    cap = StrokeCap.Round
+                                )
+
+                                val progressX = dotRadius + trackWidth * progress
+                                if (progress > 0f) {
+                                    drawLine(
+                                        color = barColor,
+                                        start = Offset(dotRadius, yCenter),
+                                        end = Offset(progressX, yCenter),
+                                        strokeWidth = barHeight,
+                                        cap = StrokeCap.Round
+                                    )
+                                }
+
+                                drawCircle(
+                                    color = barColor,
+                                    radius = dotRadius,
+                                    center = Offset(dotRadius, yCenter)
+                                )
+
+                                drawCircle(
+                                    color = barColor,
+                                    radius = dotRadius,
+                                    center = Offset(endX, yCenter)
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Spacer(Modifier.height(20.dp))
 
