@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -45,6 +46,7 @@ fun InstagramZoomOverlay(
     rootWindowOffset: Offset,
     baseUrl: String = "",
     apiKey: String = "",
+    isFavorite: Boolean = false,
     onDismiss: () -> Unit
 ) {
     if (zoomData == null) return
@@ -152,6 +154,24 @@ fun InstagramZoomOverlay(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
+
+            if (isFavorite) {
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = "Favorite",
+                    tint = Color.Red,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp)
+                        .graphicsLayer {
+                            scaleX = inverseScale
+                            scaleY = inverseScale
+                            transformOrigin = TransformOrigin(0f, 0f)
+                            alpha = badgeAlpha
+                        }
+                        .size(20.dp)
+                )
+            }
 
             if (decision != DuplicateDecision.NONE) {
                 Box(

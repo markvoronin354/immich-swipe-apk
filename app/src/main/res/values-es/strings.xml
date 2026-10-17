@@ -54,6 +54,8 @@
 
     <!-- Ventana de perfil y diagnóstico -->
     <string name="profile_connected_label">Conectado al servidor Immich</string>
+    <string name="profile_storage_usage">Uso de almacenamiento</string>
+    <string name="profile_storage_unlimited">Ilimitado</string>
     <string name="profile_logout_button">Cerrar sesión</string>
     <string name="profile_logout_confirm_title">Cerrar sesión</string>
     <string name="profile_logout_confirm_msg">¿Seguro que quieres cerrar sesión en esta cuenta?</string>
@@ -215,11 +217,17 @@
     <string name="duplicates_select_button">Seleccionar</string>
     <string name="duplicates_keep_largest">Conservar más grandes</string>
     <string name="duplicates_keep_smallest">Conservar más pequeños</string>
+    <string name="duplicates_best_shot_auto">Mejores fotos (Auto)</string>
+    <string name="duplicates_best_shot_single">Mejor foto (Única)</string>
+    <string name="duplicates_best_shot_top_2">Mejores fotos (Top 2)</string>
+    <string name="duplicates_best_shot_top_3">Mejores fotos (Top 3)</string>
     <plurals name="duplicates_groups_count">
         <item quantity="one">%1$d grupo</item>
         <item quantity="many">%1$d grupos</item>
         <item quantity="other">%1$d grupos</item>
     </plurals>
+    <string name="duplicates_ai_analyzing">Analizando la mejor toma…</string>
+    <string name="duplicates_ai_cluster_progress">Grupo %1$d de %2$d</string>
 
     <!-- Estadísticas -->
     <string name="stats_popup_title">Estadísticas de uso</string>

@@ -54,6 +54,8 @@
 
     <!-- Profile Popup & Diag -->
     <string name="profile_connected_label">Connected to Immich server</string>
+    <string name="profile_storage_usage">Storage usage</string>
+    <string name="profile_storage_unlimited">Unlimited</string>
     <string name="profile_logout_button">Logout</string>
     <string name="profile_logout_confirm_title">Logout</string>
     <string name="profile_logout_confirm_msg">Are you sure you want to log out of this account?</string>
@@ -216,10 +218,16 @@
     <string name="duplicates_select_button">Select</string>
     <string name="duplicates_keep_largest">Keep largest</string>
     <string name="duplicates_keep_smallest">Keep smallest</string>
+    <string name="duplicates_best_shot_auto">Best Shots (Auto)</string>
+    <string name="duplicates_best_shot_single">Best Shot (Single)</string>
+    <string name="duplicates_best_shot_top_2">Best Shots (Top 2)</string>
+    <string name="duplicates_best_shot_top_3">Best Shots (Top 3)</string>
     <plurals name="duplicates_groups_count">
         <item quantity="one">%1$d group</item>
         <item quantity="other">%1$d groups</item>
     </plurals>
+    <string name="duplicates_ai_analyzing">Analyzing Best Shot…</string>
+    <string name="duplicates_ai_cluster_progress">Group %1$d of %2$d</string>
 
     <!-- Statistics -->
     <string name="stats_popup_title">Usage Statistics</string>

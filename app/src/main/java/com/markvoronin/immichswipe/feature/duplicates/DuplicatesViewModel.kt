@@ -31,7 +31,8 @@ import javax.inject.Inject
 class DuplicatesViewModel @Inject constructor(
     private val swipeDecisionRepository: SwipeDecisionRepository,
     private val sessionRepository: SessionRepository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val bestShotAnalyzer: BestShotAnalyzer
 ) : ViewModel() {
 
     private val api: ImmichApi
@@ -248,9 +249,30 @@ class DuplicatesViewModel @Inject constructor(
             val newFav = !currentFav
 
             _uiState.update { state ->
+                val newFavorites = state.favorites.toMutableMap().apply { put(asset.id, newFav) }
+                val newDecisions = state.decisions.toMutableMap()
+                
+                if (newFav) {
+                    newDecisions[asset.id] = DuplicateDecision.KEEP
+                }
+                
                 state.copy(
-                    favorites = state.favorites.toMutableMap().apply { put(asset.id, newFav) }
+                    favorites = newFavorites,
+                    decisions = newDecisions
                 )
+            }
+            
+            if (newFav) {
+                val userId = sessionManager.getUserId()
+                if (userId != null) {
+                    swipeDecisionRepository.saveDecision(
+                        assetId = asset.id,
+                        albumId = Album.VIRTUAL_DUPLICATES_ID,
+                        userId = userId,
+                        decision = "KEEP",
+                        fileSize = asset.exifInfo?.fileSizeInBytes
+                    )
+                }
             }
 
             try {
@@ -346,19 +368,27 @@ class DuplicatesViewModel @Inject constructor(
     fun autoSelect(keepLargest: Boolean) {
         val newDecisions = _uiState.value.decisions.toMutableMap()
         _uiState.value.clusters.forEach { cluster ->
+            val photosOnly = cluster.assets.filter { !it.type.equals("VIDEO", ignoreCase = true) }
             val sorted = if (keepLargest) {
-                cluster.assets.sortedWith(
+                photosOnly.sortedWith(
                     compareByDescending<Asset> { it.exifInfo?.fileSizeInBytes ?: 0L }
                         .thenByDescending { (it.exifInfo?.imageWidth ?: 0) * (it.exifInfo?.imageHeight ?: 0) }
                 )
             } else {
                 // Items with 0L size (unknown) should probably go to the bottom of "smallest"
-                cluster.assets.sortedWith(compareBy<Asset> { if ((it.exifInfo?.fileSizeInBytes ?: 0L) == 0L) Long.MAX_VALUE else it.exifInfo!!.fileSizeInBytes }.thenBy { it.fileCreatedAt })
+                photosOnly.sortedWith(compareBy<Asset> { if ((it.exifInfo?.fileSizeInBytes ?: 0L) == 0L) Long.MAX_VALUE else it.exifInfo!!.fileSizeInBytes }.thenBy { it.fileCreatedAt })
             }
             
             val toKeep = sorted.firstOrNull()
             cluster.assets.forEach { asset ->
-                newDecisions[asset.id] = if (asset.id == toKeep?.id) DuplicateDecision.KEEP else DuplicateDecision.DELETE
+                if (asset.type.equals("VIDEO", ignoreCase = true)) {
+                    return@forEach // Skip videos, don't mark as KEEP or DELETE
+                }
+                if (_uiState.value.isFavorite(asset)) {
+                    newDecisions[asset.id] = DuplicateDecision.KEEP
+                } else if (toKeep != null) {
+                    newDecisions[asset.id] = if (asset.id == toKeep.id) DuplicateDecision.KEEP else DuplicateDecision.DELETE
+                }
             }
         }
         val mode = if (keepLargest) AutoSelectMode.KEEP_LARGEST else AutoSelectMode.KEEP_SMALLEST
@@ -372,6 +402,74 @@ class DuplicatesViewModel @Inject constructor(
         viewModelScope.launch {
             val userId = sessionManager.getUserId() ?: return@launch
             val allAssetsMap = _uiState.value.clusters.flatMap { it.assets }.associateBy { it.id }
+            val entitiesToSave = newDecisions.mapNotNull { (assetId, decision) ->
+                if (decision == DuplicateDecision.NONE) null
+                else {
+                    val asset = allAssetsMap[assetId]
+                    SwipeDecisionEntity(
+                        assetId = assetId,
+                        albumId = Album.VIRTUAL_DUPLICATES_ID,
+                        userId = userId,
+                        decision = decision.name,
+                        fileSize = asset?.exifInfo?.fileSizeInBytes,
+                        createdAt = System.currentTimeMillis()
+                    )
+                }
+            }
+            if (entitiesToSave.isNotEmpty()) {
+                swipeDecisionRepository.saveDecisions(entitiesToSave)
+            }
+        }
+    }
+
+    fun autoSelectBestShot(mode: BestShotAnalyzer.BestShotMode = BestShotAnalyzer.BestShotMode.AUTO) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isAnalyzingAi = true) }
+            val clusters = _uiState.value.clusters
+            val newDecisions = _uiState.value.decisions.toMutableMap()
+
+            clusters.forEachIndexed { index, cluster ->
+                _uiState.update { it.copy(aiProgress = index + 1 to clusters.size) }
+                
+                val photosOnly = cluster.assets.filter { !it.type.equals("VIDEO", ignoreCase = true) }
+                val scores = bestShotAnalyzer.analyzeCluster(
+                    photosOnly, 
+                    _uiState.value.baseUrl, 
+                    _uiState.value.apiKey
+                )
+
+                val keptAssetIds = bestShotAnalyzer.selectKeptAssetIds(scores, mode)
+
+                cluster.assets.forEach { asset ->
+                    if (asset.type.equals("VIDEO", ignoreCase = true)) {
+                        return@forEach // Skip videos, don't mark as KEEP or DELETE
+                    }
+                    if (_uiState.value.isFavorite(asset)) {
+                        newDecisions[asset.id] = DuplicateDecision.KEEP
+                    } else if (keptAssetIds.isNotEmpty()) {
+                        newDecisions[asset.id] = if (asset.id in keptAssetIds) DuplicateDecision.KEEP else DuplicateDecision.DELETE
+                    }
+                }
+            }
+
+            val autoSelectMode = when (mode) {
+                BestShotAnalyzer.BestShotMode.SINGLE_BEST -> AutoSelectMode.KEEP_BEST_SHOT_SINGLE
+                BestShotAnalyzer.BestShotMode.AUTO -> AutoSelectMode.KEEP_BEST_SHOT_AUTO
+                BestShotAnalyzer.BestShotMode.TOP_2 -> AutoSelectMode.KEEP_BEST_SHOT_TOP_2
+                BestShotAnalyzer.BestShotMode.TOP_3 -> AutoSelectMode.KEEP_BEST_SHOT_TOP_3
+            }
+
+            _uiState.update { 
+                it.copy(
+                    decisions = newDecisions,
+                    selectedAutoSelectMode = autoSelectMode,
+                    isAnalyzingAi = false,
+                    aiProgress = null
+                )
+            }
+
+            val userId = sessionManager.getUserId() ?: return@launch
+            val allAssetsMap = clusters.flatMap { it.assets }.associateBy { it.id }
             val entitiesToSave = newDecisions.mapNotNull { (assetId, decision) ->
                 if (decision == DuplicateDecision.NONE) null
                 else {

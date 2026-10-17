@@ -114,6 +114,7 @@ fun FullScreenPreviewModal(
     apiKey: String = "",
     onDecisionToggle: (String) -> Unit,
     onFavoriteToggle: (Asset) -> Unit,
+    onClusterChanged: (Int) -> Unit = {},
     onDismiss: () -> Unit
 ) {
     if (previewData == null) return
@@ -123,6 +124,11 @@ fun FullScreenPreviewModal(
     }
     var currentClusterIdx by remember(previewData) {
         mutableIntStateOf(previewData.clusterIndex.coerceIn(0, clusters.size - 1))
+    }
+
+    val currentOnClusterChanged by rememberUpdatedState(onClusterChanged)
+    LaunchedEffect(currentClusterIdx) {
+        currentOnClusterChanged(currentClusterIdx)
     }
 
     val currentCluster = clusters.getOrNull(currentClusterIdx) ?: previewData.cluster
@@ -606,10 +612,18 @@ fun FullScreenPreviewModal(
                                         dismissOffsetY = 0f
                                     }
                                 } else if (isDraggingHorizontal) {
-                                    if (totalDragX < -100f && selectedIndex < assets.size - 1) {
-                                        selectedIndex++
-                                    } else if (totalDragX > 100f && selectedIndex > 0) {
-                                        selectedIndex--
+                                    if (totalDragX < -100f) {
+                                        if (selectedIndex < assets.size - 1) {
+                                            selectedIndex++
+                                        } else if (currentClusterIdx < clusters.size - 1) {
+                                            currentClusterIdx++
+                                        }
+                                    } else if (totalDragX > 100f) {
+                                        if (selectedIndex > 0) {
+                                            selectedIndex--
+                                        } else if (currentClusterIdx > 0) {
+                                            currentClusterIdx--
+                                        }
                                     }
                                 }
                             }
@@ -824,29 +838,33 @@ fun FullScreenPreviewModal(
                                     }
                                 }
 
-                                if (assetFav) {
-                                    Icon(
-                                        imageVector = Icons.Default.Favorite,
-                                        contentDescription = null,
-                                        tint = Color.Red,
-                                        modifier = Modifier
-                                            .align(Alignment.BottomStart)
-                                            .padding(2.dp)
-                                            .size(12.dp)
-                                    )
-                                }
-
-                                if (asset.type == "VIDEO") {
-                                    Icon(
-                                        imageVector = Icons.Default.PlayArrow,
-                                        contentDescription = "Video",
-                                        tint = Color.White,
+                                if (assetFav || asset.type == "VIDEO") {
+                                    Row(
                                         modifier = Modifier
                                             .align(Alignment.TopStart)
-                                            .padding(2.dp)
-                                            .size(12.dp)
-                                            .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                                    )
+                                            .padding(2.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        if (assetFav) {
+                                            Icon(
+                                                imageVector = Icons.Default.Favorite,
+                                                contentDescription = null,
+                                                tint = Color.Red,
+                                                modifier = Modifier.size(12.dp)
+                                            )
+                                        }
+                                        if (asset.type == "VIDEO") {
+                                            Icon(
+                                                imageVector = Icons.Default.PlayArrow,
+                                                contentDescription = "Video",
+                                                tint = Color.White,
+                                                modifier = Modifier
+                                                    .size(12.dp)
+                                                    .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                                            )
+                                        }
+                                    }
                                 }
 
                                 val thumbSizeStr = asset.exifInfo?.fileSizeInBytes?.let { formatSizeStr(it) }

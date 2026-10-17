@@ -33,7 +33,7 @@ android {
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
         debug {
@@ -64,7 +64,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     testImplementation(libs.junit)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
@@ -90,7 +89,6 @@ dependencies {
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-    // debugImplementation(libs.leakcanary)
     ksp(libs.room.compiler)
 
     // Navigation 3
@@ -110,4 +108,7 @@ dependencies {
     // Use BaselineProfileGenerator in androidTest to update baseline-prof.txt.
     androidTestImplementation(libs.benchmark.macro.junit4)
     androidTestImplementation(libs.uiautomator)
+
+    // ML for "Best Shot" feature (FOSS-friendly)
+    implementation(libs.mediapipe.tasks.vision)
 }

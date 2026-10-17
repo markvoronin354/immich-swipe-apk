@@ -13,7 +13,9 @@ data class DuplicatesUiState(
     val baseUrl: String = "",
     val apiKey: String = "",
     val error: String? = null,
-    val hasCompletedDuplicatesTutorial: Boolean = true
+    val hasCompletedDuplicatesTutorial: Boolean = true,
+    val isAnalyzingAi: Boolean = false,
+    val aiProgress: Pair<Int, Int>? = null
 ) {
     fun isFavorite(asset: Asset): Boolean {
         return favorites[asset.id] ?: asset.isFavorite
@@ -28,7 +30,11 @@ data class DuplicateClusterUiModel(
 
 enum class AutoSelectMode {
     KEEP_LARGEST,
-    KEEP_SMALLEST
+    KEEP_SMALLEST,
+    KEEP_BEST_SHOT_AUTO,
+    KEEP_BEST_SHOT_SINGLE,
+    KEEP_BEST_SHOT_TOP_2,
+    KEEP_BEST_SHOT_TOP_3
 }
 
 enum class DuplicateDecision {

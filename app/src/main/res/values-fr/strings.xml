@@ -55,6 +55,8 @@
 
     <!-- Popup Profil & Diagnostic -->
     <string name="profile_connected_label">Connecté au serveur Immich</string>
+    <string name="profile_storage_usage">Utilisation du stockage</string>
+    <string name="profile_storage_unlimited">Illimité</string>
     <string name="profile_logout_button">Se déconnecter</string>
     <string name="profile_logout_confirm_title">Déconnexion</string>
     <string name="profile_logout_confirm_msg">Voulez-vous vraiment vous déconnecter de ce compte ?</string>
@@ -216,11 +218,17 @@
     <string name="duplicates_select_button">Sélectionner</string>
     <string name="duplicates_keep_largest">Garder les plus grands</string>
     <string name="duplicates_keep_smallest">Garder les plus petits</string>
+    <string name="duplicates_best_shot_auto">Meilleures photos (Auto)</string>
+    <string name="duplicates_best_shot_single">Meilleure photo (Unique)</string>
+    <string name="duplicates_best_shot_top_2">Meilleures photos (Top 2)</string>
+    <string name="duplicates_best_shot_top_3">Meilleures photos (Top 3)</string>
     <plurals name="duplicates_groups_count">
         <item quantity="one">%1$d groupe</item>
         <item quantity="many">%1$d groupes</item>
         <item quantity="other">%1$d groupes</item>
     </plurals>
+    <string name="duplicates_ai_analyzing">Analyse de la meilleure photo…</string>
+    <string name="duplicates_ai_cluster_progress">Groupe %1$d sur %2$d</string>
 
     <!-- Statistiques -->
     <string name="stats_popup_title">Statistiques d\'usage</string>

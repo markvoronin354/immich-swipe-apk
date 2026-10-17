@@ -1,8 +1,8 @@
 package com.markvoronin.immichswipe.feature.duplicates
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteForever
@@ -35,17 +36,21 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,6 +78,7 @@ import com.markvoronin.immichswipe.feature.tutorial.rememberTutorialController
 import com.markvoronin.immichswipe.feature.tutorial.tutorialTarget
 import com.markvoronin.immichswipe.ui.theme.VirtualGold
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 
 @Composable
 fun DuplicatesScreen(
@@ -83,6 +89,9 @@ fun DuplicatesScreen(
     val uiState by viewModel.uiState.collectAsState()
     var activeZoomData by remember { mutableStateOf<ZoomData?>(null) }
     var fullScreenPreviewData by remember { mutableStateOf<FullScreenPreviewData?>(null) }
+    var activeClusterIndex by remember { mutableIntStateOf(0) }
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
     var rootWindowOffset by remember { mutableStateOf(Offset.Zero) }
     var showResetDialog by remember { mutableStateOf(false) }
 
@@ -200,15 +209,21 @@ fun DuplicatesScreen(
                             val selectButtonText = when (uiState.selectedAutoSelectMode) {
                                 AutoSelectMode.KEEP_LARGEST -> stringResource(R.string.duplicates_keep_largest)
                                 AutoSelectMode.KEEP_SMALLEST -> stringResource(R.string.duplicates_keep_smallest)
+                                AutoSelectMode.KEEP_BEST_SHOT_AUTO -> stringResource(R.string.duplicates_best_shot_auto)
+                                AutoSelectMode.KEEP_BEST_SHOT_SINGLE -> stringResource(R.string.duplicates_best_shot_single)
+                                AutoSelectMode.KEEP_BEST_SHOT_TOP_2 -> stringResource(R.string.duplicates_best_shot_top_2)
+                                AutoSelectMode.KEEP_BEST_SHOT_TOP_3 -> stringResource(R.string.duplicates_best_shot_top_3)
                                 null -> stringResource(R.string.duplicates_select_button)
                             }
 
                             Box {
                                 Surface(
                                     onClick = { selectMenuExpanded = true },
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    shape = RoundedCornerShape(16.dp)
+                                    color = MaterialTheme.colorScheme.surface,
+                                    contentColor = MaterialTheme.colorScheme.onSurface,
+                                    shape = RoundedCornerShape(16.dp),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                    tonalElevation = 2.dp
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -230,7 +245,12 @@ fun DuplicatesScreen(
 
                                 DropdownMenu(
                                     expanded = selectMenuExpanded,
-                                    onDismissRequest = { selectMenuExpanded = false }
+                                    onDismissRequest = { selectMenuExpanded = false },
+                                    shape = RoundedCornerShape(20.dp),
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    tonalElevation = 3.dp,
+                                    shadowElevation = 8.dp,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                                 ) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.duplicates_keep_largest)) },
@@ -278,16 +298,109 @@ fun DuplicatesScreen(
                                             viewModel.autoSelect(keepLargest = false)
                                         }
                                     )
+                                    HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.duplicates_best_shot_auto)) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Default.AutoAwesome,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        },
+                                        trailingIcon = if (uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_BEST_SHOT_AUTO) {
+                                            {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        } else null,
+                                        onClick = {
+                                            selectMenuExpanded = false
+                                            viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.AUTO)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.duplicates_best_shot_single)) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Default.AutoAwesome,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        },
+                                        trailingIcon = if (uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_BEST_SHOT_SINGLE) {
+                                            {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        } else null,
+                                        onClick = {
+                                            selectMenuExpanded = false
+                                            viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.SINGLE_BEST)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.duplicates_best_shot_top_2)) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Default.AutoAwesome,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        },
+                                        trailingIcon = if (uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_BEST_SHOT_TOP_2) {
+                                            {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        } else null,
+                                        onClick = {
+                                            selectMenuExpanded = false
+                                            viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.TOP_2)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.duplicates_best_shot_top_3)) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Default.AutoAwesome,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        },
+                                        trailingIcon = if (uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_BEST_SHOT_TOP_3) {
+                                            {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        } else null,
+                                        onClick = {
+                                            selectMenuExpanded = false
+                                            viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.TOP_3)
+                                        }
+                                    )
                                 }
                             }
 
                             val containerColor by animateColorAsState(
-                                targetValue = if (deleteCount > 0) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                targetValue = if (deleteCount > 0) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surface,
                                 animationSpec = tween(durationMillis = 200),
                                 label = "DeleteButtonContainerColor"
                             )
                             val contentColor by animateColorAsState(
-                                targetValue = if (deleteCount > 0) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.outline,
+                                targetValue = if (deleteCount > 0) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurface,
                                 animationSpec = tween(durationMillis = 200),
                                 label = "DeleteButtonContentColor"
                             )
@@ -301,7 +414,12 @@ fun DuplicatesScreen(
                                     enabled = deleteCount > 0,
                                     color = containerColor,
                                     contentColor = contentColor,
-                                    shape = RoundedCornerShape(16.dp)
+                                    shape = RoundedCornerShape(16.dp),
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (deleteCount > 0) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant
+                                    ),
+                                    tonalElevation = 2.dp
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
@@ -328,8 +446,6 @@ fun DuplicatesScreen(
                         }
                     }
 
-                    val listState = rememberLazyListState()
-
                     LazyColumn(
                         state = listState,
                         modifier = Modifier
@@ -349,6 +465,7 @@ fun DuplicatesScreen(
                                 DuplicateClusterCard(
                                     cluster = cluster,
                                     decisions = uiState.decisions,
+                                    isFavorite = { uiState.isFavorite(it) },
                                     activeZoomAssetId = activeZoomData?.asset?.id,
                                     baseUrl = uiState.baseUrl,
                                     apiKey = uiState.apiKey,
@@ -359,6 +476,7 @@ fun DuplicatesScreen(
                                     onAssetLongPress = { clickedAsset ->
                                         val clusterIdx = uiState.clusters.indexOfFirst { it.clusterId == cluster.clusterId }.coerceAtLeast(0)
                                         val initialIdx = cluster.assets.indexOfFirst { it.id == clickedAsset.id }.coerceAtLeast(0)
+                                        activeClusterIndex = clusterIdx
                                         fullScreenPreviewData = FullScreenPreviewData(
                                             cluster = cluster,
                                             initialIndex = initialIdx,
@@ -368,6 +486,7 @@ fun DuplicatesScreen(
                                     },
                                     onOpenFullScreen = {
                                         val clusterIdx = uiState.clusters.indexOfFirst { it.clusterId == cluster.clusterId }.coerceAtLeast(0)
+                                        activeClusterIndex = clusterIdx
                                         fullScreenPreviewData = FullScreenPreviewData(
                                             cluster = cluster,
                                             initialIndex = 0,
@@ -388,6 +507,7 @@ fun DuplicatesScreen(
             InstagramZoomOverlay(
                 zoomData = activeZoomData,
                 decision = activeZoomData?.let { uiState.decisions[it.asset.id] ?: DuplicateDecision.NONE } ?: DuplicateDecision.NONE,
+                isFavorite = activeZoomData?.let { uiState.isFavorite(it.asset) } ?: false,
                 rootWindowOffset = rootWindowOffset,
                 baseUrl = uiState.baseUrl,
                 apiKey = uiState.apiKey,
@@ -402,7 +522,34 @@ fun DuplicatesScreen(
                 apiKey = uiState.apiKey,
                 onDecisionToggle = { assetId -> viewModel.toggleDecision(assetId) },
                 onFavoriteToggle = { asset -> viewModel.toggleFavorite(asset) },
-                onDismiss = { fullScreenPreviewData = null }
+                onClusterChanged = { index ->
+                    activeClusterIndex = index
+                },
+                onDismiss = {
+                    fullScreenPreviewData = null
+                    coroutineScope.launch {
+                        val targetIndex = activeClusterIndex.coerceIn(0, (uiState.clusters.size - 1).coerceAtLeast(0))
+                        if (targetIndex in uiState.clusters.indices) {
+                            val visibleItem = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == targetIndex }
+                            val viewportHeight = listState.layoutInfo.viewportSize.height - listState.layoutInfo.beforeContentPadding - listState.layoutInfo.afterContentPadding
+
+                            if (visibleItem != null && viewportHeight > 0) {
+                                val itemHeight = visibleItem.size
+                                val targetOffset = -((viewportHeight - itemHeight) / 2)
+                                listState.animateScrollToItem(targetIndex, targetOffset)
+                            } else {
+                                listState.scrollToItem(targetIndex, 0)
+                                val item = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == targetIndex }
+                                val vHeight = listState.layoutInfo.viewportSize.height - listState.layoutInfo.beforeContentPadding - listState.layoutInfo.afterContentPadding
+                                val itemHeight = item?.size ?: 0
+                                if (vHeight > 0 && itemHeight > 0) {
+                                    val targetOffset = -((vHeight - itemHeight) / 2)
+                                    listState.scrollToItem(targetIndex, targetOffset)
+                                }
+                            }
+                        }
+                    }
+                }
             )
 
             if (showResetDialog) {
@@ -501,6 +648,40 @@ fun DuplicatesScreen(
                                 text = stringResource(R.string.swipe_syncing),
                                 style = MaterialTheme.typography.bodyLarge
                             )
+                        }
+                    }
+                }
+            }
+
+            if (uiState.isAnalyzingAi) {
+                Dialog(onDismissRequest = {}) {
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 6.dp
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            CircularProgressIndicator()
+                            Text(
+                                text = stringResource(R.string.duplicates_ai_analyzing),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            val progress = uiState.aiProgress
+                            if (progress != null) {
+                                Text(
+                                    text = stringResource(
+                                        R.string.duplicates_ai_cluster_progress,
+                                        progress.first,
+                                        progress.second
+                                    ),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }

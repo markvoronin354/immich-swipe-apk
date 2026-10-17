@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.BrokenImage
 import androidx.compose.material3.Icon
@@ -63,6 +64,7 @@ fun DuplicateAssetItem(
     modifier: Modifier = Modifier,
     baseUrl: String = "",
     apiKey: String = "",
+    isFavorite: Boolean = false,
 ) {
     val context = LocalContext.current
     val baseUrlClean = baseUrl.removeSuffix("/")
@@ -229,6 +231,18 @@ fun DuplicateAssetItem(
                     }
                 }
             )
+
+            if (isFavorite) {
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = "Favorite",
+                    tint = Color.Red,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp)
+                        .size(20.dp)
+                )
+            }
 
             if (asset.type == "VIDEO") {
                 Box(

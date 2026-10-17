@@ -47,6 +47,7 @@ fun DuplicateClusterCard(
     onDeleteAll: () -> Unit = {},
     onAssetLongPress: (Asset) -> Unit,
     onZoomStateUpdate: (ZoomData?) -> Unit,
+    isFavorite: (Asset) -> Boolean = { it.isFavorite },
     onOpenFullScreen: () -> Unit = {
         cluster.assets.firstOrNull()?.let { onAssetLongPress(it) }
     }
@@ -170,6 +171,7 @@ fun DuplicateClusterCard(
                         DuplicateAssetItem(
                             asset = asset,
                             decision = decision,
+                            isFavorite = isFavorite(asset),
                             isBeingZoomed = isBeingZoomed,
                             baseUrl = baseUrl,
                             apiKey = apiKey,
@@ -193,6 +195,7 @@ fun DuplicateClusterCard(
                         DuplicateAssetItem(
                             asset = asset,
                             decision = decision,
+                            isFavorite = isFavorite(asset),
                             isBeingZoomed = isBeingZoomed,
                             baseUrl = baseUrl,
                             apiKey = apiKey,
