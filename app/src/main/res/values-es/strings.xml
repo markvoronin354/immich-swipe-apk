@@ -338,4 +338,29 @@
 
     <string name="duplicates_keep_all">Conservar todo</string>
     <string name="duplicates_delete_all">Eliminar todo</string>
+
+    <!-- Reminder -->
+    <string name="settings_section_reminder">Recordatorio</string>
+    <string name="settings_reminder_label">Recordatorio de ordenación</string>
+    <string name="settings_reminder_desc">Recibe una notificación para recordarte ordenar tus fotos. Desactivado por defecto.</string>
+    <string name="settings_reminder_interval_label">Frecuencia</string>
+    <string name="settings_reminder_often">A menudo</string>
+    <string name="settings_reminder_often_hint">Aproximadamente cada 1–2 semanas, a intervalos aleatorios</string>
+    <string name="settings_reminder_rarely">Pocas veces</string>
+    <string name="settings_reminder_rarely_hint">Aproximadamente cada 3–5 semanas, a intervalos aleatorios</string>
+    <string name="settings_reminder_custom">Personalizado</string>
+    <string name="settings_reminder_custom_hint">Aproximadamente cada %1$d–%2$d días, a intervalos aleatorios</string>
+    <string name="settings_reminder_custom_dialog_title">Frecuencia personalizada</string>
+    <string name="settings_reminder_custom_min_label">Días mínimos</string>
+    <string name="settings_reminder_custom_max_label">Días máximos</string>
+    <string name="settings_reminder_custom_configure">Configurar rango (%1$d–%2$d días)</string>
+    <string name="settings_reminder_permission_denied">Permiso de notificaciones denegado. El recordatorio sigue desactivado.</string>
+    <string name="reminder_notification_title">¡Hora de ordenar!</string>
+    <string name="reminder_notification_text">Ordena unas cuantas fotos en Immich Swipe.</string>
+    <plurals name="reminder_notification_text_count">
+        <item quantity="one">Aún queda %1$s foto por ordenar.</item>
+        <item quantity="many">Aún quedan %1$s de fotos por ordenar.</item>
+        <item quantity="other">Aún quedan %1$s fotos por ordenar.</item>
+    </plurals>
+    <string name="reminder_channel_name">Recordatorio de ordenación</string>
 </resources>

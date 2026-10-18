@@ -9,8 +9,10 @@ import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichOpenMode
 import com.markvoronin.immichswipe.core.PlaybackBehavior
+import com.markvoronin.immichswipe.core.ReminderInterval
 import com.markvoronin.immichswipe.core.SessionManager
 import com.markvoronin.immichswipe.core.cache.CacheManager
+import com.markvoronin.immichswipe.core.reminder.ReminderScheduler
 import com.markvoronin.immichswipe.data.local.model.DatabaseExport
 import com.markvoronin.immichswipe.data.repository.AccountRepository
 import com.markvoronin.immichswipe.data.repository.SessionRepository
@@ -32,7 +34,8 @@ class SettingsViewModel @Inject constructor(
     private val swipeDecisionRepository: SwipeDecisionRepository,
     private val userRepository: UserRepository,
     private val sessionManager: SessionManager,
-    private val accountRepository: AccountRepository
+    private val accountRepository: AccountRepository,
+    private val reminderScheduler: ReminderScheduler
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -223,6 +226,26 @@ class SettingsViewModel @Inject constructor(
                 _uiState.update { it.copy(doubleTapAction = action) }
             }
         }
+        viewModelScope.launch {
+            sessionRepository.reminderEnabled.collect { enabled ->
+                _uiState.update { it.copy(reminderEnabled = enabled) }
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.reminderInterval.collect { interval ->
+                _uiState.update { it.copy(reminderInterval = interval) }
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.reminderCustomMinDays.collect { min ->
+                _uiState.update { it.copy(reminderCustomMinDays = min) }
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.reminderCustomMaxDays.collect { max ->
+                _uiState.update { it.copy(reminderCustomMaxDays = max) }
+            }
+        }
     }
 
     fun setPlaybackBehavior(behavior: PlaybackBehavior) {
@@ -384,14 +407,64 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setReminderEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            sessionRepository.saveReminderEnabled(enabled)
+            if (enabled) {
+                reminderScheduler.schedule(
+                    _uiState.value.reminderInterval,
+                    customMinDays = _uiState.value.reminderCustomMinDays,
+                    customMaxDays = _uiState.value.reminderCustomMaxDays
+                )
+            } else {
+                reminderScheduler.cancel()
+            }
+        }
+    }
+
+    fun setReminderInterval(interval: ReminderInterval) {
+        viewModelScope.launch {
+            sessionRepository.saveReminderInterval(interval)
+            if (_uiState.value.reminderEnabled) {
+                reminderScheduler.schedule(
+                    interval,
+                    customMinDays = _uiState.value.reminderCustomMinDays,
+                    customMaxDays = _uiState.value.reminderCustomMaxDays
+                )
+            }
+        }
+    }
+
+    fun setCustomReminderRange(minDays: Long, maxDays: Long) {
+        viewModelScope.launch {
+            val validMin = minDays.coerceAtLeast(1L)
+            val validMax = maxDays.coerceAtLeast(validMin)
+            sessionRepository.saveReminderCustomMinDays(validMin)
+            sessionRepository.saveReminderCustomMaxDays(validMax)
+            if (_uiState.value.reminderEnabled && _uiState.value.reminderInterval == ReminderInterval.CUSTOM) {
+                reminderScheduler.schedule(
+                    ReminderInterval.CUSTOM,
+                    customMinDays = validMin,
+                    customMaxDays = validMax
+                )
+            }
+        }
+    }
+
+    fun setShowCustomReminderDialog(show: Boolean) {
+        _uiState.update { it.copy(showCustomReminderDialog = show) }
+    }
+
     fun logout() {
         viewModelScope.launch {
+            reminderScheduler.cancel()
             sessionRepository.clearSession()
         }
     }
 
     fun removeAllAccounts() {
         viewModelScope.launch {
+            reminderScheduler.cancel()
             accountRepository.deleteAllAccounts()
             sessionRepository.clearSession()
         }

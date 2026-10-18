@@ -336,4 +336,28 @@
 
     <string name="duplicates_keep_all">Keep all</string>
     <string name="duplicates_delete_all">Delete all</string>
+
+    <!-- Reminder -->
+    <string name="settings_section_reminder">Reminder</string>
+    <string name="settings_reminder_label">Cleanup reminder</string>
+    <string name="settings_reminder_desc">Get a notification to remind you to sort your photos. Disabled by default.</string>
+    <string name="settings_reminder_interval_label">Frequency</string>
+    <string name="settings_reminder_often">Often</string>
+    <string name="settings_reminder_often_hint">About every 1–2 weeks, at random intervals</string>
+    <string name="settings_reminder_rarely">Rarely</string>
+    <string name="settings_reminder_rarely_hint">About every 3–5 weeks, at random intervals</string>
+    <string name="settings_reminder_custom">Custom</string>
+    <string name="settings_reminder_custom_hint">About every %1$d–%2$d days, at random intervals</string>
+    <string name="settings_reminder_custom_dialog_title">Custom Reminder Frequency</string>
+    <string name="settings_reminder_custom_min_label">Minimum days</string>
+    <string name="settings_reminder_custom_max_label">Maximum days</string>
+    <string name="settings_reminder_custom_configure">Configure custom range (%1$d–%2$d days)</string>
+    <string name="settings_reminder_permission_denied">Notification permission denied. The reminder stays disabled.</string>
+    <string name="reminder_notification_title">Time to tidy up!</string>
+    <string name="reminder_notification_text">Sort a few photos in Immich Swipe.</string>
+    <plurals name="reminder_notification_text_count">
+        <item quantity="one">%1$s photo is still waiting to be sorted.</item>
+        <item quantity="other">%1$s photos are still waiting to be sorted.</item>
+    </plurals>
+    <string name="reminder_channel_name">Cleanup reminder</string>
 </resources>

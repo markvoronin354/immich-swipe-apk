@@ -339,4 +339,29 @@
 
     <string name="duplicates_keep_all">Tout garder</string>
     <string name="duplicates_delete_all">Tout supprimer</string>
+
+    <!-- Reminder -->
+    <string name="settings_section_reminder">Rappel</string>
+    <string name="settings_reminder_label">Rappel de tri</string>
+    <string name="settings_reminder_desc">Recevez une notification pour vous rappeler de trier vos photos. Désactivé par défaut.</string>
+    <string name="settings_reminder_interval_label">Fréquence</string>
+    <string name="settings_reminder_often">Souvent</string>
+    <string name="settings_reminder_often_hint">Environ toutes les 1 à 2 semaines, à intervalles aléatoires</string>
+    <string name="settings_reminder_rarely">Rarement</string>
+    <string name="settings_reminder_rarely_hint">Environ toutes les 3 à 5 semaines, à intervalles aléatoires</string>
+    <string name="settings_reminder_custom">Personnalisé</string>
+    <string name="settings_reminder_custom_hint">Environ tous les %1$d à %2$d jours, à intervalles aléatoires</string>
+    <string name="settings_reminder_custom_dialog_title">Fréquence personnalisée</string>
+    <string name="settings_reminder_custom_min_label">Jours minimum</string>
+    <string name="settings_reminder_custom_max_label">Jours maximum</string>
+    <string name="settings_reminder_custom_configure">Configurer la plage (%1$d–%2$d jours)</string>
+    <string name="settings_reminder_permission_denied">Permission de notification refusée. Le rappel reste désactivé.</string>
+    <string name="reminder_notification_title">C\'est l\'heure de trier !</string>
+    <string name="reminder_notification_text">Triez quelques photos dans Immich Swipe.</string>
+    <plurals name="reminder_notification_text_count">
+        <item quantity="one">%1$s photo attend encore d\'être triée.</item>
+        <item quantity="many">%1$s de photos attendent encore d\'être triées.</item>
+        <item quantity="other">%1$s photos attendent encore d\'être triées.</item>
+    </plurals>
+    <string name="reminder_channel_name">Rappel de tri</string>
 </resources>

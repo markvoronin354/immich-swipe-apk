@@ -53,6 +53,10 @@ class SessionDataStore(private val context: Context) {
         private val KEY_TAP_TO_SWIPE = booleanPreferencesKey("tap_to_swipe")
         private val KEY_DOUBLE_TAP_ENABLED = booleanPreferencesKey("double_tap_enabled")
         private val KEY_DOUBLE_TAP_ACTION = stringPreferencesKey("double_tap_action")
+        private val KEY_REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
+        private val KEY_REMINDER_INTERVAL = stringPreferencesKey("reminder_interval")
+        private val KEY_REMINDER_CUSTOM_MIN_DAYS = androidx.datastore.preferences.core.longPreferencesKey("reminder_custom_min_days")
+        private val KEY_REMINDER_CUSTOM_MAX_DAYS = androidx.datastore.preferences.core.longPreferencesKey("reminder_custom_max_days")
         private val KEY_INITIAL_INSTALL_PROCESSED = booleanPreferencesKey("initial_install_processed")
         private val KEY_HAS_COMPLETED_SWIPE_TUTORIAL = booleanPreferencesKey("has_completed_swipe_tutorial")
         private val KEY_HAS_COMPLETED_DUPLICATES_TUTORIAL = booleanPreferencesKey("has_completed_duplicates_tutorial")
@@ -271,6 +275,18 @@ class SessionDataStore(private val context: Context) {
             it[KEY_HAS_COMPLETED_DUPLICATES_TUTORIAL] = false
         }
     }
+
+    fun isReminderEnabled(): Flow<Boolean> = context.dataStore.data.map { it[KEY_REMINDER_ENABLED] ?: false }
+    suspend fun saveReminderEnabled(enabled: Boolean) { context.dataStore.edit { it[KEY_REMINDER_ENABLED] = enabled } }
+
+    fun getReminderInterval(): Flow<String?> = context.dataStore.data.map { it[KEY_REMINDER_INTERVAL] }
+    suspend fun saveReminderInterval(interval: String) { context.dataStore.edit { it[KEY_REMINDER_INTERVAL] = interval } }
+
+    fun getReminderCustomMinDays(): Flow<Long> = context.dataStore.data.map { it[KEY_REMINDER_CUSTOM_MIN_DAYS] ?: 3L }
+    suspend fun saveReminderCustomMinDays(days: Long) { context.dataStore.edit { it[KEY_REMINDER_CUSTOM_MIN_DAYS] = days } }
+
+    fun getReminderCustomMaxDays(): Flow<Long> = context.dataStore.data.map { it[KEY_REMINDER_CUSTOM_MAX_DAYS] ?: 7L }
+    suspend fun saveReminderCustomMaxDays(days: Long) { context.dataStore.edit { it[KEY_REMINDER_CUSTOM_MAX_DAYS] = days } }
 
     suspend fun clearSession() {
         context.dataStore.edit { it.clear() }

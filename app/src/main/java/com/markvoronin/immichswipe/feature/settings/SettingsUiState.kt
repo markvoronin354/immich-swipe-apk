@@ -7,6 +7,7 @@ import com.markvoronin.immichswipe.core.DoubleTapAction
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichOpenMode
 import com.markvoronin.immichswipe.core.PlaybackBehavior
+import com.markvoronin.immichswipe.core.ReminderInterval
 import com.markvoronin.immichswipe.core.SortOrder
 
 enum class DatabaseScope {
@@ -59,6 +60,11 @@ data class SettingsUiState(
     val showActionButtonsDialog: Boolean = false,
     val showInteractionsDialog: Boolean = false,
     val showClearCacheConfirmation: Boolean = false,
+    val reminderEnabled: Boolean = false,
+    val reminderInterval: ReminderInterval = ReminderInterval.OFTEN,
+    val reminderCustomMinDays: Long = 3L,
+    val reminderCustomMaxDays: Long = 7L,
+    val showCustomReminderDialog: Boolean = false,
     
     // Database actions
     val pendingDatabaseAction: DatabaseAction? = null,

@@ -8,6 +8,7 @@ import com.markvoronin.immichswipe.core.DoubleTapAction
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichOpenMode
 import com.markvoronin.immichswipe.core.PlaybackBehavior
+import com.markvoronin.immichswipe.core.ReminderInterval
 import com.markvoronin.immichswipe.core.SessionConfig
 import com.markvoronin.immichswipe.core.SortOrder
 import com.markvoronin.immichswipe.data.datastore.SessionDataStore
@@ -86,6 +87,21 @@ class SessionRepository @Inject constructor(
     }
 
     val immichLongPressWeb: Flow<Boolean> = dataStore.getImmichLongPressWeb()
+
+    /**
+     * Expose si le rappel périodique de tri est activé. Désactivé par défaut.
+     */
+    val reminderEnabled: Flow<Boolean> = dataStore.isReminderEnabled()
+
+    /**
+     * Expose la fréquence du rappel. Par défaut: OFTEN.
+     */
+    val reminderInterval: Flow<ReminderInterval> = dataStore.getReminderInterval().map {
+        it?.let { try { ReminderInterval.valueOf(it) } catch(e: Exception) { ReminderInterval.OFTEN } } ?: ReminderInterval.OFTEN
+    }
+
+    val reminderCustomMinDays: Flow<Long> = dataStore.getReminderCustomMinDays()
+    val reminderCustomMaxDays: Flow<Long> = dataStore.getReminderCustomMaxDays()
 
 
     val rotationButtonPosition: Flow<IconPosition> = dataStore.getCardDisplayIconPosition().map {
@@ -234,6 +250,14 @@ class SessionRepository @Inject constructor(
     suspend fun saveDoubleTapEnabled(enabled: Boolean) { dataStore.saveDoubleTapEnabled(enabled) }
     suspend fun saveDoubleTapAction(action: DoubleTapAction) { dataStore.saveDoubleTapAction(action.name) }
     suspend fun saveSortOrder(order: SortOrder) { dataStore.saveSortOrder(order.name) }
+
+    suspend fun saveReminderEnabled(enabled: Boolean) { dataStore.saveReminderEnabled(enabled) }
+
+    suspend fun saveReminderInterval(interval: ReminderInterval) { dataStore.saveReminderInterval(interval.name) }
+
+    suspend fun saveReminderCustomMinDays(days: Long) { dataStore.saveReminderCustomMinDays(days) }
+
+    suspend fun saveReminderCustomMaxDays(days: Long) { dataStore.saveReminderCustomMaxDays(days) }
 
 
     suspend fun clearSession() {

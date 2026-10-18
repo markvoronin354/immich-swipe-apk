@@ -57,3 +57,16 @@ enum class SortCategory {
     SIZE,
     TYPE
 }
+
+/**
+ * Fréquence du rappel pour trier ses photos. Le délai avant chaque rappel est
+ * tiré au hasard entre minDays et maxDays, pour ne pas tomber toujours au même rythme.
+ */
+enum class ReminderInterval(val minDays: Long, val maxDays: Long) {
+    OFTEN(7, 14),
+    RARELY(21, 35),
+    CUSTOM(0, 0);
+
+    fun getMinDays(customMin: Long = 3): Long = if (this == CUSTOM) customMin else minDays
+    fun getMaxDays(customMax: Long = 7): Long = if (this == CUSTOM) customMax else maxDays
+}

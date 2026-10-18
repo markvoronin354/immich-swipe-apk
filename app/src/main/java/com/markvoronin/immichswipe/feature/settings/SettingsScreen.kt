@@ -6,10 +6,13 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -35,16 +38,21 @@ import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AdsClick
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CalendarViewWeek
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhonelinkErase
@@ -78,17 +86,21 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.PlaybackBehavior
+import com.markvoronin.immichswipe.core.ReminderInterval
 import com.markvoronin.immichswipe.feature.home.components.UserAvatar
 import com.markvoronin.immichswipe.feature.settings.components.ActionButtonsScreen
 import com.markvoronin.immichswipe.feature.settings.components.ClearCacheDialog
+import com.markvoronin.immichswipe.feature.settings.components.CustomReminderDialog
 import com.markvoronin.immichswipe.feature.settings.components.DatabaseActionDialog
 import com.markvoronin.immichswipe.feature.settings.components.InteractionsScreen
 import com.markvoronin.immichswipe.feature.settings.components.LogsDialog
 import com.markvoronin.immichswipe.feature.settings.components.SettingsClickableItem
 import com.markvoronin.immichswipe.feature.settings.components.SettingsSection
+import com.markvoronin.immichswipe.feature.settings.components.SettingsToggleItem
 import com.markvoronin.immichswipe.feature.settings.components.SettingsToggleItemSmall
 import com.markvoronin.immichswipe.feature.settings.components.ThemeButton
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
@@ -115,6 +127,21 @@ fun SettingsScreen(
         if (!allGranted) {
             viewModel.setSyncLocalDeletion(sync = false)
             Toast.makeText(context, "Permission denied. Local sync disabled.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val permissionDeniedMsg = stringResource(R.string.settings_reminder_permission_denied)
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            viewModel.setReminderEnabled(true)
+        } else {
+            Toast.makeText(
+                context,
+                permissionDeniedMsg,
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
@@ -341,6 +368,107 @@ fun SettingsScreen(
                             onClick = { viewModel.setPlaybackBehavior(PlaybackBehavior.IGNORE) },
                             modifier = Modifier.weight(1f)
                         )
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // SECTION RAPPEL
+        SettingsSection(title = stringResource(R.string.settings_section_reminder), icon = Icons.Default.Notifications) {
+            Column {
+                SettingsToggleItem(
+                    title = stringResource(R.string.settings_reminder_label),
+                    subtitle = stringResource(R.string.settings_reminder_desc),
+                    checked = uiState.reminderEnabled,
+                    onCheckedChange = { enabled ->
+                        val needsPermission = enabled &&
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                            ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.POST_NOTIFICATIONS
+                            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                        if (needsPermission) {
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            viewModel.setReminderEnabled(enabled)
+                        }
+                    },
+                    icon = Icons.Default.NotificationsActive
+                )
+
+                AnimatedVisibility(
+                    visible = uiState.reminderEnabled,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+                        Text(
+                            text = stringResource(R.string.settings_reminder_interval_label),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            ThemeButton(
+                                text = stringResource(R.string.settings_reminder_often),
+                                icon = Icons.Default.CalendarViewWeek,
+                                selected = uiState.reminderInterval == ReminderInterval.OFTEN,
+                                onClick = { viewModel.setReminderInterval(ReminderInterval.OFTEN) },
+                                modifier = Modifier.weight(1f)
+                            )
+                            ThemeButton(
+                                text = stringResource(R.string.settings_reminder_rarely),
+                                icon = Icons.Default.CalendarMonth,
+                                selected = uiState.reminderInterval == ReminderInterval.RARELY,
+                                onClick = { viewModel.setReminderInterval(ReminderInterval.RARELY) },
+                                modifier = Modifier.weight(1f)
+                            )
+                            ThemeButton(
+                                text = stringResource(R.string.settings_reminder_custom),
+                                icon = Icons.Default.EditCalendar,
+                                selected = uiState.reminderInterval == ReminderInterval.CUSTOM,
+                                onClick = {
+                                    viewModel.setReminderInterval(ReminderInterval.CUSTOM)
+                                    viewModel.setShowCustomReminderDialog(true)
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = when (uiState.reminderInterval) {
+                                ReminderInterval.OFTEN -> stringResource(R.string.settings_reminder_often_hint)
+                                ReminderInterval.RARELY -> stringResource(R.string.settings_reminder_rarely_hint)
+                                ReminderInterval.CUSTOM -> stringResource(
+                                    R.string.settings_reminder_custom_hint,
+                                    uiState.reminderCustomMinDays,
+                                    uiState.reminderCustomMaxDays
+                                )
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                        if (uiState.reminderInterval == ReminderInterval.CUSTOM) {
+                            Spacer(Modifier.height(4.dp))
+                            TextButton(
+                                onClick = { viewModel.setShowCustomReminderDialog(true) }
+                            ) {
+                                Icon(Icons.Default.EditCalendar, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = stringResource(
+                                        R.string.settings_reminder_custom_configure,
+                                        uiState.reminderCustomMinDays,
+                                        uiState.reminderCustomMaxDays
+                                    ),
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -635,6 +763,18 @@ fun SettingsScreen(
             context = context,
             onConfirm = { ctx -> viewModel.clearAppCache(ctx) },
             onDismiss = { viewModel.setShowClearCacheConfirmation(false) }
+        )
+    }
+
+    if (uiState.showCustomReminderDialog) {
+        CustomReminderDialog(
+            initialMinDays = uiState.reminderCustomMinDays,
+            initialMaxDays = uiState.reminderCustomMaxDays,
+            onConfirm = { minDays, maxDays ->
+                viewModel.setCustomReminderRange(minDays, maxDays)
+                viewModel.setShowCustomReminderDialog(false)
+            },
+            onDismiss = { viewModel.setShowCustomReminderDialog(false) }
         )
     }
 }
