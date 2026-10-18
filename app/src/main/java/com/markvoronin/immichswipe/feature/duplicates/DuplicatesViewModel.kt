@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.SessionManager
 import com.markvoronin.immichswipe.data.api.DeleteAssetsRequest
-import com.markvoronin.immichswipe.data.api.DuplicateCluster
 import com.markvoronin.immichswipe.data.api.ImmichApi
 import com.markvoronin.immichswipe.data.api.UpdateAssetsRequest
 import com.markvoronin.immichswipe.data.local.entity.SwipeDecisionEntity
@@ -14,7 +13,11 @@ import com.markvoronin.immichswipe.data.repository.SwipeDecisionRepository
 import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.domain.model.Asset
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,6 +27,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 import javax.inject.Inject
 
@@ -40,6 +44,8 @@ class DuplicatesViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(DuplicatesUiState())
     val uiState: StateFlow<DuplicatesUiState> = _uiState.asStateFlow()
+
+    private var aiJob: Job? = null
 
     init {
         observeSavedDecisions()
@@ -107,27 +113,21 @@ class DuplicatesViewModel @Inject constructor(
             // Fetch clusters directly from Immich API
             val duplicateClusters = api.getDuplicates()
             
-            // Map to UI model and assign a unique ID to each cluster (sorted with most duplicates on top)
-            val mappedClusters = duplicateClusters
-                .sortedWith(
-                    compareByDescending<DuplicateCluster> { it.assets.size }
-                        .thenByDescending { cluster -> cluster.assets.sumOf { it.exifInfo?.fileSizeInBytes ?: 0L } }
+            // Map to UI model and assign a unique ID to each cluster
+            val mappedClusters = duplicateClusters.map { cluster ->
+                DuplicateClusterUiModel(
+                    clusterId = UUID.randomUUID().toString(),
+                    assets = cluster.assets
                 )
-                .map { cluster ->
-                    DuplicateClusterUiModel(
-                        clusterId = UUID.randomUUID().toString(),
-                        assets = cluster.assets.sortedWith(
-                            compareByDescending<Asset> { it.exifInfo?.fileSizeInBytes ?: 0L }
-                                .thenByDescending { (it.exifInfo?.imageWidth ?: 0) * (it.exifInfo?.imageHeight ?: 0) }
-                        )
-                    )
-                }
+            }
+
+            val sortedClusters = sortClusters(mappedClusters, _uiState.value.sortOrder)
             
             _uiState.update { 
                 it.copy(
                     isLoading = false,
                     isSyncing = false,
-                    clusters = mappedClusters,
+                    clusters = sortedClusters,
                     selectedAutoSelectMode = null
                 ) 
             }
@@ -423,70 +423,162 @@ class DuplicatesViewModel @Inject constructor(
     }
 
     fun autoSelectBestShot(mode: BestShotAnalyzer.BestShotMode = BestShotAnalyzer.BestShotMode.AUTO) {
-        viewModelScope.launch {
+        aiJob?.cancel()
+        aiJob = viewModelScope.launch {
             _uiState.update { it.copy(isAnalyzingAi = true) }
-            val clusters = _uiState.value.clusters
-            val newDecisions = _uiState.value.decisions.toMutableMap()
+            try {
+                val clusters = _uiState.value.clusters
+                val newDecisions = _uiState.value.decisions.toMutableMap()
 
-            clusters.forEachIndexed { index, cluster ->
-                _uiState.update { it.copy(aiProgress = index + 1 to clusters.size) }
-                
-                val photosOnly = cluster.assets.filter { !it.type.equals("VIDEO", ignoreCase = true) }
-                val scores = bestShotAnalyzer.analyzeCluster(
-                    photosOnly, 
-                    _uiState.value.baseUrl, 
-                    _uiState.value.apiKey
-                )
+                clusters.forEachIndexed { index, cluster ->
+                    ensureActive()
+                    _uiState.update { it.copy(aiProgress = index + 1 to clusters.size) }
+                    
+                    val photosOnly = cluster.assets.filter { !it.type.equals("VIDEO", ignoreCase = true) }
+                    val scores = bestShotAnalyzer.analyzeCluster(
+                        photosOnly, 
+                        _uiState.value.baseUrl, 
+                        _uiState.value.apiKey
+                    )
+                    ensureActive()
 
-                val keptAssetIds = bestShotAnalyzer.selectKeptAssetIds(scores, mode)
+                    val keptAssetIds = bestShotAnalyzer.selectKeptAssetIds(scores, mode)
 
-                cluster.assets.forEach { asset ->
-                    if (asset.type.equals("VIDEO", ignoreCase = true)) {
-                        return@forEach // Skip videos, don't mark as KEEP or DELETE
-                    }
-                    if (_uiState.value.isFavorite(asset)) {
-                        newDecisions[asset.id] = DuplicateDecision.KEEP
-                    } else if (keptAssetIds.isNotEmpty()) {
-                        newDecisions[asset.id] = if (asset.id in keptAssetIds) DuplicateDecision.KEEP else DuplicateDecision.DELETE
+                    cluster.assets.forEach { asset ->
+                        if (asset.type.equals("VIDEO", ignoreCase = true)) {
+                            return@forEach // Skip videos, don't mark as KEEP or DELETE
+                        }
+                        if (_uiState.value.isFavorite(asset)) {
+                            newDecisions[asset.id] = DuplicateDecision.KEEP
+                        } else if (keptAssetIds.isNotEmpty()) {
+                            newDecisions[asset.id] = if (asset.id in keptAssetIds) DuplicateDecision.KEEP else DuplicateDecision.DELETE
+                        }
                     }
                 }
-            }
 
-            val autoSelectMode = when (mode) {
-                BestShotAnalyzer.BestShotMode.SINGLE_BEST -> AutoSelectMode.KEEP_BEST_SHOT_SINGLE
-                BestShotAnalyzer.BestShotMode.AUTO -> AutoSelectMode.KEEP_BEST_SHOT_AUTO
-                BestShotAnalyzer.BestShotMode.TOP_2 -> AutoSelectMode.KEEP_BEST_SHOT_TOP_2
-                BestShotAnalyzer.BestShotMode.TOP_3 -> AutoSelectMode.KEEP_BEST_SHOT_TOP_3
-            }
+                val autoSelectMode = when (mode) {
+                    BestShotAnalyzer.BestShotMode.SINGLE_BEST -> AutoSelectMode.KEEP_BEST_SHOT_SINGLE
+                    BestShotAnalyzer.BestShotMode.AUTO -> AutoSelectMode.KEEP_BEST_SHOT_AUTO
+                    BestShotAnalyzer.BestShotMode.TOP_2 -> AutoSelectMode.KEEP_BEST_SHOT_TOP_2
+                    BestShotAnalyzer.BestShotMode.TOP_3 -> AutoSelectMode.KEEP_BEST_SHOT_TOP_3
+                }
 
-            _uiState.update { 
-                it.copy(
-                    decisions = newDecisions,
-                    selectedAutoSelectMode = autoSelectMode,
-                    isAnalyzingAi = false,
-                    aiProgress = null
-                )
-            }
-
-            val userId = sessionManager.getUserId() ?: return@launch
-            val allAssetsMap = clusters.flatMap { it.assets }.associateBy { it.id }
-            val entitiesToSave = newDecisions.mapNotNull { (assetId, decision) ->
-                if (decision == DuplicateDecision.NONE) null
-                else {
-                    val asset = allAssetsMap[assetId]
-                    SwipeDecisionEntity(
-                        assetId = assetId,
-                        albumId = Album.VIRTUAL_DUPLICATES_ID,
-                        userId = userId,
-                        decision = decision.name,
-                        fileSize = asset?.exifInfo?.fileSizeInBytes,
-                        createdAt = System.currentTimeMillis()
+                _uiState.update { 
+                    it.copy(
+                        decisions = newDecisions,
+                        selectedAutoSelectMode = autoSelectMode,
+                        isAnalyzingAi = false,
+                        aiProgress = null
                     )
                 }
-            }
-            if (entitiesToSave.isNotEmpty()) {
-                swipeDecisionRepository.saveDecisions(entitiesToSave)
+
+                val userId = sessionManager.getUserId() ?: return@launch
+                val allAssetsMap = clusters.flatMap { it.assets }.associateBy { it.id }
+                val entitiesToSave = newDecisions.mapNotNull { (assetId, decision) ->
+                    if (decision == DuplicateDecision.NONE) null
+                    else {
+                        val asset = allAssetsMap[assetId]
+                        SwipeDecisionEntity(
+                            assetId = assetId,
+                            albumId = Album.VIRTUAL_DUPLICATES_ID,
+                            userId = userId,
+                            decision = decision.name,
+                            fileSize = asset?.exifInfo?.fileSizeInBytes,
+                            createdAt = System.currentTimeMillis()
+                        )
+                    }
+                }
+                if (entitiesToSave.isNotEmpty()) {
+                    swipeDecisionRepository.saveDecisions(entitiesToSave)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } finally {
+                withContext(NonCancellable) {
+                    _uiState.update { 
+                        it.copy(
+                            isAnalyzingAi = false,
+                            aiProgress = null
+                        )
+                    }
+                }
             }
         }
+    }
+
+    fun cancelBestShotAnalysis() {
+        aiJob?.cancel()
+        aiJob = null
+        _uiState.update { 
+            it.copy(
+                isAnalyzingAi = false,
+                aiProgress = null
+            )
+        }
+    }
+
+    fun setSortOrder(sortOrder: DuplicatesSortOrder) {
+        _uiState.update { state ->
+            val sortedClusters = sortClusters(state.clusters, sortOrder)
+            state.copy(
+                sortOrder = sortOrder,
+                clusters = sortedClusters
+            )
+        }
+    }
+
+    private fun sortClusters(
+        clusters: List<DuplicateClusterUiModel>,
+        sortOrder: DuplicatesSortOrder
+    ): List<DuplicateClusterUiModel> {
+        val clusterComparator: Comparator<DuplicateClusterUiModel> = when (sortOrder) {
+            DuplicatesSortOrder.CLUSTER_SIZE -> {
+                compareByDescending<DuplicateClusterUiModel> { it.assets.size }
+                    .thenByDescending { cluster -> cluster.assets.sumOf { it.exifInfo?.fileSizeInBytes ?: 0L } }
+            }
+            DuplicatesSortOrder.PHOTOS_FIRST -> {
+                compareByDescending<DuplicateClusterUiModel> { cluster ->
+                    cluster.assets.any { !it.type.equals("VIDEO", ignoreCase = true) }
+                }
+                .thenByDescending { cluster ->
+                    cluster.assets.count { !it.type.equals("VIDEO", ignoreCase = true) }
+                }
+                .thenByDescending { it.assets.size }
+                .thenByDescending { cluster -> cluster.assets.sumOf { it.exifInfo?.fileSizeInBytes ?: 0L } }
+            }
+            DuplicatesSortOrder.VIDEOS_FIRST -> {
+                compareByDescending<DuplicateClusterUiModel> { cluster ->
+                    cluster.assets.any { it.type.equals("VIDEO", ignoreCase = true) }
+                }
+                .thenByDescending { cluster ->
+                    cluster.assets.count { it.type.equals("VIDEO", ignoreCase = true) }
+                }
+                .thenByDescending { it.assets.size }
+                .thenByDescending { cluster -> cluster.assets.sumOf { it.exifInfo?.fileSizeInBytes ?: 0L } }
+            }
+        }
+
+        val assetComparator: Comparator<Asset> = when (sortOrder) {
+            DuplicatesSortOrder.CLUSTER_SIZE -> {
+                compareByDescending<Asset> { it.exifInfo?.fileSizeInBytes ?: 0L }
+                    .thenByDescending { (it.exifInfo?.imageWidth ?: 0) * (it.exifInfo?.imageHeight ?: 0) }
+            }
+            DuplicatesSortOrder.PHOTOS_FIRST -> {
+                compareByDescending<Asset> { !it.type.equals("VIDEO", ignoreCase = true) }
+                    .thenByDescending { it.exifInfo?.fileSizeInBytes ?: 0L }
+                    .thenByDescending { (it.exifInfo?.imageWidth ?: 0) * (it.exifInfo?.imageHeight ?: 0) }
+            }
+            DuplicatesSortOrder.VIDEOS_FIRST -> {
+                compareByDescending<Asset> { it.type.equals("VIDEO", ignoreCase = true) }
+                    .thenByDescending { it.exifInfo?.fileSizeInBytes ?: 0L }
+                    .thenByDescending { (it.exifInfo?.imageWidth ?: 0) * (it.exifInfo?.imageHeight ?: 0) }
+            }
+        }
+
+        return clusters
+            .map { cluster ->
+                cluster.copy(assets = cluster.assets.sortedWith(assetComparator))
+            }
+            .sortedWith(clusterComparator)
     }
 }

@@ -153,6 +153,7 @@
     <string name="swipe_delete">Eliminar</string>
     <string name="swipe_delete_upper">ELIMINAR</string>
     <string name="swipe_remaining">Restantes</string>
+    <string name="swipe_total">Total</string>
     <string name="swipe_favorite">Favoritos</string>
     <string name="swipe_archive">Archivar</string>
     <string name="add_to_album_title">Añadir a un álbum</string>
@@ -214,6 +215,10 @@
     </plurals>
     <string name="duplicates_reset_confirm_title">¿Restablecer elecciones de duplicados?</string>
     <string name="duplicates_reset_confirm_msg">Esto borrará todas las elecciones locales (CONSERVAR/ELIMINAR) para los grupos de duplicados.</string>
+    <string name="duplicates_sort_button">Ordenar</string>
+    <string name="duplicates_sort_cluster_size">Tamaño del grupo</string>
+    <string name="duplicates_sort_photos_first">Fotos primero</string>
+    <string name="duplicates_sort_videos_first">Videos primero</string>
     <string name="duplicates_select_button">Seleccionar</string>
     <string name="duplicates_keep_largest">Conservar más grandes</string>
     <string name="duplicates_keep_smallest">Conservar más pequeños</string>
@@ -221,6 +226,12 @@
     <string name="duplicates_best_shot_single">Mejor foto (Única)</string>
     <string name="duplicates_best_shot_top_2">Mejores fotos (Top 2)</string>
     <string name="duplicates_best_shot_top_3">Mejores fotos (Top 3)</string>
+    <string name="duplicates_select_largest">Más grandes</string>
+    <string name="duplicates_select_smallest">Más pequeños</string>
+    <string name="duplicates_select_best_shot_auto">Auto</string>
+    <string name="duplicates_select_best_shot_single">Única</string>
+    <string name="duplicates_select_best_shot_top_2">Top 2</string>
+    <string name="duplicates_select_best_shot_top_3">Top 3</string>
     <plurals name="duplicates_groups_count">
         <item quantity="one">%1$d grupo</item>
         <item quantity="many">%1$d grupos</item>

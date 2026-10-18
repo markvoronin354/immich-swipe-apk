@@ -3,6 +3,7 @@ package com.markvoronin.immichswipe.feature.duplicates.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -160,50 +161,54 @@ fun DuplicateClusterCard(
                 }
             }
 
-            if (cluster.assets.size <= 2) {
-                Row(
-                    modifier = modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    cluster.assets.forEach { asset ->
-                        val decision = decisions[asset.id] ?: DuplicateDecision.NONE
-                        val isBeingZoomed = activeZoomAssetId == asset.id
-                        DuplicateAssetItem(
-                            asset = asset,
-                            decision = decision,
-                            isFavorite = isFavorite(asset),
-                            isBeingZoomed = isBeingZoomed,
-                            baseUrl = baseUrl,
-                            apiKey = apiKey,
-                            modifier = Modifier.weight(1f),
-                            onToggle = { onDecisionToggle(asset.id) },
-                            onLongPress = { onAssetLongPress(asset) },
-                            onZoomStateUpdate = onZoomStateUpdate
-                        )
+            BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+                val availableWidth = maxWidth
+                if (cluster.assets.size <= 2) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        cluster.assets.forEach { asset ->
+                            val decision = decisions[asset.id] ?: DuplicateDecision.NONE
+                            val isBeingZoomed = activeZoomAssetId == asset.id
+                            DuplicateAssetItem(
+                                asset = asset,
+                                decision = decision,
+                                isFavorite = isFavorite(asset),
+                                isBeingZoomed = isBeingZoomed,
+                                baseUrl = baseUrl,
+                                apiKey = apiKey,
+                                modifier = Modifier.weight(1f),
+                                onToggle = { onDecisionToggle(asset.id) },
+                                onLongPress = { onAssetLongPress(asset) },
+                                onZoomStateUpdate = onZoomStateUpdate
+                            )
+                        }
                     }
-                }
-            } else {
-                val rowState = rememberLazyListState()
-                LazyRow(
-                    state = rowState,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = modifier.fillMaxWidth()
-                ) {
-                    items(cluster.assets, key = { it.id }) { asset ->
-                        val decision = decisions[asset.id] ?: DuplicateDecision.NONE
-                        val isBeingZoomed = activeZoomAssetId == asset.id
-                        DuplicateAssetItem(
-                            asset = asset,
-                            decision = decision,
-                            isFavorite = isFavorite(asset),
-                            isBeingZoomed = isBeingZoomed,
-                            baseUrl = baseUrl,
-                            apiKey = apiKey,
-                            modifier = Modifier.width(135.dp),
-                            onToggle = { onDecisionToggle(asset.id) },
-                            onLongPress = { onAssetLongPress(asset) },
-                            onZoomStateUpdate = onZoomStateUpdate
-                        )
+                } else {
+                    val itemWidth = ((availableWidth - 8.dp) / 2.15f).coerceAtLeast(135.dp)
+                    val rowState = rememberLazyListState()
+                    LazyRow(
+                        state = rowState,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(cluster.assets, key = { it.id }) { asset ->
+                            val decision = decisions[asset.id] ?: DuplicateDecision.NONE
+                            val isBeingZoomed = activeZoomAssetId == asset.id
+                            DuplicateAssetItem(
+                                asset = asset,
+                                decision = decision,
+                                isFavorite = isFavorite(asset),
+                                isBeingZoomed = isBeingZoomed,
+                                baseUrl = baseUrl,
+                                apiKey = apiKey,
+                                modifier = Modifier.width(itemWidth),
+                                onToggle = { onDecisionToggle(asset.id) },
+                                onLongPress = { onAssetLongPress(asset) },
+                                onZoomStateUpdate = onZoomStateUpdate
+                            )
+                        }
                     }
                 }
             }

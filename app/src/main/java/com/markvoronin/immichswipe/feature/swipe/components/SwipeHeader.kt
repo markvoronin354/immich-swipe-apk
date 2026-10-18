@@ -88,8 +88,10 @@ fun SwipeHeader(
             val density = LocalDensity.current
             val paddingPx = with(density) { 16.dp.toPx() }
             val infoWidthPx = with(density) { 54.dp.toPx() }
+            val remainingWidthPx = with(density) { 40.dp.toPx() }
             
             val staticInfoX = totalWidth - infoWidthPx - paddingPx
+            val minRequiredRoomForRemaining = remainingWidthPx + paddingPx * 2f
             val infoIsInside = progressWidth > staticInfoX
             
             val infoTranslationX by animateFloatAsState(
@@ -102,11 +104,24 @@ fun SwipeHeader(
                 label = "InfoTranslation"
             )
 
+            val remainingTranslationX by animateFloatAsState(
+                targetValue = if (progressWidth in paddingPx..minRequiredRoomForRemaining) {
+                    (progressWidth + with(density) { 6.dp.toPx() })
+                } else {
+                    paddingPx
+                },
+                animationSpec = spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
+                label = "RemainingTranslation"
+            )
+
+            val isFetching = (uiState.isFetchingAssets || uiState.isLoading) && uiState.assets.isNotEmpty()
+            val remainingText = uiState.remainingCount.toString()
+
             // Layer 1: Dark Text (Background)
             Box(modifier = Modifier.fillMaxSize()) {
                 Box(modifier = Modifier.align(Alignment.CenterStart).padding(start = 16.dp)) {
                     androidx.compose.animation.AnimatedVisibility(
-                        visible = (uiState.isFetchingAssets || uiState.isLoading) && uiState.assets.isNotEmpty(),
+                        visible = isFetching,
                         enter = fadeIn(),
                         exit = fadeOut()
                     ) {
@@ -116,6 +131,20 @@ fun SwipeHeader(
                             iconSize = 16.dp
                         )
                     }
+                }
+
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = !isFetching,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                    modifier = Modifier.align(Alignment.CenterStart)
+                ) {
+                    RemainingInfo(
+                        remainingText = remainingText,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = infoFontSize,
+                        modifier = Modifier.graphicsLayer { translationX = remainingTranslationX }
+                    )
                 }
 
                 HeaderInfo(
@@ -166,7 +195,7 @@ fun SwipeHeader(
                 ) {
                     Box(modifier = Modifier.align(Alignment.CenterStart).padding(start = 16.dp)) {
                         androidx.compose.animation.AnimatedVisibility(
-                            visible = (uiState.isFetchingAssets || uiState.isLoading) && uiState.assets.isNotEmpty(),
+                            visible = isFetching,
                             enter = fadeIn(),
                             exit = fadeOut()
                         ) {
@@ -176,6 +205,20 @@ fun SwipeHeader(
                                 iconSize = 16.dp
                             )
                         }
+                    }
+
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = !isFetching,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                        modifier = Modifier.align(Alignment.CenterStart)
+                    ) {
+                        RemainingInfo(
+                            remainingText = remainingText,
+                            color = Color.White,
+                            fontSize = infoFontSize,
+                            modifier = Modifier.graphicsLayer { translationX = remainingTranslationX }
+                        )
                     }
 
                     HeaderInfo(
@@ -203,9 +246,26 @@ fun SwipeHeader(
                 StatBadge(label = stringResource(R.string.swipe_skip), count = uiState.skippedCount, color = Color(0xFFFFA500))
             }
             StatBadge(label = stringResource(R.string.swipe_delete), count = uiState.deletedCount, color = MaterialRed)
-            StatBadge(label = stringResource(R.string.swipe_remaining), count = uiState.remainingCount, color = MaterialTheme.colorScheme.outline)
+            StatBadge(label = stringResource(R.string.swipe_total), count = uiState.totalCount, color = MaterialTheme.colorScheme.outline)
         }
     }
+}
+
+@Composable
+fun RemainingInfo(
+    remainingText: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 13.sp
+) {
+    Text(
+        text = remainingText,
+        style = MaterialTheme.typography.labelSmall,
+        fontSize = fontSize,
+        fontWeight = FontWeight.Bold,
+        color = color,
+        modifier = modifier
+    )
 }
 
 @Composable
