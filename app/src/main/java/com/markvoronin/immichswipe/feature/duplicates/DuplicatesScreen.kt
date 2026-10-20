@@ -105,7 +105,7 @@ import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import com.markvoronin.immichswipe.feature.tutorial.LocalTutorialController
 import com.markvoronin.immichswipe.feature.tutorial.ProvideTutorialController
-import com.markvoronin.immichswipe.feature.tutorial.TutorialController
+import com.markvoronin.immichswipe.feature.tutorial.TooltipPlacement
 import com.markvoronin.immichswipe.feature.tutorial.TutorialPhase
 import com.markvoronin.immichswipe.feature.tutorial.TutorialStep
 import com.markvoronin.immichswipe.feature.tutorial.rememberTutorialController
@@ -158,7 +158,8 @@ fun DuplicatesScreen(
                 id = "action",
                 titleRes = R.string.tutorial_duplicates_action_title,
                 descriptionRes = R.string.tutorial_duplicates_action_desc,
-                targetKey = "dup_delete"
+                targetKey = "dup_delete",
+                placement = TooltipPlacement.BOTTOM
             )
         )
     }
@@ -245,7 +246,8 @@ fun DuplicatesScreen(
                             } else {
                                 Toast.makeText(context, R.string.swipe_no_deletions, Toast.LENGTH_SHORT).show()
                             }
-                        }
+                        },
+                        modifier = Modifier.tutorialTarget("dup_delete", tutorialController)
                     )
 
                     BoxWithConstraints(
@@ -365,7 +367,6 @@ fun DuplicatesScreen(
                 DuplicatesBottomBar(
                     uiState = uiState,
                     viewModel = viewModel,
-                    tutorialController = tutorialController,
                     modifier = with(boxScope) {
                         Modifier
                             .align(Alignment.BottomCenter)
@@ -795,7 +796,6 @@ private fun StatBadge(text: String, color: Color) {
 private fun DuplicatesBottomBar(
     uiState: DuplicatesUiState,
     viewModel: DuplicatesViewModel,
-    tutorialController: TutorialController,
     onSortOrderSelected: (DuplicatesSortOrder) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -938,9 +938,7 @@ private fun DuplicatesBottomBar(
                 null -> stringResource(R.string.duplicates_select_button)
             }
 
-            Box(
-                modifier = Modifier.tutorialTarget("dup_delete", tutorialController)
-            ) {
+            Box {
                 Surface(
                     onClick = { selectMenuExpanded = true },
                     color = MaterialTheme.colorScheme.surfaceVariant,

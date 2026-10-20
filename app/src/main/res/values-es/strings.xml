@@ -326,7 +326,7 @@
     <string name="tutorial_duplicates_selection_title">Conservar o Eliminar</string>
     <string name="tutorial_duplicates_selection_desc">Toca cualquier foto para alternar entre Conservar y Eliminar. ¡Mantén presionado para una vista de comparación en pantalla completa!</string>
     <string name="tutorial_duplicates_action_title">Liberar espacio</string>
-    <string name="tutorial_duplicates_action_desc">Una vez marcadas las fotos para eliminar, ¡toca el botón \"Eliminar\" arriba a la derecha para borrarlas del servidor!</string>
+    <string name="tutorial_duplicates_action_desc">Una vez marcadas las fotos para eliminar, ¡toca la barra de progreso en cualquier momento para ver el resumen y eliminarlas de Immich!</string>
 
     <string name="login_api_key_tutorial_link">¿Cómo crear una API Key?</string>
     <string name="login_api_key_tutorial_title">Creación de una API Key</string>

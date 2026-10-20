@@ -62,7 +62,7 @@ fun DuplicateClusterCard(
     val isAllDelete = cluster.assets.isNotEmpty() && cluster.assets.all { decisions[it.id] == DuplicateDecision.DELETE }
 
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp,

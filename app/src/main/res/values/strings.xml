@@ -324,7 +324,7 @@
     <string name="tutorial_duplicates_selection_title">Mark Keep or Delete</string>
     <string name="tutorial_duplicates_selection_desc">Tap any photo card to toggle between Keep and Delete choices. Long-press any photo for a full-screen comparison view!</string>
     <string name="tutorial_duplicates_action_title">Free Up Server Space</string>
-    <string name="tutorial_duplicates_action_desc">Once duplicate photos are marked for deletion, tap the top-right \"Delete\" button to remove them from your Immich server!</string>
+    <string name="tutorial_duplicates_action_desc">Once duplicate photos are marked for deletion, tap the progress bar anytime to open the summary and delete them from Immich!</string>
 
     <string name="login_api_key_tutorial_link">How to create an API Key?</string>
     <string name="login_api_key_tutorial_title">Creating an API Key</string>
