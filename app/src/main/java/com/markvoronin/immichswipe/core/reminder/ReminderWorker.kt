@@ -61,7 +61,7 @@ class ReminderWorker(
         val unsortedCount = countUnsorted(config, sessionRepository.includeArchived.first())
         if (unsortedCount == 0) {
 
-            AppLogger.i("Reminder", "Aucun média non trié, notification ignorée")
+            AppLogger.i("Reminder", "No unsorted media, notification skipped")
         } else {
             showNotification(unsortedCount)
         }
@@ -97,7 +97,7 @@ class ReminderWorker(
             (total - treated).coerceAtLeast(0)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            AppLogger.w("Reminder", "Impossible de compter les médias non triés", e)
+            AppLogger.w("Reminder", "Unable to count unsorted media", e)
             null
         }
     }
@@ -107,7 +107,7 @@ class ReminderWorker(
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
         if (!hasPermission) {
-            AppLogger.w("Reminder", "Permission de notification manquante, rappel ignoré")
+            AppLogger.w("Reminder", "Notification permission missing, reminder skipped")
             return
         }
 
@@ -142,7 +142,7 @@ class ReminderWorker(
             .build()
 
         NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
-        AppLogger.i("Reminder", "Notification de rappel affichée")
+        AppLogger.i("Reminder", "Reminder notification shown")
     }
 
     private fun createChannel() {

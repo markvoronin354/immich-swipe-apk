@@ -470,7 +470,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    // --- Gestion de la Base de Données ---
+
 
     fun requestDatabaseAction(action: DatabaseAction, scope: DatabaseScope) {
         _uiState.value = _uiState.value.copy(

@@ -7,7 +7,7 @@ data class Asset(
     val id: String,
     val ownerId: String,
     val fileCreatedAt: String,
-    val type: String, // IMAGE ou VIDEO
+    val type: String, // IMAGE or VIDEO
     val duration: String? = null,
     val isFavorite: Boolean = false,
     val isArchived: Boolean = false,

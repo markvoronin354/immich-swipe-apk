@@ -89,10 +89,10 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.coil.compose)
-    implementation(libs.coil.video) // Pour les miniatures vidéo
-    implementation(libs.coil.gif) // Pour la lecture des GIFs animés
+    implementation(libs.coil.video) // For video thumbnails
+    implementation(libs.coil.gif) // For animated GIF playback
 
-    // Media3 pour la lecture vidéo
+    // Media3 for video playback
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.ui)
 

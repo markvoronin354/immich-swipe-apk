@@ -1,17 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg
-   version="1.1"
-   viewBox="0 0 1000 1000"
-   width="1000"
-   height="1000"
-   class="excalidraw-svg"
-   id="svg24"
-   sodipodi:docname="logo_immich_swipe.svg"
-   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
+<svg version="1.1" viewBox="0 0 1000 1000" width="1000" height="1000" class="excalidraw-svg" id="svg24"
+    sodipodi:docname="logo_immich_swipe.svg" inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+    xmlns="http://www.w3.org/2000/svg">
   <sodipodi:namedview
      id="namedview1"
      pagecolor="#ffffff"
@@ -51,31 +42,31 @@
        position="0,950"
        orientation="0,1000"
        id="ink-font-guide-ascender"
-       inkscape:label="jambage supérieur"
+       inkscape:label="ascender"
        inkscape:locked="false" />
     <sodipodi:guide
        position="0,800"
        orientation="0,1000"
        id="ink-font-guide-caps"
-       inkscape:label="terminaisons"
+       inkscape:label="overshoot"
        inkscape:locked="false" />
     <sodipodi:guide
        position="0,600"
        orientation="0,1000"
        id="ink-font-guide-x-height"
-       inkscape:label="hauteur d'x"
+       inkscape:label="x-height"
        inkscape:locked="false" />
     <sodipodi:guide
        position="0,200"
        orientation="0,1000"
        id="ink-font-guide-baseline"
-       inkscape:label="ligne de base des textes"
+       inkscape:label="baseline"
        inkscape:locked="false" />
     <sodipodi:guide
        position="0,0"
        orientation="0,1000"
        id="ink-font-guide-descender"
-       inkscape:label="jambage inférieur"
+       inkscape:label="descender"
        inkscape:locked="false" />
   </sodipodi:namedview>
   <!-- svg-source:excalidraw -->

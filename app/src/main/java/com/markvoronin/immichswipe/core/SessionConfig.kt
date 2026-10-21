@@ -58,10 +58,7 @@ enum class SortCategory {
     TYPE
 }
 
-/**
- * Fréquence du rappel pour trier ses photos. Le délai avant chaque rappel est
- * tiré au hasard entre minDays et maxDays, pour ne pas tomber toujours au même rythme.
- */
+
 enum class ReminderInterval(val minDays: Long, val maxDays: Long) {
     OFTEN(7, 14),
     RARELY(21, 35),
