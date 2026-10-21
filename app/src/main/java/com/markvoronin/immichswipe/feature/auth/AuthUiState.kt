@@ -19,5 +19,7 @@ data class AuthUiState(
     val isLoading: Boolean = false,
     val error: AuthError? = null,
     val success: Boolean = false,
-    val savedServerUrls: List<String> = emptyList()
+    val savedServerUrls: List<String> = emptyList(),
+    // True while waiting for the user to confirm sending the API key over plain HTTP to a public host.
+    val showInsecureHttpWarning: Boolean = false
 )

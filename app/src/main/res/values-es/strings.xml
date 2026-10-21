@@ -8,6 +8,9 @@
     <string name="login_clear_fields">Limpiar</string>
     <string name="login_button">Iniciar sesión</string>
     <string name="login_success">Sesión iniciada ✔</string>
+    <string name="login_insecure_http_title">Conexión sin cifrar</string>
+    <string name="login_insecure_http_message">Este servidor está en Internet y su dirección empieza por http://. Tu clave de API se enviaría sin cifrar y cualquiera en la red podría leerla. Usa una dirección https:// si puedes.</string>
+    <string name="login_insecure_http_confirm">Conectar de todos modos</string>
     <string name="login_error_unknown">Se ha producido un error desconocido</string>
     <string name="login_error_empty">La URL y la clave API son requeridas</string>
     <string name="login_error_dns">Servidor no encontrado. Verifique la URL o su DNS.</string>

@@ -317,6 +317,24 @@ fun AuthScreen(
                     )
                 }
 
+                if (state.showInsecureHttpWarning) {
+                    androidx.compose.material3.AlertDialog(
+                        onDismissRequest = { viewModel.dismissInsecureHttpWarning() },
+                        title = { Text(stringResource(R.string.login_insecure_http_title)) },
+                        text = { Text(stringResource(R.string.login_insecure_http_message)) },
+                        confirmButton = {
+                            TextButton(onClick = { viewModel.login(allowInsecureHttp = true) }) {
+                                Text(stringResource(R.string.login_insecure_http_confirm))
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { viewModel.dismissInsecureHttpWarning() }) {
+                                Text(stringResource(R.string.common_cancel))
+                            }
+                        }
+                    )
+                }
+
                 Spacer(Modifier.height(8.dp))
 
                 Button(

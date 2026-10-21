@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.SessionConfig
 import com.markvoronin.immichswipe.core.SessionManager
+import com.markvoronin.immichswipe.core.UrlPolicy
 import com.markvoronin.immichswipe.data.repository.AccountRepository
 import com.markvoronin.immichswipe.data.repository.AuthRepository
 import com.markvoronin.immichswipe.data.repository.SessionRepository
@@ -90,7 +91,12 @@ class AuthViewModel @Inject constructor(
     }
 
 
-    fun login() {
+    fun dismissInsecureHttpWarning() {
+        _uiState.value = _uiState.value.copy(showInsecureHttpWarning = false)
+    }
+
+
+    fun login(allowInsecureHttp: Boolean = false) {
         viewModelScope.launch {
             val baseUrl = _uiState.value.baseUrl.trim()
             val apiKey = _uiState.value.apiKey.trim()
@@ -101,6 +107,13 @@ class AuthViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(error = AuthError.EmptyFields)
                 return@launch
             }
+
+            // Plain HTTP to a public host would send the API key unencrypted: ask first.
+            if (!allowInsecureHttp && UrlPolicy.isInsecureRemote(baseUrl)) {
+                _uiState.value = _uiState.value.copy(showInsecureHttpWarning = true, error = null)
+                return@launch
+            }
+            _uiState.value = _uiState.value.copy(showInsecureHttpWarning = false)
 
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 

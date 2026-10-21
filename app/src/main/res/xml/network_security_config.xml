@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<network-security-config>
-    <base-config cleartextTrafficPermitted="true">
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <!--
+        Cleartext HTTP stays allowed at the platform level because self-hosted Immich servers are
+        often reached by LAN address without TLS, and the network security config cannot express
+        "private addresses only". The app enforces the policy itself: plain HTTP to a public host
+        needs an explicit confirmation at login (see UrlPolicy).
+    -->
+    <base-config
+        cleartextTrafficPermitted="true"
+        tools:ignore="InsecureBaseConfiguration">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>

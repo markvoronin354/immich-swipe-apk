@@ -9,6 +9,9 @@
     <string name="login_clear_fields">Effacer</string>
     <string name="login_button">Se connecter</string>
     <string name="login_success">Connexion réussie ✔</string>
+    <string name="login_insecure_http_title">Connexion non chiffrée</string>
+    <string name="login_insecure_http_message">Ce serveur est accessible depuis Internet et son adresse commence par http://. Votre clé API serait envoyée sans chiffrement et pourrait être lue par n\'importe qui sur le réseau. Utilisez une adresse https:// si possible.</string>
+    <string name="login_insecure_http_confirm">Se connecter quand même</string>
     <string name="login_error_unknown">Une erreur inconnue est survenue</string>
     <string name="login_error_empty">L\'URL et la clé API sont requises</string>
     <string name="login_error_dns">Serveur introuvable. Vérifiez l\'URL ou votre DNS.</string>
