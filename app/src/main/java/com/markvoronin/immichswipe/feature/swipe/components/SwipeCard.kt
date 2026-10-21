@@ -394,7 +394,8 @@ fun SwipeCard(
                             val accumulatedDX = abs(totalDX)
                             val accumulatedDY = abs(totalDY)
 
-                            val downSwipeGestureEnabled = false
+                            // Swiping down means SKIP, so it follows the single skip feature switch.
+            val downSwipeGestureEnabled = com.markvoronin.immichswipe.domain.model.Album.IS_SKIP_FEATURE_ENABLED
 
                             if (dragDirection == 0) {
                                 // Decision threshold: 12 pixels of movement
@@ -883,7 +884,9 @@ fun SwipeCard(
                     val currentX = offsetX.value
                     val currentY = offsetY.value
 
-                    if (dragDirection == 3 || (dragDirection == 0 && currentY > 0f && currentY > abs(currentX))) {
+                    if (com.markvoronin.immichswipe.domain.model.Album.IS_SKIP_FEATURE_ENABLED &&
+                        (dragDirection == 3 || (dragDirection == 0 && currentY > 0f && currentY > abs(currentX)))
+                    ) {
                         IndicatorBadge(
                             stringResource(R.string.swipe_skip_upper),
                             Color(0xFFFFA500), // Orange for skip

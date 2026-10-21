@@ -4,6 +4,7 @@ import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.data.repository.AlbumRepository
 import com.markvoronin.immichswipe.data.repository.AssetRepository
 import com.markvoronin.immichswipe.data.repository.SwipeDecisionRepository
+import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import kotlinx.coroutines.CancellationException
@@ -27,7 +28,9 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
         deletedSize: Long,
         keptCount: Int,
         archiveCount: Int,
-        lockedCount: Int
+        lockedCount: Int,
+        // While the skip feature is disabled no SKIP album is read, created or cleaned up.
+        skipFeatureEnabled: Boolean = Album.IS_SKIP_FEATURE_ENABLED
     ): ApplyResult = withContext(Dispatchers.IO) {
         val toDelete = decisions.filter { it.value == SwipeDecision.DELETE }.keys.toList()
         val toArchive = decisions.filter { it.value == SwipeDecision.ARCHIVE }.keys.toList()
@@ -78,33 +81,35 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
             swipeDecisionRepository.removeDecisions(toLock, userId)
         }
 
-        // 1d. Add skipped assets to SKIP album on server and local DB
-        if (toSkip.isNotEmpty()) {
-            step(SyncStep.SKIP_ALBUM, emptyList()) {
+        // 1d. Add skipped assets to SKIP album on server and local DB.
+        // The album repository reports failures through its return value, so check it explicitly.
+        if (skipFeatureEnabled && toSkip.isNotEmpty()) {
+            step(SyncStep.SKIP_ALBUM, toSkip) {
                 val albums = albumRepository.getAlbumsRaw()
-                var skipAlbum = albums.find { it.albumName.equals("SKIP", ignoreCase = true) }
-                if (skipAlbum == null) {
-                    skipAlbum = albumRepository.createAlbum("SKIP", toSkip)
+                val existing = albums.find { it.albumName.equals("SKIP", ignoreCase = true) }
+                val skipAlbumId = if (existing == null) {
+                    checkNotNull(albumRepository.createAlbum("SKIP", toSkip)) { "Could not create the SKIP album" }.id
                 } else {
-                    albumRepository.addAssetsToAlbum(skipAlbum.id, toSkip)
+                    check(albumRepository.addAssetsToAlbum(existing.id, toSkip)) { "Could not add assets to the SKIP album" }
+                    existing.id
                 }
-                if (skipAlbum != null) {
-                    val assetsToInsert = currentAssets.filter { it.id in toSkip }
-                    if (assetsToInsert.isNotEmpty()) {
-                        assetRepository.insertAlbumAssetsLocally(skipAlbum.id, userId, assetsToInsert)
-                    }
+                val assetsToInsert = currentAssets.filter { it.id in toSkip }
+                if (assetsToInsert.isNotEmpty()) {
+                    assetRepository.insertAlbumAssetsLocally(skipAlbumId, userId, assetsToInsert)
                 }
             }
         }
 
         // 1e. Remove assets that received a decision OTHER than SKIP from the SKIP album
         val nonSkipDecidedIds = decisions.filter { it.value != SwipeDecision.SKIP }.keys.toList()
-        if (nonSkipDecidedIds.isNotEmpty()) {
-            step(SyncStep.SKIP_ALBUM, emptyList()) {
+        if (skipFeatureEnabled && nonSkipDecidedIds.isNotEmpty()) {
+            step(SyncStep.SKIP_ALBUM, nonSkipDecidedIds) {
                 val albums = albumRepository.getAlbumsRaw()
                 val skipAlbum = albums.find { it.albumName.equals("SKIP", ignoreCase = true) }
                 if (skipAlbum != null) {
-                    albumRepository.removeAssetsFromAlbum(skipAlbum.id, nonSkipDecidedIds)
+                    check(albumRepository.removeAssetsFromAlbum(skipAlbum.id, nonSkipDecidedIds)) {
+                        "Could not remove assets from the SKIP album"
+                    }
                     assetRepository.removeAlbumAssetsLocally(skipAlbum.id, userId, nonSkipDecidedIds)
                 }
             }

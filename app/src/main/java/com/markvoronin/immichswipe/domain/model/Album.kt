@@ -17,6 +17,11 @@ data class Album(
         const val VIRTUAL_ALL_ID = "virtual_all_assets"
         const val VIRTUAL_ORPHANS_ID = "virtual_orphans"
         const val VIRTUAL_DUPLICATES_ID = "virtual_duplicates"
+        /**
+         * Single switch for the SKIP feature. While false: the SKIP album is hidden from the home
+         * list, the swipe-down gesture and its indicator are off, and applying changes never reads,
+         * creates or cleans up a SKIP album on the server.
+         */
         const val IS_SKIP_FEATURE_ENABLED = false
     }
 }
