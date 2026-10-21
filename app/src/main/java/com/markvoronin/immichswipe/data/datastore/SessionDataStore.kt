@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.markvoronin.immichswipe.core.SecretStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -65,7 +66,7 @@ class SessionDataStore(private val context: Context) {
     suspend fun saveSession(baseUrl: String, apiKey: String, userId: String) {
         context.dataStore.edit { prefs ->
             prefs[KEY_BASE_URL] = baseUrl
-            prefs[KEY_API_KEY] = apiKey
+            prefs[KEY_API_KEY] = SecretStore.default.encrypt(apiKey)
             prefs[KEY_USER_ID] = userId
         }
     }
@@ -75,11 +76,22 @@ class SessionDataStore(private val context: Context) {
     }
 
     fun getApiKey(): Flow<String?> {
-        return context.dataStore.data.map { it[KEY_API_KEY] }
+        // A stored key that can no longer be decrypted is treated as "no session".
+        return context.dataStore.data.map { prefs -> prefs[KEY_API_KEY]?.let { SecretStore.default.decrypt(it) } }
     }
 
     fun getUserId(): Flow<String?> {
         return context.dataStore.data.map { it[KEY_USER_ID] }
+    }
+
+    /** Re-saves a legacy plaintext API key in encrypted form. */
+    suspend fun encryptStoredApiKeyIfNeeded() {
+        context.dataStore.edit { prefs ->
+            val stored = prefs[KEY_API_KEY] ?: return@edit
+            if (SecretStore.default.needsEncryption(stored)) {
+                prefs[KEY_API_KEY] = SecretStore.default.encrypt(stored)
+            }
+        }
     }
 
     fun getSavedServerUrls(): Flow<Set<String>> {

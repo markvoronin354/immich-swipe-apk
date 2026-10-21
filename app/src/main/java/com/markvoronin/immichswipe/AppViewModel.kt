@@ -22,10 +22,15 @@ class AppViewModel @Inject constructor(
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
 
     init {
+        migrateLegacySecrets()
         initializeTutorialState()
         observeSession()
         observeTheme()
         observeDynamicColor()
+    }
+
+    private fun migrateLegacySecrets() {
+        viewModelScope.launch { sessionRepository.migrateLegacySecrets() }
     }
 
     private fun initializeTutorialState() {

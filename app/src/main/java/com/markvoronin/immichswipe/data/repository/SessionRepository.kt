@@ -23,7 +23,7 @@ import javax.inject.Singleton
 @Singleton
 class SessionRepository @Inject constructor(
     @ApplicationContext context: Context,
-    accountRepository: AccountRepository
+    private val accountRepository: AccountRepository
 ) {
 
     private val dataStore = SessionDataStore(context)
@@ -88,14 +88,10 @@ class SessionRepository @Inject constructor(
 
     val immichLongPressWeb: Flow<Boolean> = dataStore.getImmichLongPressWeb()
 
-    /**
-     * Expose si le rappel périodique de tri est activé. Désactivé par défaut.
-     */
+
     val reminderEnabled: Flow<Boolean> = dataStore.isReminderEnabled()
 
-    /**
-     * Expose la fréquence du rappel. Par défaut: OFTEN.
-     */
+
     val reminderInterval: Flow<ReminderInterval> = dataStore.getReminderInterval().map {
         it?.let { try { ReminderInterval.valueOf(it) } catch(e: Exception) { ReminderInterval.OFTEN } } ?: ReminderInterval.OFTEN
     }
@@ -270,6 +266,12 @@ class SessionRepository @Inject constructor(
 
     suspend fun removeSavedServerUrl(url: String) {
         dataStore.removeSavedServerUrl(url)
+    }
+
+    /** Encrypts API keys saved as plaintext by older versions (idempotent). */
+    suspend fun migrateLegacySecrets() {
+        dataStore.encryptStoredApiKeyIfNeeded()
+        accountRepository.encryptLegacyApiKeys()
     }
 
     suspend fun initializeTutorialState() {

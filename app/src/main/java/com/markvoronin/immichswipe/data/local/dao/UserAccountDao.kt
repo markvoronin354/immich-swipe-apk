@@ -13,6 +13,9 @@ interface UserAccountDao {
     @Query("SELECT * FROM user_accounts ORDER BY lastActive DESC")
     fun getAllAccounts(): Flow<List<UserAccountEntity>>
 
+    @Query("SELECT * FROM user_accounts")
+    suspend fun getAllAccountsOnce(): List<UserAccountEntity>
+
     @Query("SELECT * FROM user_accounts WHERE userId = :userId")
     suspend fun getAccountById(userId: String): UserAccountEntity?
 
