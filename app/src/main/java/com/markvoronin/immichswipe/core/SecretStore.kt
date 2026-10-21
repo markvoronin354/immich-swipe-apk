@@ -1,8 +1,10 @@
 package com.markvoronin.immichswipe.core
 
 import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
 import java.security.KeyStore
+import java.security.UnrecoverableKeyException
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -12,6 +14,12 @@ import javax.crypto.spec.GCMParameterSpec
 interface SecretCrypto {
     fun encrypt(plain: ByteArray): ByteArray
     fun decrypt(data: ByteArray): ByteArray
+
+    /**
+     * Called once after [encrypt] failed, before a single retry. An implementation can repair itself
+     * here, for example by replacing a key that can no longer be used. Does nothing by default.
+     */
+    fun recoverFrom(error: Exception) {}
 }
 
 /**
@@ -23,13 +31,21 @@ class SecretStore(private val crypto: SecretCrypto) {
 
     fun encrypt(plain: String): String {
         if (plain.isEmpty()) return plain
-        return try {
-            PREFIX + java.util.Base64.getEncoder().encodeToString(crypto.encrypt(plain.toByteArray(Charsets.UTF_8)))
-        } catch (e: Exception) {
-            // Never lose the credential because the Keystore is unavailable on a broken device.
-            AppLogger.e("SecretStore", "Encryption failed, storing value unprotected: ${e.message}")
-            plain
+        val bytes = plain.toByteArray(Charsets.UTF_8)
+        val encrypted = try {
+            crypto.encrypt(bytes)
+        } catch (first: Exception) {
+            AppLogger.w("SecretStore", "Encryption failed, retrying once: ${first.message}")
+            try {
+                crypto.recoverFrom(first)
+                crypto.encrypt(bytes)
+            } catch (second: Exception) {
+                // Never lose the credential because the Keystore is unavailable on a broken device.
+                AppLogger.e("SecretStore", "Encryption failed again, storing value unprotected: ${second.message}")
+                return plain
+            }
         }
+        return PREFIX + java.util.Base64.getEncoder().encodeToString(encrypted)
     }
 
     /** Returns the plaintext, or null when an encrypted value can no longer be decrypted. */
@@ -74,6 +90,22 @@ class KeystoreCrypto : SecretCrypto {
         val cipher = Cipher.getInstance(TRANSFORMATION).apply { init(Cipher.ENCRYPT_MODE, key()) }
         // Layout: [iv length][iv][ciphertext+tag]
         return byteArrayOf(cipher.iv.size.toByte()) + cipher.iv + cipher.doFinal(plain)
+    }
+
+    /**
+     * Replaces the key only when it is permanently unusable (for example invalidated after a lock screen
+     * change). A transient failure must not delete it: that would make every stored secret unreadable.
+     */
+    override fun recoverFrom(error: Exception) {
+        var cause: Throwable? = error
+        while (cause != null) {
+            if (cause is KeyPermanentlyInvalidatedException || cause is UnrecoverableKeyException) {
+                AppLogger.w("SecretStore", "Keystore key unusable, creating a new one")
+                KeyStore.getInstance(PROVIDER).apply { load(null) }.deleteEntry(ALIAS)
+                return
+            }
+            cause = cause.cause
+        }
     }
 
     override fun decrypt(data: ByteArray): ByteArray {
