@@ -18,9 +18,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.markvoronin.immichswipe.R
 
 @Composable
 fun SwipeBulkOverlay(
@@ -45,13 +47,13 @@ fun SwipeBulkOverlay(
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                text = if (isDelete) "Bulk Delete: $selectionCount selected" else "Bulk Keep: $selectionCount selected",
+                text = if (isDelete) stringResource(R.string.swipe_bulk_delete_title, selectionCount) else stringResource(R.string.swipe_bulk_keep_title, selectionCount),
                 color = Color.White,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = if (isDelete) "Slide right to select, release to delete" else "Slide left to select, release to keep",
+                text = if (isDelete) stringResource(R.string.swipe_bulk_delete_hint) else stringResource(R.string.swipe_bulk_keep_hint),
                 color = Color.White.copy(alpha = 0.8f),
                 style = MaterialTheme.typography.bodyMedium
             )

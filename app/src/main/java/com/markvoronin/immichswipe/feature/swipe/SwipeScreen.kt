@@ -23,6 +23,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -202,6 +203,7 @@ fun SwipeScreen(
     }
 
      val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val playbackBehavior = uiState.playbackBehavior
     val currentAsset = uiState.currentAsset
@@ -342,7 +344,7 @@ fun SwipeScreen(
                 ?: "immich_${asset.id}.${asset.fileExtension ?: "jpg"}"
             val fileName = if (rawName.contains(".")) rawName else "$rawName.${asset.fileExtension ?: "jpg"}"
 
-            Toast.makeText(context, "Downloading $fileName...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, resources.getString(R.string.swipe_download_started, fileName), Toast.LENGTH_SHORT).show()
 
             scope.launch(Dispatchers.IO) {
                 // The API key is sent as a header on every request, never in the URL, so it cannot
@@ -378,7 +380,7 @@ fun SwipeScreen(
 
                 if (response == null) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Download failed: Server error", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, resources.getString(R.string.swipe_download_server_error), Toast.LENGTH_LONG).show()
                     }
                     return@launch
                 }
@@ -414,12 +416,12 @@ fun SwipeScreen(
                     }
 
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Saved to Downloads: $fileName", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, resources.getString(R.string.swipe_download_saved, fileName), Toast.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
                     AppLogger.e("Download", "Error saving downloaded file", e)
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Failed to save file: ${e.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, resources.getString(R.string.swipe_download_save_error, e.message.orEmpty()), Toast.LENGTH_LONG).show()
                     }
                 } finally {
                     body.close()
@@ -434,7 +436,7 @@ fun SwipeScreen(
             val apiKey = uiState.apiKey
             if (baseUrl.isEmpty() || apiKey.isEmpty()) return@collect
 
-            Toast.makeText(context, "Preparing share...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, resources.getString(R.string.swipe_share_preparing), Toast.LENGTH_SHORT).show()
 
             scope.launch(Dispatchers.IO) {
                 // The API key is sent as a header on every request, never in the URL, so it cannot
@@ -470,7 +472,7 @@ fun SwipeScreen(
 
                 if (response == null) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Share failed: Server error", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, resources.getString(R.string.swipe_share_server_error), Toast.LENGTH_LONG).show()
                     }
                     return@launch
                 }
@@ -501,11 +503,11 @@ fun SwipeScreen(
                         putExtra(Intent.EXTRA_STREAM, contentUri)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
-                    context.startActivity(Intent.createChooser(intent, "Share media"))
+                    context.startActivity(Intent.createChooser(intent, resources.getString(R.string.swipe_share_chooser_title)))
                 } catch (e: Exception) {
                     AppLogger.e("Share", "Error sharing asset", e)
                     launch(Dispatchers.Main) {
-                        Toast.makeText(context, "Failed to share: ${e.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, resources.getString(R.string.swipe_share_error, e.message.orEmpty()), Toast.LENGTH_LONG).show()
                     }
                 }
             }

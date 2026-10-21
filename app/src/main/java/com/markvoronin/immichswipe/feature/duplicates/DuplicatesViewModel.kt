@@ -142,7 +142,7 @@ class DuplicatesViewModel @Inject constructor(
                 it.copy(
                     isLoading = false, 
                     isSyncing = false,
-                    error = e.message ?: "Unknown error occurred"
+                    error = e.message.orEmpty()
                 ) 
             }
         }
@@ -353,7 +353,7 @@ class DuplicatesViewModel @Inject constructor(
                 _uiState.update { 
                     it.copy(
                         isSyncing = false, 
-                        error = "Failed to sync: ${e.message}"
+                        error = e.message.orEmpty()
                     ) 
                 }
             } finally {

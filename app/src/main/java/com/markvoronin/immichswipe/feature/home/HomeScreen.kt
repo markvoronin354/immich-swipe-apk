@@ -130,6 +130,7 @@ fun HomeScreen(
     }
 
     val virtualAllName = stringResource(R.string.home_virtual_all_assets)
+    val albumFallbackName = stringResource(R.string.home_album_fallback)
     val virtualAllDesc = stringResource(R.string.home_virtual_all_assets_desc)
     val virtualOrphansName = stringResource(R.string.home_virtual_orphans)
     val virtualOrphansDesc = stringResource(R.string.home_virtual_orphans_desc)
@@ -143,7 +144,7 @@ fun HomeScreen(
         val albumId = currentTopKey.albumId
         uiState.filteredAlbums.firstOrNull { it.id == albumId }?.albumName
             ?: uiState.selectedAlbum?.takeIf { it.id == albumId }?.albumName
-            ?: if (albumId == Album.VIRTUAL_ALL_ID) virtualAllName else (uiState.virtualNames[albumId] ?: "Album")
+            ?: if (albumId == Album.VIRTUAL_ALL_ID) virtualAllName else (uiState.virtualNames[albumId] ?: albumFallbackName)
     } else null
 
     LaunchedEffect(Unit) {
@@ -315,7 +316,7 @@ fun HomeScreen(
                                 ?: uiState.selectedAlbum?.takeIf { it.id == key.albumId }
                                 ?: Album(
                                     id = key.albumId,
-                                    albumName = if (key.albumId == Album.VIRTUAL_ALL_ID) virtualAllName else (uiState.virtualNames[key.albumId] ?: "Album"),
+                                    albumName = if (key.albumId == Album.VIRTUAL_ALL_ID) virtualAllName else (uiState.virtualNames[key.albumId] ?: albumFallbackName),
                                     description = uiState.virtualDescriptions[key.albumId],
                                     assetCount = 0,
                                     albumThumbnailAssetId = null

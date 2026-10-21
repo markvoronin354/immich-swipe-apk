@@ -31,11 +31,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
 import kotlinx.coroutines.coroutineScope
@@ -160,7 +162,7 @@ fun InstagramZoomOverlay(
             if (isFavorite) {
                 Icon(
                     imageVector = Icons.Default.Favorite,
-                    contentDescription = "Favorite",
+                    contentDescription = stringResource(R.string.cd_favorite),
                     tint = Color.Red,
                     modifier = Modifier
                         .align(Alignment.TopStart)

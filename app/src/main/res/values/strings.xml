@@ -364,4 +364,56 @@
         <item quantity="other">%1$s photos are still waiting to be sorted.</item>
     </plurals>
     <string name="reminder_channel_name">Cleanup reminder</string>
+
+    <!-- Accessibility (content descriptions) -->
+    <string name="cd_remove">Remove</string>
+    <string name="cd_toggle_key_visibility">Toggle key visibility</string>
+    <string name="cd_decrease">Decrease</string>
+    <string name="cd_increase">Increase</string>
+    <string name="cd_mute">Mute</string>
+    <string name="cd_unmute">Unmute</string>
+    <string name="cd_play">Play</string>
+    <string name="cd_pause">Pause</string>
+    <string name="cd_paused">Paused</string>
+    <string name="cd_download">Download</string>
+    <string name="cd_share">Share</string>
+    <string name="cd_favorite">Favorite</string>
+    <string name="cd_video">Video</string>
+    <string name="cd_asset_info">Asset info</string>
+    <string name="cd_previous_group">Previous group</string>
+    <string name="cd_next_group">Next group</string>
+
+    <!-- Misc messages -->
+    <string name="login_logs_button">Logs</string>
+    <string name="launcher_no_server_url">Server URL is not configured</string>
+    <string name="launcher_no_browser">Could not open web browser</string>
+    <string name="launcher_immich_not_installed">Immich app is not installed</string>
+    <string name="settings_sync_local_permission_denied">Permission denied. Local sync disabled.</string>
+    <string name="settings_clear_cache_error">Failed to clear cache: %1$s</string>
+    <string name="settings_logs_clip_label">Immich Swipe Logs</string>
+    <string name="home_album_fallback">Album</string>
+    <string name="swipe_download_started">Downloading %1$s…</string>
+    <string name="swipe_download_server_error">Download failed: Server error</string>
+    <string name="swipe_download_saved">Saved to Downloads: %1$s</string>
+    <string name="swipe_download_save_error">Failed to save file: %1$s</string>
+    <string name="swipe_share_preparing">Preparing share…</string>
+    <string name="swipe_share_server_error">Share failed: Server error</string>
+    <string name="swipe_share_error">Failed to share: %1$s</string>
+    <string name="swipe_share_chooser_title">Share media</string>
+    <string name="swipe_bulk_delete_title">Bulk Delete: %1$d selected</string>
+    <string name="swipe_bulk_keep_title">Bulk Keep: %1$d selected</string>
+    <string name="swipe_bulk_delete_hint">Slide right to select, release to delete</string>
+    <string name="swipe_bulk_keep_hint">Slide left to select, release to keep</string>
+    <string name="swipe_loading_metadata">Loading album metadata… %1$d / %2$d</string>
+    <plurals name="swipe_summary_photos_count">
+        <item quantity="one">%1$d photo</item>
+        <item quantity="other">%1$d photos</item>
+    </plurals>
+    <string name="swipe_metadata_unavailable">N/A</string>
+    <string name="duplicates_none_found">No duplicates found!</string>
+    <string name="duplicates_unknown_size">Unknown size</string>
+    <string name="duplicates_unknown">Unknown</string>
+    <string name="duplicates_photo_fallback">Photo</string>
+    <string name="duplicates_swipe_down_dismiss">Swipe down to dismiss</string>
+    <string name="duplicates_decision_none">NONE</string>
 </resources>

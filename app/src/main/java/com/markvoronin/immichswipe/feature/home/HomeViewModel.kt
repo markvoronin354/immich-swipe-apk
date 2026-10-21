@@ -248,7 +248,7 @@ class HomeViewModel @Inject constructor(
                 AppLogger.e("Home", "Error during initial loading", e)
                 _uiState.update { 
                     it.copy(
-                        error = e.message ?: "Loading error", 
+                        error = e.message.orEmpty(), 
                         isLoading = false
                     )
                 }

@@ -354,7 +354,7 @@ fun ProfilePopup(
                                 Spacer(Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = account.userName ?: "User",
+                                        text = account.userName ?: stringResource(R.string.home_user_fallback),
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.Medium
                                     )
@@ -373,7 +373,7 @@ fun ProfilePopup(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.DeleteOutline,
-                                            contentDescription = "Remove",
+                                            contentDescription = stringResource(R.string.cd_remove),
                                             tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f),
                                             modifier = Modifier.size(18.dp)
                                         )

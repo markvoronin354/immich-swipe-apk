@@ -236,7 +236,7 @@ fun AuthScreen(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Close,
-                                            contentDescription = "Remove",
+                                            contentDescription = stringResource(R.string.cd_remove),
                                             tint = MaterialTheme.colorScheme.outline,
                                             modifier = Modifier.size(16.dp)
                                         )
@@ -259,7 +259,7 @@ fun AuthScreen(
                         IconButton(onClick = { apiKeyVisible = !apiKeyVisible }) {
                             Icon(
                                 imageVector = if (apiKeyVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = "Toggle key visibility",
+                                contentDescription = stringResource(R.string.cd_toggle_key_visibility),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -472,7 +472,7 @@ fun AuthScreen(
                     color = MaterialTheme.colorScheme.outline
                 )
                 Text(
-                    text = "Logs",
+                    text = stringResource(R.string.login_logs_button),
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,

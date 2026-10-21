@@ -340,7 +340,7 @@ fun FullScreenPreviewModal(
                             }
                     ) {
                         val sizeStr = currentAsset.exifInfo?.fileSizeInBytes?.let { formatSizeStr(it) } ?: ""
-                        val originalName = currentAsset.originalFileName ?: "Photo"
+                        val originalName = currentAsset.originalFileName ?: stringResource(R.string.duplicates_photo_fallback)
 
                         val displayedName = if (isFileNameExpanded) {
                             originalName
@@ -374,7 +374,7 @@ fun FullScreenPreviewModal(
                         ) {
                             Icon(
                                 imageVector = if (currentIsFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = "Favorite",
+                                contentDescription = stringResource(R.string.cd_favorite),
                                 tint = if (currentIsFav) Color.Red else Color.White
                             )
                         }
@@ -389,7 +389,7 @@ fun FullScreenPreviewModal(
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Info,
-                                contentDescription = "Asset Info",
+                                contentDescription = stringResource(R.string.cd_asset_info),
                                 tint = Color.White
                             )
                         }
@@ -400,7 +400,7 @@ fun FullScreenPreviewModal(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
+                                contentDescription = stringResource(R.string.common_close),
                                 tint = Color.White
                             )
                         }
@@ -455,10 +455,10 @@ fun FullScreenPreviewModal(
                                 val formatLabel = if (currentAsset.fileExtension != null) {
                                     "${currentAsset.type} (.${currentAsset.fileExtension.lowercase()})"
                                 } else currentAsset.type
-                                val sizeLabel = currentAsset.exifInfo?.fileSizeInBytes?.let { formatSizeStr(it) } ?: "Unknown"
+                                val sizeLabel = currentAsset.exifInfo?.fileSizeInBytes?.let { formatSizeStr(it) } ?: stringResource(R.string.duplicates_unknown)
                                 val resolutionLabel = currentAsset.exifInfo?.let {
                                     "${it.imageWidth ?: "?"} × ${it.imageHeight ?: "?"}"
-                                } ?: "Unknown"
+                                } ?: stringResource(R.string.duplicates_unknown)
                                 val dateLabel = currentAsset.effectiveDate.substringBefore("T")
 
                                 MetadataRow(
@@ -729,9 +729,9 @@ fun FullScreenPreviewModal(
                         DuplicateDecision.NONE -> Color.White.copy(alpha = 0.7f)
                     }
                     val badgeText = when (currentDecision) {
-                        DuplicateDecision.DELETE -> "DELETE"
-                        DuplicateDecision.KEEP -> "KEEP"
-                        DuplicateDecision.NONE -> "NONE"
+                        DuplicateDecision.DELETE -> stringResource(R.string.swipe_delete_upper)
+                        DuplicateDecision.KEEP -> stringResource(R.string.swipe_keep_upper)
+                        DuplicateDecision.NONE -> stringResource(R.string.duplicates_decision_none)
                     }
 
                     Row(
@@ -859,7 +859,7 @@ fun FullScreenPreviewModal(
                                         if (asset.type == "VIDEO") {
                                             Icon(
                                                 imageVector = Icons.Default.PlayArrow,
-                                                contentDescription = "Video",
+                                                contentDescription = stringResource(R.string.cd_video),
                                                 tint = Color.White,
                                                 modifier = Modifier
                                                     .size(12.dp)
@@ -908,7 +908,7 @@ fun FullScreenPreviewModal(
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
-                                contentDescription = "Previous Group",
+                                contentDescription = stringResource(R.string.cd_previous_group),
                                 tint = if (hasPreviousGroup) Color.White else Color.White.copy(alpha = 0.2f),
                                 modifier = Modifier.size(24.dp)
                             )
@@ -919,7 +919,7 @@ fun FullScreenPreviewModal(
                         ) {
                             Text(
                                 text = if (clusters.size > 1) {
-                                    "Group ${currentClusterIdx + 1} of ${clusters.size}"
+                                    stringResource(R.string.duplicates_ai_cluster_progress, currentClusterIdx + 1, clusters.size)
                                 } else {
                                     "${selectedIndex + 1} / ${assets.size}"
                                 },
@@ -936,7 +936,7 @@ fun FullScreenPreviewModal(
                                 )
                                 Spacer(modifier = Modifier.width(2.dp))
                                 Text(
-                                    text = "Swipe down to dismiss",
+                                    text = stringResource(R.string.duplicates_swipe_down_dismiss),
                                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                                     color = Color.White.copy(alpha = 0.5f)
                                 )
@@ -956,7 +956,7 @@ fun FullScreenPreviewModal(
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                                contentDescription = "Next Group",
+                                contentDescription = stringResource(R.string.cd_next_group),
                                 tint = if (hasNextGroup) Color.White else Color.White.copy(alpha = 0.2f),
                                 modifier = Modifier.size(24.dp)
                             )

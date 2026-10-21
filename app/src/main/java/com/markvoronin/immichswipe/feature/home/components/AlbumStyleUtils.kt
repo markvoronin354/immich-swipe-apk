@@ -105,7 +105,7 @@ fun ErrorView(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = error,
+                    text = error.ifBlank { stringResource(R.string.login_error_unknown) },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,

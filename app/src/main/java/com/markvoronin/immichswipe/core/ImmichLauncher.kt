@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.core.net.toUri
+import com.markvoronin.immichswipe.R
 
 object ImmichLauncher {
     private const val IMMICH_PACKAGE_NAME = "app.alextran.immich"
@@ -24,7 +25,7 @@ object ImmichLauncher {
             if (!baseUrl.isNullOrBlank()) {
                 openInWeb(context, baseUrl, assetId)
             } else {
-                Toast.makeText(context, "Server URL is not configured", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.launcher_no_server_url), Toast.LENGTH_SHORT).show()
             }
             return
         }
@@ -76,7 +77,7 @@ object ImmichLauncher {
             context.startActivity(intent)
         } catch (e: ActivityNotFoundException) {
             AppLogger.e("ImmichLauncher", "Failed to open web URL: $url", e)
-            Toast.makeText(context, "Could not open web browser", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.launcher_no_browser), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -90,7 +91,7 @@ object ImmichLauncher {
             }
             context.startActivity(playStoreIntent)
         } catch (_: ActivityNotFoundException) {
-            Toast.makeText(context, "Immich app is not installed", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.launcher_immich_not_installed), Toast.LENGTH_SHORT).show()
         }
     }
 }

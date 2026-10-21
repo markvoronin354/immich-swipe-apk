@@ -61,7 +61,7 @@ data class HomeUiState(
             if (allAssetsCount > 0) {
                 virtuals.add(Album(
                     id = Album.VIRTUAL_ALL_ID,
-                    albumName = virtualNames[Album.VIRTUAL_ALL_ID] ?: "All Assets",
+                    albumName = virtualNames[Album.VIRTUAL_ALL_ID].orEmpty(),
                     description = virtualDescriptions[Album.VIRTUAL_ALL_ID],
                     assetCount = allAssetsCount,
                     albumThumbnailAssetId = null
@@ -72,7 +72,7 @@ data class HomeUiState(
             if (orphansCount > 0) {
                 virtuals.add(Album(
                     id = Album.VIRTUAL_ORPHANS_ID,
-                    albumName = virtualNames[Album.VIRTUAL_ORPHANS_ID] ?: "Orphans",
+                    albumName = virtualNames[Album.VIRTUAL_ORPHANS_ID].orEmpty(),
                     description = virtualDescriptions[Album.VIRTUAL_ORPHANS_ID],
                     assetCount = orphansCount,
                     albumThumbnailAssetId = null
@@ -83,7 +83,7 @@ data class HomeUiState(
             if (duplicatesCount > 0) {
                 virtuals.add(Album(
                     id = Album.VIRTUAL_DUPLICATES_ID,
-                    albumName = virtualNames[Album.VIRTUAL_DUPLICATES_ID] ?: "Duplicates",
+                    albumName = virtualNames[Album.VIRTUAL_DUPLICATES_ID].orEmpty(),
                     description = virtualDescriptions[Album.VIRTUAL_DUPLICATES_ID],
                     assetCount = duplicatesCount,
                     albumThumbnailAssetId = null

@@ -46,11 +46,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
@@ -237,7 +239,7 @@ fun DuplicateAssetItem(
             if (isFavorite) {
                 Icon(
                     imageVector = Icons.Default.Favorite,
-                    contentDescription = "Favorite",
+                    contentDescription = stringResource(R.string.cd_favorite),
                     tint = Color.Red,
                     modifier = Modifier
                         .align(Alignment.TopStart)
@@ -256,7 +258,7 @@ fun DuplicateAssetItem(
                 ) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Video",
+                        contentDescription = stringResource(R.string.cd_video),
                         tint = Color.White,
                         modifier = Modifier.size(16.dp)
                     )
@@ -298,12 +300,12 @@ fun DuplicateAssetItem(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        val sizeStr = asset.exifInfo?.fileSizeInBytes?.let { formatSizeStr(it) } ?: "Unknown size"
+        val sizeStr = asset.exifInfo?.fileSizeInBytes?.let { formatSizeStr(it) } ?: stringResource(R.string.duplicates_unknown_size)
         Text(text = sizeStr, style = MaterialTheme.typography.bodySmall)
 
         val decisionText = when (decision) {
-            DuplicateDecision.DELETE -> "DELETE"
-            DuplicateDecision.KEEP -> "KEEP"
+            DuplicateDecision.DELETE -> stringResource(R.string.swipe_delete_upper)
+            DuplicateDecision.KEEP -> stringResource(R.string.swipe_keep_upper)
             DuplicateDecision.NONE -> "-"
         }
 

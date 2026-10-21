@@ -320,7 +320,7 @@ fun SharedVideoPlayer(
                                         ) {
                                             Icon(
                                                 imageVector = if (isVideoPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                                contentDescription = if (isVideoPlaying) "Pause" else "Play",
+                                                contentDescription = if (isVideoPlaying) stringResource(R.string.cd_pause) else stringResource(R.string.cd_play),
                                                 tint = Color.White,
                                                 modifier = Modifier.size(14.dp)
                                             )
@@ -378,7 +378,7 @@ fun SharedVideoPlayer(
                                 ) {
                                     Icon(
                                         imageVector = if (isVideoPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                        contentDescription = if (isVideoPlaying) "Pause" else "Play",
+                                        contentDescription = if (isVideoPlaying) stringResource(R.string.cd_pause) else stringResource(R.string.cd_play),
                                         tint = Color.White,
                                         modifier = Modifier.size(20.dp)
                                     )
@@ -425,7 +425,7 @@ fun SharedVideoPlayer(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Pause,
-                        contentDescription = "Paused",
+                        contentDescription = stringResource(R.string.cd_paused),
                         tint = Color.White.copy(alpha = 0.9f),
                         modifier = Modifier.requiredSize(32.dp)
                     )

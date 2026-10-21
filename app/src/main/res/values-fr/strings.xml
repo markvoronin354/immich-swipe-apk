@@ -368,4 +368,57 @@
         <item quantity="other">%1$s photos attendent encore d\'être triées.</item>
     </plurals>
     <string name="reminder_channel_name">Rappel de tri</string>
+
+    <!-- Accessibility (content descriptions) -->
+    <string name="cd_remove">Supprimer</string>
+    <string name="cd_toggle_key_visibility">Afficher ou masquer la clé</string>
+    <string name="cd_decrease">Diminuer</string>
+    <string name="cd_increase">Augmenter</string>
+    <string name="cd_mute">Couper le son</string>
+    <string name="cd_unmute">Activer le son</string>
+    <string name="cd_play">Lecture</string>
+    <string name="cd_pause">Pause</string>
+    <string name="cd_paused">En pause</string>
+    <string name="cd_download">Télécharger</string>
+    <string name="cd_share">Partager</string>
+    <string name="cd_favorite">Favori</string>
+    <string name="cd_video">Vidéo</string>
+    <string name="cd_asset_info">Infos du média</string>
+    <string name="cd_previous_group">Groupe précédent</string>
+    <string name="cd_next_group">Groupe suivant</string>
+
+    <!-- Misc messages -->
+    <string name="login_logs_button">Journaux</string>
+    <string name="launcher_no_server_url">L\'URL du serveur n\'est pas configurée</string>
+    <string name="launcher_no_browser">Impossible d\'ouvrir le navigateur web</string>
+    <string name="launcher_immich_not_installed">L\'application Immich n\'est pas installée</string>
+    <string name="settings_sync_local_permission_denied">Autorisation refusée. La synchronisation locale est désactivée.</string>
+    <string name="settings_clear_cache_error">Échec du vidage du cache : %1$s</string>
+    <string name="settings_logs_clip_label">Journaux Immich Swipe</string>
+    <string name="home_album_fallback">Album</string>
+    <string name="swipe_download_started">Téléchargement de %1$s…</string>
+    <string name="swipe_download_server_error">Échec du téléchargement : erreur du serveur</string>
+    <string name="swipe_download_saved">Enregistré dans Téléchargements : %1$s</string>
+    <string name="swipe_download_save_error">Échec de l\'enregistrement du fichier : %1$s</string>
+    <string name="swipe_share_preparing">Préparation du partage…</string>
+    <string name="swipe_share_server_error">Échec du partage : erreur du serveur</string>
+    <string name="swipe_share_error">Échec du partage : %1$s</string>
+    <string name="swipe_share_chooser_title">Partager le média</string>
+    <string name="swipe_bulk_delete_title">Suppression groupée : %1$d sélectionné(s)</string>
+    <string name="swipe_bulk_keep_title">Conservation groupée : %1$d sélectionné(s)</string>
+    <string name="swipe_bulk_delete_hint">Glissez vers la droite pour sélectionner, relâchez pour supprimer</string>
+    <string name="swipe_bulk_keep_hint">Glissez vers la gauche pour sélectionner, relâchez pour conserver</string>
+    <string name="swipe_loading_metadata">Chargement des métadonnées de l\'album… %1$d / %2$d</string>
+    <plurals name="swipe_summary_photos_count">
+        <item quantity="one">%1$d photo</item>
+        <item quantity="many">%1$d de photos</item>
+        <item quantity="other">%1$d photos</item>
+    </plurals>
+    <string name="swipe_metadata_unavailable">N/D</string>
+    <string name="duplicates_none_found">Aucun doublon trouvé !</string>
+    <string name="duplicates_unknown_size">Taille inconnue</string>
+    <string name="duplicates_unknown">Inconnu</string>
+    <string name="duplicates_photo_fallback">Photo</string>
+    <string name="duplicates_swipe_down_dismiss">Glissez vers le bas pour fermer</string>
+    <string name="duplicates_decision_none">AUCUN</string>
 </resources>

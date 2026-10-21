@@ -138,7 +138,7 @@ private fun DayCounterRow(
                 },
                 enabled = count > 1
             ) {
-                Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                Icon(Icons.Default.Remove, contentDescription = stringResource(R.string.cd_decrease))
             }
 
             BasicTextField(
@@ -186,7 +186,7 @@ private fun DayCounterRow(
                     onCountChange(newCount)
                 }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Increase")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_increase))
             }
         }
     }

@@ -82,6 +82,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -118,6 +119,7 @@ fun SettingsScreen(
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val resources = LocalResources.current
     val uriHandler = LocalUriHandler.current
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -126,7 +128,7 @@ fun SettingsScreen(
         val allGranted = permissions.entries.all { it.value }
         if (!allGranted) {
             viewModel.setSyncLocalDeletion(sync = false)
-            Toast.makeText(context, "Permission denied. Local sync disabled.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, resources.getString(R.string.settings_sync_local_permission_denied), Toast.LENGTH_SHORT).show()
         }
     }
 

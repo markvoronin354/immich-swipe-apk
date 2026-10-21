@@ -611,7 +611,7 @@ class SettingsViewModel @Inject constructor(
             } catch (e: Exception) {
                 AppLogger.e("SettingsVM", "Failed to clear cache", e)
                 _uiState.value = _uiState.value.copy(
-                    databaseActionStatus = "Failed to clear cache: ${e.message}",
+                    databaseActionStatus = context.getString(R.string.settings_clear_cache_error, e.message.orEmpty()),
                     showClearCacheConfirmation = false
                 )
             }

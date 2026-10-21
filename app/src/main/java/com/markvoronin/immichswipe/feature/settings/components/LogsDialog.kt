@@ -67,6 +67,7 @@ fun LogsDialog(
     onDismiss: () -> Unit
 ) {
     val logsCopiedMessage = stringResource(R.string.settings_logs_copied_toast)
+    val logsClipLabel = stringResource(R.string.settings_logs_clip_label)
     val errorColor = MaterialTheme.colorScheme.error
     val warningColor = Color(0xFFFFA500)
 
@@ -224,7 +225,7 @@ fun LogsDialog(
             TextButton(
                 onClick = { 
                     scope.launch {
-                        val clipData = ClipData.newPlainText("Immich Swipe Logs", rawLogs)
+                        val clipData = ClipData.newPlainText(logsClipLabel, rawLogs)
                         clipboard.setClipEntry(ClipEntry(clipData))
                     }
                     Toast.makeText(context, logsCopiedMessage, Toast.LENGTH_SHORT).show()

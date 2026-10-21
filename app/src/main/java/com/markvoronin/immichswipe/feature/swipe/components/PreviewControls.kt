@@ -28,8 +28,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.markvoronin.immichswipe.R
 
 @Composable
 fun PreviewControls(
@@ -89,7 +91,7 @@ fun PreviewControls(
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "Close",
+                    contentDescription = stringResource(R.string.common_close),
                     tint = Color.White
                 )
             }
@@ -105,7 +107,7 @@ fun PreviewControls(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Undo,
-                        contentDescription = "Undo",
+                        contentDescription = stringResource(R.string.swipe_undo),
                         tint = Color.White
                     )
                 }
@@ -122,7 +124,7 @@ fun PreviewControls(
                 ) {
                     Icon(
                         imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
-                        contentDescription = "Mute",
+                        contentDescription = stringResource(R.string.cd_mute),
                         tint = Color.White
                     )
                 }

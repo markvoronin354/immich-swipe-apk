@@ -62,7 +62,7 @@ fun SwipeCardDeck(
                 CircularProgressIndicator()
                 if (uiState.syncTotalCount > 0) {
                     Text(
-                        text = "Loading album metadata... ${uiState.syncLoadedCount} / ${uiState.syncTotalCount}",
+                        text = stringResource(R.string.swipe_loading_metadata, uiState.syncLoadedCount, uiState.syncTotalCount),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

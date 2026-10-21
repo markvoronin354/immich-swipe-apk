@@ -227,7 +227,7 @@ fun DuplicatesScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "No duplicates found!",
+                        text = stringResource(R.string.duplicates_none_found),
                         style = MaterialTheme.typography.titleLarge
                     )
                 }

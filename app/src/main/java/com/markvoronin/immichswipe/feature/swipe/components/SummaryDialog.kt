@@ -67,6 +67,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -215,7 +216,7 @@ fun SummaryDialog(
                         }
                     } else if (uiState.deletedAssets.isNotEmpty()) {
                         Text(
-                            "${uiState.deletedAssets.size} photos",
+                            pluralStringResource(R.plurals.swipe_summary_photos_count, uiState.deletedAssets.size, uiState.deletedAssets.size),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

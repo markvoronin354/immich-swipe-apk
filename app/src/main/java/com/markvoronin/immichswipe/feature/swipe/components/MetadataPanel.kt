@@ -126,7 +126,7 @@ fun MetadataPanel(
             val formatLabel = if (asset.fileExtension != null) "${asset.type} (.${asset.fileExtension.lowercase()})" else asset.type
             MetadataRow(Icons.Default.Info, stringResource(R.string.swipe_metadata_format), formatLabel)
             asset.exifInfo?.let { exif ->
-                val sizeLabel = exif.fileSizeInBytes?.let { formatSize(it) } ?: "N/A"
+                val sizeLabel = exif.fileSizeInBytes?.let { formatSize(it) } ?: stringResource(R.string.swipe_metadata_unavailable)
                 MetadataRow(Icons.Default.SdStorage, stringResource(R.string.swipe_metadata_size), sizeLabel)
                 MetadataRow(Icons.Default.AspectRatio, stringResource(R.string.swipe_metadata_resolution), "${exif.imageWidth ?: "?"} x ${exif.imageHeight ?: "?"}")
             } ?: run {

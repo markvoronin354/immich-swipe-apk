@@ -99,7 +99,7 @@ fun ActionButtonsOverlay(
                     buttons.add {
                         SwipeActionIconButton(
                             icon = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
-                            contentDescription = "Mute",
+                            contentDescription = stringResource(R.string.cd_mute),
                             enabled = !isNext,
                             onClick = onToggleMuteWithIndicator
                         )
@@ -109,7 +109,7 @@ fun ActionButtonsOverlay(
                     buttons.add {
                         SwipeActionIconButton(
                             icon = Icons.Default.FileDownload,
-                            contentDescription = "Download",
+                            contentDescription = stringResource(R.string.cd_download),
                             enabled = !isNext,
                             onClick = { actions.onDownload(asset) }
                         )
@@ -119,7 +119,7 @@ fun ActionButtonsOverlay(
                     buttons.add {
                         SwipeActionIconButton(
                             icon = Icons.Default.Share,
-                            contentDescription = "Share",
+                            contentDescription = stringResource(R.string.cd_share),
                             enabled = !isNext,
                             onClick = { actions.onShare(asset) }
                         )
