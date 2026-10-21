@@ -1,0 +1,325 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 13,
+    "identityHash": "15a91b35b15b2d7ab29630c387e46eb6",
+    "entities": [
+      {
+        "tableName": "swipe_decisions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`assetId` TEXT NOT NULL, `albumId` TEXT NOT NULL, `userId` TEXT NOT NULL, `decision` TEXT NOT NULL, `fileSize` INTEGER, `createdAt` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL, `wasSyncedSkip` INTEGER NOT NULL, PRIMARY KEY(`assetId`, `userId`))",
+        "fields": [
+          {
+            "fieldPath": "assetId",
+            "columnName": "assetId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "albumId",
+            "columnName": "albumId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "decision",
+            "columnName": "decision",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fileSize",
+            "columnName": "fileSize",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wasSyncedSkip",
+            "columnName": "wasSyncedSkip",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "assetId",
+            "userId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_swipe_decisions_userId_albumId",
+            "unique": false,
+            "columnNames": [
+              "userId",
+              "albumId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_swipe_decisions_userId_albumId` ON `${TABLE_NAME}` (`userId`, `albumId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "sync_history",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `userId` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `deletedCount` INTEGER NOT NULL, `bytesSaved` INTEGER NOT NULL, `keptCount` INTEGER NOT NULL, `archivedCount` INTEGER NOT NULL, `lockedCount` INTEGER NOT NULL, `skippedCount` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deletedCount",
+            "columnName": "deletedCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bytesSaved",
+            "columnName": "bytesSaved",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "keptCount",
+            "columnName": "keptCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "archivedCount",
+            "columnName": "archivedCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lockedCount",
+            "columnName": "lockedCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "skippedCount",
+            "columnName": "skippedCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "album_assets",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`albumId` TEXT NOT NULL, `assetId` TEXT NOT NULL, `userId` TEXT NOT NULL, `type` TEXT, `fileCreatedAt` TEXT, `originalFileName` TEXT, `fileSizeInBytes` INTEGER, `imageWidth` INTEGER, `imageHeight` INTEGER, `rotation` INTEGER NOT NULL, PRIMARY KEY(`albumId`, `assetId`, `userId`))",
+        "fields": [
+          {
+            "fieldPath": "albumId",
+            "columnName": "albumId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "assetId",
+            "columnName": "assetId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fileCreatedAt",
+            "columnName": "fileCreatedAt",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "originalFileName",
+            "columnName": "originalFileName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fileSizeInBytes",
+            "columnName": "fileSizeInBytes",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "imageWidth",
+            "columnName": "imageWidth",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "imageHeight",
+            "columnName": "imageHeight",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rotation",
+            "columnName": "rotation",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "albumId",
+            "assetId",
+            "userId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_album_assets_assetId",
+            "unique": false,
+            "columnNames": [
+              "assetId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_album_assets_assetId` ON `${TABLE_NAME}` (`assetId`)"
+          },
+          {
+            "name": "index_album_assets_userId",
+            "unique": false,
+            "columnNames": [
+              "userId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_album_assets_userId` ON `${TABLE_NAME}` (`userId`)"
+          },
+          {
+            "name": "index_album_assets_albumId_userId_fileCreatedAt",
+            "unique": false,
+            "columnNames": [
+              "albumId",
+              "userId",
+              "fileCreatedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_album_assets_albumId_userId_fileCreatedAt` ON `${TABLE_NAME}` (`albumId`, `userId`, `fileCreatedAt`)"
+          },
+          {
+            "name": "index_album_assets_albumId_userId_fileSizeInBytes",
+            "unique": false,
+            "columnNames": [
+              "albumId",
+              "userId",
+              "fileSizeInBytes"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_album_assets_albumId_userId_fileSizeInBytes` ON `${TABLE_NAME}` (`albumId`, `userId`, `fileSizeInBytes`)"
+          },
+          {
+            "name": "index_album_assets_albumId_userId_type_fileCreatedAt",
+            "unique": false,
+            "columnNames": [
+              "albumId",
+              "userId",
+              "type",
+              "fileCreatedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_album_assets_albumId_userId_type_fileCreatedAt` ON `${TABLE_NAME}` (`albumId`, `userId`, `type`, `fileCreatedAt`)"
+          }
+        ]
+      },
+      {
+        "tableName": "user_accounts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` TEXT NOT NULL, `baseUrl` TEXT NOT NULL, `apiKey` TEXT NOT NULL, `userName` TEXT, `userEmail` TEXT NOT NULL, `avatarColor` TEXT, `lastActive` INTEGER NOT NULL, PRIMARY KEY(`userId`))",
+        "fields": [
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "baseUrl",
+            "columnName": "baseUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "apiKey",
+            "columnName": "apiKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userName",
+            "columnName": "userName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "userEmail",
+            "columnName": "userEmail",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "avatarColor",
+            "columnName": "avatarColor",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastActive",
+            "columnName": "lastActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "userId"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '15a91b35b15b2d7ab29630c387e46eb6')"
+    ]
+  }
+}

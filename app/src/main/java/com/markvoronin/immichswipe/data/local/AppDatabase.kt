@@ -19,7 +19,7 @@ import com.markvoronin.immichswipe.data.local.entity.UserAccountEntity
 @Database(
     entities = [SwipeDecisionEntity::class, SyncHistoryEntity::class, AlbumAssetEntity::class, UserAccountEntity::class],
     version = 13,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun swipeDecisionDao(): SwipeDecisionDao
