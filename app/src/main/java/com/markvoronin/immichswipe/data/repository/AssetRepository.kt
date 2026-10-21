@@ -3,6 +3,7 @@ package com.markvoronin.immichswipe.data.repository
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.SessionManager
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
 import com.markvoronin.immichswipe.data.api.AssetEditAction
 import com.markvoronin.immichswipe.data.api.AssetEditActionItem
 import com.markvoronin.immichswipe.data.api.DeleteAssetsRequest
@@ -24,8 +25,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
-import javax.inject.Inject
-import javax.inject.Singleton
 
 data class AssetBatch(
     val assets: List<Asset>,
@@ -34,8 +33,8 @@ data class AssetBatch(
     val isSyncing: Boolean = false
 )
 
-@Singleton
-class AssetRepository @Inject constructor(
+// Provided by RepositoryModule (the constructor has optional parameters Dagger cannot satisfy).
+class AssetRepository(
     private val sessionManager: SessionManager,
     private val customApi: ImmichApi? = null,
     private val albumAssetDao: AlbumAssetDao? = null
@@ -55,19 +54,18 @@ class AssetRepository @Inject constructor(
             return@channelFlow
         }
 
-        val maxDbLimit = 100000
         val cachedEntities = when (sortOrder) {
-            SortOrder.CHRONOLOGICAL_DESC -> albumAssetDao.getAssetsChronologicalDesc(albumId, userId, limit = maxDbLimit, offset = 0)
-            SortOrder.CHRONOLOGICAL_ASC -> albumAssetDao.getAssetsChronologicalAsc(albumId, userId, limit = maxDbLimit, offset = 0)
-            SortOrder.SIZE_DESC -> albumAssetDao.getAssetsSizeDesc(albumId, userId, limit = maxDbLimit, offset = 0)
-            SortOrder.SIZE_ASC -> albumAssetDao.getAssetsSizeAsc(albumId, userId, limit = maxDbLimit, offset = 0)
-            SortOrder.TYPE_VIDEO_FIRST -> albumAssetDao.getAssetsTypeVideoFirstDesc(albumId, userId, limit = maxDbLimit, offset = 0)
-            SortOrder.TYPE_PHOTO_FIRST -> albumAssetDao.getAssetsTypePhotoFirstDesc(albumId, userId, limit = maxDbLimit, offset = 0)
-            SortOrder.TYPE_VIDEO_FIRST_ASC -> albumAssetDao.getAssetsTypeVideoFirstAsc(albumId, userId, limit = maxDbLimit, offset = 0)
-            SortOrder.TYPE_PHOTO_FIRST_ASC -> albumAssetDao.getAssetsTypePhotoFirstAsc(albumId, userId, limit = maxDbLimit, offset = 0)
-            SortOrder.SHUFFLED -> albumAssetDao.getAssetsShuffled(albumId, userId, shuffleSeed ?: 1L, limit = maxDbLimit, offset = 0)
-            SortOrder.TYPE_VIDEO_FIRST_SHUFFLED -> albumAssetDao.getAssetsTypeVideoFirstShuffled(albumId, userId, shuffleSeed ?: 1L, limit = maxDbLimit, offset = 0)
-            SortOrder.TYPE_PHOTO_FIRST_SHUFFLED -> albumAssetDao.getAssetsTypePhotoFirstShuffled(albumId, userId, shuffleSeed ?: 1L, limit = maxDbLimit, offset = 0)
+            SortOrder.CHRONOLOGICAL_DESC -> albumAssetDao.getAssetsChronologicalDesc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.CHRONOLOGICAL_ASC -> albumAssetDao.getAssetsChronologicalAsc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.SIZE_DESC -> albumAssetDao.getAssetsSizeDesc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.SIZE_ASC -> albumAssetDao.getAssetsSizeAsc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.TYPE_VIDEO_FIRST -> albumAssetDao.getAssetsTypeVideoFirstDesc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.TYPE_PHOTO_FIRST -> albumAssetDao.getAssetsTypePhotoFirstDesc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.TYPE_VIDEO_FIRST_ASC -> albumAssetDao.getAssetsTypeVideoFirstAsc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.TYPE_PHOTO_FIRST_ASC -> albumAssetDao.getAssetsTypePhotoFirstAsc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.SHUFFLED -> albumAssetDao.getAssetsShuffled(albumId, userId, shuffleSeed ?: 1L, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.TYPE_VIDEO_FIRST_SHUFFLED -> albumAssetDao.getAssetsTypeVideoFirstShuffled(albumId, userId, shuffleSeed ?: 1L, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.TYPE_PHOTO_FIRST_SHUFFLED -> albumAssetDao.getAssetsTypePhotoFirstShuffled(albumId, userId, shuffleSeed ?: 1L, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
         }
         
         val mappedLocal = withContext(Dispatchers.Default) {
@@ -116,6 +114,7 @@ class AssetRepository @Inject constructor(
                 // For duplicates, we don't cache them in the DB yet, just return them directly
                 send(AssetBatch(flatAssets, flatAssets.size, isLocalCache = false, isSyncing = false))
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 AppLogger.e("AssetRepo", "Error fetching duplicates: ${e.message}")
                 send(AssetBatch(emptyList(), 0, isLocalCache = false, isSyncing = false))
             }
@@ -156,6 +155,7 @@ class AssetRepository @Inject constructor(
                 send(AssetBatch(finalItems, finalItems.size, isLocalCache = false, isSyncing = false))
                 return@channelFlow
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 AppLogger.w("AssetRepo", "GET api/albums/$albumId detail failed, falling back to search API: ${e.message}")
             }
         }
@@ -184,6 +184,7 @@ class AssetRepository @Inject constructor(
         val statsResp = try {
             api.getSearchStatistics(statsRequest)
         } catch (e: Exception) {
+            e.rethrowIfCancelled()
             AppLogger.e("AssetRepo", "Error fetching stats: ${e.message}")
             null
         }
@@ -194,6 +195,7 @@ class AssetRepository @Inject constructor(
         val firstPageResp = try {
             api.searchAssets(baseRequest.copy(page = 1, size = 500))
         } catch (e: Exception) {
+            e.rethrowIfCancelled()
             AppLogger.e("AssetRepo", "Error fetching first page: ${e.message}")
             if (mappedLocal.isEmpty()) send(AssetBatch(emptyList(), totalFromServer, isLocalCache = false, isSyncing = false))
             else send(AssetBatch(mappedLocal, mappedLocal.size, isLocalCache = true, isSyncing = false))
@@ -309,13 +311,17 @@ class AssetRepository @Inject constructor(
                 nextPage = resp.assets.nextPage
                 if (allFetchedAssets.size > 500000) break
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 AppLogger.e("AssetRepo", "Error page sync: ${e.message}")
                 break
             }
         }
 
-        // Purge stale items that were in local DB but no longer returned by the server
-        if (allServerFetchedIds.isNotEmpty()) {
+        // Purge stale items that were in local DB but no longer returned by the server. Only after a
+        // complete pass: after an error or cancellation the fetched set is partial, and purging would
+        // delete cached rows of assets that simply were not re-fetched yet.
+        val syncCompleted = nextPage == null
+        if (syncCompleted && allServerFetchedIds.isNotEmpty()) {
             val allStaleIds = cachedEntities.map { it.assetId }.filter { it !in allServerFetchedIds }
             if (allStaleIds.isNotEmpty()) {
                 withContext(Dispatchers.IO) {
@@ -333,17 +339,17 @@ class AssetRepository @Inject constructor(
         
         // Re-read from DB to ensure sort order is applied to new items
         val finalEntities = when (sortOrder) {
-            SortOrder.CHRONOLOGICAL_DESC -> albumAssetDao.getAssetsChronologicalDesc(albumId, userId, limit = 5000, offset = 0)
-            SortOrder.CHRONOLOGICAL_ASC -> albumAssetDao.getAssetsChronologicalAsc(albumId, userId, limit = 5000, offset = 0)
-            SortOrder.SIZE_DESC -> albumAssetDao.getAssetsSizeDesc(albumId, userId, limit = 5000, offset = 0)
-            SortOrder.SIZE_ASC -> albumAssetDao.getAssetsSizeAsc(albumId, userId, limit = 5000, offset = 0)
-            SortOrder.TYPE_VIDEO_FIRST -> albumAssetDao.getAssetsTypeVideoFirstDesc(albumId, userId, limit = 5000, offset = 0)
-            SortOrder.TYPE_PHOTO_FIRST -> albumAssetDao.getAssetsTypePhotoFirstDesc(albumId, userId, limit = 5000, offset = 0)
-            SortOrder.TYPE_VIDEO_FIRST_ASC -> albumAssetDao.getAssetsTypeVideoFirstAsc(albumId, userId, limit = 5000, offset = 0)
-            SortOrder.TYPE_PHOTO_FIRST_ASC -> albumAssetDao.getAssetsTypePhotoFirstAsc(albumId, userId, limit = 5000, offset = 0)
-            SortOrder.SHUFFLED -> albumAssetDao.getAssetsShuffled(albumId, userId, shuffleSeed ?: 1L, limit = 5000, offset = 0)
-            SortOrder.TYPE_VIDEO_FIRST_SHUFFLED -> albumAssetDao.getAssetsTypeVideoFirstShuffled(albumId, userId, shuffleSeed ?: 1L, limit = 5000, offset = 0)
-            SortOrder.TYPE_PHOTO_FIRST_SHUFFLED -> albumAssetDao.getAssetsTypePhotoFirstShuffled(albumId, userId, shuffleSeed ?: 1L, limit = 5000, offset = 0)
+            SortOrder.CHRONOLOGICAL_DESC -> albumAssetDao.getAssetsChronologicalDesc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.CHRONOLOGICAL_ASC -> albumAssetDao.getAssetsChronologicalAsc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.SIZE_DESC -> albumAssetDao.getAssetsSizeDesc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.SIZE_ASC -> albumAssetDao.getAssetsSizeAsc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.TYPE_VIDEO_FIRST -> albumAssetDao.getAssetsTypeVideoFirstDesc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.TYPE_PHOTO_FIRST -> albumAssetDao.getAssetsTypePhotoFirstDesc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.TYPE_VIDEO_FIRST_ASC -> albumAssetDao.getAssetsTypeVideoFirstAsc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.TYPE_PHOTO_FIRST_ASC -> albumAssetDao.getAssetsTypePhotoFirstAsc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.SHUFFLED -> albumAssetDao.getAssetsShuffled(albumId, userId, shuffleSeed ?: 1L, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.TYPE_VIDEO_FIRST_SHUFFLED -> albumAssetDao.getAssetsTypeVideoFirstShuffled(albumId, userId, shuffleSeed ?: 1L, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
+            SortOrder.TYPE_PHOTO_FIRST_SHUFFLED -> albumAssetDao.getAssetsTypePhotoFirstShuffled(albumId, userId, shuffleSeed ?: 1L, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
         }
         
         val mappedFinal = withContext(Dispatchers.Default) {
@@ -435,7 +441,8 @@ class AssetRepository @Inject constructor(
             } else {
                 api.getSearchStatistics(SearchAssetsRequest(visibility = "timeline")).total
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            e.rethrowIfCancelled()
             0
         }
     }
@@ -451,7 +458,8 @@ class AssetRepository @Inject constructor(
             } else {
                 api.getSearchStatistics(SearchAssetsRequest(isNotInAlbum = true, visibility = "timeline")).total
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            e.rethrowIfCancelled()
             0
         }
     }
@@ -481,9 +489,17 @@ class AssetRepository @Inject constructor(
             AppLogger.i("AssetRepo", "Deleting ${assetIds.size} assets from Immich server...")
             try {
                 api.deleteAssets(DeleteAssetsRequest(ids = assetIds, force = false))
-                deleteLocalAssets(assetIds)
                 AppLogger.i("AssetRepo", "Successfully deleted ${assetIds.size} assets from Immich server")
+                // The server delete is what matters. A failing local cache cleanup must not make the delete
+                // look failed, since the next album sync purges stale cache rows anyway.
+                try {
+                    deleteLocalAssets(assetIds)
+                } catch (e: Exception) {
+                    e.rethrowIfCancelled()
+                    AppLogger.w("AssetRepo", "Deleted on server but local cache cleanup failed: ${e.message}")
+                }
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 AppLogger.e("AssetRepo", "Failed to delete ${assetIds.size} assets from Immich server: ${e.message}", e)
                 throw e
             }
@@ -509,6 +525,7 @@ class AssetRepository @Inject constructor(
                 }
                 AppLogger.i("AssetRepo", "Successfully updated ${assetIds.size} assets on Immich server")
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 AppLogger.e("AssetRepo", "Failed to update ${assetIds.size} assets on Immich server: ${e.message}", e)
                 throw e
             }
@@ -537,6 +554,7 @@ class AssetRepository @Inject constructor(
             updateAssetEdits(assetId, normalizedRotation)
             AppLogger.i("AssetRepo", "Successfully synced asset rotation edits to Immich server for asset $assetId")
         } catch (e: Exception) {
+            e.rethrowIfCancelled()
             val errBody = (e as? HttpException)?.response()?.errorBody()?.string()
             AppLogger.w("AssetRepo", "Failed to sync via editAsset endpoint for asset $assetId (body=$errBody). Falling back to rotate endpoint...")
             try {
@@ -556,7 +574,8 @@ class AssetRepository @Inject constructor(
         return try {
             val clusters = api.getDuplicates()
             clusters.sumOf { it.assets.size }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            e.rethrowIfCancelled()
             0
         }
     }

@@ -6,6 +6,7 @@ import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.SessionConfig
 import com.markvoronin.immichswipe.core.SessionManager
 import com.markvoronin.immichswipe.core.UrlPolicy
+import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
 import com.markvoronin.immichswipe.data.repository.AccountRepository
 import com.markvoronin.immichswipe.data.repository.AuthRepository
 import com.markvoronin.immichswipe.data.repository.SessionRepository
@@ -131,6 +132,7 @@ class AuthViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isLoading = false, success = true)
 
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 val error = when (e) {
                     is java.net.UnknownHostException -> AuthError.Dns
                     is java.net.SocketTimeoutException -> AuthError.Timeout

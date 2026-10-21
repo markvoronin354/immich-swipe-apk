@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import com.markvoronin.immichswipe.core.AppLogger
+import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
 import com.markvoronin.immichswipe.domain.model.Asset
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -86,6 +87,7 @@ class LocalMediaRepository @Inject constructor(
                         }
                     }
                 } catch (e: Exception) {
+                    e.rethrowIfCancelled()
                     AppLogger.e("LocalMediaRepo", "Error querying MediaStore table $contentUri: ${e.message}", e)
                 }
             }
@@ -122,6 +124,7 @@ class LocalMediaRepository @Inject constructor(
                     } catch (e: android.app.RecoverableSecurityException) {
                         if (consentIntent == null) consentIntent = e.userAction.actionIntent
                     } catch (e: Exception) {
+                        e.rethrowIfCancelled()
                         AppLogger.e("LocalMediaRepo", "Failed deletion for $uri: ${e.message}")
                     }
                 }
@@ -131,12 +134,14 @@ class LocalMediaRepository @Inject constructor(
                     try {
                         context.contentResolver.delete(uri, null, null)
                     } catch (e: Exception) {
+                        e.rethrowIfCancelled()
                         AppLogger.e("LocalMediaRepo", "Failed legacy deletion for $uri: ${e.message}")
                     }
                 }
                 null
             }
         } catch (e: Exception) {
+            e.rethrowIfCancelled()
             AppLogger.e("LocalMediaRepo", "Error creating delete PendingIntent: ${e.message}", e)
             null
         }

@@ -2,6 +2,7 @@ package com.markvoronin.immichswipe.data.repository
 
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.SessionManager
+import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
 import com.markvoronin.immichswipe.data.api.AddAssetsToAlbumRequest
 import com.markvoronin.immichswipe.data.api.ImmichApi
 import com.markvoronin.immichswipe.data.api.SearchAssetsRequest
@@ -11,12 +12,10 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import javax.inject.Inject
-import javax.inject.Singleton
 
 
-@Singleton
-class AlbumRepository @Inject constructor(
+// Provided by RepositoryModule (the constructor has optional parameters Dagger cannot satisfy).
+class AlbumRepository(
     private val sessionManager: SessionManager,
     private val customApi: ImmichApi? = null
 ) {
@@ -33,7 +32,8 @@ class AlbumRepository @Inject constructor(
             api.getSearchStatistics(
                 SearchAssetsRequest(albumIds = listOf(albumId), visibility = "archive")
             ).total
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            e.rethrowIfCancelled()
             0
         }
     }
@@ -62,6 +62,7 @@ class AlbumRepository @Inject constructor(
                 assetIds = assetIds
             ))
         } catch (e: Exception) {
+            e.rethrowIfCancelled()
             AppLogger.e("AlbumRepository", "Error creating album $albumName", e)
             null
         }
@@ -78,6 +79,7 @@ class AlbumRepository @Inject constructor(
             )
             response.isSuccessful
         } catch (e: Exception) {
+            e.rethrowIfCancelled()
             AppLogger.e("AlbumRepository", "Error adding assets to album $albumId", e)
             false
         }
@@ -90,6 +92,7 @@ class AlbumRepository @Inject constructor(
             )
             response.isSuccessful
         } catch (e: Exception) {
+            e.rethrowIfCancelled()
             AppLogger.e("AlbumRepository", "Error removing assets from album $albumId", e)
             false
         }

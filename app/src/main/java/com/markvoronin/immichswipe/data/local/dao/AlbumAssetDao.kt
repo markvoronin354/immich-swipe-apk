@@ -8,6 +8,12 @@ import com.markvoronin.immichswipe.data.local.entity.AlbumAssetEntity
 
 @Dao
 interface AlbumAssetDao {
+
+    companion object {
+        /** SQLite treats a negative LIMIT as "no upper bound". */
+        const val NO_LIMIT = -1
+    }
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAlbumAssets(relations: List<AlbumAssetEntity>)
 

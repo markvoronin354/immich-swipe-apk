@@ -13,6 +13,7 @@ import com.markvoronin.immichswipe.core.ReminderInterval
 import com.markvoronin.immichswipe.core.SessionManager
 import com.markvoronin.immichswipe.core.cache.CacheManager
 import com.markvoronin.immichswipe.core.reminder.ReminderScheduler
+import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
 import com.markvoronin.immichswipe.data.local.model.DatabaseExport
 import com.markvoronin.immichswipe.data.repository.AccountRepository
 import com.markvoronin.immichswipe.data.repository.SessionRepository
@@ -55,6 +56,7 @@ class SettingsViewModel @Inject constructor(
                     userQuotaBytes = user.quotaUsageInBytes
                 )
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 AppLogger.e("SettingsVM", "Error loading user", e)
             }
         }
@@ -531,6 +533,7 @@ class SettingsViewModel @Inject constructor(
                     databaseActionStatus = context.resources.getQuantityString(R.plurals.settings_db_export_success, decisions.size, decisions.size)
                 )
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 _uiState.value = _uiState.value.copy(
                     databaseActionStatus = context.getString(R.string.settings_db_export_error, e.message ?: "")
                 )
@@ -562,6 +565,7 @@ class SettingsViewModel @Inject constructor(
                     )
                 )
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 _uiState.value = _uiState.value.copy(
                     databaseActionStatus = context.getString(R.string.settings_db_import_error, e.message ?: "")
                 )
@@ -609,6 +613,7 @@ class SettingsViewModel @Inject constructor(
                     showClearCacheConfirmation = false
                 )
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 AppLogger.e("SettingsVM", "Failed to clear cache", e)
                 _uiState.value = _uiState.value.copy(
                     databaseActionStatus = context.getString(R.string.settings_clear_cache_error, e.message.orEmpty()),
