@@ -344,10 +344,11 @@ fun SwipeScreen(
             Toast.makeText(context, "Downloading $fileName...", Toast.LENGTH_SHORT).show()
 
             scope.launch(Dispatchers.IO) {
+                // The API key is sent as a header on every request, never in the URL, so it cannot
+                // end up in server, proxy or browser logs.
                 val urlsToTry = listOf(
-                    "$baseUrl/api/assets/${asset.id}/original?key=$apiKey",
-                    "$baseUrl/api/asset/file/${asset.id}?key=$apiKey",
-                    "$baseUrl/api/assets/${asset.id}/original"
+                    "$baseUrl/api/assets/${asset.id}/original",
+                    "$baseUrl/api/asset/file/${asset.id}"
                 )
 
                 val client = OkHttpClient.Builder()
@@ -435,10 +436,11 @@ fun SwipeScreen(
             Toast.makeText(context, "Preparing share...", Toast.LENGTH_SHORT).show()
 
             scope.launch(Dispatchers.IO) {
+                // The API key is sent as a header on every request, never in the URL, so it cannot
+                // end up in server, proxy or browser logs.
                 val urlsToTry = listOf(
-                    "$baseUrl/api/assets/${asset.id}/original?key=$apiKey",
-                    "$baseUrl/api/asset/file/${asset.id}?key=$apiKey",
-                    "$baseUrl/api/assets/${asset.id}/original"
+                    "$baseUrl/api/assets/${asset.id}/original",
+                    "$baseUrl/api/asset/file/${asset.id}"
                 )
 
                 val client = OkHttpClient.Builder()
