@@ -19,5 +19,9 @@ jobs:
         run: ./gradlew testDebugUnitTest
       - name: Lint
         run: ./gradlew lintDebug
+      - name: Static analysis
+        run: ./gradlew detekt
+      - name: Compile instrumented tests
+        run: ./gradlew assembleDebugAndroidTest
       - name: Assemble debug APK
         run: ./gradlew assembleDebug

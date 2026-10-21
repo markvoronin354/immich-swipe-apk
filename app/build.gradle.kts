@@ -3,7 +3,12 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.detekt)
 }
+
+// Opt-in: ./gradlew assembleRelease -PabiSplits=true builds one small APK per CPU type plus a universal
+// one (for GitHub releases). Default builds, the Play bundle and F-Droid are unaffected.
+val abiSplitsEnabled = providers.gradleProperty("abiSplits").isPresent
 
 android {
     namespace = "com.markvoronin.immichswipe"
@@ -18,6 +23,15 @@ android {
         versionName = "4.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    splits {
+        abi {
+            isEnable = abiSplitsEnabled
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
+            isUniversalApk = true
+        }
     }
 
     dependenciesInfo {
@@ -43,6 +57,8 @@ android {
     }
     lint {
         disable.add("ModifierParameter")
+        // The launcher icon paths come from the designer export; simplifying them means redrawing the icon.
+        disable.add("VectorPath")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -52,10 +68,37 @@ android {
         // android.util.Log etc. return defaults in plain JVM unit tests instead of throwing.
         unitTests.isReturnDefaultValues = true
     }
+    sourceSets {
+        // Exported Room schemas, used by MigrationTestHelper in instrumented tests.
+        getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    }
     buildFeatures {
         compose = true
         buildConfig = true
     }
+}
+
+if (abiSplitsEnabled) {
+    // Split APKs must have distinct, ordered version codes. The scaled scheme is only used for
+    // these GitHub builds: base * 10 plus an offset per ABI (0 for the universal APK).
+    androidComponents {
+        onVariants { variant ->
+            val offsets = mapOf("x86" to 1, "x86_64" to 2, "armeabi-v7a" to 3, "arm64-v8a" to 4)
+            variant.outputs.forEach { output ->
+                val abi = output.filters
+                    .firstOrNull { it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI }
+                    ?.identifier
+                output.versionCode.set((output.versionCode.orNull ?: 0) * 10 + (offsets[abi] ?: 0))
+            }
+        }
+    }
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+    baseline = rootProject.file("config/detekt/baseline.xml")
+    source.setFrom("src/main/java", "src/test/java")
 }
 
 ksp {
@@ -118,6 +161,7 @@ dependencies {
     // AGP automatically includes app/src/main/baseline-prof.txt in release builds.
     // Use BaselineProfileGenerator in androidTest to update baseline-prof.txt.
     androidTestImplementation(libs.benchmark.macro.junit4)
+    androidTestImplementation(libs.room.testing)
     androidTestImplementation(libs.uiautomator)
 
     // ML for "Best Shot" feature (FOSS-friendly)

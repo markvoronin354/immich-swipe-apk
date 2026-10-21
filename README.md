@@ -73,6 +73,7 @@ If you want to compile the application yourself:
 - Clone the repository and import the project into Android Studio.
 - Sync Gradle.
 - Run `./gradlew assembleDebug` to generate a debug APK.
+- Add `-PabiSplits=true` to a release build to get one small APK per CPU type (plus a universal one). Split APKs use scaled version codes (base x 10 plus an ABI offset), so do not mix them with F-Droid or Play builds.
 
 ## 📄 License
 

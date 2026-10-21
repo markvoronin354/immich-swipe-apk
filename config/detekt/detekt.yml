@@ -1,0 +1,37 @@
+# Layered on top of the detekt defaults (buildUponDefaultConfig = true).
+# Existing findings live in baseline.xml, so CI only fails on new problems.
+# Size and complexity rules are relaxed because several screens are still large by design;
+# splitting them is tracked separately.
+complexity:
+  LongMethod:
+    active: false
+  LongParameterList:
+    active: false
+  LargeClass:
+    active: false
+  CyclomaticComplexMethod:
+    active: false
+  NestedBlockDepth:
+    active: false
+  TooManyFunctions:
+    active: false
+style:
+  MagicNumber:
+    active: false
+  MaxLineLength:
+    active: false
+  ReturnCount:
+    active: false
+  UnusedPrivateProperty:
+    active: true
+naming:
+  FunctionNaming:
+    # Composable functions are PascalCase by convention.
+    ignoreAnnotated: ['Composable']
+  TopLevelPropertyNaming:
+    constantPattern: '[A-Za-z][_A-Za-z0-9]*'
+exceptions:
+  TooGenericExceptionThrown:
+    excludes: ['**/test/**']
+  SwallowedException:
+    excludes: ['**/test/**']

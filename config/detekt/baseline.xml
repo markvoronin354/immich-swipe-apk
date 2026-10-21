@@ -1,0 +1,54 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ComplexCondition:FullscreenViewer.kt:tapToSwipeEnabled &amp;&amp; !isZoomedIn &amp;&amp; (offset.x &lt; width * 0.3f || offset.x &gt; width * 0.7f)</ID>
+    <ID>ComplexCondition:MainActivity.kt:MainActivity$(api != null) &amp;&amp; (baseUrl != null) &amp;&amp; (fingerprint != null) &amp;&amp; (activeUserId != null)</ID>
+    <ID>ComplexCondition:SwipeCard.kt:asset.type == "VIDEO" &amp;&amp; !isNext &amp;&amp; providedPlayer == null &amp;&amp; !isFullscreenOpen</ID>
+    <ID>ComplexCondition:SwipeCard.kt:com.markvoronin.immichswipe.domain.model.Album.IS_SKIP_FEATURE_ENABLED &amp;&amp; (dragDirection == 3 || (dragDirection == 0 &amp;&amp; currentY &gt; 0f &amp;&amp; currentY &gt; abs(currentX)))</ID>
+    <ID>ComplexCondition:SwipeUiState.kt:SwipeUiState$(albumId == Album.VIRTUAL_ALL_ID || albumId == Album.VIRTUAL_DUPLICATES_ID) &amp;&amp; userQuotaBytes != null &amp;&amp; userQuotaBytes &gt; 0 &amp;&amp; !includeArchived</ID>
+    <ID>EnumNaming:ImmichApi.kt:AssetEditAction$crop</ID>
+    <ID>EnumNaming:ImmichApi.kt:AssetEditAction$rotate</ID>
+    <ID>LoopWithTooManyJumpStatements:AssetRepository.kt:AssetRepository$while</ID>
+    <ID>LoopWithTooManyJumpStatements:CacheManager.kt:CacheManager$for</ID>
+    <ID>LoopWithTooManyJumpStatements:RetryInterceptor.kt:RetryInterceptor$while</ID>
+    <ID>MatchingDeclarationName:SettingsScreen.kt:SettingsSubMenu</ID>
+    <ID>NewLineAtEndOfFile:AccountRepository.kt:com.markvoronin.immichswipe.data.repository.AccountRepository.kt</ID>
+    <ID>NewLineAtEndOfFile:CustomReminderDialog.kt:com.markvoronin.immichswipe.feature.settings.components.CustomReminderDialog.kt</ID>
+    <ID>NewLineAtEndOfFile:DuplicatesViewModel.kt:com.markvoronin.immichswipe.feature.duplicates.DuplicatesViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:ImmichApi.kt:com.markvoronin.immichswipe.data.api.ImmichApi.kt</ID>
+    <ID>NewLineAtEndOfFile:LoadingScreen.kt:com.markvoronin.immichswipe.feature.common.LoadingScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:ReminderScheduler.kt:com.markvoronin.immichswipe.core.reminder.ReminderScheduler.kt</ID>
+    <ID>NewLineAtEndOfFile:ReminderSchedulerTest.kt:com.markvoronin.immichswipe.core.reminder.ReminderSchedulerTest.kt</ID>
+    <ID>NewLineAtEndOfFile:ReminderWorker.kt:com.markvoronin.immichswipe.core.reminder.ReminderWorker.kt</ID>
+    <ID>NewLineAtEndOfFile:Type.kt:com.markvoronin.immichswipe.ui.theme.Type.kt</ID>
+    <ID>NewLineAtEndOfFile:UserAccountDao.kt:com.markvoronin.immichswipe.data.local.dao.UserAccountDao.kt</ID>
+    <ID>NewLineAtEndOfFile:UserAccountEntity.kt:com.markvoronin.immichswipe.data.local.entity.UserAccountEntity.kt</ID>
+    <ID>RethrowCaughtException:DuplicatesViewModel.kt:DuplicatesViewModel$throw e</ID>
+    <ID>SwallowedException:SessionRepository.kt:SessionRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AlbumRepository.kt:AlbumRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AppLogger.kt:AppLogger$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ApplySwipeDecisionsUseCase.kt:ApplySwipeDecisionsUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AssetRepository.kt:AssetRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AssetRepository.kt:AssetRepository$fallbackEx: Exception</ID>
+    <ID>TooGenericExceptionCaught:AuthViewModel.kt:AuthViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:BestShotAnalyzer.kt:BestShotAnalyzer$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CacheCleanupWorker.kt:CacheCleanupWorker$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CacheManager.kt:CacheManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DuplicatesViewModel.kt:DuplicatesViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:HomeViewModel.kt:HomeViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:LocalMediaRepository.kt:LocalMediaRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ReminderWorker.kt:ReminderWorker$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RetrofitFactory.kt:RetrofitFactory$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SecretStore.kt:SecretStore$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SecretStore.kt:SecretStore$first: Exception</ID>
+    <ID>TooGenericExceptionCaught:SecretStore.kt:SecretStore$second: Exception</ID>
+    <ID>TooGenericExceptionCaught:SessionManager.kt:SessionManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SessionRepository.kt:SessionRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SettingsViewModel.kt:SettingsViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SwipeScreen.kt:e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SwipeViewModel.kt:SwipeViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:VideoCache.kt:VideoCache$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:VideoPreloader.kt:VideoPreloader$e: Throwable</ID>
+  </CurrentIssues>
+</SmellBaseline>

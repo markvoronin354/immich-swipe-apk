@@ -73,6 +73,7 @@ Si vous souhaitez compiler l'application vous-même :
 - Clonez le dépôt et importez le projet dans Android Studio.
 - Synchronisez Gradle.
 - Utilisez `./gradlew assembleDebug` pour générer un APK de test.
+- Ajoutez `-PabiSplits=true` à un build release pour obtenir un petit APK par architecture CPU (plus un APK universel). Les APK séparés utilisent des codes de version multipliés (base x 10 plus un décalage par ABI) : ne les mélangez pas avec les builds F-Droid ou Play.
 
 ## 📄 Licence
 
