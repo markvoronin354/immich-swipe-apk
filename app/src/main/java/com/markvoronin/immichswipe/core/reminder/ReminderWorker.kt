@@ -19,31 +19,39 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.SessionConfig
 import com.markvoronin.immichswipe.core.SessionManager
-import com.markvoronin.immichswipe.data.local.AppDatabase
-import com.markvoronin.immichswipe.data.repository.AccountRepository
 import com.markvoronin.immichswipe.data.repository.AssetRepository
 import com.markvoronin.immichswipe.data.repository.SessionRepository
 import com.markvoronin.immichswipe.data.repository.SwipeDecisionRepository
 import com.markvoronin.immichswipe.domain.model.Album
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import java.text.NumberFormat
 
-/**
- * Affiche la notification de rappel pour trier ses photos, puis planifie le rappel suivant.
- */
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+internal interface ReminderEntryPoint {
+    fun sessionRepository(): SessionRepository
+    fun sessionManager(): SessionManager
+    fun assetRepository(): AssetRepository
+    fun swipeDecisionRepository(): SwipeDecisionRepository
+}
+
 class ReminderWorker(
     private val context: Context,
     params: WorkerParameters
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        val database = AppDatabase.getDatabase(context)
-        val accountRepository = AccountRepository(database.userAccountDao())
-        val sessionRepository = SessionRepository(context, accountRepository)
+        // Reuse the app-wide singletons instead of building a second session stack (HTTP client,
+        // network callback, database handle) on every run.
+        val deps = EntryPointAccessors.fromApplication(context, ReminderEntryPoint::class.java)
+        val sessionRepository = deps.sessionRepository()
 
-        // Le rappel est désactivé ou la session a été effacée (déconnexion) :
-        // on arrête la planification au lieu de notifier.
+
         val config = sessionRepository.sessionConfig.first()
         if (!sessionRepository.reminderEnabled.first() || config == null) {
             WorkManager.getInstance(context).cancelUniqueWork(ReminderScheduler.WORK_NAME)
@@ -52,13 +60,13 @@ class ReminderWorker(
 
         val unsortedCount = countUnsorted(config, sessionRepository.includeArchived.first())
         if (unsortedCount == 0) {
-            // Tout est déjà trié : inutile de déranger l'utilisateur pour ce cycle.
+
             AppLogger.i("Reminder", "Aucun média non trié, notification ignorée")
         } else {
             showNotification(unsortedCount)
         }
 
-        // Planifie le rappel suivant avec un nouveau délai aléatoire.
+
         val customMin = sessionRepository.reminderCustomMinDays.first()
         val customMax = sessionRepository.reminderCustomMaxDays.first()
         ReminderScheduler(context).schedule(
@@ -69,25 +77,18 @@ class ReminderWorker(
         return Result.success()
     }
 
-    /**
-     * Nombre de médias pas encore triés, calculé comme pour la collection "Tous les médias"
-     * de l'accueil : total sur le serveur moins les décisions locales.
-     * Retourne null si le serveur est injoignable (la notification reste alors générique).
-     */
+
     private suspend fun countUnsorted(config: SessionConfig, includeArchived: Boolean): Int? {
         return try {
-            val sessionManager = SessionManager(context)
+            val deps = EntryPointAccessors.fromApplication(context, ReminderEntryPoint::class.java)
+            val sessionManager = deps.sessionManager()
             if (sessionManager.api == null) sessionManager.initialize(config)
 
-            val database = AppDatabase.getDatabase(context)
-            val total = AssetRepository(
-                sessionManager = sessionManager,
-                albumAssetDao = database.albumAssetDao()
-            ).getTotalAssetCount(includeArchived)
+            val total = deps.assetRepository().getTotalAssetCount(includeArchived)
 
             if (total <= 0) return null
 
-            val treated = SwipeDecisionRepository(database.swipeDecisionDao())
+            val treated = deps.swipeDecisionRepository()
                 .getAllAlbumDecisionCounts(config.userId)
                 .first()
                 .firstOrNull { it.albumId == Album.VIRTUAL_ALL_ID }
