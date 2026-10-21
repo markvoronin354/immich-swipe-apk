@@ -62,11 +62,24 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
             }
         }
 
+        // Local bookkeeping that follows a successful server call. Its failure must not turn the
+        // already applied server change into a reported failure (and a pointless retry).
+        suspend fun bestEffortLocal(what: String, block: suspend () -> Unit) {
+            try {
+                block()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLogger.w("ApplySwipeDecisionsUseCase", "Local step '$what' failed after the server change was applied: ${e.message}")
+            }
+        }
+
         // 1. Delete on server (and local cache via AssetRepository)
         val deleteOk = toDelete.isEmpty() || step(SyncStep.DELETE, toDelete) {
             assetRepository.deleteAssets(toDelete)
-            // These decisions are no longer relevant once the assets are gone.
-            swipeDecisionRepository.removeDecisions(toDelete, userId)
+            // These decisions are no longer relevant once the assets are gone. The server step already
+            // succeeded, so a local failure here is only logged.
+            bestEffortLocal("remove delete decisions") { swipeDecisionRepository.removeDecisions(toDelete, userId) }
         }
 
         // 1b. Sync archive decisions to Immich server
@@ -77,8 +90,10 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
         // 1c. Sync lock decisions to Immich server (Immich API expects "locked" for locked/hidden assets)
         val lockOk = toLock.isEmpty() || step(SyncStep.LOCK, toLock) {
             assetRepository.updateAssets(toLock, visibility = "locked")
-            assetRepository.deleteLocalAssets(toLock)
-            swipeDecisionRepository.removeDecisions(toLock, userId)
+            bestEffortLocal("clean up locked assets") {
+                assetRepository.deleteLocalAssets(toLock)
+                swipeDecisionRepository.removeDecisions(toLock, userId)
+            }
         }
 
         // 1d. Add skipped assets to SKIP album on server and local DB.

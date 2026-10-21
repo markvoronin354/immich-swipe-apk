@@ -44,6 +44,7 @@ class ApplySwipeDecisionsUseCaseTest {
 
     private class Env(
         failingApi: Set<String> = emptySet(),
+        failingDecisionDao: Set<String> = emptySet(),
         albums: List<Album> = emptyList(),
         addToAlbumResponse: Response<Unit> = Response.success(Unit)
     ) {
@@ -66,7 +67,9 @@ class ApplySwipeDecisionsUseCaseTest {
             val sessionManager = SessionManager(ContextWrapper(null))
             val assets = AssetRepository(sessionManager, fakeApi, fake<AlbumAssetDao>(albumAssetDao))
             val albumsRepo = AlbumRepository(sessionManager, fakeApi)
-            val decisions = SwipeDecisionRepository(fake<SwipeDecisionDao>(decisionDao))
+            val decisions = SwipeDecisionRepository(fake<SwipeDecisionDao>(decisionDao) { name, _ ->
+                if (name in failingDecisionDao) throw RuntimeException("$name failed") else Unit
+            })
             useCase = ApplySwipeDecisionsUseCase(assets, decisions, albumsRepo)
         }
 
@@ -230,5 +233,17 @@ class ApplySwipeDecisionsUseCaseTest {
     fun `the skip feature flag defaults to the app wide switch`() {
         // Guards the shipped default: the feature must stay off unless it is deliberately enabled.
         assertFalse(Album.IS_SKIP_FEATURE_ENABLED)
+    }
+
+    @Test
+    fun `local cleanup failing after a successful server delete is not a sync failure`() {
+        val env = Env(failingDecisionDao = setOf("deleteDecisions"))
+        val result = apply(env, mapOf("del" to SwipeDecision.DELETE, "keep" to SwipeDecision.KEEP))
+
+        assertFalse(result.hasFailures)
+        // The server delete happened, so the asset counts as deleted and is recorded in the history.
+        assertEquals(listOf("del"), result.toDelete)
+        assertEquals(1, env.apiCalls("deleteAssets").size)
+        assertEquals(1, env.history().deletedCount)
     }
 }
