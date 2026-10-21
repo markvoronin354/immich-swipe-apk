@@ -120,11 +120,11 @@ interface SwipeDecisionDao {
     @Query("DELETE FROM swipe_decisions WHERE userId = :userId")
     suspend fun deleteAllDecisionsForUser(userId: String)
 
-    @Query("DELETE FROM swipe_decisions WHERE UPPER(decision) = 'SKIP'")
-    suspend fun deleteSkipDecisions()
+    @Query("DELETE FROM swipe_decisions WHERE userId = :userId AND UPPER(decision) = 'SKIP'")
+    suspend fun deleteSkipDecisionsForUser(userId: String)
 
-    @Query("DELETE FROM swipe_decisions WHERE assetId IN (:assetIds)")
-    suspend fun deleteDecisionsForAssets(assetIds: List<String>)
+    @Query("DELETE FROM swipe_decisions WHERE userId = :userId AND assetId IN (:assetIds)")
+    suspend fun deleteDecisionsForAssets(userId: String, assetIds: List<String>)
 
     @Query("DELETE FROM sync_history")
     suspend fun deleteAllSyncHistory()

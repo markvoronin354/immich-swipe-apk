@@ -550,10 +550,9 @@ class SettingsViewModel @Inject constructor(
                 val rawHistory = export?.syncHistory ?: emptyList()
 
                 val nonSkipDecisions = rawDecisions.filter { !it.decision.equals("SKIP", ignoreCase = true) }
-                val skipAssetIds = rawDecisions.filter { it.decision.equals("SKIP", ignoreCase = true) }.map { it.assetId }
                 val cleanedHistory = rawHistory.map { it.copy(skippedCount = 0) }
 
-                swipeDecisionRepository.importData(nonSkipDecisions, cleanedHistory, skipAssetIds)
+                swipeDecisionRepository.importData(rawDecisions, cleanedHistory)
 
                 _uiState.value = _uiState.value.copy(
                     databaseActionStatus = context.resources.getQuantityString(

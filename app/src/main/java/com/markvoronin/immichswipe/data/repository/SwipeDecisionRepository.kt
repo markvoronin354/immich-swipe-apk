@@ -132,28 +132,39 @@ class SwipeDecisionRepository @Inject constructor(
     suspend fun getAllSyncHistoryRaw() = swipeDecisionDao.getAllSyncHistoryRaw()
     suspend fun getAllSyncHistoryForUserRaw(userId: String) = swipeDecisionDao.getAllSyncHistoryForUserRaw(userId)
 
+    /**
+     * Imports exported decisions and history. Every deletion is scoped to the user that owns the
+     * imported rows, so importing never touches the data of another account.
+     */
     suspend fun importData(
         decisions: List<SwipeDecisionEntity>,
-        history: List<SyncHistoryEntity>,
-        skipAssetIds: List<String> = emptyList()
+        history: List<SyncHistoryEntity>
     ) {
-        val validDecisions = decisions.filter { !it.decision.equals("SKIP", ignoreCase = true) }
-        val allSkipIds = (skipAssetIds + decisions.filter { it.decision.equals("SKIP", ignoreCase = true) }.map { it.assetId }).distinct()
+        val (skipDecisions, validDecisions) = decisions.partition { it.decision.equals("SKIP", ignoreCase = true) }
 
-        if (allSkipIds.isNotEmpty()) {
-            allSkipIds.chunked(500).forEach { chunk ->
-                swipeDecisionDao.deleteDecisionsForAssets(chunk)
+        // SKIP is no longer stored locally: drop any existing local state for those assets.
+        skipDecisions.groupBy { it.userId }.forEach { (userId, rows) ->
+            rows.map { it.assetId }.distinct().chunked(500).forEach { chunk ->
+                swipeDecisionDao.deleteDecisionsForAssets(userId, chunk)
             }
         }
-        swipeDecisionDao.deleteSkipDecisions()
-
-        if (validDecisions.isNotEmpty()) {
-            validDecisions.chunked(500).forEach { chunk ->
-                swipeDecisionDao.insertDecisions(chunk)
-            }
+        decisions.map { it.userId }.distinct().forEach { userId ->
+            swipeDecisionDao.deleteSkipDecisionsForUser(userId)
         }
+
+        validDecisions.chunked(500).forEach { chunk ->
+            swipeDecisionDao.insertDecisions(chunk)
+        }
+
+        // History ids are auto-generated: reset them so imported rows never overwrite existing
+        // rows (possibly of another account), and skip rows that were already imported.
         if (history.isNotEmpty()) {
-            history.chunked(500).forEach { chunk ->
+            val existing = swipeDecisionDao.getAllSyncHistoryRaw()
+                .mapTo(HashSet()) { it.userId to it.timestamp }
+            val fresh = history
+                .filter { (it.userId to it.timestamp) !in existing }
+                .map { it.copy(id = 0) }
+            fresh.chunked(500).forEach { chunk ->
                 swipeDecisionDao.insertSyncHistoryList(chunk)
             }
         }
