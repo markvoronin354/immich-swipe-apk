@@ -20,11 +20,23 @@ object AppLogger {
     private const val PREVIOUS_LOG_FILE = "previous_logs.txt"
     private const val MAX_FILE_SIZE = 1024 * 1024 // 1 MB
 
+    @Volatile
     private var logsDir: File? = null
+    // SimpleDateFormat is not thread-safe: it is only used inside writeToFile, which is synchronized.
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
 
+    private class LogEntry(
+        val timestamp: Long,
+        val level: String,
+        val tag: String,
+        val message: String
+    ) {
+        fun format(dateFormat: SimpleDateFormat): String =
+            "${dateFormat.format(Date(timestamp))} $level/$tag: $message\n"
+    }
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val logChannel = Channel<String>(Channel.UNLIMITED)
+    private val logChannel = Channel<Any>(Channel.UNLIMITED)
 
     init {
         scope.launch {
@@ -65,13 +77,13 @@ object AppLogger {
     }
 
     private fun enqueue(level: String, tag: String, message: String) {
-        val timestamp = dateFormat.format(Date())
-        val logLine = "$timestamp $level/$tag: $message\n"
-        logChannel.trySend(logLine)
+        logChannel.trySend(LogEntry(System.currentTimeMillis(), level, tag, message))
     }
 
-    private fun writeToFile(text: String) {
+    @Synchronized
+    private fun writeToFile(item: Any) {
         val dir = logsDir ?: return
+        val text = if (item is LogEntry) item.format(dateFormat) else item.toString()
         try {
             val currentFile = File(dir, CURRENT_LOG_FILE)
 

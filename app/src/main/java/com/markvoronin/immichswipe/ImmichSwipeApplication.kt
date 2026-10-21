@@ -8,6 +8,7 @@ import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
+import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.cache.CacheManager
 import com.markvoronin.immichswipe.core.util.MemoryTier
 import dagger.hilt.android.HiltAndroidApp
@@ -16,6 +17,8 @@ import dagger.hilt.android.HiltAndroidApp
 class ImmichSwipeApplication : Application(), ImageLoaderFactory {
     override fun onCreate() {
         super.onCreate()
+        // Initialized here (not in the activity) so background work such as workers is logged too.
+        AppLogger.init(this)
         CacheManager.schedulePeriodicMaintenance(this)
     }
 
