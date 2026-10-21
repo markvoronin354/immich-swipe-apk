@@ -6,6 +6,7 @@ import com.markvoronin.immichswipe.data.repository.AssetRepository
 import com.markvoronin.immichswipe.data.repository.SwipeDecisionRepository
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -39,87 +40,88 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
             "Applying changes: ${toDelete.size} to delete, $keptCount kept, $archiveCount archive, $lockedCount locked, ${toSkip.size} skipped"
         )
 
-        // 1. Delete on server (and local cache via AssetRepository)
-        if (toDelete.isNotEmpty()) {
-            try {
-                assetRepository.deleteAssets(toDelete)
-                // Also delete these decisions from local DB as they are no longer relevant
-                swipeDecisionRepository.removeDecisions(toDelete, userId)
+        val failedSteps = linkedSetOf<SyncStep>()
+        val failedIds = HashSet<String>()
+
+        // Runs one server step. On failure the step is recorded, the affected ids are flagged so
+        // they stay pending, and the remaining steps still run.
+        suspend fun step(kind: SyncStep, ids: Collection<String>, block: suspend () -> Unit): Boolean {
+            return try {
+                block()
+                true
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                AppLogger.e("ApplySwipeDecisionsUseCase", "Failed to delete assets on server: ${e.message}", e)
+                AppLogger.e("ApplySwipeDecisionsUseCase", "Sync step $kind failed: ${e.message}", e)
+                failedSteps += kind
+                failedIds += ids
+                false
             }
+        }
+
+        // 1. Delete on server (and local cache via AssetRepository)
+        val deleteOk = toDelete.isEmpty() || step(SyncStep.DELETE, toDelete) {
+            assetRepository.deleteAssets(toDelete)
+            // These decisions are no longer relevant once the assets are gone.
+            swipeDecisionRepository.removeDecisions(toDelete, userId)
         }
 
         // 1b. Sync archive decisions to Immich server
-        if (toArchive.isNotEmpty()) {
-            try {
-                assetRepository.updateAssets(toArchive, visibility = "archive")
-            } catch (e: Exception) {
-                AppLogger.e("ApplySwipeDecisionsUseCase", "Failed to archive assets on server: ${e.message}", e)
-            }
+        val archiveOk = toArchive.isEmpty() || step(SyncStep.ARCHIVE, toArchive) {
+            assetRepository.updateAssets(toArchive, visibility = "archive")
         }
 
         // 1c. Sync lock decisions to Immich server (Immich API expects "locked" for locked/hidden assets)
-        if (toLock.isNotEmpty()) {
-            try {
-                assetRepository.updateAssets(toLock, visibility = "locked")
-                assetRepository.deleteLocalAssets(toLock)
-                swipeDecisionRepository.removeDecisions(toLock, userId)
-            } catch (e: Exception) {
-                AppLogger.e("ApplySwipeDecisionsUseCase", "Failed to lock assets on server: ${e.message}", e)
-            }
+        val lockOk = toLock.isEmpty() || step(SyncStep.LOCK, toLock) {
+            assetRepository.updateAssets(toLock, visibility = "locked")
+            assetRepository.deleteLocalAssets(toLock)
+            swipeDecisionRepository.removeDecisions(toLock, userId)
         }
 
         // 1d. Add skipped assets to SKIP album on server and local DB
         if (toSkip.isNotEmpty()) {
-            try {
+            step(SyncStep.SKIP_ALBUM, emptyList()) {
                 val albums = albumRepository.getAlbumsRaw()
-                var existingSkipAlbum = albums.find { it.albumName.equals("SKIP", ignoreCase = true) }
-                if (existingSkipAlbum == null) {
-                    existingSkipAlbum = albumRepository.createAlbum("SKIP", toSkip)
+                var skipAlbum = albums.find { it.albumName.equals("SKIP", ignoreCase = true) }
+                if (skipAlbum == null) {
+                    skipAlbum = albumRepository.createAlbum("SKIP", toSkip)
                 } else {
-                    albumRepository.addAssetsToAlbum(existingSkipAlbum.id, toSkip)
+                    albumRepository.addAssetsToAlbum(skipAlbum.id, toSkip)
                 }
-                if (existingSkipAlbum != null) {
+                if (skipAlbum != null) {
                     val assetsToInsert = currentAssets.filter { it.id in toSkip }
                     if (assetsToInsert.isNotEmpty()) {
-                        assetRepository.insertAlbumAssetsLocally(existingSkipAlbum.id, userId, assetsToInsert)
+                        assetRepository.insertAlbumAssetsLocally(skipAlbum.id, userId, assetsToInsert)
                     }
                 }
-            } catch (e: Exception) {
-                AppLogger.e("ApplySwipeDecisionsUseCase", "Failed to add skipped assets to SKIP album: ${e.message}", e)
             }
         }
 
-        // 1e. Remove assets that received a decision OTHER than SKIP from the SKIP album on server and local DB
+        // 1e. Remove assets that received a decision OTHER than SKIP from the SKIP album
         val nonSkipDecidedIds = decisions.filter { it.value != SwipeDecision.SKIP }.keys.toList()
         if (nonSkipDecidedIds.isNotEmpty()) {
-            try {
+            step(SyncStep.SKIP_ALBUM, emptyList()) {
                 val albums = albumRepository.getAlbumsRaw()
-                val existingSkipAlbum = albums.find { it.albumName.equals("SKIP", ignoreCase = true) }
-                if (existingSkipAlbum != null) {
-                    albumRepository.removeAssetsFromAlbum(existingSkipAlbum.id, nonSkipDecidedIds)
-                    assetRepository.removeAlbumAssetsLocally(existingSkipAlbum.id, userId, nonSkipDecidedIds)
+                val skipAlbum = albums.find { it.albumName.equals("SKIP", ignoreCase = true) }
+                if (skipAlbum != null) {
+                    albumRepository.removeAssetsFromAlbum(skipAlbum.id, nonSkipDecidedIds)
+                    assetRepository.removeAlbumAssetsLocally(skipAlbum.id, userId, nonSkipDecidedIds)
                 }
-            } catch (e: Exception) {
-                AppLogger.e("ApplySwipeDecisionsUseCase", "Failed to remove non-skipped assets from SKIP album: ${e.message}", e)
             }
         }
 
-        // 2. Mark remaining decisions as synced in DB (KEPT, ARCHIVE, SKIP)
-        val toMarkSynced = allSwipedIds.filter { it !in toDelete && it !in toLock }
+        // 2. Mark decisions as synced only when their server step succeeded (KEEP, ARCHIVE, SKIP)
+        val toMarkSynced = allSwipedIds.filter { it !in toDelete && it !in toLock && it !in failedIds }
         if (toMarkSynced.isNotEmpty()) {
             swipeDecisionRepository.markAsSynced(toMarkSynced, userId)
         }
 
-        // 2b. Persist rotation changes permanently locally and sync to Immich server
+        // 2b. Persist rotation changes locally and sync to Immich server
         localRotations.forEach { (assetId, rot) ->
             assetRepository.updateAssetRotation(assetId, userId, rot)
             if (rot != 0 || assetsEditedThisSession.contains(assetId)) {
-                try {
+                step(SyncStep.ROTATION, emptyList()) {
                     assetRepository.syncAssetRotationToServer(assetId, rot)
-                } catch (e: Exception) {
-                    AppLogger.e("ApplySwipeDecisionsUseCase", "Failed to sync rotation for $assetId: ${e.message}", e)
                 }
             }
         }
@@ -127,45 +129,57 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
         // 2c. Sync favorite changes to Immich server
         val favsToAdd = localFavorites.filter { it.value }.keys.toList()
         val favsToRemove = localFavorites.filter { !it.value }.keys.toList()
-        if (favsToAdd.isNotEmpty()) {
-            try {
+        val failedFavorites = HashSet<String>()
+        if (favsToAdd.isNotEmpty() && !step(SyncStep.FAVORITES, emptyList()) {
                 assetRepository.updateAssets(favsToAdd, isFavorite = true)
-            } catch (e: Exception) {
-                AppLogger.e("ApplySwipeDecisionsUseCase", "Failed to sync favorite add: ${e.message}", e)
             }
-        }
-        if (favsToRemove.isNotEmpty()) {
-            try {
+        ) failedFavorites += favsToAdd
+        if (favsToRemove.isNotEmpty() && !step(SyncStep.FAVORITES, emptyList()) {
                 assetRepository.updateAssets(favsToRemove, isFavorite = false)
-            } catch (e: Exception) {
-                AppLogger.e("ApplySwipeDecisionsUseCase", "Failed to sync favorite remove: ${e.message}", e)
             }
+        ) failedFavorites += favsToRemove
+
+        // 3. Save sync history, counting only what was really applied on the server. Kept items have
+        // no server step, so they are only counted once everything succeeded; otherwise the retry
+        // of this apply would count them a second time.
+        val allServerStepsOk = deleteOk && archiveOk && lockOk
+        val keptForHistory = if (allServerStepsOk) keptCount else 0
+        val anyApplied = (toDelete.isNotEmpty() && deleteOk) || (toLock.isNotEmpty() && lockOk) ||
+            (toArchive.isNotEmpty() && archiveOk) || keptForHistory > 0
+        if (anyApplied) {
+            swipeDecisionRepository.saveSyncHistory(
+                userId = userId,
+                deletedCount = if (deleteOk) deletedCount else 0,
+                bytesSaved = if (deleteOk) deletedSize else 0,
+                keptCount = keptForHistory,
+                archivedCount = if (archiveOk) archiveCount else 0,
+                lockedCount = if (lockOk) lockedCount else 0
+            )
         }
 
-        // 3. Save sync history
-        swipeDecisionRepository.saveSyncHistory(
-            userId = userId,
-            deletedCount = deletedCount,
-            bytesSaved = deletedSize,
-            keptCount = keptCount,
-            archivedCount = archiveCount,
-            lockedCount = lockedCount
-        )
-
-        val deletedAssets = currentAssets.filter { it.id in toDelete }
+        val succeededDelete = if (deleteOk) toDelete else emptyList()
+        val deletedAssets = currentAssets.filter { it.id in succeededDelete }
 
         return@withContext ApplyResult(
-            toDelete = toDelete,
-            toLock = toLock,
-            nonSkipDecidedIds = nonSkipDecidedIds,
-            deletedAssets = deletedAssets
+            toDelete = succeededDelete,
+            toLock = if (lockOk) toLock else emptyList(),
+            nonSkipDecidedIds = nonSkipDecidedIds.filter { it !in failedIds },
+            deletedAssets = deletedAssets,
+            failedSteps = failedSteps,
+            failedFavoriteIds = failedFavorites
         )
     }
+
+    enum class SyncStep { DELETE, ARCHIVE, LOCK, SKIP_ALBUM, ROTATION, FAVORITES }
 
     data class ApplyResult(
         val toDelete: List<String>,
         val toLock: List<String>,
         val nonSkipDecidedIds: List<String>,
-        val deletedAssets: List<Asset> = emptyList()
-    )
+        val deletedAssets: List<Asset> = emptyList(),
+        val failedSteps: Set<SyncStep> = emptySet(),
+        val failedFavoriteIds: Set<String> = emptySet()
+    ) {
+        val hasFailures: Boolean get() = failedSteps.isNotEmpty()
+    }
 }

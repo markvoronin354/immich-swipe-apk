@@ -185,6 +185,7 @@
     <string name="swipe_congratulations">¡Enhorabuena! Álbum ordenado.</string>
     <string name="swipe_check_before_delete">Revisar antes de eliminar</string>
     <string name="swipe_revert_delete">Restaurar elemento</string>
+    <string name="swipe_sync_partial_failure">Algunos cambios no se pudieron sincronizar con el servidor. Siguen pendientes, inténtalo de nuevo.</string>
     <string name="swipe_asset_error">Error al cargar el elemento</string>
     <string name="swipe_asset_error_sub">Formato incompatible o error del servidor</string>
     <string name="swipe_video_error">Error al reproducir el video</string>

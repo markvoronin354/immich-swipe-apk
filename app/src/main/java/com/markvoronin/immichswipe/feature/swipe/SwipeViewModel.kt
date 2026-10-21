@@ -82,6 +82,10 @@ class SwipeViewModel @Inject constructor(
     private val _shareRequestChannel = Channel<Asset>(Channel.BUFFERED)
     val shareRequestSignal = _shareRequestChannel.receiveAsFlow()
 
+    // Emitted when some server steps of "apply changes" failed; failed items stay pending.
+    private val _syncIssueChannel = Channel<Unit>(Channel.BUFFERED)
+    val syncIssueSignal = _syncIssueChannel.receiveAsFlow()
+
     init {
         loadAssetsAndDecisions()
         observeSettings()
@@ -750,13 +754,17 @@ class SwipeViewModel @Inject constructor(
                 _uiState.update { it.copy(
                     isSyncing = false, 
                     showSummary = false, 
-                    showSuccessAnimation = true,
+                    showSuccessAnimation = !result.hasFailures,
                     localDeletePendingIntent = pendingDeleteIntent,
                     // Remove deleted & locked assets from current UI decisions too
                     decisions = remainingDecisions,
                     history = emptyList(), // Reset history for undo after sync
-                    localFavorites = emptyMap()
+                    // Keep favorites that failed to sync so they are retried on the next apply
+                    localFavorites = currentState.localFavorites.filterKeys { it in result.failedFavoriteIds }
                 ) }
+                if (result.hasFailures) {
+                    _syncIssueChannel.trySend(Unit)
+                }
 
                 // Force refresh sorted work pile so `_uiState.value.assets` and `currentIndex` are updated immediately
                 pendingJumpToFirstUnprocessed = true
@@ -766,8 +774,10 @@ class SwipeViewModel @Inject constructor(
                     overrideHistory = emptyList()
                 )
 
-                delay(2000.milliseconds)
-                _uiState.update { it.copy(showSuccessAnimation = false) }
+                if (!result.hasFailures) {
+                    delay(2000.milliseconds)
+                    _uiState.update { it.copy(showSuccessAnimation = false) }
+                }
             } catch (e: Exception) {
                 AppLogger.e("SwipeViewModel", "Error applying changes: ${e.message}", e)
                 _uiState.update { it.copy(isSyncing = false, error = e.message) }

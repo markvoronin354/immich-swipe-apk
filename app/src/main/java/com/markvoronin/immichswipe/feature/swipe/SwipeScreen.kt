@@ -326,6 +326,12 @@ fun SwipeScreen(
     }
 
     LaunchedEffect(Unit) {
+        viewModel.syncIssueSignal.collect {
+            Toast.makeText(context, R.string.swipe_sync_partial_failure, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    LaunchedEffect(Unit) {
         viewModel.downloadRequestSignal.collect { asset ->
             val baseUrl = uiState.baseUrl.removeSuffix("/")
             val apiKey = uiState.apiKey
