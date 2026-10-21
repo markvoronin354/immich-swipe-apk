@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,7 +48,7 @@ fun SwipeBulkOverlay(
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                text = if (isDelete) stringResource(R.string.swipe_bulk_delete_title, selectionCount) else stringResource(R.string.swipe_bulk_keep_title, selectionCount),
+                text = if (isDelete) pluralStringResource(R.plurals.swipe_bulk_delete_title, selectionCount, selectionCount) else pluralStringResource(R.plurals.swipe_bulk_keep_title, selectionCount, selectionCount),
                 color = Color.White,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold

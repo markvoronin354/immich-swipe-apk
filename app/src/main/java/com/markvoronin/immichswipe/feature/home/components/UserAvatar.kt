@@ -29,16 +29,17 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.markvoronin.immichswipe.core.util.apiKeyHeader
+import com.markvoronin.immichswipe.core.util.asAccount
 
 @Composable
 fun UserAvatar(
     userId: String?,
     baseUrl: String,
-    apiKey: String,
     name: String?,
     avatarColorName: String?,
     modifier: Modifier = Modifier,
+    // Set for avatars of saved accounts other than the active one, so they load with their own key.
+    loadAsAccountId: String? = null,
     borderWidth: Dp = 1.dp,
     contentDescription: String? = null,
     onClick: (() -> Unit)? = null,
@@ -61,7 +62,7 @@ fun UserAvatar(
         SubcomposeAsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(imageUrl)
-                .apiKeyHeader(apiKey)
+                .let { builder -> if (loadAsAccountId != null) builder.asAccount(loadAsAccountId) else builder }
                 .crossfade(enable = true)
                 .build(),
             contentDescription = contentDescription,

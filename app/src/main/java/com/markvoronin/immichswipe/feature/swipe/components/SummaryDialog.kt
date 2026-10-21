@@ -83,7 +83,6 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
 import com.markvoronin.immichswipe.R
-import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.duplicates.components.DuplicateVideoPlayer
 import com.markvoronin.immichswipe.feature.swipe.SwipeUiState
@@ -398,16 +397,14 @@ fun DeletedAssetThumbnail(
 ) {
     val context = LocalContext.current
     val baseUrl = uiState.baseUrl.removeSuffix("/")
-    val apiKey = uiState.apiKey
 
     val hasHeart = uiState.isFavorite(asset.id)
     val hasArchive = asset.isArchived
     val hasLock = asset.isLocked
 
-    val imageRequest = remember(asset.id, baseUrl, apiKey) {
+    val imageRequest = remember(asset.id, baseUrl) {
         ImageRequest.Builder(context)
             .data("$baseUrl/api/assets/${asset.id}/thumbnail?format=WEBP")
-            .apiKeyHeader(apiKey)
             .crossfade(true)
             .precision(Precision.INEXACT)
             .build()
@@ -515,7 +512,6 @@ fun SummaryFullscreenPreviewDialog(
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
         val baseUrlClean = uiState.baseUrl.removeSuffix("/")
-        val apiKey = uiState.apiKey
 
         val initialIndex = remember(initialAsset.id) {
             assets.indexOfFirst { it.id == initialAsset.id }.coerceAtLeast(0)
@@ -582,19 +578,17 @@ fun SummaryFullscreenPreviewDialog(
                         DuplicateVideoPlayer(
                             asset = pageAsset,
                             baseUrl = baseUrlClean,
-                            apiKey = apiKey,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Fit
                         )
                     } else {
                         val photoRequest =
-                            remember(pageAsset.id, baseUrlClean, apiKey, pageAsset.isGif) {
+                            remember(pageAsset.id, baseUrlClean, pageAsset.isGif) {
                                 ImageRequest.Builder(context)
                                     .data(
                                         if (pageAsset.isGif) "$baseUrlClean/api/assets/${pageAsset.id}/original"
                                         else "$baseUrlClean/api/assets/${pageAsset.id}/thumbnail?format=WEBP&size=preview"
                                     )
-                                    .apiKeyHeader(apiKey)
                                     .crossfade(true)
                                     .build()
                             }

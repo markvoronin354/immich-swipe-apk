@@ -3,11 +3,11 @@ package com.markvoronin.immichswipe.feature.swipe
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.markvoronin.immichswipe.core.AppLogger
-import com.markvoronin.immichswipe.core.IconPosition
-import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.SessionManager
 import com.markvoronin.immichswipe.core.SortCategory
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.core.SwipeSettings
+import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
 import com.markvoronin.immichswipe.data.repository.AlbumRepository
 import com.markvoronin.immichswipe.data.repository.AssetRepository
 import com.markvoronin.immichswipe.data.repository.LocalMediaRepository
@@ -97,7 +97,6 @@ class SwipeViewModel @Inject constructor(
             sessionManager.sessionConfig.collect { config ->
                 _uiState.update { it.copy(
                     baseUrl = config?.baseUrl ?: "",
-                    apiKey = config?.apiKey ?: ""
                 ) }
             }
         }
@@ -110,32 +109,7 @@ class SwipeViewModel @Inject constructor(
 
     private fun observeSettings() {
         viewModelScope.launch {
-            combine<Any, Unit>(
-                sessionRepository.playbackBehavior,
-                sessionRepository.fullscreenButtonPosition,
-                sessionRepository.immichButtonPosition,
-                sessionRepository.cardDisplayButtonPosition,
-                sessionRepository.muteButtonPosition,
-                sessionRepository.showFullscreenButton,
-                sessionRepository.showImmichButton,
-                sessionRepository.showCardDisplayButton,
-                sessionRepository.showMuteButton,
-                sessionRepository.showDownloadButton,
-                sessionRepository.downloadButtonPosition,
-                sessionRepository.showShareButton,
-                sessionRepository.shareButtonPosition,
-                sessionRepository.showSwipeButtons,
-                sessionRepository.autoNextOnFav,
-                sessionRepository.showArchiveButton,
-                sessionRepository.syncLocalDeletion,
-                sessionRepository.trashLocalDeletion,
-                sessionRepository.sortOrder,
-                sessionRepository.tapToSwipeEnabled,
-                sessionRepository.showFavoriteButton,
-                sessionRepository.showLockButton
-            ) { values ->
-                updateSettingsState(values)
-            }.collect {}
+            sessionRepository.swipeSettings.collect { applySettings(it) }
         }
         viewModelScope.launch {
             sessionRepository.immichOpenMode.collect { mode ->
@@ -180,38 +154,41 @@ class SwipeViewModel @Inject constructor(
         }
     }
 
-    private fun updateSettingsState(values: Array<*>) {
-        val order = values[18] as SortOrder
+    private fun applySettings(settings: SwipeSettings) {
+        val order = settings.behavior.sortOrder
         val category = when (order) {
             SortOrder.CHRONOLOGICAL_DESC, SortOrder.CHRONOLOGICAL_ASC, SortOrder.SHUFFLED -> SortCategory.TIME
             SortOrder.SIZE_DESC, SortOrder.SIZE_ASC -> SortCategory.SIZE
             else -> SortCategory.TYPE
         }
         val oldOrder = _uiState.value.sortOrder
+        val pos = settings.positions
+        val vis = settings.visibility
+        val behavior = settings.behavior
         _uiState.update { it.copy(
-            playbackBehavior = values[0] as PlaybackBehavior,
-            fullscreenButtonPosition = values[1] as IconPosition,
-            immichButtonPosition = values[2] as IconPosition,
-            rotationButtonPosition = values[3] as IconPosition,
-            muteButtonPosition = values[4] as IconPosition,
-            showFullscreenButton = values[5] as Boolean,
-            showImmichButton = values[6] as Boolean,
-            showRotationButton = values[7] as Boolean,
-            showMuteButton = values[8] as Boolean,
-            showDownloadButton = values[9] as Boolean,
-            downloadButtonPosition = values[10] as IconPosition,
-            showShareButton = values[11] as Boolean,
-            shareButtonPosition = values[12] as IconPosition,
-            showSwipeButtons = values[13] as Boolean,
-            autoNextOnFav = values[14] as Boolean,
-            showArchiveButton = values[15] as Boolean,
-            syncLocalDeletion = values[16] as Boolean,
-            trashLocalDeletion = values[17] as Boolean,
+            playbackBehavior = behavior.playback,
+            fullscreenButtonPosition = pos.fullscreen,
+            immichButtonPosition = pos.immich,
+            rotationButtonPosition = pos.rotation,
+            muteButtonPosition = pos.mute,
+            showFullscreenButton = vis.fullscreen,
+            showImmichButton = vis.immich,
+            showRotationButton = vis.rotation,
+            showMuteButton = vis.mute,
+            showDownloadButton = vis.download,
+            downloadButtonPosition = pos.download,
+            showShareButton = vis.share,
+            shareButtonPosition = pos.share,
+            showSwipeButtons = vis.swipeButtons,
+            autoNextOnFav = behavior.autoNextOnFavorite,
+            showArchiveButton = vis.archive,
+            syncLocalDeletion = behavior.syncLocalDeletion,
+            trashLocalDeletion = behavior.trashLocalDeletion,
             sortOrder = order,
             sortCategory = category,
-            tapToSwipeEnabled = values[19] as Boolean,
-            showFavoriteButton = values[20] as Boolean,
-            showLockButton = values[21] as Boolean
+            tapToSwipeEnabled = behavior.tapToSwipe,
+            showFavoriteButton = vis.favorite,
+            showLockButton = vis.lock
         )}
         if (oldOrder != order) {
             pendingJumpToFirstUnprocessed = true
@@ -538,6 +515,7 @@ class SwipeViewModel @Inject constructor(
                 val albums = albumRepository.getAlbumsRaw().filter { !it.isVirtual }
                 _uiState.update { it.copy(albumsForAddToAlbum = albums, isFetchingAlbumsForDialog = false) }
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 AppLogger.e("SwipeViewModel", "Error loading albums for dialog", e)
                 _uiState.update { it.copy(isFetchingAlbumsForDialog = false) }
             }
@@ -564,6 +542,7 @@ class SwipeViewModel @Inject constructor(
                 }
                 onResult(success, targetAlbum.albumName)
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 AppLogger.e("SwipeViewModel", "Error adding asset to album ${targetAlbum.albumName}", e)
                 onResult(false, targetAlbum.albumName)
             }
@@ -629,6 +608,7 @@ class SwipeViewModel @Inject constructor(
                 
                 refreshSortedWorkPile(jumpToFirstUnprocessed = true)
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 AppLogger.e("SwipeViewModel", "Error resetting album decisions", e)
                 _uiState.update { it.copy(showResetConfirmation = false) }
             }
@@ -745,6 +725,7 @@ class SwipeViewModel @Inject constructor(
                             )
                         }
                     } catch (e: Exception) {
+                        e.rethrowIfCancelled()
                         AppLogger.e("SwipeViewModel", "Error resolving local media for deletion: ${e.message}", e)
                     }
                 }
@@ -779,6 +760,7 @@ class SwipeViewModel @Inject constructor(
                     _uiState.update { it.copy(showSuccessAnimation = false) }
                 }
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 AppLogger.e("SwipeViewModel", "Error applying changes: ${e.message}", e)
                 _uiState.update { it.copy(isSyncing = false, error = e.message) }
             }

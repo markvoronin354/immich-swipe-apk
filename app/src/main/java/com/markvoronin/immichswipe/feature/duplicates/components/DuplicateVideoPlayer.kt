@@ -65,7 +65,6 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.cache.VideoCache
 import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
-import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.data.datastore.SessionDataStore
 import com.markvoronin.immichswipe.domain.model.Asset
 import kotlinx.coroutines.delay
@@ -77,7 +76,6 @@ fun DuplicateVideoPlayer(
     asset: Asset,
     modifier: Modifier = Modifier,
     baseUrl: String = "",
-    apiKey: String = "",
     contentScale: ContentScale = ContentScale.Fit,
     onTap: (() -> Unit)? = null,
     videoSurfaceWrapper: @Composable (surfaceContent: @Composable () -> Unit) -> Unit = { surface -> surface() }
@@ -85,10 +83,8 @@ fun DuplicateVideoPlayer(
     val context = LocalContext.current
     val sessionDataStore = remember(context) { SessionDataStore(context.applicationContext) }
     val storedBaseUrl by sessionDataStore.getBaseUrl().collectAsState(initial = null)
-    val storedApiKey by sessionDataStore.getApiKey().collectAsState(initial = null)
 
     val effectiveBaseUrl = (baseUrl.ifBlank { storedBaseUrl ?: "" }).removeSuffix("/")
-    val effectiveApiKey = apiKey.ifBlank { storedApiKey ?: "" }
 
     val playbackBehaviorStr by sessionDataStore.getAudioFocusMode().collectAsState(initial = null)
     val playbackBehavior = remember(playbackBehaviorStr) {
@@ -105,10 +101,10 @@ fun DuplicateVideoPlayer(
     var isScrubbing by remember(asset.id) { mutableStateOf(false) }
     var scrubValue by remember(asset.id) { mutableLongStateOf(0L) }
 
-    var exoPlayer by remember(asset.id, handleAudioFocus, effectiveBaseUrl, effectiveApiKey) { mutableStateOf<ExoPlayer?>(null) }
+    var exoPlayer by remember(asset.id, handleAudioFocus, effectiveBaseUrl) { mutableStateOf<ExoPlayer?>(null) }
 
-    DisposableEffect(asset.id, handleAudioFocus, effectiveBaseUrl, effectiveApiKey) {
-        if (effectiveBaseUrl.isEmpty() || effectiveApiKey.isEmpty()) {
+    DisposableEffect(asset.id, handleAudioFocus, effectiveBaseUrl) {
+        if (effectiveBaseUrl.isEmpty()) {
             return@DisposableEffect onDispose {}
         }
 
@@ -125,7 +121,7 @@ fun DuplicateVideoPlayer(
             .build().apply {
                 repeatMode = Player.REPEAT_MODE_ONE
                 val videoUrl = "$effectiveBaseUrl/api/assets/${asset.id}/video/playback"
-                val dataSourceFactory = VideoCache.getCacheDataSourceFactory(context, effectiveApiKey)
+                val dataSourceFactory = VideoCache.getCacheDataSourceFactory(context)
                 val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
                     .createMediaSource(
                         MediaItem.Builder()
@@ -192,11 +188,10 @@ fun DuplicateVideoPlayer(
     ) {
         videoSurfaceWrapper {
             Box(modifier = Modifier.fillMaxSize()) {
-                if (effectiveBaseUrl.isNotEmpty() && effectiveApiKey.isNotEmpty()) {
+                if (effectiveBaseUrl.isNotEmpty()) {
                     AsyncImage(
                         model = ImageRequest.Builder(context)
                             .data("$effectiveBaseUrl/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview")
-                            .apiKeyHeader(effectiveApiKey)
                             .crossfade(true)
                             .build(),
                         contentDescription = null,

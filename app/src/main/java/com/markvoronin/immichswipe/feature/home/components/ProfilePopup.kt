@@ -67,7 +67,7 @@ import com.markvoronin.immichswipe.BuildConfig
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.ConnectionLevel
 import com.markvoronin.immichswipe.core.ConnectionStatus
-import com.markvoronin.immichswipe.data.local.entity.UserAccountEntity
+import com.markvoronin.immichswipe.domain.model.AccountSummary
 import com.markvoronin.immichswipe.domain.model.User
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
@@ -75,10 +75,9 @@ import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 @Composable
 fun ProfilePopup(
     user: User?,
-    savedAccounts: List<UserAccountEntity>,
+    savedAccounts: List<AccountSummary>,
     connectionStatus: ConnectionStatus,
     baseUrl: String = "",
-    apiKey: String = "",
     onClose: () -> Unit,
     onSettingsClick: () -> Unit,
     onSwitchAccount: (String) -> Unit,
@@ -90,7 +89,7 @@ fun ProfilePopup(
     val baseUrlClean = baseUrl.removeSuffix("/")
 
     var showLogoutConfirmation by remember { mutableStateOf(false) }
-    var accountToRemove by remember { mutableStateOf<UserAccountEntity?>(null) }
+    var accountToRemove by remember { mutableStateOf<AccountSummary?>(null) }
 
     Dialog(
         onDismissRequest = onClose,
@@ -149,7 +148,6 @@ fun ProfilePopup(
                 UserAvatar(
                     userId = user?.id,
                     baseUrl = baseUrlClean,
-                    apiKey = apiKey,
                     name = user?.name ?: user?.email,
                     avatarColorName = user?.avatarColor,
                     modifier = Modifier.size(96.dp),
@@ -333,7 +331,7 @@ fun ProfilePopup(
                                     UserAvatar(
                                         userId = account.userId,
                                         baseUrl = account.baseUrl,
-                                        apiKey = account.apiKey,
+                                        loadAsAccountId = account.userId,
                                         name = account.userName ?: account.userEmail,
                                         avatarColorName = account.avatarColor,
                                         modifier = Modifier.size(32.dp),

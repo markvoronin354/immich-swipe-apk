@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.SessionManager
+import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
 import com.markvoronin.immichswipe.data.local.dao.UnsyncedDecisionCounts
 import com.markvoronin.immichswipe.data.repository.AccountRepository
 import com.markvoronin.immichswipe.data.repository.AlbumRepository
@@ -11,6 +12,7 @@ import com.markvoronin.immichswipe.data.repository.AssetRepository
 import com.markvoronin.immichswipe.data.repository.SessionRepository
 import com.markvoronin.immichswipe.data.repository.SwipeDecisionRepository
 import com.markvoronin.immichswipe.data.repository.UserRepository
+import com.markvoronin.immichswipe.domain.model.AccountSummary
 import com.markvoronin.immichswipe.domain.model.Album
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -93,7 +95,6 @@ class HomeViewModel @Inject constructor(
                 if (config != null) {
                     _uiState.update { it.copy(
                         baseUrl = config.baseUrl,
-                        apiKey = config.apiKey,
                         user = if (it.user?.id != config.userId) null else it.user,
                         albums = if (it.user?.id != config.userId) emptyList() else it.albums,
                         albumTreatedCounts = if (it.user?.id != config.userId) emptyMap() else it.albumTreatedCounts,
@@ -103,7 +104,6 @@ class HomeViewModel @Inject constructor(
                 } else {
                     _uiState.update { it.copy(
                         baseUrl = "",
-                        apiKey = "",
                         user = null,
                         albums = emptyList(),
                         albumTreatedCounts = emptyMap(),
@@ -197,7 +197,11 @@ class HomeViewModel @Inject constructor(
 
         viewModelScope.launch {
             accountRepository.allAccounts.collect { accounts ->
-                _uiState.update { it.copy(savedAccounts = accounts) }
+                _uiState.update { state ->
+                    state.copy(savedAccounts = accounts.map {
+                        AccountSummary(it.userId, it.baseUrl, it.userName, it.userEmail, it.avatarColor, it.lastActive)
+                    })
+                }
             }
         }
 
@@ -245,6 +249,7 @@ class HomeViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 AppLogger.e("Home", "Error during initial loading", e)
                 _uiState.update { 
                     it.copy(
@@ -293,6 +298,7 @@ class HomeViewModel @Inject constructor(
                     _uiState.update { it.copy(isRefreshing = false, error = null) }
                 }
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 AppLogger.e("Home", "Error in refreshAlbums", e)
                 _uiState.update { it.copy(isRefreshing = false) }
             }

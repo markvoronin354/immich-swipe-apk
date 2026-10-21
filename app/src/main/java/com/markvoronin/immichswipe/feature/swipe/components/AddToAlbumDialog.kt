@@ -60,7 +60,6 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
 import com.markvoronin.immichswipe.R
-import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.feature.home.components.getVirtualCollectionStyle
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
@@ -77,7 +76,6 @@ fun AddToAlbumDialog(
     isLoading: Boolean,
     showLockButton: Boolean = false,
     baseUrl: String = "",
-    apiKey: String = "",
     onAlbumSelect: (Album) -> Unit,
     onLockSelect: (() -> Unit)? = null,
     onDismiss: () -> Unit,
@@ -285,7 +283,6 @@ fun AddToAlbumDialog(
                                     AlbumSelectionItem(
                                         album = album,
                                         baseUrl = baseUrlClean,
-                                        apiKey = apiKey,
                                     ) {
                                         onAlbumSelect(album)
                                     }
@@ -304,7 +301,6 @@ fun AddToAlbumDialog(
 private fun AlbumSelectionItem(
     album: Album,
     baseUrl: String?,
-    apiKey: String,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -333,10 +329,9 @@ private fun AlbumSelectionItem(
             ) {
                 if (!isVirtual && (album.albumThumbnailAssetId != null) && (baseUrl != null)) {
                     val imageUrl = "$baseUrl/api/assets/${album.albumThumbnailAssetId}/thumbnail?format=WEBP&size=thumbnail"
-                    val imageRequest = remember(album.albumThumbnailAssetId, baseUrl, apiKey) {
+                    val imageRequest = remember(album.albumThumbnailAssetId, baseUrl) {
                         ImageRequest.Builder(context)
                             .data(imageUrl)
-                            .apiKeyHeader(apiKey)
                             .crossfade(enable = true)
                             .precision(Precision.INEXACT)
                             .memoryCachePolicy(CachePolicy.ENABLED)

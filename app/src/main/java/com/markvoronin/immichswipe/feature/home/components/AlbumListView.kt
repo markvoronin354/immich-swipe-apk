@@ -66,7 +66,6 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
 import com.markvoronin.immichswipe.R
-import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.feature.home.AlbumStatus
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
@@ -87,7 +86,6 @@ fun AlbumList(
     onToggleCategory: (AlbumStatus) -> Unit,
     modifier: Modifier = Modifier,
     baseUrl: String = "",
-    apiKey: String = "",
 ) {
     val state = rememberLazyListState()
     var expansionTimes by remember { mutableStateOf<Map<AlbumStatus, Long>>(emptyMap()) }
@@ -172,7 +170,6 @@ fun AlbumList(
                                     treatedCount = treatedCounts[album.id] ?: 0,
                                     unsyncedCount = unsyncedChanges[album.id] ?: 0,
                                     baseUrl = baseUrl,
-                                    apiKey = apiKey,
                                     itemIndex = index,
                                     expansionTime = expansionTimes[status] ?: 0L,
                                     onClick = { onAlbumClick(album) },
@@ -242,7 +239,6 @@ fun AlbumItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     baseUrl: String = "",
-    apiKey: String = "",
     itemIndex: Int = 0,
     expansionTime: Long = 0L,
 ) {
@@ -309,10 +305,9 @@ fun AlbumItem(
                         color = MaterialTheme.colorScheme.primaryContainer
                     ) {
                         if (!isVirtualCollection && album.albumThumbnailAssetId != null && baseUrlClean.isNotEmpty()) {
-                            val imageRequest = remember(album.albumThumbnailAssetId, baseUrlClean, apiKey) {
+                            val imageRequest = remember(album.albumThumbnailAssetId, baseUrlClean) {
                                 ImageRequest.Builder(context)
                                     .data("$baseUrlClean/api/assets/${album.albumThumbnailAssetId}/thumbnail?format=WEBP&size=thumbnail")
-                                    .apiKeyHeader(apiKey)
                                     .crossfade(true)
                                     .precision(Precision.INEXACT)
                                     .memoryCachePolicy(CachePolicy.ENABLED)

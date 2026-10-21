@@ -328,7 +328,6 @@ fun DuplicatesScreen(
                                         isFavorite = { uiState.isFavorite(it) },
                                         activeZoomAssetId = activeZoomData?.asset?.id,
                                         baseUrl = uiState.baseUrl,
-                                        apiKey = uiState.apiKey,
                                         modifier = if (index == 0) Modifier.tutorialTarget("dup_photos", tutorialController) else Modifier,
                                         onDecisionToggle = { assetId -> viewModel.toggleDecision(assetId) },
                                         onKeepAll = { viewModel.setClusterDecisions(cluster, DuplicateDecision.KEEP) },
@@ -404,7 +403,6 @@ fun DuplicatesScreen(
                 isFavorite = activeZoomData?.let { uiState.isFavorite(it.asset) } ?: false,
                 rootWindowOffset = rootWindowOffset,
                 baseUrl = uiState.baseUrl,
-                apiKey = uiState.apiKey,
                 onDismiss = { activeZoomData = null }
             )
 
@@ -413,7 +411,6 @@ fun DuplicatesScreen(
                 decisions = uiState.decisions,
                 isFavorite = { uiState.isFavorite(it) },
                 baseUrl = uiState.baseUrl,
-                apiKey = uiState.apiKey,
                 onDecisionToggle = { assetId -> viewModel.toggleDecision(assetId) },
                 onFavoriteToggle = { asset -> viewModel.toggleFavorite(asset) },
                 onClusterChanged = { index ->

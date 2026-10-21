@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -88,7 +89,7 @@ fun CustomReminderDialog(
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    text = stringResource(R.string.settings_reminder_custom_hint, minDays, maxDays),
+                    text = pluralStringResource(R.plurals.settings_reminder_custom_hint, maxDays.toInt(), minDays, maxDays),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline
                 )

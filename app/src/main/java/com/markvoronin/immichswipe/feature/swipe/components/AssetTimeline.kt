@@ -56,7 +56,6 @@ import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
-import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
@@ -74,7 +73,6 @@ fun AssetTimeline(
     isLocked: (String) -> Boolean,
     onAssetClick: (Int) -> Unit,
     baseUrl: String = "",
-    apiKey: String = "",
     isBulkMode: Boolean = false,
     bulkSelection: Set<String> = emptySet(),
     isBulkDelete: Boolean = false,
@@ -148,7 +146,6 @@ fun AssetTimeline(
                 isBulkDelete = isBulkDelete,
                 rotation = getRotation(asset.id),
                 baseUrl = baseUrlClean,
-                apiKey = apiKey,
                 onAssetClick = onAssetClick
             )
         }
@@ -170,7 +167,6 @@ private fun AssetTimelineItem(
     isBulkDelete: Boolean,
     rotation: Int,
     baseUrl: String,
-    apiKey: String,
     onAssetClick: (Int) -> Unit
 ) {
     val context = LocalContext.current
@@ -220,10 +216,9 @@ private fun AssetTimelineItem(
             .clickable { onAssetClick(index) }
     ) {
         if (baseUrl.isNotEmpty()) {
-            val thumbnailRequest = remember(asset.id, baseUrl, apiKey, rotation) {
+            val thumbnailRequest = remember(asset.id, baseUrl, rotation) {
                 ImageRequest.Builder(context)
                     .data("$baseUrl/api/assets/${asset.id}/thumbnail?format=WEBP&size=thumbnail&edited=true")
-                    .apiKeyHeader(apiKey)
                     .crossfade(true)
                     .precision(Precision.INEXACT)
                     .memoryCachePolicy(CachePolicy.ENABLED)

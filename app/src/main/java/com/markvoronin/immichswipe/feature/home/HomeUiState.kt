@@ -4,7 +4,7 @@ import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.ConnectionStatus
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.SortOrder
-import com.markvoronin.immichswipe.data.local.entity.UserAccountEntity
+import com.markvoronin.immichswipe.domain.model.AccountSummary
 import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.domain.model.User
 
@@ -32,7 +32,6 @@ data class HomeUiState(
     val searchQuery: String = "",
     val connectionStatus: ConnectionStatus = ConnectionStatus(),
     val baseUrl: String = "",
-    val apiKey: String = "",
     val allAssetsCount: Int = 0,
     val orphansCount: Int = 0,
     val duplicatesCount: Int = 0,
@@ -47,7 +46,7 @@ data class HomeUiState(
         AlbumStatus.NOT_STARTED,
         AlbumStatus.COMPLETED
     ),
-    val savedAccounts: List<UserAccountEntity> = emptyList(),
+    val savedAccounts: List<AccountSummary> = emptyList(),
     val isLoggingInToAnotherAccount: Boolean = false,
     val showBackupWarning: Boolean = false,
     val showGlobalResetConfirmation: Boolean = false

@@ -52,7 +52,6 @@ fun SwipeScreenDialogs(
             showMuteButton = true, // Mute button is always shown in fullscreen for videos
             rotation = uiState.getRotation(currentAsset.id),
             baseUrl = uiState.baseUrl,
-            apiKey = uiState.apiKey
         )
     }
 
@@ -86,7 +85,6 @@ fun SwipeScreenDialogs(
             isLoading = uiState.isFetchingAlbumsForDialog,
             showLockButton = uiState.showLockButton,
             baseUrl = uiState.baseUrl,
-            apiKey = uiState.apiKey,
             onAlbumSelect = { targetAlbum ->
                 viewModel.addCurrentAssetToAlbum(targetAlbum) { success, albumName ->
                     viewModel.dismissAddToAlbumDialog()

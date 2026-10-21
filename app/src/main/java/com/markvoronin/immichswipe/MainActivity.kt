@@ -62,10 +62,12 @@ class MainActivity : ComponentActivity() {
                             val activeUserId = state.activeUserId
                             val api = sessionManager.api
                             val baseUrl = sessionManager.getBaseUrl()
-                            val apiKey = sessionManager.getApiKey()
-                            
-                            if ((api != null) && (baseUrl != null) && (apiKey != null) && (activeUserId != null)) {
-                                val sessionKey = "$activeUserId-$baseUrl-$apiKey"
+                            // One-way fingerprint of user, server and key: same change semantics as using the
+                            // key itself, without putting the API key into UI state.
+                            val fingerprint = sessionManager.sessionFingerprint()
+
+                            if ((api != null) && (baseUrl != null) && (fingerprint != null) && (activeUserId != null)) {
+                                val sessionKey = "$activeUserId-$baseUrl-$fingerprint"
                                 
                                 key(sessionKey) {
                                     HomeScreen(

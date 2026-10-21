@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.SessionManager
+import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
 import com.markvoronin.immichswipe.data.api.DeleteAssetsRequest
 import com.markvoronin.immichswipe.data.api.ImmichApi
 import com.markvoronin.immichswipe.data.api.UpdateAssetsRequest
@@ -63,7 +64,6 @@ class DuplicatesViewModel @Inject constructor(
             sessionManager.sessionConfig.collect { config ->
                 _uiState.update { it.copy(
                     baseUrl = config?.baseUrl ?: "",
-                    apiKey = config?.apiKey ?: ""
                 ) }
             }
         }
@@ -137,6 +137,7 @@ class DuplicatesViewModel @Inject constructor(
                 ) 
             }
         } catch (e: Exception) {
+            e.rethrowIfCancelled()
             AppLogger.e("Duplicates", "Failed to load duplicates", e)
             _uiState.update { 
                 it.copy(
@@ -288,6 +289,7 @@ class DuplicatesViewModel @Inject constructor(
                     )
                 )
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 AppLogger.e("Duplicates", "Failed to update favorite status", e)
                 _uiState.update { state ->
                     state.copy(
@@ -349,6 +351,7 @@ class DuplicatesViewModel @Inject constructor(
                 // Refresh list after successful deletion
                 fetchDuplicates()
             } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 AppLogger.e("Duplicates", "Failed to sync deletions", e)
                 _uiState.update { 
                     it.copy(
@@ -441,9 +444,8 @@ class DuplicatesViewModel @Inject constructor(
                     
                     val photosOnly = cluster.assets.filter { !it.type.equals("VIDEO", ignoreCase = true) }
                     val scores = bestShotAnalyzer.analyzeCluster(
-                        photosOnly, 
-                        _uiState.value.baseUrl, 
-                        _uiState.value.apiKey
+                        photosOnly,
+                        _uiState.value.baseUrl
                     )
                     ensureActive()
 

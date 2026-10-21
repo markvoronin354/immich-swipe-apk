@@ -15,7 +15,6 @@ import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker.FaceLandmarkerOptions
 import com.markvoronin.immichswipe.core.AppLogger
-import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Asset
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -79,14 +78,14 @@ class BestShotAnalyzer @Inject constructor(
         TOP_3
     }
 
-    suspend fun analyzeCluster(assets: List<Asset>, baseUrl: String, apiKey: String): List<AssetScore> = withContext(Dispatchers.Default) {
+    suspend fun analyzeCluster(assets: List<Asset>, baseUrl: String): List<AssetScore> = withContext(Dispatchers.Default) {
         if (assets.isEmpty()) return@withContext emptyList()
 
         val scores = assets.map { asset ->
             if (asset.type.equals("VIDEO", ignoreCase = true)) {
                 analyzeVideoAsset(asset)
             } else {
-                val bitmap = fetchThumbnailBitmap(asset, baseUrl, apiKey)
+                val bitmap = fetchThumbnailBitmap(asset, baseUrl)
                 if (bitmap != null) {
                     analyzeAsset(asset, bitmap)
                 } else {
@@ -128,8 +127,8 @@ class BestShotAnalyzer @Inject constructor(
         }
     }
 
-    suspend fun findBestShot(assets: List<Asset>, baseUrl: String, apiKey: String): AssetScore? {
-        return analyzeCluster(assets, baseUrl, apiKey).firstOrNull()
+    suspend fun findBestShot(assets: List<Asset>, baseUrl: String): AssetScore? {
+        return analyzeCluster(assets, baseUrl).firstOrNull()
     }
 
     private fun analyzeVideoAsset(asset: Asset): AssetScore {
@@ -146,10 +145,9 @@ class BestShotAnalyzer @Inject constructor(
         )
     }
 
-    private suspend fun fetchThumbnailBitmap(asset: Asset, baseUrl: String, apiKey: String): Bitmap? = withContext(Dispatchers.IO) {
+    private suspend fun fetchThumbnailBitmap(asset: Asset, baseUrl: String): Bitmap? = withContext(Dispatchers.IO) {
         val request = ImageRequest.Builder(context)
             .data("${baseUrl.removeSuffix("/")}/api/assets/${asset.id}/thumbnail?size=preview")
-            .apiKeyHeader(apiKey)
             .size(512) // Limit size for performance
             .allowHardware(false) // Software bitmap for pixel access
             .build()

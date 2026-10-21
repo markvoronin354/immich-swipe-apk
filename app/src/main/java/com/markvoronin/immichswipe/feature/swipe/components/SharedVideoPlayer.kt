@@ -73,7 +73,6 @@ import coil3.size.Precision
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.CardDisplayMode
-import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.feature.swipe.utils.formatMediaTime
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 import kotlinx.coroutines.delay
@@ -87,7 +86,6 @@ fun SharedVideoPlayer(
     isFullscreen: Boolean,
     assetId: String? = null,
     baseUrl: String = "",
-    apiKey: String = "",
     isMuted: Boolean = false,
     isPaused: Boolean = false,
     isVideoReady: Boolean = true,
@@ -178,10 +176,9 @@ fun SharedVideoPlayer(
                 Box(modifier = Modifier.fillMaxSize()) {
                     if (assetId != null && baseUrlClean.isNotEmpty() && !isVideoReady) {
                         val context = LocalContext.current
-                        val thumbnailRequest = remember(assetId, baseUrlClean, apiKey) {
+                        val thumbnailRequest = remember(assetId, baseUrlClean) {
                             ImageRequest.Builder(context)
                                 .data("$baseUrlClean/api/assets/$assetId/thumbnail?format=WEBP&size=preview&edited=true")
-                                .apiKeyHeader(apiKey)
                                 .memoryCacheKey("$assetId-preview")
                                 .placeholderMemoryCacheKey("$assetId-preview")
                                 .crossfade(false)

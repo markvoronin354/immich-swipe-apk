@@ -26,12 +26,10 @@
     <!-- Navigation -->
     <string name="nav_home">Accueil</string>
     <string name="nav_swipe">Swipe</string>
-    <string name="nav_back">Retour</string>
 
     <!-- Écran d'Accueil -->
     <string name="home_search_placeholder">Rechercher un album…</string>
     <string name="home_no_results">Aucun album ne correspond à votre recherche</string>
-    <string name="home_global_reset_button">Réinitialiser tout le tri</string>
     <string name="home_global_reset_confirm_title">Réinitialiser toute la progression ?</string>
     <string name="home_global_reset_confirm_msg">Cela supprimera définitivement TOUTES vos décisions de tri locales pour TOUS les albums et collections de ce compte.\n\nLes décisions déjà synchronisées sur Immich (supprimées ou archivées) ne seront PAS affectées.\n\nVoulez-vous continuer ?</string>
     <string name="home_error_title">Oups ! Une erreur est survenue</string>
@@ -43,9 +41,6 @@
     <string name="home_album_completed">Terminé</string>
     <string name="home_unsynced_changes">Contient %1$d changements non synchronisés</string>
     <string name="home_sorted_count">%1$d / %2$d triés</string>
-    <string name="home_select_album">Sélectionnez un album pour commencer !</string>
-    <string name="home_session_title">Session de tri : %1$s</string>
-    <string name="home_photos_to_discover">%1$d photos à découvrir</string>
     <string name="home_unsynced_badge">NON SYNCHRONISÉ</string>
     <string name="home_virtual_all_assets">Toutes les photos</string>
     <string name="home_virtual_all_assets_desc">Collection de l\'ensemble de votre bibliothèque (dépendant de vos droits d\'accès)</string>
@@ -86,12 +81,8 @@
     <string name="settings_theme_dark">Sombre</string>
     <string name="settings_dynamic_color_label">Couleurs système</string>
     <string name="settings_dynamic_color_desc">Utilise les couleurs de votre fond d\'écran et du système. Si désactivé, les couleurs par défaut de l\'app seront utilisées.</string>
-    <string name="settings_layout_label">Affichage par défaut</string>
     <string name="settings_layout_list">Liste</string>
     <string name="settings_layout_grid">Grille</string>
-    <string name="settings_section_tri">Tri</string>
-    <string name="settings_include_archived_label">Inclure les archives externes</string>
-    <string name="settings_include_archived_desc">Afficher et trier les photos déjà archivées dans Immich (hors de Immich Swipe)</string>
     <string name="settings_sort_order_label">Ordre de tri</string>
     <string name="settings_sort_newest">Plus récents d\'abord</string>
     <string name="settings_sort_oldest">Plus anciens d\'abord</string>
@@ -156,7 +147,6 @@
     <string name="swipe_keep_upper">KEEP</string>
     <string name="swipe_delete">Supprimer</string>
     <string name="swipe_delete_upper">DELETE</string>
-    <string name="swipe_remaining">Restant</string>
     <string name="swipe_total">Total</string>
     <string name="swipe_favorite">Favoris</string>
     <string name="swipe_archive">Archiver</string>
@@ -354,11 +344,29 @@
     <string name="settings_reminder_rarely">Rarement</string>
     <string name="settings_reminder_rarely_hint">Environ toutes les 3 à 5 semaines, à intervalles aléatoires</string>
     <string name="settings_reminder_custom">Personnalisé</string>
-    <string name="settings_reminder_custom_hint">Environ tous les %1$d à %2$d jours, à intervalles aléatoires</string>
+    <plurals name="settings_reminder_custom_hint">
+        <item quantity="one">Environ tous les %1$d à %2$d jour, à intervalles aléatoires</item>
+        <item quantity="many">Environ tous les %1$d à %2$d jours, à intervalles aléatoires</item>
+        <item quantity="other">Environ tous les %1$d à %2$d jours, à intervalles aléatoires</item>
+    </plurals>
+    <plurals name="settings_reminder_custom_configure">
+        <item quantity="one">Configurer la plage (%1$d–%2$d jour)</item>
+        <item quantity="many">Configurer la plage (%1$d–%2$d jours)</item>
+        <item quantity="other">Configurer la plage (%1$d–%2$d jours)</item>
+    </plurals>
+    <plurals name="swipe_bulk_delete_title">
+        <item quantity="one">Suppression groupée : %1$d sélectionné</item>
+        <item quantity="many">Suppression groupée : %1$d sélectionnés</item>
+        <item quantity="other">Suppression groupée : %1$d sélectionnés</item>
+    </plurals>
+    <plurals name="swipe_bulk_keep_title">
+        <item quantity="one">Conservation groupée : %1$d sélectionné</item>
+        <item quantity="many">Conservation groupée : %1$d sélectionnés</item>
+        <item quantity="other">Conservation groupée : %1$d sélectionnés</item>
+    </plurals>
     <string name="settings_reminder_custom_dialog_title">Fréquence personnalisée</string>
     <string name="settings_reminder_custom_min_label">Jours minimum</string>
     <string name="settings_reminder_custom_max_label">Jours maximum</string>
-    <string name="settings_reminder_custom_configure">Configurer la plage (%1$d–%2$d jours)</string>
     <string name="settings_reminder_permission_denied">Permission de notification refusée. Le rappel reste désactivé.</string>
     <string name="reminder_notification_title">C\'est l\'heure de trier !</string>
     <string name="reminder_notification_text">Triez quelques photos dans Immich Swipe.</string>
@@ -404,8 +412,6 @@
     <string name="swipe_share_server_error">Échec du partage : erreur du serveur</string>
     <string name="swipe_share_error">Échec du partage : %1$s</string>
     <string name="swipe_share_chooser_title">Partager le média</string>
-    <string name="swipe_bulk_delete_title">Suppression groupée : %1$d sélectionné(s)</string>
-    <string name="swipe_bulk_keep_title">Conservation groupée : %1$d sélectionné(s)</string>
     <string name="swipe_bulk_delete_hint">Glissez vers la droite pour sélectionner, relâchez pour supprimer</string>
     <string name="swipe_bulk_keep_hint">Glissez vers la gauche pour sélectionner, relâchez pour conserver</string>
     <string name="swipe_loading_metadata">Chargement des métadonnées de l\'album… %1$d / %2$d</string>

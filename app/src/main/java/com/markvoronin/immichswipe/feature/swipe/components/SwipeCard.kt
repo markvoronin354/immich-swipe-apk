@@ -86,7 +86,6 @@ import com.markvoronin.immichswipe.core.CardDisplayMode
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.cache.VideoCache
 import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
-import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardActions
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardConfig
@@ -115,7 +114,6 @@ fun SwipeCard(
     val context = LocalContext.current
     val density = LocalDensity.current
     val baseUrl = config.baseUrl.removeSuffix("/")
-    val apiKey = config.apiKey
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val scope = rememberCoroutineScope()
@@ -166,7 +164,7 @@ fun SwipeCard(
 
                 repeatMode = Player.REPEAT_MODE_ONE
                 val videoUrl = "$baseUrl/api/assets/${asset.id}/video/playback"
-                val dataSourceFactory = VideoCache.getCacheDataSourceFactory(context, apiKey)
+                val dataSourceFactory = VideoCache.getCacheDataSourceFactory(context)
                 val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
                     .createMediaSource(MediaItem.Builder()
                         .setUri(videoUrl)
@@ -215,7 +213,7 @@ fun SwipeCard(
         }
     }
 
-    rememberExoPlayerWithLifecycle(
+    ExoPlayerLifecycleEffect(
         exoPlayer = exoPlayer,
         assetId = asset.id,
         lifecycleOwner = lifecycleOwner,
@@ -480,10 +478,9 @@ fun SwipeCard(
                     .clip(RoundedCornerShape(16.dp))
             ) {
                 if (asset.type == "VIDEO") {
-                    val placeholderRequest = remember(asset.id, baseUrl, apiKey) {
+                    val placeholderRequest = remember(asset.id, baseUrl) {
                         ImageRequest.Builder(context)
                             .data("$baseUrl/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview&edited=true")
-                            .apiKeyHeader(apiKey)
                             .memoryCacheKey("${asset.id}-preview")
                             .placeholderMemoryCacheKey("${asset.id}-preview")
                             .allowHardware(true)
@@ -517,7 +514,6 @@ fun SwipeCard(
                             isFullscreen = false,
                             assetId = asset.id,
                             baseUrl = baseUrl,
-                            apiKey = apiKey,
                             isMuted = isMuted,
                             isPaused = pausedByHoldState,
                             isVideoReady = isVideoReady,
@@ -645,13 +641,12 @@ fun SwipeCard(
                         )
                     }
                 } else {
-                    val photoRequest = remember(asset.id, baseUrl, apiKey, asset.isGif) {
+                    val photoRequest = remember(asset.id, baseUrl, asset.isGif) {
                         ImageRequest.Builder(context)
                             .data(
                                 if (asset.isGif) "$baseUrl/api/assets/${asset.id}/original"
                                 else "$baseUrl/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview&edited=true"
                             )
-                            .apiKeyHeader(apiKey)
                             .memoryCacheKey("${asset.id}-preview")
                             .placeholderMemoryCacheKey("${asset.id}-preview")
                             .allowHardware(true)

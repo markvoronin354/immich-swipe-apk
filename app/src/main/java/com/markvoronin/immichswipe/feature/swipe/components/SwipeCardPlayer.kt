@@ -9,7 +9,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 
 @Composable
-fun rememberExoPlayerWithLifecycle(
+fun ExoPlayerLifecycleEffect(
     exoPlayer: ExoPlayer?,
     assetId: String,
     lifecycleOwner: LifecycleOwner,
