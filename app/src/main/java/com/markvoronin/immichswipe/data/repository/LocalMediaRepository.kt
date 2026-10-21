@@ -113,7 +113,19 @@ class LocalMediaRepository @Inject constructor(
                     MediaStore.createDeleteRequest(context.contentResolver, uris)
                 }
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // API 29 (Android 10)
-                MediaStore.createDeleteRequest(context.contentResolver, uris)
+                // createDeleteRequest only exists from API 30. On Android 10 the system asks for
+                // consent through a RecoverableSecurityException, whose action intent we hand back.
+                var consentIntent: PendingIntent? = null
+                for (uri in uris) {
+                    try {
+                        context.contentResolver.delete(uri, null, null)
+                    } catch (e: android.app.RecoverableSecurityException) {
+                        if (consentIntent == null) consentIntent = e.userAction.actionIntent
+                    } catch (e: Exception) {
+                        AppLogger.e("LocalMediaRepo", "Failed deletion for $uri: ${e.message}")
+                    }
+                }
+                consentIntent
             } else { // Android 9 and lower
                 uris.forEach { uri ->
                     try {
