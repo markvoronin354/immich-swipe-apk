@@ -38,9 +38,9 @@ import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
-import coil.imageLoader
-import coil.request.CachePolicy
-import coil.request.ImageRequest
+import coil3.imageLoader
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.ConnectionLevel
@@ -48,6 +48,7 @@ import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.cache.VideoCache
 import com.markvoronin.immichswipe.core.cache.VideoPreloader
 import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
+import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.feature.swipe.components.SwipeScreenContent
 import com.markvoronin.immichswipe.feature.swipe.components.SwipeScreenDialogs
@@ -190,7 +191,7 @@ fun SwipeScreen(
                     else "$baseUrl/api/assets/${nextAsset.id}/thumbnail?format=WEBP&size=preview&edited=true"
                     val request = ImageRequest.Builder(localCtx)
                         .data(imageUrl)
-                        .addHeader("x-api-key", apiKey)
+                        .apiKeyHeader(apiKey)
                         .memoryCacheKey("${nextAsset.id}-preview")
                         .memoryCachePolicy(CachePolicy.ENABLED)
                         .build()

@@ -57,12 +57,14 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.cache.VideoCache
 import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
+import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.data.datastore.SessionDataStore
 import com.markvoronin.immichswipe.domain.model.Asset
 import kotlinx.coroutines.delay
@@ -193,7 +195,7 @@ fun DuplicateVideoPlayer(
                     AsyncImage(
                         model = ImageRequest.Builder(context)
                             .data("$effectiveBaseUrl/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview")
-                            .addHeader("x-api-key", effectiveApiKey)
+                            .apiKeyHeader(effectiveApiKey)
                             .crossfade(true)
                             .build(),
                         contentDescription = null,

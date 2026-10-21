@@ -77,10 +77,12 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import coil.size.Precision
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.size.Precision
 import com.markvoronin.immichswipe.R
+import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.duplicates.components.DuplicateVideoPlayer
 import com.markvoronin.immichswipe.feature.swipe.SwipeUiState
@@ -404,7 +406,7 @@ fun DeletedAssetThumbnail(
     val imageRequest = remember(asset.id, baseUrl, apiKey) {
         ImageRequest.Builder(context)
             .data("$baseUrl/api/assets/${asset.id}/thumbnail?format=WEBP")
-            .addHeader("x-api-key", apiKey)
+            .apiKeyHeader(apiKey)
             .crossfade(true)
             .precision(Precision.INEXACT)
             .build()
@@ -591,7 +593,7 @@ fun SummaryFullscreenPreviewDialog(
                                         if (pageAsset.isGif) "$baseUrlClean/api/assets/${pageAsset.id}/original"
                                         else "$baseUrlClean/api/assets/${pageAsset.id}/thumbnail?format=WEBP&size=preview"
                                     )
-                                    .addHeader("x-api-key", apiKey)
+                                    .apiKeyHeader(apiKey)
                                     .crossfade(true)
                                     .build()
                             }

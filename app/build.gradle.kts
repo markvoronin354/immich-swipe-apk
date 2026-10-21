@@ -90,7 +90,8 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.coil.compose)
     implementation(libs.coil.video) // For video thumbnails
-    implementation(libs.coil.gif) // For animated GIF playback
+    implementation(libs.coil.gif)
+    implementation(libs.coil.network.okhttp) // Fetches images over HTTP (not bundled in Coil 3)
 
     // Media3 for video playback
     implementation(libs.media3.exoplayer)

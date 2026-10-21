@@ -69,11 +69,13 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import coil.compose.SubcomposeAsyncImage
-import coil.request.ImageRequest
-import coil.size.Precision
+import coil3.compose.SubcomposeAsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.size.Precision
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
+import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
@@ -292,7 +294,7 @@ fun FullscreenViewer(
                             if (nextAsset.isGif) "$baseUrlClean/api/assets/${nextAsset.id}/original"
                             else "$baseUrlClean/api/assets/${nextAsset.id}/thumbnail?format=WEBP&size=preview&edited=true"
                         )
-                        .addHeader("x-api-key", apiKey)
+                        .apiKeyHeader(apiKey)
                         .memoryCacheKey("${nextAsset.id}-preview")
                         .placeholderMemoryCacheKey("${nextAsset.id}-preview")
                         .crossfade(false)
@@ -608,7 +610,7 @@ fun FullscreenViewer(
                                 if (asset.isGif) "$baseUrlClean/api/assets/${asset.id}/original"
                                 else "$baseUrlClean/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview&edited=true"
                             )
-                            .addHeader("x-api-key", apiKey)
+                            .apiKeyHeader(apiKey)
                             .memoryCacheKey("${asset.id}-preview")
                             .placeholderMemoryCacheKey("${asset.id}-preview")
                             .crossfade(false)

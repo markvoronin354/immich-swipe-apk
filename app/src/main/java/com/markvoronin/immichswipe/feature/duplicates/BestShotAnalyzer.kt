@@ -2,11 +2,12 @@ package com.markvoronin.immichswipe.feature.duplicates
 
 import android.content.Context
 import android.graphics.Bitmap
-import androidx.core.graphics.drawable.toBitmapOrNull
-import coil.Coil
-import coil.ImageLoader
-import coil.request.ImageRequest
-import coil.request.SuccessResult
+import coil3.ImageLoader
+import coil3.SingletonImageLoader
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import coil3.request.allowHardware
+import coil3.toBitmap
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.tasks.components.containers.NormalizedLandmark
 import com.google.mediapipe.tasks.core.BaseOptions
@@ -14,6 +15,7 @@ import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker.FaceLandmarkerOptions
 import com.markvoronin.immichswipe.core.AppLogger
+import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Asset
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +30,7 @@ class BestShotAnalyzer @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     // Share the app-wide Coil loader (and its caches) instead of creating a private one.
-    private val imageLoader: ImageLoader get() = Coil.imageLoader(context)
+    private val imageLoader: ImageLoader get() = SingletonImageLoader.get(context)
 
     private var faceLandmarker: FaceLandmarker? = null
     private var landmarkerInitFailed = false
@@ -147,14 +149,14 @@ class BestShotAnalyzer @Inject constructor(
     private suspend fun fetchThumbnailBitmap(asset: Asset, baseUrl: String, apiKey: String): Bitmap? = withContext(Dispatchers.IO) {
         val request = ImageRequest.Builder(context)
             .data("${baseUrl.removeSuffix("/")}/api/assets/${asset.id}/thumbnail?size=preview")
-            .addHeader("x-api-key", apiKey)
+            .apiKeyHeader(apiKey)
             .size(512) // Limit size for performance
             .allowHardware(false) // Software bitmap for pixel access
             .build()
 
         val result = imageLoader.execute(request)
         if (result is SuccessResult) {
-            result.drawable.toBitmapOrNull()
+            result.image.toBitmap()
         } else {
             null
         }

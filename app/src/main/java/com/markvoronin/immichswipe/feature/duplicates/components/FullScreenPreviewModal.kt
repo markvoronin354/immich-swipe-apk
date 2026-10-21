@@ -91,12 +91,14 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import coil.compose.AsyncImage
-import coil.imageLoader
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.ImmichLauncher
 import com.markvoronin.immichswipe.core.cache.VideoPreloader
+import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
 import com.markvoronin.immichswipe.feature.settings.components.horizontalFadingEdges
@@ -176,15 +178,15 @@ fun FullScreenPreviewModal(
                 val thumbUrl = "$baseUrlClean/api/assets/${targetAsset.id}/thumbnail?format=WEBP&size=preview"
                 val thumbRequest = ImageRequest.Builder(context)
                     .data(thumbUrl)
-                    .addHeader("x-api-key", apiKey)
+                    .apiKeyHeader(apiKey)
                     .build()
                 context.imageLoader.enqueue(thumbRequest)
             } else {
                 val imageUrl = "$baseUrlClean/api/assets/${targetAsset.id}/original"
                 val imageRequest = ImageRequest.Builder(context)
                     .data(imageUrl)
-                    .addHeader("x-api-key", apiKey)
-                    .size(coil.size.Size.ORIGINAL)
+                    .apiKeyHeader(apiKey)
+                    .size(coil3.size.Size.ORIGINAL)
                     .build()
                 context.imageLoader.enqueue(imageRequest)
 
@@ -192,7 +194,7 @@ fun FullScreenPreviewModal(
                     val thumbUrl = "$baseUrlClean/api/assets/${targetAsset.id}/thumbnail?format=WEBP&size=preview"
                     val thumbRequest = ImageRequest.Builder(context)
                         .data(thumbUrl)
-                        .addHeader("x-api-key", apiKey)
+                        .apiKeyHeader(apiKey)
                         .build()
                     context.imageLoader.enqueue(thumbRequest)
                 }
@@ -679,8 +681,8 @@ fun FullScreenPreviewModal(
                                 val imageRequest = remember(currentAsset.id, baseUrlClean, apiKey) {
                                     ImageRequest.Builder(context)
                                         .data("$baseUrlClean/api/assets/${currentAsset.id}/original")
-                                        .addHeader("x-api-key", apiKey)
-                                        .size(coil.size.Size.ORIGINAL)
+                                        .apiKeyHeader(apiKey)
+                                        .size(coil3.size.Size.ORIGINAL)
                                         .crossfade(false)
                                         .build()
                                 }
@@ -690,7 +692,7 @@ fun FullScreenPreviewModal(
                                     contentScale = ContentScale.Fit,
                                     modifier = Modifier.fillMaxSize(),
                                     onState = { state ->
-                                        isImageLoading = state is coil.compose.AsyncImagePainter.State.Loading
+                                        isImageLoading = state is coil3.compose.AsyncImagePainter.State.Loading
                                     }
                                 )
                             }
@@ -801,7 +803,7 @@ fun FullScreenPreviewModal(
                                             if (asset.isGif) "$baseUrlClean/api/assets/${asset.id}/original"
                                             else "$baseUrlClean/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview"
                                         )
-                                        .addHeader("x-api-key", apiKey)
+                                        .apiKeyHeader(apiKey)
                                         .crossfade(false)
                                         .build()
                                 }

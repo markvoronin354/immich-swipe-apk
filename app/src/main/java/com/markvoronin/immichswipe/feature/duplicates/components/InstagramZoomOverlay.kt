@@ -33,8 +33,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -143,7 +145,7 @@ fun InstagramZoomOverlay(
                         if (zoomData.asset.isGif) "$baseUrlClean/api/assets/${zoomData.asset.id}/original"
                         else "$baseUrlClean/api/assets/${zoomData.asset.id}/thumbnail?format=WEBP&size=preview"
                     )
-                    .addHeader("x-api-key", apiKey)
+                    .apiKeyHeader(apiKey)
                     .crossfade(false)
                     .build()
             }

@@ -54,11 +54,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import coil.compose.AsyncImage
-import coil.request.CachePolicy
-import coil.request.ImageRequest
-import coil.size.Precision
+import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.size.Precision
 import com.markvoronin.immichswipe.R
+import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.feature.home.components.getVirtualCollectionStyle
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
@@ -334,7 +336,7 @@ private fun AlbumSelectionItem(
                     val imageRequest = remember(album.albumThumbnailAssetId, baseUrl, apiKey) {
                         ImageRequest.Builder(context)
                             .data(imageUrl)
-                            .addHeader("x-api-key", apiKey)
+                            .apiKeyHeader(apiKey)
                             .crossfade(enable = true)
                             .precision(Precision.INEXACT)
                             .memoryCachePolicy(CachePolicy.ENABLED)

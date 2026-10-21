@@ -48,8 +48,10 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.SubcomposeAsyncImage
-import coil.request.ImageRequest
+import coil3.compose.SubcomposeAsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
 
@@ -207,7 +209,7 @@ fun DuplicateAssetItem(
                         if (asset.isGif) "$baseUrlClean/api/assets/${asset.id}/original"
                         else "$baseUrlClean/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview"
                     )
-                    .addHeader("x-api-key", apiKey)
+                    .apiKeyHeader(apiKey)
                     .crossfade(true)
                     .build()
             }

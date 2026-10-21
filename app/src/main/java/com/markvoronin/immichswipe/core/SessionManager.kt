@@ -6,7 +6,7 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import androidx.compose.ui.graphics.Color
-import coil.Coil
+import coil3.SingletonImageLoader
 import com.markvoronin.immichswipe.data.api.ImmichApi
 import com.markvoronin.immichswipe.data.api.RetrofitFactory
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -113,7 +113,7 @@ class SessionManager @Inject constructor(
 
     private fun clearImageCache() {
         try {
-            Coil.imageLoader(context).memoryCache?.clear()
+            SingletonImageLoader.get(context).memoryCache?.clear()
         } catch (e: Exception) {
             AppLogger.e("SessionManager", "Error clearing Coil memory cache: ${e.message}")
         }

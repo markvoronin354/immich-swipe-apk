@@ -60,11 +60,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.request.CachePolicy
-import coil.request.ImageRequest
-import coil.size.Precision
+import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.size.Precision
 import com.markvoronin.immichswipe.R
+import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.feature.home.AlbumStatus
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
@@ -310,7 +312,7 @@ fun AlbumItem(
                             val imageRequest = remember(album.albumThumbnailAssetId, baseUrlClean, apiKey) {
                                 ImageRequest.Builder(context)
                                     .data("$baseUrlClean/api/assets/${album.albumThumbnailAssetId}/thumbnail?format=WEBP&size=thumbnail")
-                                    .addHeader("x-api-key", apiKey)
+                                    .apiKeyHeader(apiKey)
                                     .crossfade(true)
                                     .precision(Precision.INEXACT)
                                     .memoryCachePolicy(CachePolicy.ENABLED)

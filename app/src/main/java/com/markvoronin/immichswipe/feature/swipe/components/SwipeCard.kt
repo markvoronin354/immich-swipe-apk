@@ -75,15 +75,18 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
-import coil.compose.SubcomposeAsyncImage
-import coil.request.ImageRequest
-import coil.size.Precision
+import coil3.compose.SubcomposeAsyncImage
+import coil3.request.ImageRequest
+import coil3.request.allowHardware
+import coil3.request.crossfade
+import coil3.size.Precision
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.CardDisplayMode
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.cache.VideoCache
 import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
+import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardActions
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardConfig
@@ -480,7 +483,7 @@ fun SwipeCard(
                     val placeholderRequest = remember(asset.id, baseUrl, apiKey) {
                         ImageRequest.Builder(context)
                             .data("$baseUrl/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview&edited=true")
-                            .addHeader("x-api-key", apiKey)
+                            .apiKeyHeader(apiKey)
                             .memoryCacheKey("${asset.id}-preview")
                             .placeholderMemoryCacheKey("${asset.id}-preview")
                             .allowHardware(true)
@@ -648,7 +651,7 @@ fun SwipeCard(
                                 if (asset.isGif) "$baseUrl/api/assets/${asset.id}/original"
                                 else "$baseUrl/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview&edited=true"
                             )
-                            .addHeader("x-api-key", apiKey)
+                            .apiKeyHeader(apiKey)
                             .memoryCacheKey("${asset.id}-preview")
                             .placeholderMemoryCacheKey("${asset.id}-preview")
                             .allowHardware(true)

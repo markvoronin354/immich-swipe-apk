@@ -51,10 +51,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.SubcomposeAsyncImage
-import coil.request.CachePolicy
-import coil.request.ImageRequest
-import coil.size.Precision
+import coil3.compose.SubcomposeAsyncImage
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.size.Precision
+import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
@@ -221,7 +223,7 @@ private fun AssetTimelineItem(
             val thumbnailRequest = remember(asset.id, baseUrl, apiKey, rotation) {
                 ImageRequest.Builder(context)
                     .data("$baseUrl/api/assets/${asset.id}/thumbnail?format=WEBP&size=thumbnail&edited=true")
-                    .addHeader("x-api-key", apiKey)
+                    .apiKeyHeader(apiKey)
                     .crossfade(true)
                     .precision(Precision.INEXACT)
                     .memoryCachePolicy(CachePolicy.ENABLED)

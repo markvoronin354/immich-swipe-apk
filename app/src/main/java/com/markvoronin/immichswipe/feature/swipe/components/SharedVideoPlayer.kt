@@ -66,12 +66,14 @@ import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
-import coil.compose.SubcomposeAsyncImage
-import coil.request.ImageRequest
-import coil.size.Precision
+import coil3.compose.SubcomposeAsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.size.Precision
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.CardDisplayMode
+import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.feature.swipe.utils.formatMediaTime
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 import kotlinx.coroutines.delay
@@ -179,7 +181,7 @@ fun SharedVideoPlayer(
                         val thumbnailRequest = remember(assetId, baseUrlClean, apiKey) {
                             ImageRequest.Builder(context)
                                 .data("$baseUrlClean/api/assets/$assetId/thumbnail?format=WEBP&size=preview&edited=true")
-                                .addHeader("x-api-key", apiKey)
+                                .apiKeyHeader(apiKey)
                                 .memoryCacheKey("$assetId-preview")
                                 .placeholderMemoryCacheKey("$assetId-preview")
                                 .crossfade(false)

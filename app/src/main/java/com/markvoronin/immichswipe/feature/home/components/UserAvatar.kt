@@ -26,8 +26,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.SubcomposeAsyncImage
-import coil.request.ImageRequest
+import coil3.compose.SubcomposeAsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import com.markvoronin.immichswipe.core.util.apiKeyHeader
 
 @Composable
 fun UserAvatar(
@@ -59,7 +61,7 @@ fun UserAvatar(
         SubcomposeAsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(imageUrl)
-                .addHeader("x-api-key", apiKey)
+                .apiKeyHeader(apiKey)
                 .crossfade(enable = true)
                 .build(),
             contentDescription = contentDescription,
