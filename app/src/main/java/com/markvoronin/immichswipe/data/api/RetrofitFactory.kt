@@ -74,7 +74,8 @@ object RetrofitFactory {
                         else -> ConnectionLevel.OFFLINE to DiagStatus.CONNECTION_ERROR
                     }
                     onStatusUpdate?.invoke(level, statusType, null, e.message)
-                    AppLogger.e("Retrofit", "Network error ($statusType) on $urlPath: ${e.message}", e)
+                    // Logged at debug only: the retry interceptor reports each retry and callers log the final failure.
+                    AppLogger.d("Retrofit", "Network error ($statusType) on $urlPath: ${e.message}")
                 }
                 throw e
             }
