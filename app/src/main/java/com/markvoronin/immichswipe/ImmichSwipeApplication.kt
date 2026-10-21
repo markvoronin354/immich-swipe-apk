@@ -9,15 +9,22 @@ import coil3.disk.DiskCache
 import coil3.gif.AnimatedImageDecoder
 import coil3.gif.GifDecoder
 import coil3.memory.MemoryCache
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.cache.CacheManager
+import com.markvoronin.immichswipe.core.net.MediaHttpClient
 import com.markvoronin.immichswipe.core.util.MemoryTier
 import dagger.hilt.android.HiltAndroidApp
 import okio.Path.Companion.toOkioPath
+import javax.inject.Inject
 
 @HiltAndroidApp
 class ImmichSwipeApplication : Application(), SingletonImageLoader.Factory {
+
+    @Inject
+    lateinit var mediaHttpClient: MediaHttpClient
+
     override fun onCreate() {
         super.onCreate()
         // Initialized here (not in the activity) so background work such as workers is logged too.
@@ -45,6 +52,8 @@ class ImmichSwipeApplication : Application(), SingletonImageLoader.Factory {
                     .build()
             }
             .components {
+                // Authenticated through the interceptor of the shared media client.
+                add(OkHttpNetworkFetcherFactory(callFactory = { mediaHttpClient.client }))
                 if (Build.VERSION.SDK_INT >= 28) {
                     add(AnimatedImageDecoder.Factory())
                 } else {

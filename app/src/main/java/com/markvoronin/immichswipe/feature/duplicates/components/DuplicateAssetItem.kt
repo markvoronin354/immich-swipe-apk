@@ -53,7 +53,6 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.markvoronin.immichswipe.R
-import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
 
@@ -67,7 +66,6 @@ fun DuplicateAssetItem(
     onZoomStateUpdate: (ZoomData?) -> Unit,
     modifier: Modifier = Modifier,
     baseUrl: String = "",
-    apiKey: String = "",
     isFavorite: Boolean = false,
 ) {
     val context = LocalContext.current
@@ -205,13 +203,12 @@ fun DuplicateAssetItem(
                     }
                 }
         ) {
-            val imageRequest = remember(asset.id, baseUrlClean, apiKey, asset.isGif) {
+            val imageRequest = remember(asset.id, baseUrlClean, asset.isGif) {
                 ImageRequest.Builder(context)
                     .data(
                         if (asset.isGif) "$baseUrlClean/api/assets/${asset.id}/original"
                         else "$baseUrlClean/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview"
                     )
-                    .apiKeyHeader(apiKey)
                     .crossfade(true)
                     .build()
             }

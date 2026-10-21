@@ -146,5 +146,15 @@ class SessionManager @Inject constructor(
     fun isLoggedIn(): Boolean = _api != null
     fun getBaseUrl(): String? = config?.baseUrl
     fun getApiKey(): String? = config?.apiKey
+
+    /**
+     * Short one-way fingerprint of the active session (user, server and key). It changes exactly when
+     * any of them changes, so it can key UI state without exposing the API key itself.
+     */
+    fun sessionFingerprint(): String? = config?.let {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+            .digest("${it.userId}|${it.baseUrl}|${it.apiKey}".toByteArray(Charsets.UTF_8))
+        digest.take(6).joinToString("") { b -> "%02x".format(b) }
+    }
     fun getUserId(): String? = config?.userId
 }

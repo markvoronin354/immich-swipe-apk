@@ -38,7 +38,6 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.markvoronin.immichswipe.R
-import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -49,7 +48,6 @@ fun InstagramZoomOverlay(
     decision: DuplicateDecision,
     rootWindowOffset: Offset,
     baseUrl: String = "",
-    apiKey: String = "",
     isFavorite: Boolean = false,
     onDismiss: () -> Unit
 ) {
@@ -141,13 +139,12 @@ fun InstagramZoomOverlay(
                 .clip(RoundedCornerShape(14.dp))
                 .border(2.dp, borderColor, RoundedCornerShape(14.dp))
         ) {
-            val imageRequest = remember(zoomData.asset.id, baseUrlClean, apiKey, zoomData.asset.isGif) {
+            val imageRequest = remember(zoomData.asset.id, baseUrlClean, zoomData.asset.isGif) {
                 ImageRequest.Builder(context)
                     .data(
                         if (zoomData.asset.isGif) "$baseUrlClean/api/assets/${zoomData.asset.id}/original"
                         else "$baseUrlClean/api/assets/${zoomData.asset.id}/thumbnail?format=WEBP&size=preview"
                     )
-                    .apiKeyHeader(apiKey)
                     .crossfade(false)
                     .build()
             }

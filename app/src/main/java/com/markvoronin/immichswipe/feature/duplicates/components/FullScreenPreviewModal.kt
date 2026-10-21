@@ -98,7 +98,6 @@ import coil3.request.crossfade
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.ImmichLauncher
 import com.markvoronin.immichswipe.core.cache.VideoPreloader
-import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
 import com.markvoronin.immichswipe.feature.settings.components.horizontalFadingEdges
@@ -113,7 +112,6 @@ fun FullScreenPreviewModal(
     decisions: Map<String, DuplicateDecision>,
     isFavorite: (Asset) -> Boolean,
     baseUrl: String = "",
-    apiKey: String = "",
     onDecisionToggle: (String) -> Unit,
     onFavoriteToggle: (Asset) -> Unit,
     onClusterChanged: (Int) -> Unit = {},
@@ -153,8 +151,8 @@ fun FullScreenPreviewModal(
     }
     var selectedIndex by remember(currentCluster.clusterId) { mutableIntStateOf(initialIndex) }
 
-    LaunchedEffect(selectedIndex, currentClusterIdx, baseUrlClean, apiKey) {
-        if (baseUrlClean.isEmpty() || apiKey.isEmpty()) return@LaunchedEffect
+    LaunchedEffect(selectedIndex, currentClusterIdx, baseUrlClean) {
+        if (baseUrlClean.isEmpty()) return@LaunchedEffect
 
         // Small delay to allow the current full screen asset's main request to start first
         delay(150.milliseconds)
@@ -173,19 +171,16 @@ fun FullScreenPreviewModal(
                     context = context.applicationContext,
                     assetId = targetAsset.id,
                     videoUrl = videoUrl,
-                    apiKey = apiKey
                 )
                 val thumbUrl = "$baseUrlClean/api/assets/${targetAsset.id}/thumbnail?format=WEBP&size=preview"
                 val thumbRequest = ImageRequest.Builder(context)
                     .data(thumbUrl)
-                    .apiKeyHeader(apiKey)
                     .build()
                 context.imageLoader.enqueue(thumbRequest)
             } else {
                 val imageUrl = "$baseUrlClean/api/assets/${targetAsset.id}/original"
                 val imageRequest = ImageRequest.Builder(context)
                     .data(imageUrl)
-                    .apiKeyHeader(apiKey)
                     .size(coil3.size.Size.ORIGINAL)
                     .build()
                 context.imageLoader.enqueue(imageRequest)
@@ -194,7 +189,6 @@ fun FullScreenPreviewModal(
                     val thumbUrl = "$baseUrlClean/api/assets/${targetAsset.id}/thumbnail?format=WEBP&size=preview"
                     val thumbRequest = ImageRequest.Builder(context)
                         .data(thumbUrl)
-                        .apiKeyHeader(apiKey)
                         .build()
                     context.imageLoader.enqueue(thumbRequest)
                 }
@@ -635,7 +629,6 @@ fun FullScreenPreviewModal(
                         DuplicateVideoPlayer(
                             asset = currentAsset,
                             baseUrl = baseUrlClean,
-                            apiKey = apiKey,
                             modifier = swipeModifier,
                             contentScale = ContentScale.Fit,
                             onTap = {
@@ -678,10 +671,9 @@ fun FullScreenPreviewModal(
                                     }
                                 }
                             ) {
-                                val imageRequest = remember(currentAsset.id, baseUrlClean, apiKey) {
+                                val imageRequest = remember(currentAsset.id, baseUrlClean) {
                                     ImageRequest.Builder(context)
                                         .data("$baseUrlClean/api/assets/${currentAsset.id}/original")
-                                        .apiKeyHeader(apiKey)
                                         .size(coil3.size.Size.ORIGINAL)
                                         .crossfade(false)
                                         .build()
@@ -797,13 +789,12 @@ fun FullScreenPreviewModal(
                                         selectedIndex = index
                                     }
                             ) {
-                                val thumbRequest = remember(asset.id, baseUrlClean, apiKey, asset.isGif) {
+                                val thumbRequest = remember(asset.id, baseUrlClean, asset.isGif) {
                                     ImageRequest.Builder(context)
                                         .data(
                                             if (asset.isGif) "$baseUrlClean/api/assets/${asset.id}/original"
                                             else "$baseUrlClean/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview"
                                         )
-                                        .apiKeyHeader(apiKey)
                                         .crossfade(false)
                                         .build()
                                 }

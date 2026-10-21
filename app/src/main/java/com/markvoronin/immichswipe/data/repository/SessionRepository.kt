@@ -2,7 +2,9 @@ package com.markvoronin.immichswipe.data.repository
 
 import android.content.Context
 import com.markvoronin.immichswipe.core.AppTheme
+import com.markvoronin.immichswipe.core.ButtonPositions
 import com.markvoronin.immichswipe.core.ButtonStackOrientation
+import com.markvoronin.immichswipe.core.ButtonVisibility
 import com.markvoronin.immichswipe.core.CardDisplayMode
 import com.markvoronin.immichswipe.core.DoubleTapAction
 import com.markvoronin.immichswipe.core.IconPosition
@@ -11,10 +13,14 @@ import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.ReminderInterval
 import com.markvoronin.immichswipe.core.SessionConfig
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.core.SwipeBehavior
+import com.markvoronin.immichswipe.core.SwipeSettings
+import com.markvoronin.immichswipe.core.util.combine6
 import com.markvoronin.immichswipe.data.datastore.SessionDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -277,6 +283,42 @@ class SessionRepository @Inject constructor(
     suspend fun initializeTutorialState() {
         dataStore.initializeTutorialStateForInstallOrUpgrade()
     }
+
+    /**
+     * Every setting the swipe screen reacts to, combined into one typed, de-duplicated flow. Built from
+     * small typed groups so nothing needs unchecked casts.
+     */
+    val swipeSettings: Flow<SwipeSettings> = combine(
+        combine6(
+            fullscreenButtonPosition, immichButtonPosition, cardDisplayButtonPosition,
+            muteButtonPosition, downloadButtonPosition, shareButtonPosition
+        ) { fullscreen, immich, rotation, mute, download, share ->
+            ButtonPositions(fullscreen, immich, rotation, mute, download, share)
+        },
+        combine(
+            combine6(
+                showFullscreenButton, showImmichButton, showCardDisplayButton,
+                showMuteButton, showDownloadButton, showShareButton
+            ) { fullscreen, immich, rotation, mute, download, share ->
+                listOf(fullscreen, immich, rotation, mute, download, share)
+            },
+            showFavoriteButton, showLockButton, showArchiveButton, showSwipeButtons
+        ) { first, favorite, lock, archive, swipeButtons ->
+            ButtonVisibility(
+                fullscreen = first[0], immich = first[1], rotation = first[2],
+                mute = first[3], download = first[4], share = first[5],
+                favorite = favorite, lock = lock, archive = archive, swipeButtons = swipeButtons
+            )
+        },
+        combine6(
+            playbackBehavior, autoNextOnFav, syncLocalDeletion,
+            trashLocalDeletion, sortOrder, tapToSwipeEnabled
+        ) { playback, autoNext, sync, trash, order, tap ->
+            SwipeBehavior(playback, autoNext, sync, trash, order, tap)
+        }
+    ) { positions, visibility, behavior ->
+        SwipeSettings(positions, visibility, behavior)
+    }.distinctUntilChanged()
 
     val hasCompletedSwipeTutorial: Flow<Boolean> = dataStore.hasCompletedSwipeTutorial()
     suspend fun setHasCompletedSwipeTutorial(completed: Boolean) {

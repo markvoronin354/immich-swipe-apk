@@ -200,7 +200,6 @@ fun HomeScreen(
                         user = uiState.user,
                         connectionStatus = uiState.connectionStatus,
                         baseUrl = uiState.baseUrl,
-                        apiKey = uiState.apiKey,
                         onOpenStats = { viewModel.toggleStatsPopup(visible = true) },
                         isGridView = uiState.isGridView,
                         onToggleLayout = { viewModel.toggleLayoutMode() },
@@ -273,7 +272,6 @@ fun HomeScreen(
                                                     collapsedCategories = uiState.collapsedCategories,
                                                     isRefreshing = uiState.isRefreshing,
                                                     baseUrl = uiState.baseUrl,
-                                                    apiKey = uiState.apiKey,
                                                     onRefresh = { viewModel.refreshAlbums() },
                                                     onAlbumClick = { album ->
                                                         viewModel.onAlbumSelected(album)
@@ -293,7 +291,6 @@ fun HomeScreen(
                                                     collapsedCategories = uiState.collapsedCategories,
                                                     isRefreshing = uiState.isRefreshing,
                                                     baseUrl = uiState.baseUrl,
-                                                    apiKey = uiState.apiKey,
                                                     onRefresh = { viewModel.refreshAlbums() },
                                                     onAlbumClick = { album ->
                                                         viewModel.onAlbumSelected(album)
@@ -455,7 +452,6 @@ fun HomeScreen(
             savedAccounts = uiState.savedAccounts,
             connectionStatus = uiState.connectionStatus,
             baseUrl = uiState.baseUrl,
-            apiKey = uiState.apiKey,
             onClose = { viewModel.toggleProfilePopup(visible = false) },
             onSettingsClick = { 
                 if (currentTopKey !is NavKey.Settings) {

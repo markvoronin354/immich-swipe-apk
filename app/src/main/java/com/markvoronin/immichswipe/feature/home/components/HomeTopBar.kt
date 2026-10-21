@@ -96,7 +96,6 @@ fun HomeTopBar(
     swipeAlbumName: String? = null,
     activeSubMenu: SettingsSubMenu = SettingsSubMenu.NONE,
     baseUrl: String = "",
-    apiKey: String = "",
     onBack: () -> Unit = {},
 ) {
     val showBackButton = isSettingsTab || isSwipeTab || isDuplicatesTab
@@ -315,7 +314,6 @@ fun HomeTopBar(
                             UserAvatar(
                                 userId = user?.id,
                                 baseUrl = baseUrl,
-                                apiKey = apiKey,
                                 name = user?.name ?: user?.email,
                                 avatarColorName = user?.avatarColor,
                                 modifier = Modifier.size(32.dp),

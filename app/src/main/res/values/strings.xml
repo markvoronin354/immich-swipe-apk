@@ -25,12 +25,10 @@
     <!-- Navigation -->
     <string name="nav_home">Home</string>
     <string name="nav_swipe">Swipe</string>
-    <string name="nav_back">Back</string>
 
     <!-- Home Screen -->
     <string name="home_search_placeholder">Search an album…</string>
     <string name="home_no_results">No albums match your search</string>
-    <string name="home_global_reset_button">Reset all sorting</string>
     <string name="home_global_reset_confirm_title">Reset All Progress?</string>
     <string name="home_global_reset_confirm_msg">This will permanently delete ALL local sorting decisions for ALL albums and collections for this account.\n\nDecisions already synced to Immich (deleted or archived) will NOT be affected.\n\nDo you want to continue?</string>
     <string name="home_error_title">Oops! An error occurred</string>
@@ -42,9 +40,6 @@
     <string name="home_album_completed">Completed</string>
     <string name="home_unsynced_changes" tools:ignore="PluralsCandidate">Contains %1$d unsynced changes</string>
     <string name="home_sorted_count" tools:ignore="PluralsCandidate">%1$d / %2$d sorted</string>
-    <string name="home_select_album">Select an album to start!</string>
-    <string name="home_session_title">Sorting session: %1$s</string>
-    <string name="home_photos_to_discover" tools:ignore="PluralsCandidate">%1$d photos to discover</string>
     <string name="home_unsynced_badge">NOT SYNCED</string>
     <string name="home_virtual_all_assets">All Assets</string>
     <string name="home_virtual_all_assets_desc">Collection of all assets in your library (depending on your access rights)</string>
@@ -85,12 +80,8 @@
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_dynamic_color_label">System colors</string>
     <string name="settings_dynamic_color_desc">Use colors from your wallpaper and system theme. If disabled, the default app colors will be used.</string>
-    <string name="settings_layout_label">Default homepage layout</string>
     <string name="settings_layout_list">List</string>
     <string name="settings_layout_grid">Grid</string>
-    <string name="settings_section_tri">Sorting</string>
-    <string name="settings_include_archived_label">Include external archives</string>
-    <string name="settings_include_archived_desc">View and sort photos that have been archived in Immich (outside of Immich Swipe)</string>
     <string name="settings_sort_order_label">Sort order</string>
     <string name="settings_sort_newest">Newest first</string>
     <string name="settings_sort_oldest">Oldest first</string>
@@ -157,7 +148,6 @@
     <string name="swipe_skip_upper" translatable="false">SKIP</string>
     <string name="swipe_delete">Delete</string>
     <string name="swipe_delete_upper">DELETE</string>
-    <string name="swipe_remaining">Remaining</string>
     <string name="swipe_total">Total</string>
     <string name="swipe_favorite">Favorites</string>
     <string name="swipe_archive">Archive</string>
@@ -351,11 +341,25 @@
     <string name="settings_reminder_rarely">Rarely</string>
     <string name="settings_reminder_rarely_hint">About every 3–5 weeks, at random intervals</string>
     <string name="settings_reminder_custom">Custom</string>
-    <string name="settings_reminder_custom_hint">About every %1$d–%2$d days, at random intervals</string>
+    <plurals name="settings_reminder_custom_hint">
+        <item quantity="one">About every %1$d–%2$d day, at random intervals</item>
+        <item quantity="other">About every %1$d–%2$d days, at random intervals</item>
+    </plurals>
+    <plurals name="settings_reminder_custom_configure">
+        <item quantity="one">Configure custom range (%1$d–%2$d day)</item>
+        <item quantity="other">Configure custom range (%1$d–%2$d days)</item>
+    </plurals>
+    <plurals name="swipe_bulk_delete_title">
+        <item quantity="one">Bulk Delete: %1$d selected</item>
+        <item quantity="other">Bulk Delete: %1$d selected</item>
+    </plurals>
+    <plurals name="swipe_bulk_keep_title">
+        <item quantity="one">Bulk Keep: %1$d selected</item>
+        <item quantity="other">Bulk Keep: %1$d selected</item>
+    </plurals>
     <string name="settings_reminder_custom_dialog_title">Custom Reminder Frequency</string>
     <string name="settings_reminder_custom_min_label">Minimum days</string>
     <string name="settings_reminder_custom_max_label">Maximum days</string>
-    <string name="settings_reminder_custom_configure">Configure custom range (%1$d–%2$d days)</string>
     <string name="settings_reminder_permission_denied">Notification permission denied. The reminder stays disabled.</string>
     <string name="reminder_notification_title">Time to tidy up!</string>
     <string name="reminder_notification_text">Sort a few photos in Immich Swipe.</string>
@@ -400,8 +404,6 @@
     <string name="swipe_share_server_error">Share failed: Server error</string>
     <string name="swipe_share_error">Failed to share: %1$s</string>
     <string name="swipe_share_chooser_title">Share media</string>
-    <string name="swipe_bulk_delete_title">Bulk Delete: %1$d selected</string>
-    <string name="swipe_bulk_keep_title">Bulk Keep: %1$d selected</string>
     <string name="swipe_bulk_delete_hint">Slide right to select, release to delete</string>
     <string name="swipe_bulk_keep_hint">Slide left to select, release to keep</string>
     <string name="swipe_loading_metadata">Loading album metadata… %1$d / %2$d</string>

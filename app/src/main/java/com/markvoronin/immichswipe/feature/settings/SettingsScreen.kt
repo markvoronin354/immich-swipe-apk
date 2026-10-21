@@ -84,6 +84,7 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -445,8 +446,9 @@ fun SettingsScreen(
                             text = when (uiState.reminderInterval) {
                                 ReminderInterval.OFTEN -> stringResource(R.string.settings_reminder_often_hint)
                                 ReminderInterval.RARELY -> stringResource(R.string.settings_reminder_rarely_hint)
-                                ReminderInterval.CUSTOM -> stringResource(
-                                    R.string.settings_reminder_custom_hint,
+                                ReminderInterval.CUSTOM -> pluralStringResource(
+                                    R.plurals.settings_reminder_custom_hint,
+                                    uiState.reminderCustomMaxDays.toInt(),
                                     uiState.reminderCustomMinDays,
                                     uiState.reminderCustomMaxDays
                                 )
@@ -462,8 +464,9 @@ fun SettingsScreen(
                                 Icon(Icons.Default.EditCalendar, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(6.dp))
                                 Text(
-                                    text = stringResource(
-                                        R.string.settings_reminder_custom_configure,
+                                    text = pluralStringResource(
+                                        R.plurals.settings_reminder_custom_configure,
+                                        uiState.reminderCustomMaxDays.toInt(),
                                         uiState.reminderCustomMinDays,
                                         uiState.reminderCustomMaxDays
                                     ),
@@ -601,7 +604,6 @@ fun SettingsScreen(
                     UserAvatar(
                         userId = null,
                         baseUrl = "",
-                        apiKey = "",
                         name = uiState.userName,
                         avatarColorName = null,
                         modifier = Modifier.size(40.dp)

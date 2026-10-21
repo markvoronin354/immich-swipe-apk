@@ -10,7 +10,6 @@ import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 
 data class SwipeCardConfig(
     val baseUrl: String = "",
-    val apiKey: String = "",
     val playbackBehavior: PlaybackBehavior,
     val fullscreenButtonPosition: IconPosition,
     val immichButtonPosition: IconPosition,

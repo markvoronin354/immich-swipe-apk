@@ -59,7 +59,6 @@ fun SwipeScreenContent(
                     isLocked = { uiState.isLocked(it) },
                     onAssetClick = { viewModel.onMoveToAsset(it) },
                     baseUrl = uiState.baseUrl,
-                    apiKey = uiState.apiKey,
                     isBulkMode = uiState.isBulkDeleteMode || uiState.isBulkKeepMode,
                     bulkSelection = uiState.bulkSelection,
                     isBulkDelete = uiState.isBulkDeleteMode,

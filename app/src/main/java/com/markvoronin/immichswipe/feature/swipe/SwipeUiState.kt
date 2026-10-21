@@ -54,7 +54,6 @@ data class SwipeUiState(
     val autoNextOnFav: Boolean = false,
     val connectionStatus: ConnectionStatus = ConnectionStatus(),
     val baseUrl: String = "",
-    val apiKey: String = "",
     val includeArchived: Boolean = false,
     val sortCategory: com.markvoronin.immichswipe.core.SortCategory = com.markvoronin.immichswipe.core.SortCategory.TIME,
     val sortOrder: SortOrder = SortOrder.CHRONOLOGICAL_DESC,

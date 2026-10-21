@@ -5,11 +5,15 @@ import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.cache.CacheDataSink
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import com.markvoronin.immichswipe.core.AppLogger
+import com.markvoronin.immichswipe.core.net.ImmichAuthInterceptor
+import com.markvoronin.immichswipe.core.net.MediaHttp
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.io.File
 
 /**
@@ -52,18 +56,32 @@ object VideoCache {
         }
     }
 
-    fun getCacheDataSourceFactory(context: Context, apiKey: String): CacheDataSource.Factory {
+    /**
+     * Cached, authenticated upstream for video. The API key is added per request by a resolver and only
+     * when the request goes to the active server, so callers never need to pass the key.
+     */
+    fun getCacheDataSourceFactory(context: Context): CacheDataSource.Factory {
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
             .setAllowCrossProtocolRedirects(true)
             .setConnectTimeoutMs(15_000)
             .setReadTimeoutMs(30_000)
-            .setDefaultRequestProperties(mapOf("x-api-key" to apiKey))
-        
+
+        val appContext = context.applicationContext
+        val authenticatedUpstream = ResolvingDataSource.Factory(httpDataSourceFactory) { dataSpec ->
+            val session = MediaHttp.activeSession(appContext)
+            val url = dataSpec.uri.toString().toHttpUrlOrNull()
+            if (session != null && url != null && ImmichAuthInterceptor.isSameOrigin(url, session.baseUrl)) {
+                dataSpec.withAdditionalHeaders(mapOf(ImmichAuthInterceptor.KEY_HEADER to session.apiKey))
+            } else {
+                dataSpec
+            }
+        }
+
         val cacheInstance = getCache(context)
-        
+
         return CacheDataSource.Factory()
             .setCache(cacheInstance)
-            .setUpstreamDataSourceFactory(httpDataSourceFactory)
+            .setUpstreamDataSourceFactory(authenticatedUpstream)
             .setCacheWriteDataSinkFactory(CacheDataSink.Factory().setCache(cacheInstance))
             .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
     }

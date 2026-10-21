@@ -75,7 +75,6 @@ import coil3.request.crossfade
 import coil3.size.Precision
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
-import com.markvoronin.immichswipe.core.util.apiKeyHeader
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
@@ -110,7 +109,6 @@ fun FullscreenViewer(
     showMuteButton: Boolean = true,
     rotation: Int = 0,
     baseUrl: String = "",
-    apiKey: String = ""
 ) {
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
@@ -288,13 +286,12 @@ fun FullscreenViewer(
                 val nextScale = 0.85f + (0.15f * swipeProgress)
                 val nextAlpha = (0.6f + (0.4f * swipeProgress)) * fadeAlpha
 
-                val nextPhotoRequest = remember(nextAsset.id, baseUrlClean, apiKey, nextAsset.isGif) {
+                val nextPhotoRequest = remember(nextAsset.id, baseUrlClean, nextAsset.isGif) {
                     ImageRequest.Builder(context)
                         .data(
                             if (nextAsset.isGif) "$baseUrlClean/api/assets/${nextAsset.id}/original"
                             else "$baseUrlClean/api/assets/${nextAsset.id}/thumbnail?format=WEBP&size=preview&edited=true"
                         )
-                        .apiKeyHeader(apiKey)
                         .memoryCacheKey("${nextAsset.id}-preview")
                         .placeholderMemoryCacheKey("${nextAsset.id}-preview")
                         .crossfade(false)
@@ -427,7 +424,6 @@ fun FullscreenViewer(
                     isFullscreen = true,
                     assetId = asset.id,
                     baseUrl = baseUrlClean,
-                    apiKey = apiKey,
                     isMuted = isMuted,
                     isPaused = pausedByHoldState,
                     isVideoReady = isVideoReady,
@@ -604,13 +600,12 @@ fun FullscreenViewer(
                         label = "FullscreenRotation"
                     )
 
-                    val photoRequest = remember(asset.id, baseUrlClean, apiKey, asset.isGif) {
+                    val photoRequest = remember(asset.id, baseUrlClean, asset.isGif) {
                         ImageRequest.Builder(context)
                             .data(
                                 if (asset.isGif) "$baseUrlClean/api/assets/${asset.id}/original"
                                 else "$baseUrlClean/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview&edited=true"
                             )
-                            .apiKeyHeader(apiKey)
                             .memoryCacheKey("${asset.id}-preview")
                             .placeholderMemoryCacheKey("${asset.id}-preview")
                             .crossfade(false)

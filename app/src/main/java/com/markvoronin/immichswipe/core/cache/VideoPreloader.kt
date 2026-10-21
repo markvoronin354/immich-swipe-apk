@@ -29,7 +29,7 @@ object VideoPreloader {
         }
     }
 
-    fun preload(context: Context, assetId: String, videoUrl: String, apiKey: String) {
+    fun preload(context: Context, assetId: String, videoUrl: String) {
         if (activeJobs.containsKey(assetId)) return
 
         // Cap concurrent preloads to MAX_CONCURRENT_PRELOADS to avoid I/O disk thrashing
@@ -45,7 +45,7 @@ object VideoPreloader {
                 val preloadSize = getPreloadSize(context)
                 AppLogger.d("VideoPreloader", "Starting preload for $assetId (size=${preloadSize / (1024 * 1024)}MB)")
                 
-                val dataSourceFactory = VideoCache.getCacheDataSourceFactory(context, apiKey)
+                val dataSourceFactory = VideoCache.getCacheDataSourceFactory(context)
                 val dataSpec = DataSpec.Builder()
                     .setUri(videoUrl)
                     .setKey(assetId) // Match the cache key used in ExoPlayer

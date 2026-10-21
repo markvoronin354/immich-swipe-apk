@@ -48,8 +48,9 @@ import com.markvoronin.immichswipe.core.ConnectionLevel
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.cache.VideoCache
 import com.markvoronin.immichswipe.core.cache.VideoPreloader
+import com.markvoronin.immichswipe.core.net.MediaHttp
 import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
-import com.markvoronin.immichswipe.core.util.apiKeyHeader
+import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
 import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.feature.swipe.components.SwipeScreenContent
 import com.markvoronin.immichswipe.feature.swipe.components.SwipeScreenDialogs
@@ -64,7 +65,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import java.io.File
@@ -154,13 +154,12 @@ fun SwipeScreen(
     val localCtx = LocalContext.current
     
     // Background Preloader Trigger - Deferred to prevent background IO / decoding from stealing CPU frames during animations
-    LaunchedEffect(uiState.currentIndex, uiState.apiKey, uiState.baseUrl) {
+    LaunchedEffect(uiState.currentIndex, uiState.baseUrl) {
         val currentIndex = uiState.currentIndex
         val assets = uiState.assets
-        val apiKey = uiState.apiKey
         val baseUrl = uiState.baseUrl.removeSuffix("/")
         
-        if (apiKey.isEmpty() || baseUrl.isEmpty()) return@LaunchedEffect
+        if (baseUrl.isEmpty()) return@LaunchedEffect
 
         // Wait 350ms for active gestures, card swipes, or top bar transitions to finish smoothly before preloading
         delay(350.milliseconds)
@@ -184,7 +183,6 @@ fun SwipeScreen(
                         context = localCtx.applicationContext,
                         assetId = nextAsset.id,
                         videoUrl = videoUrl,
-                        apiKey = apiKey
                     )
                 } else {
                     // Preload Image to Coil RAM Cache
@@ -192,7 +190,6 @@ fun SwipeScreen(
                     else "$baseUrl/api/assets/${nextAsset.id}/thumbnail?format=WEBP&size=preview&edited=true"
                     val request = ImageRequest.Builder(localCtx)
                         .data(imageUrl)
-                        .apiKeyHeader(apiKey)
                         .memoryCacheKey("${nextAsset.id}-preview")
                         .memoryCachePolicy(CachePolicy.ENABLED)
                         .build()
@@ -209,7 +206,6 @@ fun SwipeScreen(
     val currentAsset = uiState.currentAsset
     
     val baseUrl = uiState.baseUrl.removeSuffix("/")
-    val apiKey = uiState.apiKey
 
      val sharedPlayer: ExoPlayer = remember {
         val loadControl = PlayerLoadControlFactory.createSwipeLoadControl(context)
@@ -246,7 +242,7 @@ fun SwipeScreen(
             // Just update the media source.
             val videoUrl = "$baseUrl/api/assets/${currentAsset.id}/video/playback"
 
-            val dataSourceFactory = VideoCache.getCacheDataSourceFactory(context, apiKey)
+            val dataSourceFactory = VideoCache.getCacheDataSourceFactory(context)
             val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
                 .createMediaSource(MediaItem.Builder()
                     .setUri(videoUrl)
@@ -313,7 +309,8 @@ fun SwipeScreen(
                 deleteLauncher.launch(
                     IntentSenderRequest.Builder(pendingIntent.intentSender).build()
                 )
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                e.rethrowIfCancelled()
                 viewModel.onLocalDeleteIntentHandled()
             }
         }
@@ -337,8 +334,7 @@ fun SwipeScreen(
     LaunchedEffect(Unit) {
         viewModel.downloadRequestSignal.collect { asset ->
             val baseUrl = uiState.baseUrl.removeSuffix("/")
-            val apiKey = uiState.apiKey
-            if (baseUrl.isEmpty() || apiKey.isEmpty()) return@collect
+            if (baseUrl.isEmpty()) return@collect
 
             val rawName = asset.originalFileName?.substringAfterLast('/')?.substringAfterLast('\\')
                 ?: "immich_${asset.id}.${asset.fileExtension ?: "jpg"}"
@@ -354,17 +350,14 @@ fun SwipeScreen(
                     "$baseUrl/api/asset/file/${asset.id}"
                 )
 
-                val client = OkHttpClient.Builder()
-                    .followRedirects(true)
-                    .followSslRedirects(true)
-                    .build()
+                // Shared client: it adds the API key itself, and only for requests to the active server.
+                val client = MediaHttp.client(context)
 
                 var response: Response? = null
                 for (downloadUrl in urlsToTry) {
                     try {
                         val req = Request.Builder()
                             .url(downloadUrl)
-                            .addHeader("x-api-key", apiKey)
                             .build()
                         val resp = client.newCall(req).execute()
                         if (resp.isSuccessful) {
@@ -374,6 +367,7 @@ fun SwipeScreen(
                             resp.close()
                         }
                     } catch (e: Exception) {
+                        e.rethrowIfCancelled()
                         AppLogger.w("Download", "Failed download endpoint $downloadUrl: ${e.message}")
                     }
                 }
@@ -419,6 +413,7 @@ fun SwipeScreen(
                         Toast.makeText(context, resources.getString(R.string.swipe_download_saved, fileName), Toast.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
+                    e.rethrowIfCancelled()
                     AppLogger.e("Download", "Error saving downloaded file", e)
                     withContext(Dispatchers.Main) {
                         Toast.makeText(context, resources.getString(R.string.swipe_download_save_error, e.message.orEmpty()), Toast.LENGTH_LONG).show()
@@ -433,8 +428,7 @@ fun SwipeScreen(
     LaunchedEffect(Unit) {
         viewModel.shareRequestSignal.collect { asset ->
             val baseUrl = uiState.baseUrl.removeSuffix("/")
-            val apiKey = uiState.apiKey
-            if (baseUrl.isEmpty() || apiKey.isEmpty()) return@collect
+            if (baseUrl.isEmpty()) return@collect
 
             Toast.makeText(context, resources.getString(R.string.swipe_share_preparing), Toast.LENGTH_SHORT).show()
 
@@ -446,17 +440,14 @@ fun SwipeScreen(
                     "$baseUrl/api/asset/file/${asset.id}"
                 )
 
-                val client = OkHttpClient.Builder()
-                    .followRedirects(true)
-                    .followSslRedirects(true)
-                    .build()
+                // Shared client: it adds the API key itself, and only for requests to the active server.
+                val client = MediaHttp.client(context)
 
                 var response: Response? = null
                 for (shareUrl in urlsToTry) {
                     try {
                         val req = Request.Builder()
                             .url(shareUrl)
-                            .addHeader("x-api-key", apiKey)
                             .build()
                         val resp = client.newCall(req).execute()
                         if (resp.isSuccessful) {
@@ -466,6 +457,7 @@ fun SwipeScreen(
                             resp.close()
                         }
                     } catch (e: Exception) {
+                        e.rethrowIfCancelled()
                         AppLogger.w("Share", "Failed share endpoint $shareUrl: ${e.message}")
                     }
                 }
@@ -505,6 +497,7 @@ fun SwipeScreen(
                     }
                     context.startActivity(Intent.createChooser(intent, resources.getString(R.string.swipe_share_chooser_title)))
                 } catch (e: Exception) {
+                    e.rethrowIfCancelled()
                     AppLogger.e("Share", "Error sharing asset", e)
                     launch(Dispatchers.Main) {
                         Toast.makeText(context, resources.getString(R.string.swipe_share_error, e.message.orEmpty()), Toast.LENGTH_LONG).show()

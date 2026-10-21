@@ -12,7 +12,6 @@ data class DuplicatesUiState(
     val isSyncing: Boolean = false,
     val showDeleteConfirmation: Boolean = false,
     val baseUrl: String = "",
-    val apiKey: String = "",
     val error: String? = null,
     val hasCompletedDuplicatesTutorial: Boolean = true,
     val isAnalyzingAi: Boolean = false,
