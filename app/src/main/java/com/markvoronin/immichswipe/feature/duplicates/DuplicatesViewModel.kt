@@ -42,6 +42,11 @@ class DuplicatesViewModel @Inject constructor(
     private val api: ImmichApi
         get() = sessionManager.api ?: error("No active API session")
 
+    override fun onCleared() {
+        // Free the native face model; it is reloaded lazily next time Best Shot is used.
+        bestShotAnalyzer.release()
+    }
+
     private val _uiState = MutableStateFlow(DuplicatesUiState())
     val uiState: StateFlow<DuplicatesUiState> = _uiState.asStateFlow()
 

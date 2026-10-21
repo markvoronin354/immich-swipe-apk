@@ -3,6 +3,7 @@ package com.markvoronin.immichswipe.feature.duplicates
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.core.graphics.drawable.toBitmapOrNull
+import coil.Coil
 import coil.ImageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
@@ -26,25 +27,38 @@ import kotlin.math.sqrt
 class BestShotAnalyzer @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    private val imageLoader = ImageLoader(context)
+    // Share the app-wide Coil loader (and its caches) instead of creating a private one.
+    private val imageLoader: ImageLoader get() = Coil.imageLoader(context)
+
     private var faceLandmarker: FaceLandmarker? = null
+    private var landmarkerInitFailed = false
 
-    init {
-        val baseOptions = BaseOptions.builder()
-            .setModelAssetPath("face_landmarker.task")
-            .build()
-            
-        val options = FaceLandmarkerOptions.builder()
-            .setBaseOptions(baseOptions)
-            .setRunningMode(RunningMode.IMAGE)
-            .setNumFaces(3)
-            .build()
-
-        try {
-            faceLandmarker = FaceLandmarker.createFromOptions(context, options)
+    /**
+     * The model is loaded on first use (on the analysis dispatcher) rather than at injection time,
+     * and can be released with [release] when the screen that needs it goes away.
+     */
+    @Synchronized
+    private fun landmarker(): FaceLandmarker? {
+        faceLandmarker?.let { return it }
+        if (landmarkerInitFailed) return null
+        return try {
+            val options = FaceLandmarkerOptions.builder()
+                .setBaseOptions(BaseOptions.builder().setModelAssetPath("face_landmarker.task").build())
+                .setRunningMode(RunningMode.IMAGE)
+                .setNumFaces(3)
+                .build()
+            FaceLandmarker.createFromOptions(context, options).also { faceLandmarker = it }
         } catch (e: Exception) {
+            landmarkerInitFailed = true
             AppLogger.e("BestShotAnalyzer", "Failed to initialize FaceLandmarker", e)
+            null
         }
+    }
+
+    @Synchronized
+    fun release() {
+        faceLandmarker?.close()
+        faceLandmarker = null
     }
 
     data class AssetScore(
@@ -146,9 +160,11 @@ class BestShotAnalyzer @Inject constructor(
         }
     }
 
+    // The MediaPipe task is not thread-safe, so detection is serialized.
+    @Synchronized
     private fun analyzeAsset(asset: Asset, bitmap: Bitmap): AssetScore {
         val mpImage = BitmapImageBuilder(bitmap).build()
-        val result = faceLandmarker?.detect(mpImage)
+        val result = landmarker()?.detect(mpImage)
         
         val sharpness = calculateSharpness(bitmap)
 
