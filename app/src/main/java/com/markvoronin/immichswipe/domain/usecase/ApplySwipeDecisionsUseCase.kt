@@ -97,15 +97,15 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
         }
 
         // 1d. Add skipped assets to SKIP album on server and local DB.
-        // The album repository reports failures through its return value, so check it explicitly.
+        // The album repository returns a Result: getOrThrow turns a failure into a failed step.
         if (skipFeatureEnabled && toSkip.isNotEmpty()) {
             step(SyncStep.SKIP_ALBUM, toSkip) {
                 val albums = albumRepository.getAlbumsRaw()
                 val existing = albums.find { it.albumName.equals("SKIP", ignoreCase = true) }
                 val skipAlbumId = if (existing == null) {
-                    checkNotNull(albumRepository.createAlbum("SKIP", toSkip)) { "Could not create the SKIP album" }.id
+                    albumRepository.createAlbum("SKIP", toSkip).getOrThrow().id
                 } else {
-                    check(albumRepository.addAssetsToAlbum(existing.id, toSkip)) { "Could not add assets to the SKIP album" }
+                    albumRepository.addAssetsToAlbum(existing.id, toSkip).getOrThrow()
                     existing.id
                 }
                 val assetsToInsert = currentAssets.filter { it.id in toSkip }
@@ -122,9 +122,7 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
                 val albums = albumRepository.getAlbumsRaw()
                 val skipAlbum = albums.find { it.albumName.equals("SKIP", ignoreCase = true) }
                 if (skipAlbum != null) {
-                    check(albumRepository.removeAssetsFromAlbum(skipAlbum.id, nonSkipDecidedIds)) {
-                        "Could not remove assets from the SKIP album"
-                    }
+                    albumRepository.removeAssetsFromAlbum(skipAlbum.id, nonSkipDecidedIds).getOrThrow()
                     assetRepository.removeAlbumAssetsLocally(skipAlbum.id, userId, nonSkipDecidedIds)
                 }
             }

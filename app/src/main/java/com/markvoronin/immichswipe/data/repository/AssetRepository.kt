@@ -4,6 +4,7 @@ import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.SessionManager
 import com.markvoronin.immichswipe.core.SortOrder
 import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
+import com.markvoronin.immichswipe.core.util.runCatchingCancellable
 import com.markvoronin.immichswipe.data.api.AssetEditAction
 import com.markvoronin.immichswipe.data.api.AssetEditActionItem
 import com.markvoronin.immichswipe.data.api.DeleteAssetsRequest
@@ -430,39 +431,30 @@ class AssetRepository(
         }
     }
 
-    suspend fun getTotalAssetCount(includeArchived: Boolean = false): Int {
-        return try {
-            if (includeArchived) {
-                coroutineScope {
-                    val timeline = async { api.getSearchStatistics(SearchAssetsRequest(visibility = "timeline")).total }
-                    val archive = async { api.getSearchStatistics(SearchAssetsRequest(visibility = "archive")).total }
-                    timeline.await() + archive.await()
-                }
-            } else {
-                api.getSearchStatistics(SearchAssetsRequest(visibility = "timeline")).total
+    /** Total number of assets, or the failure. A failure must not be mistaken for an empty library. */
+    suspend fun getTotalAssetCount(includeArchived: Boolean = false): Result<Int> = runCatchingCancellable {
+        if (includeArchived) {
+            coroutineScope {
+                val timeline = async { api.getSearchStatistics(SearchAssetsRequest(visibility = "timeline")).total }
+                val archive = async { api.getSearchStatistics(SearchAssetsRequest(visibility = "archive")).total }
+                timeline.await() + archive.await()
             }
-        } catch (e: Exception) {
-            e.rethrowIfCancelled()
-            0
+        } else {
+            api.getSearchStatistics(SearchAssetsRequest(visibility = "timeline")).total
         }
-    }
+    }.onFailure { AppLogger.w("AssetRepo", "Could not load the total asset count: ${it.message}") }
 
-    suspend fun getOrphansCount(includeArchived: Boolean = false): Int {
-        return try {
-            if (includeArchived) {
-                coroutineScope {
-                    val timeline = async { api.getSearchStatistics(SearchAssetsRequest(isNotInAlbum = true, visibility = "timeline")).total }
-                    val archive = async { api.getSearchStatistics(SearchAssetsRequest(isNotInAlbum = true, visibility = "archive")).total }
-                    timeline.await() + archive.await()
-                }
-            } else {
-                api.getSearchStatistics(SearchAssetsRequest(isNotInAlbum = true, visibility = "timeline")).total
+    suspend fun getOrphansCount(includeArchived: Boolean = false): Result<Int> = runCatchingCancellable {
+        if (includeArchived) {
+            coroutineScope {
+                val timeline = async { api.getSearchStatistics(SearchAssetsRequest(isNotInAlbum = true, visibility = "timeline")).total }
+                val archive = async { api.getSearchStatistics(SearchAssetsRequest(isNotInAlbum = true, visibility = "archive")).total }
+                timeline.await() + archive.await()
             }
-        } catch (e: Exception) {
-            e.rethrowIfCancelled()
-            0
+        } else {
+            api.getSearchStatistics(SearchAssetsRequest(isNotInAlbum = true, visibility = "timeline")).total
         }
-    }
+    }.onFailure { AppLogger.w("AssetRepo", "Could not load the orphans count: ${it.message}") }
 
     suspend fun getAssetDetail(assetId: String): Asset {
         return api.getAssetDetail(assetId)
@@ -570,15 +562,9 @@ class AssetRepository(
         }
     }
 
-    suspend fun getDuplicatesCount(): Int {
-        return try {
-            val clusters = api.getDuplicates()
-            clusters.sumOf { it.assets.size }
-        } catch (e: Exception) {
-            e.rethrowIfCancelled()
-            0
-        }
-    }
+    suspend fun getDuplicatesCount(): Result<Int> = runCatchingCancellable {
+        api.getDuplicates().sumOf { it.assets.size }
+    }.onFailure { AppLogger.w("AssetRepo", "Could not load the duplicates count: ${it.message}") }
 
     suspend fun insertAlbumAssetsLocally(albumId: String, userId: String, assets: List<Asset>) {
         if (albumAssetDao == null || assets.isEmpty()) return

@@ -12,3 +12,16 @@ import kotlin.coroutines.cancellation.CancellationException
 fun Throwable.rethrowIfCancelled() {
     if (this is CancellationException) throw this
 }
+
+/**
+ * Like `runCatching`, but a coroutine cancellation is rethrown instead of being captured as a failure.
+ * Use it where a repository wants to report success or failure to its caller as a [Result].
+ */
+@Suppress("TooGenericExceptionCaught") // Catching everything is the point; cancellation is rethrown below.
+inline fun <T> runCatchingCancellable(block: () -> T): Result<T> =
+    try {
+        Result.success(block())
+    } catch (e: Exception) {
+        e.rethrowIfCancelled()
+        Result.failure(e)
+    }

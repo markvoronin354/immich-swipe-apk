@@ -84,7 +84,7 @@ class ReminderWorker(
             val sessionManager = deps.sessionManager()
             if (sessionManager.api == null) sessionManager.initialize(config)
 
-            val total = deps.assetRepository().getTotalAssetCount(includeArchived)
+            val total = deps.assetRepository().getTotalAssetCount(includeArchived).getOrNull() ?: return null
 
             if (total <= 0) return null
 

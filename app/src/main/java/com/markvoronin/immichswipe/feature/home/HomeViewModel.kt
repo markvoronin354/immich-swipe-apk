@@ -235,9 +235,9 @@ class HomeViewModel @Inject constructor(
                     _uiState.update { 
                         it.copy(
                             albums = rawAlbums,
-                            allAssetsCount = allCountDeferred.await(),
-                            orphansCount = orphansCountDeferred.await(),
-                            duplicatesCount = duplicatesCountDeferred.await(),
+                            allAssetsCount = allCountDeferred.await().getOrDefault(it.allAssetsCount),
+                            orphansCount = orphansCountDeferred.await().getOrDefault(it.orphansCount),
+                            duplicatesCount = duplicatesCountDeferred.await().getOrDefault(it.duplicatesCount),
                             isLoading = false,
                             error = null
                         )
@@ -279,9 +279,9 @@ class HomeViewModel @Inject constructor(
                     _uiState.update { 
                         it.copy(
                             albums = rawAlbums,
-                            allAssetsCount = allCountDeferred.await(),
-                            orphansCount = orphansCountDeferred.await(),
-                            duplicatesCount = duplicatesCountDeferred.await()
+                            allAssetsCount = allCountDeferred.await().getOrDefault(it.allAssetsCount),
+                            orphansCount = orphansCountDeferred.await().getOrDefault(it.orphansCount),
+                            duplicatesCount = duplicatesCountDeferred.await().getOrDefault(it.duplicatesCount)
                         )
                     }
 

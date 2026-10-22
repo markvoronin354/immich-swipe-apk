@@ -530,7 +530,7 @@ class SwipeViewModel @Inject constructor(
         val asset = _uiState.value.currentAsset ?: return
         viewModelScope.launch {
             try {
-                val success = albumRepository.addAssetToAlbum(targetAlbum.id, asset.id)
+                val success = albumRepository.addAssetToAlbum(targetAlbum.id, asset.id).isSuccess
                 if (success) {
                     val config = sessionRepository.sessionConfig.first()
                     if (config != null) {

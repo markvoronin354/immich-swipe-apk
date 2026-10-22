@@ -1,7 +1,5 @@
 package com.markvoronin.immichswipe.domain.usecase
 
-import android.content.ContextWrapper
-import com.markvoronin.immichswipe.core.SessionManager
 import com.markvoronin.immichswipe.data.api.ImmichApi
 import com.markvoronin.immichswipe.data.local.dao.AlbumAssetDao
 import com.markvoronin.immichswipe.data.local.dao.SwipeDecisionDao
@@ -13,6 +11,9 @@ import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.domain.usecase.ApplySwipeDecisionsUseCase.SyncStep
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
+import com.markvoronin.immichswipe.testutil.RecordedCall
+import com.markvoronin.immichswipe.testutil.fake
+import com.markvoronin.immichswipe.testutil.testSessionManager
 import kotlinx.coroutines.runBlocking
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
@@ -20,21 +21,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.Response
-import java.lang.reflect.Proxy
-
-/** Builds a recording stand-in for an interface. [handler] may override the default result. */
-private inline fun <reified T : Any> fake(
-    calls: MutableList<Call>,
-    crossinline handler: (name: String, args: List<Any?>) -> Any? = { _, _ -> Unit }
-): T = Proxy.newProxyInstance(T::class.java.classLoader, arrayOf(T::class.java)) { _, method, rawArgs ->
-    val args = (rawArgs ?: emptyArray()).toList()
-    val real = if (args.lastOrNull() is kotlin.coroutines.Continuation<*>) args.dropLast(1) else args
-    calls += Call(method.name, real)
-    handler(method.name, real)
-} as T
-
-
-private class Call(val name: String, val args: List<Any?>)
 
 /**
  * Exercises the use case against fake server and database layers, focusing on what happens when a
@@ -48,9 +34,9 @@ class ApplySwipeDecisionsUseCaseTest {
         albums: List<Album> = emptyList(),
         addToAlbumResponse: Response<Unit> = Response.success(Unit)
     ) {
-        val api = mutableListOf<Call>()
-        val decisionDao = mutableListOf<Call>()
-        val albumAssetDao = mutableListOf<Call>()
+        val api = mutableListOf<RecordedCall>()
+        val decisionDao = mutableListOf<RecordedCall>()
+        val albumAssetDao = mutableListOf<RecordedCall>()
 
         val useCase: ApplySwipeDecisionsUseCase
 
@@ -64,7 +50,7 @@ class ApplySwipeDecisionsUseCaseTest {
                     else -> Unit
                 }
             }
-            val sessionManager = SessionManager(ContextWrapper(null))
+            val sessionManager = testSessionManager()
             val assets = AssetRepository(sessionManager, fakeApi, fake<AlbumAssetDao>(albumAssetDao))
             val albumsRepo = AlbumRepository(sessionManager, fakeApi)
             val decisions = SwipeDecisionRepository(fake<SwipeDecisionDao>(decisionDao) { name, _ ->
