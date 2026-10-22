@@ -403,6 +403,7 @@
     <string name="settings_clear_cache_error">Error al borrar la caché: %1$s</string>
     <string name="settings_logs_clip_label">Registros de Immich Swipe</string>
     <string name="home_album_fallback">Álbum</string>
+    <string name="swipe_download_permission_denied">Permite el acceso al almacenamiento para guardar el archivo en Descargas.</string>
     <string name="swipe_download_started">Descargando %1$s…</string>
     <string name="swipe_download_server_error">Error de descarga: error del servidor</string>
     <string name="swipe_download_saved">Guardado en Descargas: %1$s</string>

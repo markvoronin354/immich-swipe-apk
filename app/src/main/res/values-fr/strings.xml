@@ -404,6 +404,7 @@
     <string name="settings_clear_cache_error">Échec du vidage du cache : %1$s</string>
     <string name="settings_logs_clip_label">Journaux Immich Swipe</string>
     <string name="home_album_fallback">Album</string>
+    <string name="swipe_download_permission_denied">Autorisez l\'accès au stockage pour enregistrer le fichier dans Téléchargements.</string>
     <string name="swipe_download_started">Téléchargement de %1$s…</string>
     <string name="swipe_download_server_error">Échec du téléchargement : erreur du serveur</string>
     <string name="swipe_download_saved">Enregistré dans Téléchargements : %1$s</string>

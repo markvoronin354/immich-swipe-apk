@@ -1,7 +1,9 @@
 package com.markvoronin.immichswipe.feature.swipe
 
+import android.Manifest
 import android.content.ContentValues
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
@@ -24,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -331,10 +334,34 @@ fun SwipeScreen(
         }
     }
 
+    // Android 8 and 9 write straight into the public Downloads folder, which needs this permission to be
+    // granted at runtime. Newer versions save through MediaStore and need nothing.
+    var pendingLegacyDownload by remember { mutableStateOf<com.markvoronin.immichswipe.domain.model.Asset?>(null) }
+    val legacyWritePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val asset = pendingLegacyDownload
+        pendingLegacyDownload = null
+        if (granted && asset != null) {
+            viewModel.downloadAsset(asset)
+        } else if (!granted) {
+            Toast.makeText(context, R.string.swipe_download_permission_denied, Toast.LENGTH_LONG).show()
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.downloadRequestSignal.collect { asset ->
             val baseUrl = uiState.baseUrl.removeSuffix("/")
             if (baseUrl.isEmpty()) return@collect
+
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                pendingLegacyDownload = asset
+                legacyWritePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                return@collect
+            }
 
             val rawName = asset.originalFileName?.substringAfterLast('/')?.substringAfterLast('\\')
                 ?: "immich_${asset.id}.${asset.fileExtension ?: "jpg"}"
