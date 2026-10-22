@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit
 object CacheManager {
     private const val TAG = "CacheManager"
     private const val WORK_NAME = "CacheMaintenanceWork"
-    private const val MAX_CACHE_SIZE = 1024 * 1024 * 1024L // 1 GB
     private const val SHARED_ASSETS_DIR = "shared_assets"
     private const val EXPIRATION_TIME_MS = 24 * 60 * 60 * 1000L // 24 Hours
     fun schedulePeriodicMaintenance(context: Context) {
@@ -78,8 +77,9 @@ object CacheManager {
     private fun checkAndLimitGlobalCache(context: Context) {
         val cacheDir = context.cacheDir
         val totalSize = getFolderSize(cacheDir)
+        val maxCacheSize = CachePolicy.otherCacheLimitBytes(context)
 
-        if (totalSize > MAX_CACHE_SIZE) {
+        if (totalSize > maxCacheSize) {
             AppLogger.i(TAG, "Cache too large (${totalSize / (1024 * 1024)} MB). Launching aggressive cleanup...")
 
             val allFiles = getAllFiles(cacheDir).sortedBy { it.lastModified() }
@@ -87,7 +87,7 @@ object CacheManager {
             var currentSize = totalSize
             var deletedCount = 0
 
-            val targetSize = (MAX_CACHE_SIZE * 0.7).toLong()
+            val targetSize = (maxCacheSize * 0.7).toLong()
             
             for (file in allFiles) {
                 if (currentSize <= targetSize) break

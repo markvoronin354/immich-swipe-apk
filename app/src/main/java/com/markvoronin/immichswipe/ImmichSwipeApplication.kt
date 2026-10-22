@@ -48,7 +48,7 @@ class ImmichSwipeApplication : Application(), SingletonImageLoader.Factory {
             .diskCache {
                 DiskCache.Builder()
                     .directory(cacheDir.resolve("image_cache").toOkioPath())
-                    .maxSizeBytes(250 * 1024 * 1024L) // 250MB cap
+                    .maxSizeBytes(250 * 1024 * 1024L) // 250MB cap, fixed: images are small compared to video
                     .build()
             }
             .components {

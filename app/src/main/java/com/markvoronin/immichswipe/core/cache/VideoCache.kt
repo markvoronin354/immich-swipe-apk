@@ -22,7 +22,6 @@ import java.io.File
 @OptIn(UnstableApi::class)
 object VideoCache {
     private var cache: SimpleCache? = null
-    private const val CACHE_SIZE = 1024 * 1024 * 1024L // 1 GB for videos
 
     @Synchronized
     fun getCache(context: Context): SimpleCache {
@@ -31,7 +30,7 @@ object VideoCache {
             if (!cacheDir.exists()) cacheDir.mkdirs()
             cache = SimpleCache(
                 cacheDir,
-                LeastRecentlyUsedCacheEvictor(CACHE_SIZE),
+                LeastRecentlyUsedCacheEvictor(CachePolicy.videoCacheBytes(context)),
                 StandaloneDatabaseProvider(context)
             )
         }

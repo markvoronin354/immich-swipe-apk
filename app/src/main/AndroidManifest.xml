@@ -24,6 +24,11 @@
         </intent>
     </queries>
 
+    <!--
+        largeHeap stays on on purpose: full-screen zoom decodes photos at their original size, and a
+        48 MP image alone needs about 190 MB. Without it those would risk out-of-memory crashes.
+        It only raises the ceiling and does not reserve memory.
+    -->
     <application
         android:name=".ImmichSwipeApplication"
         android:allowBackup="false"
