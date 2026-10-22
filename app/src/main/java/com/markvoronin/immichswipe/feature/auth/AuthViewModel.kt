@@ -7,9 +7,9 @@ import com.markvoronin.immichswipe.core.SessionConfig
 import com.markvoronin.immichswipe.core.SessionManager
 import com.markvoronin.immichswipe.core.UrlPolicy
 import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
-import com.markvoronin.immichswipe.data.repository.AccountRepository
-import com.markvoronin.immichswipe.data.repository.AuthRepository
-import com.markvoronin.immichswipe.data.repository.SessionRepository
+import com.markvoronin.immichswipe.data.repository.AccountSaver
+import com.markvoronin.immichswipe.data.repository.CredentialChecker
+import com.markvoronin.immichswipe.data.repository.LoginSessionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,9 +20,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val sessionRepository: SessionRepository,
-    private val authRepository: AuthRepository,
-    private val accountRepository: AccountRepository,
+    private val sessionRepository: LoginSessionStore,
+    private val authRepository: CredentialChecker,
+    private val accountRepository: AccountSaver,
     private val sessionManager: SessionManager
 ) : ViewModel() {
 

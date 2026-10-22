@@ -8,10 +8,10 @@ import javax.inject.Singleton
 
 
 @Singleton
-class AuthRepository @Inject constructor() {
+class AuthRepository @Inject constructor() : CredentialChecker {
 
 
-    suspend fun checkCredentials(baseUrl: String, apiKey: String): User {
+    override suspend fun checkCredentials(baseUrl: String, apiKey: String): User {
         val config = SessionConfig(baseUrl = baseUrl, apiKey = apiKey)
         
         val tempApi = RetrofitFactory.create(config)

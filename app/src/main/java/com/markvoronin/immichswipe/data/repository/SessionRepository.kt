@@ -30,12 +30,12 @@ import javax.inject.Singleton
 class SessionRepository @Inject constructor(
     @ApplicationContext context: Context,
     private val accountRepository: AccountRepository
-) {
+) : LoginSessionStore {
 
     private val dataStore = SessionDataStore(context)
 
 
-    val savedServerUrls: Flow<List<String>> = combine(
+    override val savedServerUrls: Flow<List<String>> = combine(
         dataStore.getSavedServerUrls(),
         accountRepository.allAccounts
     ) { dataStoreUrls, accounts ->
@@ -48,7 +48,7 @@ class SessionRepository @Inject constructor(
     }
 
 
-    val sessionConfig: Flow<SessionConfig?> = combine(
+    override val sessionConfig: Flow<SessionConfig?> = combine(
         dataStore.getBaseUrl(),
         dataStore.getApiKey(),
         dataStore.getUserId()
@@ -168,7 +168,7 @@ class SessionRepository @Inject constructor(
     }
 
 
-    suspend fun saveSession(baseUrl: String, token: String, userId: String) {
+    override suspend fun saveSession(baseUrl: String, token: String, userId: String) {
         dataStore.saveSession(baseUrl, token, userId)
     }
 
@@ -266,11 +266,11 @@ class SessionRepository @Inject constructor(
         dataStore.clearSession()
     }
 
-    suspend fun saveRecentServerUrl(url: String) {
+    override suspend fun saveRecentServerUrl(url: String) {
         dataStore.saveRecentServerUrl(url)
     }
 
-    suspend fun removeSavedServerUrl(url: String) {
+    override suspend fun removeSavedServerUrl(url: String) {
         dataStore.removeSavedServerUrl(url)
     }
 

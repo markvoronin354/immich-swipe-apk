@@ -10,7 +10,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class AccountRepository @Inject constructor(private val userAccountDao: UserAccountDao) {
+class AccountRepository @Inject constructor(private val userAccountDao: UserAccountDao) : AccountSaver {
 
     private val secrets = SecretStore.default
 
@@ -20,7 +20,7 @@ class AccountRepository @Inject constructor(private val userAccountDao: UserAcco
 
     private fun UserAccountEntity.decrypted() = copy(apiKey = secrets.decrypt(apiKey) ?: "")
 
-    suspend fun saveAccount(baseUrl: String, apiKey: String, user: User) {
+    override suspend fun saveAccount(baseUrl: String, apiKey: String, user: User) {
         val entity = UserAccountEntity(
             userId = user.id,
             baseUrl = baseUrl,
