@@ -61,7 +61,7 @@ class RetryInterceptorTest {
 
     @Test
     fun `gives up after max attempts and returns last response`() {
-        val h = Harness(listOf({ 503 }))
+        val h = Harness(listOf { 503 })
         assertEquals(503, h.execute(get()).code)
         assertEquals(3, h.calls)
     }
@@ -69,7 +69,7 @@ class RetryInterceptorTest {
     @Test
     fun `does not retry authentication or not found errors`() {
         listOf(401, 403, 404).forEach { code ->
-            val h = Harness(listOf({ code }))
+            val h = Harness(listOf { code })
             assertEquals(code, h.execute(get()).code)
             assertEquals(1, h.calls)
             assertTrue(h.delays.isEmpty())
@@ -85,26 +85,26 @@ class RetryInterceptorTest {
 
     @Test
     fun `rethrows io error after max attempts`() {
-        val h = Harness(listOf({ IOException("boom") }))
+        val h = Harness(listOf { IOException("boom") })
         try {
             h.execute(get())
             fail("expected IOException")
-        } catch (e: IOException) {
+        } catch (_: IOException) {
             assertEquals(3, h.calls)
         }
     }
 
     @Test
     fun `never replays non idempotent posts`() {
-        val create = Harness(listOf({ 503 }))
+        val create = Harness(listOf { 503 })
         assertEquals(503, create.execute(post("/api/albums")).code)
         assertEquals(1, create.calls)
 
-        val rotate = Harness(listOf({ IOException("reset") }))
+        val rotate = Harness(listOf { IOException("reset") })
         try {
             rotate.execute(post("/api/assets/abc/rotate"))
             fail("expected IOException")
-        } catch (e: IOException) {
+        } catch (_: IOException) {
             assertEquals(1, rotate.calls)
         }
     }

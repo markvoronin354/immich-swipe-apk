@@ -99,7 +99,7 @@ class SessionRepository @Inject constructor(
 
 
     val reminderInterval: Flow<ReminderInterval> = dataStore.getReminderInterval().map {
-        it?.let { try { ReminderInterval.valueOf(it) } catch(e: Exception) { ReminderInterval.OFTEN } } ?: ReminderInterval.OFTEN
+        it?.let { try { ReminderInterval.valueOf(it) } catch(_: Exception) { ReminderInterval.OFTEN } } ?: ReminderInterval.OFTEN
     }
 
     val reminderCustomMinDays: Flow<Long> = dataStore.getReminderCustomMinDays()

@@ -50,6 +50,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.io.IOException
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SwipeViewModelTest {
@@ -135,7 +136,7 @@ class SwipeViewModelTest {
      * Waiting for loading and fetching to both end means the last refresh has been applied.
      */
     private fun SwipeViewModel.await(predicate: (SwipeUiState) -> Boolean): SwipeUiState =
-        runBlocking { withTimeout(5_000) { uiState.first(predicate) } }
+        runBlocking { withTimeout(5_000.milliseconds) { uiState.first(predicate) } }
 
     private fun openAlbum(expectedAssets: Int = assets.size): SwipeViewModel {
         val vm = SwipeViewModel(
@@ -630,7 +631,7 @@ class SwipeViewModelTest {
         vm.applyChanges()
 
         assertFalse(vm.uiState.value.showSuccessAnimation)
-        assertEquals(Unit, runBlocking { withTimeout(5_000) { vm.syncIssueSignal.first() } })
+        assertEquals(Unit, runBlocking { withTimeout(5_000.milliseconds) { vm.syncIssueSignal.first() } })
     }
 
     @Test

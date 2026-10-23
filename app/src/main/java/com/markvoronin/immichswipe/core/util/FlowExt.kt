@@ -12,6 +12,6 @@ import kotlinx.coroutines.flow.combine
 fun <T1, T2, T3, T4, T5, T6, R> combine6(
     f1: Flow<T1>, f2: Flow<T2>, f3: Flow<T3>, f4: Flow<T4>, f5: Flow<T5>, f6: Flow<T6>,
     transform: suspend (T1, T2, T3, T4, T5, T6) -> R
-): Flow<R> = combine(listOf<Flow<Any?>>(f1, f2, f3, f4, f5, f6)) { v ->
+): Flow<R> = combine(listOf(f1, f2, f3, f4, f5, f6)) { v ->
     transform(v[0] as T1, v[1] as T2, v[2] as T3, v[3] as T4, v[4] as T5, v[5] as T6)
 }

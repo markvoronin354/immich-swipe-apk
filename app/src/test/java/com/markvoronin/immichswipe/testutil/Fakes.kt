@@ -15,7 +15,7 @@ class RecordedCall(val name: String, val args: List<Any?>)
  */
 inline fun <reified T : Any> fake(
     calls: MutableList<RecordedCall> = mutableListOf(),
-    crossinline handler: (name: String, args: List<Any?>) -> Any? = { _, _ -> Unit }
+    crossinline handler: (name: String, args: List<Any?>) -> Any? = { _, _ -> }
 ): T = Proxy.newProxyInstance(T::class.java.classLoader, arrayOf(T::class.java)) { _, method, rawArgs ->
     val args = (rawArgs ?: emptyArray()).toList()
     val real = if (args.lastOrNull() is kotlin.coroutines.Continuation<*>) args.dropLast(1) else args

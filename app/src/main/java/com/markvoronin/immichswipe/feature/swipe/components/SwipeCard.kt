@@ -411,30 +411,34 @@ fun SwipeCard(
                                         1
                                     }
 
-                                    if (dragDirection == 1) {
-                                        scope.launch {
-                                            panelProgress.snapTo(startProgress)
-                                            if (offsetY.value != 0f) offsetY.snapTo(0f)
-                                            offsetX.snapTo(totalDX)
-                                        }
-                                    } else if (dragDirection == 3) {
-                                        scope.launch {
-                                            panelProgress.snapTo(startProgress)
-                                            if (offsetX.value != 0f) offsetX.snapTo(0f)
-                                            offsetY.snapTo(totalDY)
-                                        }
-                                    } else {
-                                        scope.launch {
-                                            if (offsetX.value != 0f) {
-                                                offsetX.snapTo(0f)
+                                    when (dragDirection) {
+                                        1 -> {
+                                            scope.launch {
+                                                panelProgress.snapTo(startProgress)
+                                                if (offsetY.value != 0f) offsetY.snapTo(0f)
+                                                offsetX.snapTo(totalDX)
                                             }
-                                            if (offsetY.value != 0f) {
-                                                offsetY.snapTo(0f)
+                                        }
+                                        3 -> {
+                                            scope.launch {
+                                                panelProgress.snapTo(startProgress)
+                                                if (offsetX.value != 0f) offsetX.snapTo(0f)
+                                                offsetY.snapTo(totalDY)
                                             }
-                                            val heightPx = if (metadataHeightPx > 0f) metadataHeightPx else maxHeightPx
-                                            if (heightPx > 0f) {
-                                                val initialProgress = (startProgress - totalDY / heightPx).coerceIn(0f, 1f)
-                                                panelProgress.snapTo(initialProgress)
+                                        }
+                                        else -> {
+                                            scope.launch {
+                                                if (offsetX.value != 0f) {
+                                                    offsetX.snapTo(0f)
+                                                }
+                                                if (offsetY.value != 0f) {
+                                                    offsetY.snapTo(0f)
+                                                }
+                                                val heightPx = if (metadataHeightPx > 0f) metadataHeightPx else maxHeightPx
+                                                if (heightPx > 0f) {
+                                                    val initialProgress = (startProgress - totalDY / heightPx).coerceIn(0f, 1f)
+                                                    panelProgress.snapTo(initialProgress)
+                                                }
                                             }
                                         }
                                     }

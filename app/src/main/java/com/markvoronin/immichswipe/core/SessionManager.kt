@@ -145,7 +145,6 @@ class SessionManager @Inject constructor(
 
     fun isLoggedIn(): Boolean = _api != null
     fun getBaseUrl(): String? = config?.baseUrl
-    fun getApiKey(): String? = config?.apiKey
 
     /**
      * Short one-way fingerprint of the active session (user, server and key). It changes exactly when

@@ -329,7 +329,7 @@ fun SummaryDialog(
     if (previewAsset != null) {
         SummaryFullscreenPreviewDialog(
             initialAsset = previewAsset!!,
-            assets = if (uiState.deletedAssets.isNotEmpty()) uiState.deletedAssets else listOf(previewAsset!!),
+            assets = uiState.deletedAssets.ifEmpty { listOf(previewAsset!!) },
             uiState = uiState,
             onDismiss = { previewAsset = null },
             onRevert = { assetToRevert ->

@@ -127,10 +127,6 @@ class BestShotAnalyzer @Inject constructor(
         }
     }
 
-    suspend fun findBestShot(assets: List<Asset>, baseUrl: String): AssetScore? {
-        return analyzeCluster(assets, baseUrl).firstOrNull()
-    }
-
     private fun analyzeVideoAsset(asset: Asset): AssetScore {
         val fileSize = asset.exifInfo?.fileSizeInBytes ?: 0L
         val fileSizeScore = (fileSize.toFloat() / (100 * 1024 * 1024f)).coerceIn(0f, 1f)

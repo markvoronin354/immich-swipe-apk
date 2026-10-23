@@ -25,12 +25,12 @@ class CachePolicyTest {
     @Test
     fun `video cache keeps a usable minimum on a nearly full device`() {
         assertEquals(64 * mb, CachePolicy.videoCacheBytes(MemoryTier.HIGH, 100 * mb))
-        assertEquals(64 * mb, CachePolicy.videoCacheBytes(MemoryTier.HIGH, 0))
+        assertEquals(CachePolicy.videoCacheBytes(MemoryTier.HIGH, 0), 64 * mb)
     }
 
     @Test
     fun `other cache limit follows the tier only`() {
-        assertEquals(256 * mb, CachePolicy.otherCacheLimitBytes(MemoryTier.LOW))
+        assertEquals(CachePolicy.otherCacheLimitBytes(MemoryTier.LOW), 256 * mb)
         assertTrue(CachePolicy.otherCacheLimitBytes(MemoryTier.HIGH) > CachePolicy.otherCacheLimitBytes(MemoryTier.MEDIUM))
     }
 }

@@ -31,8 +31,6 @@ import javax.net.ssl.SSLHandshakeException
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthViewModelTest {
 
-    private val user = User(id = "u1", email = "a@b.c", name = "Ann")
-
     private class FakeChecker(var failWith: Throwable? = null) : CredentialChecker {
         val checked = mutableListOf<Pair<String, String>>()
         override suspend fun checkCredentials(baseUrl: String, apiKey: String): User {

@@ -42,11 +42,11 @@ class ApplySwipeDecisionsUseCaseTest {
 
         init {
             val fakeApi = fake<ImmichApi>(api) { name, _ ->
-                when {
-                    name in failingApi -> throw RuntimeException("$name failed")
-                    name == "getAlbums" -> albums
-                    name == "addAssetsToAlbum" || name == "removeAssetsFromAlbum" -> addToAlbumResponse
-                    name == "createAlbum" -> throw RuntimeException("not scripted")
+                when (name) {
+                    in failingApi -> throw RuntimeException("$name failed")
+                    "getAlbums" -> albums
+                    "addAssetsToAlbum", "removeAssetsFromAlbum" -> addToAlbumResponse
+                    "createAlbum" -> throw RuntimeException("not scripted")
                     else -> Unit
                 }
             }

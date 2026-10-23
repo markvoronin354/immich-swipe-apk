@@ -24,7 +24,7 @@ class SwipeDecisionRepositoryImportTest {
             // Suspend functions get a trailing Continuation argument; drop it.
             val real = (args ?: emptyArray()).toList().dropLast(if (args?.lastOrNull() is kotlin.coroutines.Continuation<*>) 1 else 0)
             calls += Call(method.name, real)
-            if (method.name == "getAllSyncHistoryRaw") existingHistory else kotlin.Unit
+            if (method.name == "getAllSyncHistoryRaw") existingHistory else Unit
         } as SwipeDecisionDao
 
         fun named(name: String) = calls.filter { it.name == name }

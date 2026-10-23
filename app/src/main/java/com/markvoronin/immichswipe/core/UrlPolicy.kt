@@ -19,8 +19,7 @@ object UrlPolicy {
     /** True when [url] uses plain HTTP to a host that is not recognisably on a private network. */
     fun isInsecureRemote(url: String): Boolean {
         val parsed = url.trim().toHttpUrlOrNull() ?: return false
-        if (parsed.scheme != "http") return false
-        return !isPrivateHost(parsed.host)
+        return parsed.scheme == "http" && !isPrivateHost(parsed.host)
     }
 
     internal fun isPrivateHost(host: String): Boolean {
@@ -38,11 +37,8 @@ object UrlPolicy {
                 (a == 100 && b in 64..127) // carrier-grade NAT range, also used by Tailscale
         }
 
-        if (h.contains(':')) {
-            // IPv6 literal: loopback, unique local (fc00::/7) and link local (fe80::/10).
-            return h == "::1" || h.startsWith("fc") || h.startsWith("fd") ||
-                h.startsWith("fe8") || h.startsWith("fe9") || h.startsWith("fea") || h.startsWith("feb")
-        }
-        return false
+        return h.contains(':') && (h == "::1" || h.startsWith("fc") || h.startsWith("fd") ||
+                h.startsWith("fe8") || h.startsWith("fe9") || h.startsWith("fea") || h.startsWith("feb"))
+        // IPv6 literal: loopback, unique local (fc00::/7) and link local (fe80::/10).
     }
 }
