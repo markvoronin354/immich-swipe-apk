@@ -1,0 +1,8 @@
+- API keys are now stored encrypted. Downgrading means logging in again.
+- Warning before sending your key over plain HTTP to a public server.
+- Failed syncs stay pending with a warning instead of being marked done.
+- Fixed albums over 5000 photos being cut short.
+- Importing a database only affects the accounts in the file.
+- Fixed downloads on Android 8-9 and a crash on Android 10.
+- Cache sizes adapt to your device.
+- Image loading updated to Coil 3.
