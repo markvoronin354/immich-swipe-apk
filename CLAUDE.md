@@ -22,4 +22,5 @@ Adhere strictly to Andrej Karpathy's operating principles across all changes:
 - Confirm the build succeeds and existing behavior remains unbroken.
 - If an issue or regression is introduced, revert cleanly to the working baseline instead of layering speculative patches.
 
-## 5. 
+## 5. Chat Response.
+- whenever multiple files have been modified, group all of the changed files into commit groups and include a commit message for each group.
