@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -57,10 +58,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentType
@@ -168,6 +173,27 @@ fun AuthScreen(
 
                 val fieldShape = RoundedCornerShape(14.dp)
 
+                // The autofill highlight is drawn as a plain rectangle on top of the field, so it
+                // has to be clipped to the field outline. The strip Material reserves above the
+                // field for the floating label stays unclipped so the label is not cut off.
+                val density = LocalDensity.current
+                val labelLineHeight = MaterialTheme.typography.bodySmall.lineHeight
+                val fieldClipShape = remember(density, labelLineHeight) {
+                    with(density) {
+                        val labelInset = labelLineHeight.toPx() / 2
+                        val cornerRadius = CornerRadius(14.dp.toPx())
+                        GenericShape { size, _ ->
+                            addRect(Rect(0f, 0f, size.width, labelInset))
+                            addRoundRect(
+                                RoundRect(
+                                    Rect(0f, labelInset, size.width, size.height),
+                                    cornerRadius
+                                )
+                            )
+                        }
+                    }
+                }
+
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = state.baseUrl,
@@ -190,6 +216,7 @@ fun AuthScreen(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clip(fieldClipShape)
                             .onFocusChanged { focusState ->
                                 if (focusState.isFocused && state.savedServerUrls.isNotEmpty()) {
                                     urlDropdownExpanded = true
@@ -271,6 +298,7 @@ fun AuthScreen(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clip(fieldClipShape)
                         .semantics {
                             contentType = ContentType.Password
                         },
