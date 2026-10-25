@@ -4,16 +4,18 @@ package com.markvoronin.immichswipe.feature.duplicates
 
 import android.widget.Toast
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
 import androidx.compose.foundation.gestures.snapping.SnapPosition
-import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.gestures.snapping.snapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -124,7 +126,10 @@ fun DuplicatesScreen(
     var activeZoomData by remember { mutableStateOf<ZoomData?>(null) }
     var fullScreenPreviewData by remember { mutableStateOf<FullScreenPreviewData?>(null) }
     var activeClusterIndex by remember { mutableIntStateOf(0) }
-    var bottomBarHeightPx by remember { mutableFloatStateOf(0f) }
+    var listBottomPx by remember { mutableFloatStateOf(0f) }
+    var bottomBarTopPx by remember { mutableFloatStateOf(0f) }
+    // how far the bottom bar covers the list; 0 when the list already ends above the bar
+    val bottomBarHeightPx = (listBottomPx - bottomBarTopPx).coerceAtLeast(0f)
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var rootWindowOffset by remember { mutableStateOf(Offset.Zero) }
@@ -254,6 +259,9 @@ fun DuplicatesScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
+                            .onGloballyPositioned { coords ->
+                                listBottomPx = coords.positionInWindow().y + coords.size.height
+                            }
                     ) {
                         val density = LocalDensity.current
                         val bottomBarHeightDp = with(density) { bottomBarHeightPx.toDp() }
@@ -273,6 +281,17 @@ fun DuplicatesScreen(
                             )
                         }
 
+                        // The default snap spring reuses the fling's leftover velocity and overshoots
+                        // the target. A tween with a monotonic easing settles without passing it.
+                        val decaySpec = rememberSplineBasedDecay<Float>()
+                        val snapFlingBehavior = remember(snapLayoutInfoProvider, decaySpec) {
+                            snapFlingBehavior(
+                                snapLayoutInfoProvider = snapLayoutInfoProvider,
+                                decayAnimationSpec = decaySpec,
+                                snapAnimationSpec = tween(durationMillis = 350, easing = LinearOutSlowInEasing)
+                            )
+                        }
+
                         LazyColumn(
                             state = listState,
                             modifier = Modifier
@@ -285,7 +304,7 @@ fun DuplicatesScreen(
                                 bottom = verticalPadding + bottomBarHeightDp
                             ),
                             verticalArrangement = Arrangement.spacedBy(16.dp),
-                            flingBehavior = rememberSnapFlingBehavior(snapLayoutInfoProvider)
+                            flingBehavior = snapFlingBehavior
                         ) {
                             itemsIndexed(uiState.clusters, key = { _, item -> item.clusterId }) { index, cluster ->
                                 Box(
@@ -302,8 +321,9 @@ fun DuplicatesScreen(
                                                 val itemTop = itemInfo.offset.toFloat()
                                                 val totalTravelDistance = (clearHeight - beforePadding).coerceAtLeast(1f)
 
-                                                val distanceBelow = (itemTop - beforePadding).coerceAtLeast(0f)
-                                                val distanceAbove = (beforePadding - itemTop - 48.dp.toPx()).coerceAtLeast(0f)
+                                                // item offsets exclude the content padding, so the snapped card sits at 0
+                                                val distanceBelow = itemTop.coerceAtLeast(0f)
+                                                val distanceAbove = (-itemTop).coerceAtLeast(0f)
                                                 val distanceFromTarget = maxOf(distanceBelow, distanceAbove)
 
                                                 val fraction = (distanceFromTarget / totalTravelDistance).coerceIn(0f, 1f)
@@ -370,13 +390,7 @@ fun DuplicatesScreen(
                         Modifier
                             .align(Alignment.BottomCenter)
                             .onGloballyPositioned { coords ->
-                                val parentHeight = coords.parentCoordinates?.size?.height?.toFloat() ?: 0f
-                                val topInParent = coords.positionInParent().y
-                                bottomBarHeightPx = if (parentHeight > 0f && topInParent > 0f) {
-                                    parentHeight - topInParent
-                                } else {
-                                    coords.size.height.toFloat()
-                                }
+                                bottomBarTopPx = coords.positionInWindow().y
                             }
                     },
                     onSortOrderSelected = { newSortOrder ->
