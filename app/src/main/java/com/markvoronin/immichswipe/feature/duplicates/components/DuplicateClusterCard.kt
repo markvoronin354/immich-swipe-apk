@@ -1,6 +1,10 @@
 package com.markvoronin.immichswipe.feature.duplicates.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.ScrollableDefaults
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -10,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -26,7 +31,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChangeIgnoreConsumed
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,6 +43,10 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateClusterUiModel
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 @Composable
 fun DuplicateClusterCard(
@@ -186,10 +199,14 @@ fun DuplicateClusterCard(
                 } else {
                     val itemWidth = ((availableWidth - 8.dp) / 2.15f).coerceAtLeast(135.dp)
                     val rowState = rememberLazyListState()
+                    val flingBehavior = ScrollableDefaults.flingBehavior()
                     LazyRow(
                         state = rowState,
+                        userScrollEnabled = false,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalRowDrag(rowState, flingBehavior)
                     ) {
                         items(cluster.assets, key = { it.id }) { asset ->
                             val decision = decisions[asset.id] ?: DuplicateDecision.NONE
@@ -207,6 +224,61 @@ fun DuplicateClusterCard(
                             )
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Drives [rowState] from raw pointer events so a swipe that leans horizontal always scrolls the row.
+ * The built-in row scroll gives up once its parent consumes an event, which happens when the parent
+ * list is still flinging (it grabs the touch immediately) or crosses its vertical slop first.
+ * Consuming the moves here also cancels the parent's drag. Pair it with `userScrollEnabled = false`.
+ */
+private fun Modifier.horizontalRowDrag(
+    rowState: LazyListState,
+    flingBehavior: FlingBehavior,
+    maxVerticalToHorizontalRatio: Float = 1.5f
+): Modifier = pointerInput(rowState, flingBehavior) {
+    val decisionDistance = viewConfiguration.touchSlop * 0.4f
+    coroutineScope {
+        var flingJob: Job? = null
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            flingJob?.cancel()
+            val velocityTracker = VelocityTracker()
+            velocityTracker.addPosition(down.uptimeMillis, down.position)
+            var total = Offset.Zero
+            var horizontal: Boolean? = null
+            var cancelled = false
+
+            do {
+                val event = awaitPointerEvent()
+                val change = event.changes.firstOrNull { it.id == down.id }
+                if (change == null || event.changes.count { it.pressed } > 1) {
+                    cancelled = true
+                    break
+                }
+                val delta = change.positionChangeIgnoreConsumed()
+
+                if (horizontal == null) {
+                    total += delta
+                    if (total.getDistance() >= decisionDistance) {
+                        horizontal = abs(total.y) <= abs(total.x) * maxVerticalToHorizontalRatio
+                    }
+                }
+                if (horizontal == true) {
+                    velocityTracker.addPosition(change.uptimeMillis, change.position)
+                    rowState.dispatchRawDelta(-delta.x)
+                    change.consume()
+                }
+            } while (event.changes.any { it.pressed })
+
+            if (horizontal == true && !cancelled) {
+                val velocity = -velocityTracker.calculateVelocity().x
+                flingJob = launch {
+                    rowState.scroll { with(flingBehavior) { performFling(velocity) } }
                 }
             }
         }
