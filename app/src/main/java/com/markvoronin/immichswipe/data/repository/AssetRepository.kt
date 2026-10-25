@@ -11,7 +11,6 @@ import com.markvoronin.immichswipe.data.api.DeleteAssetsRequest
 import com.markvoronin.immichswipe.data.api.DuplicateCluster
 import com.markvoronin.immichswipe.data.api.EditAssetRequest
 import com.markvoronin.immichswipe.data.api.ImmichApi
-import com.markvoronin.immichswipe.data.api.RotateAssetRequest
 import com.markvoronin.immichswipe.data.api.SearchAssetsRequest
 import com.markvoronin.immichswipe.data.api.UpdateAssetsRequest
 import com.markvoronin.immichswipe.data.local.dao.AlbumAssetDao
@@ -548,17 +547,8 @@ class AssetRepository(
         } catch (e: Exception) {
             e.rethrowIfCancelled()
             val errBody = (e as? HttpException)?.response()?.errorBody()?.string()
-            AppLogger.w("AssetRepo", "Failed to sync via editAsset endpoint for asset $assetId (body=$errBody). Falling back to rotate endpoint...")
-            try {
-                val steps = normalizedRotation / 90
-                repeat(steps) {
-                    api.rotateAsset(assetId, RotateAssetRequest(direction = "cw"))
-                }
-                AppLogger.i("AssetRepo", "Successfully synced asset rotation via rotate endpoint ($steps steps) for asset $assetId")
-            } catch (fallbackEx: Exception) {
-                val fallbackErrBody = (fallbackEx as? HttpException)?.response()?.errorBody()?.string()
-                AppLogger.e("AssetRepo", "Failed to sync rotation via fallback endpoint for asset $assetId: ${fallbackEx.message} body=$fallbackErrBody", fallbackEx)
-            }
+            AppLogger.e("AssetRepo", "Failed to sync rotation for asset $assetId: ${e.message} body=$errBody", e)
+            throw e
         }
     }
 

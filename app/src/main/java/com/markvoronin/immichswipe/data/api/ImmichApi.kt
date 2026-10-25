@@ -64,12 +64,6 @@ interface ImmichApi {
         @Path("id") assetId: String,
         @Body request: EditAssetRequest
     )
-
-    @POST("api/assets/{id}/rotate")
-    suspend fun rotateAsset(
-        @Path("id") assetId: String,
-        @Body request: RotateAssetRequest
-    )
 }
 
 
@@ -85,11 +79,6 @@ data class AssetEditActionItem(
 enum class AssetEditAction {
     crop, rotate,
 }
-
-
-data class RotateAssetRequest(
-    val direction: String = "cw"
-)
 
 
 data class UpdateAssetsRequest(
