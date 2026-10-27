@@ -94,6 +94,7 @@ import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 import com.markvoronin.immichswipe.feature.swipe.utils.rotateLayout
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
@@ -105,6 +106,8 @@ fun SwipeCard(
     asset: Asset,
     isNext: Boolean,
     isFullscreenOpen: Boolean,
+    enterFromBelow: Boolean = false,
+    onEnterFinished: () -> Unit = {},
     providedPlayer: ExoPlayer? = null,
     isMuted: Boolean = false,
     topCardSwipeOffset: Float = 0f,
@@ -118,11 +121,33 @@ fun SwipeCard(
 
     val scope = rememberCoroutineScope()
     val offsetX = remember(asset.id) { Animatable(0f) }
-    val offsetY = remember(asset.id) { Animatable(0f) }
+    // A card restored by undo starts below the screen and springs up into the stack.
+    val offsetY = remember(asset.id) { Animatable(if (enterFromBelow && !isNext) 1500f else 0f) }
     val panelProgress = remember(asset.id) { Animatable(0f) }
+    var isEnteringFromBelow by remember(asset.id) { mutableStateOf(offsetY.value != 0f) }
+
+    LaunchedEffect(offsetY) {
+        if (isEnteringFromBelow) {
+            try {
+                offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
+            } finally {
+                isEnteringFromBelow = false
+            }
+        }
+    }
 
     // Directional lock for gestures
     var dragDirection by remember { mutableIntStateOf(0) } // 0: undecided, 1: free drag (keep/delete/undo), 2: vertical (up/metadata)
+
+    // Reported once the restored card is at rest and untouched. A grab for another undo removes this card first, so the hold carries over.
+    LaunchedEffect(offsetY) {
+        if (isEnteringFromBelow) {
+            snapshotFlow {
+                dragDirection == 0 && !offsetY.isRunning && offsetY.value == 0f && offsetX.value == 0f
+            }.first { it }
+            onEnterFinished()
+        }
+    }
 
     var isHoldingByPress by remember(asset.id) { mutableStateOf(value = false) }
     var wasHoldDetected by remember(asset.id) { mutableStateOf(value = false) }
@@ -298,7 +323,8 @@ fun SwipeCard(
                                     if (currentCanUndo && isPullDown) {
                                         offsetY.animateTo(1500f, tween(150))
                                         actions.onUndo()
-                                        // This card now sits behind the restored one, so reset it for when it returns to the top.
+                                        // The deck drops this card (cancelling this scope) once undo takes effect; only reset if it is still here.
+                                        delay(500.milliseconds)
                                         offsetX.snapTo(0f)
                                         offsetY.snapTo(0f)
                                     } else if (currentX > 250 || isFlickRight) {
@@ -874,7 +900,7 @@ fun SwipeCard(
                     val currentX = offsetX.value
                     val currentY = offsetY.value
 
-                    if (config.canUndo && currentY > abs(currentX)) {
+                    if (config.canUndo && !isEnteringFromBelow && currentY > abs(currentX)) {
                         IndicatorBadge(
                             stringResource(R.string.swipe_undo_upper),
                             Color(0xFF2196F3), // Blue for undo

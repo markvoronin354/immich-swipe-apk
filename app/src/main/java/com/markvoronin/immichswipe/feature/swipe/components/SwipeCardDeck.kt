@@ -23,6 +23,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -82,9 +84,14 @@ fun SwipeCardDeck(
 
             val isBulk = uiState.isBulkDeleteMode || uiState.isBulkKeepMode
             val mainIndex = uiState.bulkLastIndex ?: currentIndex
+            var undoneAssetId by remember { mutableStateOf<String?>(null) }
+            var heldNextIndex by remember { mutableIntStateOf(-1) }
             val nextUnprocessedIndex = if (isBulk) {
                 val candidate = (uiState.bulkLastIndex ?: currentIndex) + 1
                 if (candidate < assets.size) candidate else -1
+            } else if (undoneAssetId == assets[mainIndex].id) {
+                // Keep the old background card until the restored card has settled.
+                heldNextIndex
             } else {
                 viewModel.getNextUnprocessedIndex()
             }
@@ -104,6 +111,8 @@ fun SwipeCardDeck(
                         asset = asset,
                         isNext = isNextCard,
                         isFullscreenOpen = uiState.isFullscreenMode,
+                        enterFromBelow = asset.id == undoneAssetId,
+                        onEnterFinished = { undoneAssetId = null },
                         providedPlayer = if (!isNextCard && !uiState.isFullscreenMode) sharedPlayer else null,
                         isMuted = uiState.isMuted,
                         topCardSwipeOffset = if (isNextCard) topCardOffsetX else 0f,
@@ -133,7 +142,11 @@ fun SwipeCardDeck(
                         ),
                         actions = SwipeCardActions(
                             onSwipe = { viewModel.onSwipe(it) },
-                            onUndo = { viewModel.undo() },
+                            onUndo = {
+                                undoneAssetId = uiState.history.lastOrNull()
+                                heldNextIndex = nextUnprocessedIndex
+                                viewModel.undo()
+                            },
                             onRotateAsset = { viewModel.rotateCurrentAsset() },
                             onDoubleTap = {
                                 if (uiState.doubleTapEnabled) {
