@@ -308,7 +308,7 @@
     <string name="tutorial_replay_toast">Tutorials reset! Open Swipe or Duplicates to view.</string>
 
     <string name="tutorial_swipe_gestures_title">Swipe Gestures &amp; Details</string>
-    <string name="tutorial_swipe_gestures_desc">Swipe RIGHT to KEEP, Swipe LEFT to DELETE, or drag UP to view full photo EXIF details!</string>
+    <string name="tutorial_swipe_gestures_desc">Swipe RIGHT to KEEP, Swipe LEFT to DELETE, swipe DOWN to go back to the previous card, or drag UP to view full photo EXIF details!</string>
     <string name="tutorial_swipe_header_title">Progress Tracking</string>
     <string name="tutorial_swipe_header_desc">Monitor your sorting progress and counts at a glance. Tap the progress bar anytime to open the summary and sync changes to Immich!</string>
     <string name="tutorial_swipe_actions_title">Quick Action Bar</string>

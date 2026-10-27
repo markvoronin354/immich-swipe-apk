@@ -311,7 +311,7 @@
     <string name="tutorial_replay_toast">Tutoriels réinitialisés ! Ouvrez le Tri ou les Doublons pour les afficher.</string>
 
     <string name="tutorial_swipe_gestures_title">Gestes &amp; Détails</string>
-    <string name="tutorial_swipe_gestures_desc">Glissez à DROITE pour GARDER, à GAUCHE pour SUPPRIMER, ou vers le HAUT pour afficher les détails EXIF de la photo !</string>
+    <string name="tutorial_swipe_gestures_desc">Glissez à DROITE pour GARDER, à GAUCHE pour SUPPRIMER, vers le BAS pour revenir à la carte précédente, ou vers le HAUT pour afficher les détails EXIF de la photo !</string>
     <string name="tutorial_swipe_header_title">Suivi de progression</string>
     <string name="tutorial_swipe_header_desc">Suivez votre avancement en direct. Appuyez sur la barre de progression pour ouvrir le résumé et synchroniser vos choix avec Immich !</string>
     <string name="tutorial_swipe_actions_title">Barre d\'actions rapides</string>

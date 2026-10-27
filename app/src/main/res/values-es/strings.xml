@@ -310,7 +310,7 @@
     <string name="tutorial_replay_toast">¡Tutoriales reiniciados! Abre Deslizar o Duplicados para verlos.</string>
 
     <string name="tutorial_swipe_gestures_title">Gestos y Detalles</string>
-    <string name="tutorial_swipe_gestures_desc">¡Desliza a la DERECHA para CONSERVAR, a la IZQUIERDA para ELIMINAR, o arrastra hacia ARRIBA para ver los detalles EXIF!</string>
+    <string name="tutorial_swipe_gestures_desc">¡Desliza a la DERECHA para CONSERVAR, a la IZQUIERDA para ELIMINAR, hacia ABAJO para volver a la tarjeta anterior, o arrastra hacia ARRIBA para ver los detalles EXIF!</string>
     <string name="tutorial_swipe_header_title">Seguimiento del progreso</string>
     <string name="tutorial_swipe_header_desc">Revisa tu progreso. Toca la barra de progreso en cualquier momento para ver el resumen y sincronizar con Immich.</string>
     <string name="tutorial_swipe_actions_title">Barra de acciones rápidas</string>
