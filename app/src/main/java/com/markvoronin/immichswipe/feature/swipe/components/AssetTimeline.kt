@@ -43,7 +43,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -65,6 +69,7 @@ import com.markvoronin.immichswipe.feature.swipe.utils.rotateLayout
 import kotlin.math.abs
 
 private const val UNFOCUSED_ITEM_SCALE = 0.8f
+private val FADING_EDGE_WIDTH = 76.dp
 
 @Composable
 fun AssetTimeline(
@@ -134,7 +139,21 @@ fun AssetTimeline(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(75.dp)
-                .padding(vertical = 5.dp),
+                .padding(vertical = 5.dp)
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                .drawWithContent {
+                    drawContent()
+                    val fade = (FADING_EDGE_WIDTH.toPx() / size.width).coerceAtMost(0.5f)
+                    drawRect(
+                        brush = Brush.horizontalGradient(
+                            0f to Color.Transparent,
+                            fade to Color.Black,
+                            1f - fade to Color.Black,
+                            1f to Color.Transparent
+                        ),
+                        blendMode = BlendMode.DstIn
+                    )
+                },
             contentPadding = PaddingValues(horizontal = sidePadding),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
