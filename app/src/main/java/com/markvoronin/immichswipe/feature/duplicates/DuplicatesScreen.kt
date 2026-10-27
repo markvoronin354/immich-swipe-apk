@@ -151,13 +151,15 @@ fun DuplicatesScreen(
                 id = "clusters",
                 titleRes = R.string.tutorial_duplicates_clusters_title,
                 descriptionRes = R.string.tutorial_duplicates_clusters_desc,
-                targetKey = "dup_cluster"
+                targetKey = "dup_cluster",
+                placement = TooltipPlacement.TOP
             ),
             TutorialStep(
                 id = "selection",
                 titleRes = R.string.tutorial_duplicates_selection_title,
                 descriptionRes = R.string.tutorial_duplicates_selection_desc,
-                targetKey = "dup_photos"
+                targetKey = "dup_photos",
+                placement = TooltipPlacement.TOP
             ),
             TutorialStep(
                 id = "action",
