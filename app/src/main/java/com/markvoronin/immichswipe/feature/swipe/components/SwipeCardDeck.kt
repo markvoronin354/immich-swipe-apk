@@ -127,11 +127,13 @@ fun SwipeCardDeck(
                             showShareButton = uiState.showShareButton,
                             cardDisplayMode = uiState.cardDisplayMode,
                             tapToSwipeEnabled = uiState.tapToSwipeEnabled,
+                            canUndo = !isBulk && uiState.history.isNotEmpty(),
                             showSizeIndicator = (uiState.sortOrder == SortOrder.SIZE_DESC) || (uiState.sortOrder == SortOrder.SIZE_ASC),
                             rotationAngle = uiState.getRotation(asset.id)
                         ),
                         actions = SwipeCardActions(
                             onSwipe = { viewModel.onSwipe(it) },
+                            onUndo = { viewModel.undo() },
                             onRotateAsset = { viewModel.rotateCurrentAsset() },
                             onDoubleTap = {
                                 if (uiState.doubleTapEnabled) {

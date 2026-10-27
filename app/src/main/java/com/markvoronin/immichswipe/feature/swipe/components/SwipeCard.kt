@@ -122,11 +122,12 @@ fun SwipeCard(
     val panelProgress = remember(asset.id) { Animatable(0f) }
 
     // Directional lock for gestures
-    var dragDirection by remember { mutableIntStateOf(0) } // 0: undecided, 1: horizontal, 2: vertical (up/metadata), 3: downward (skip)
+    var dragDirection by remember { mutableIntStateOf(0) } // 0: undecided, 1: horizontal, 2: vertical (up/metadata), 3: downward (undo)
 
     var isHoldingByPress by remember(asset.id) { mutableStateOf(value = false) }
     var wasHoldDetected by remember(asset.id) { mutableStateOf(value = false) }
     val currentIsHolding by rememberUpdatedState(isHoldingByPress || wasHoldDetected)
+    val currentCanUndo by rememberUpdatedState(config.canUndo)
     var pausedByHoldState by remember(asset.id) { mutableStateOf(value = false) }
     var ignoreNextTap by remember(asset.id) { mutableStateOf(value = false) }
 
@@ -228,9 +229,7 @@ fun SwipeCard(
     LaunchedEffect(isNext) {
         if (!isNext) {
             snapshotFlow {
-                val x = offsetX.value
-                val y = offsetY.value
-                if (abs(y) > abs(x)) y else x
+                offsetX.value
             }.collect { offset ->
                 actions.onSwipeOffsetChanged(offset)
             }
@@ -303,11 +302,13 @@ fun SwipeCard(
                                     } else {
                                         offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
                                     }
-                                } else if (dragDirection == 3) { // Downward swipe (SKIP)
+                                } else if (dragDirection == 3) { // Downward swipe (UNDO)
                                     val isFlickDown = velocityY > 1000f && currentY >= -50f
-                                    if (currentY > 250 || isFlickDown) {
+                                    if (currentCanUndo && (currentY > 250 || isFlickDown)) {
                                         offsetY.animateTo(1500f, tween(150))
-                                        actions.onSwipe(com.markvoronin.immichswipe.feature.swipe.SwipeDecision.SKIP)
+                                        actions.onUndo()
+                                        // This card now sits behind the restored one, so reset it for when it returns to the top.
+                                        offsetY.snapTo(0f)
                                     } else {
                                         offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
                                     }
@@ -395,8 +396,8 @@ fun SwipeCard(
                             val accumulatedDX = abs(totalDX)
                             val accumulatedDY = abs(totalDY)
 
-                            // Swiping down means SKIP, so it follows the single skip feature switch.
-            val downSwipeGestureEnabled = com.markvoronin.immichswipe.domain.model.Album.IS_SKIP_FEATURE_ENABLED
+                            // Nothing to undo: the card resists the pull instead of following the finger.
+                            val downOffset = if (currentCanUndo) totalDY else totalDY * 0.2f
 
                             if (dragDirection == 0) {
                                 // Decision threshold: 12 pixels of movement
@@ -404,9 +405,7 @@ fun SwipeCard(
                                     dragDirection = if (startProgress > 0.1f && accumulatedDY > 5f) {
                                         2
                                     } else if (accumulatedDY > accumulatedDX) {
-                                        if (totalDY > 0) {
-                                            if (downSwipeGestureEnabled) 3 else 0
-                                        } else 2 // 3 is down, 2 is up (metadata)
+                                        if (totalDY > 0) 3 else 2 // 3 is down (undo), 2 is up (metadata)
                                     } else {
                                         1
                                     }
@@ -423,7 +422,7 @@ fun SwipeCard(
                                             scope.launch {
                                                 panelProgress.snapTo(startProgress)
                                                 if (offsetX.value != 0f) offsetX.snapTo(0f)
-                                                offsetY.snapTo(totalDY)
+                                                offsetY.snapTo(downOffset)
                                             }
                                         }
                                         else -> {
@@ -450,7 +449,7 @@ fun SwipeCard(
                                         offsetX.snapTo(totalDX)
                                     } else if (dragDirection == 3) {
                                         if (offsetX.value != 0f) offsetX.snapTo(0f)
-                                        offsetY.snapTo(totalDY)
+                                        offsetY.snapTo(downOffset)
                                     } else if (dragDirection == 2) {
                                         val heightPx = if (metadataHeightPx > 0f) metadataHeightPx else maxHeightPx
                                         if (heightPx > 0f) {
@@ -886,12 +885,12 @@ fun SwipeCard(
                     val currentX = offsetX.value
                     val currentY = offsetY.value
 
-                    if (com.markvoronin.immichswipe.domain.model.Album.IS_SKIP_FEATURE_ENABLED &&
+                    if (config.canUndo &&
                         (dragDirection == 3 || (dragDirection == 0 && currentY > 0f && currentY > abs(currentX)))
                     ) {
                         IndicatorBadge(
-                            stringResource(R.string.swipe_skip_upper),
-                            Color(0xFFFFA500), // Orange for skip
+                            stringResource(R.string.swipe_undo_upper),
+                            Color(0xFF2196F3), // Blue for undo
                             Alignment.TopCenter
                         ) { (currentY / 200f).coerceIn(0f, 1f) * 0.9f }
                     } else if (currentX > 0f) {

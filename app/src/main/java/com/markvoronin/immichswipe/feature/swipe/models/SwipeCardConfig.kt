@@ -28,12 +28,14 @@ data class SwipeCardConfig(
     val immichLongPressWeb: Boolean = true,
     val cardDisplayMode: CardDisplayMode,
     val tapToSwipeEnabled: Boolean = false,
+    val canUndo: Boolean = false,
     val showSizeIndicator: Boolean = false,
     val rotationAngle: Int = 0
 )
 
 data class SwipeCardActions(
     val onSwipe: (SwipeDecision) -> Unit,
+    val onUndo: () -> Unit = {},
     val onRotateAsset: () -> Unit = {},
     val onDoubleTap: () -> Unit,
     val onOpenFullscreen: () -> Unit,

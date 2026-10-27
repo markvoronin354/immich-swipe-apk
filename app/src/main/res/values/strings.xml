@@ -153,6 +153,7 @@
     <string name="swipe_archive">Archive</string>
     <string name="swipe_locked">Lock</string>
     <string name="swipe_undo">Undo</string>
+    <string name="swipe_undo_upper">UNDO</string>
     <string name="add_to_album_title">Add to album</string>
     <string name="add_to_album_search_placeholder">Search an album…</string>
     <string name="add_to_album_no_albums">No albums found</string>
