@@ -294,7 +294,8 @@ fun SwipeCard(
                                     val isFlickRight = velocityX > 1000f && currentX >= -50f
                                     val isFlickLeft = velocityX < -1000f && currentX <= 50f
                                     val isFlickDown = velocityY > 1000f
-                                    if (currentCanUndo && currentY > abs(currentX) && (currentY > 250 || isFlickDown)) {
+                                    val isPullDown = currentY > abs(currentX) && (currentY > 250 || isFlickDown)
+                                    if (currentCanUndo && isPullDown) {
                                         offsetY.animateTo(1500f, tween(150))
                                         actions.onUndo()
                                         // This card now sits behind the restored one, so reset it for when it returns to the top.
