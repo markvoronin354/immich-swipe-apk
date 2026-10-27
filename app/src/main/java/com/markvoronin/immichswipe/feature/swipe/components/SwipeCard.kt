@@ -122,7 +122,7 @@ fun SwipeCard(
     val panelProgress = remember(asset.id) { Animatable(0f) }
 
     // Directional lock for gestures
-    var dragDirection by remember { mutableIntStateOf(0) } // 0: undecided, 1: horizontal, 2: vertical (up/metadata), 3: downward (undo)
+    var dragDirection by remember { mutableIntStateOf(0) } // 0: undecided, 1: free drag (keep/delete/undo), 2: vertical (up/metadata)
 
     var isHoldingByPress by remember(asset.id) { mutableStateOf(value = false) }
     var wasHoldDetected by remember(asset.id) { mutableStateOf(value = false) }
@@ -290,27 +290,25 @@ fun SwipeCard(
                                 val velocityY = velocity.y
                                 val velocityX = velocity.x
 
-                                if (dragDirection == 1) { // Horizontal swipe
+                                if (dragDirection == 1) { // Free drag: the card follows the finger on both axes
                                     val isFlickRight = velocityX > 1000f && currentX >= -50f
                                     val isFlickLeft = velocityX < -1000f && currentX <= 50f
-                                    if (currentX > 250 || isFlickRight) {
+                                    val isFlickDown = velocityY > 1000f
+                                    if (currentCanUndo && currentY > abs(currentX) && (currentY > 250 || isFlickDown)) {
+                                        offsetY.animateTo(1500f, tween(150))
+                                        actions.onUndo()
+                                        // This card now sits behind the restored one, so reset it for when it returns to the top.
+                                        offsetX.snapTo(0f)
+                                        offsetY.snapTo(0f)
+                                    } else if (currentX > 250 || isFlickRight) {
                                         offsetX.animateTo(1500f, tween(150))
                                         actions.onSwipe(com.markvoronin.immichswipe.feature.swipe.SwipeDecision.KEEP)
                                     } else if (currentX < -250 || isFlickLeft) {
                                         offsetX.animateTo(-1500f, tween(150))
                                         actions.onSwipe(com.markvoronin.immichswipe.feature.swipe.SwipeDecision.DELETE)
                                     } else {
+                                        launch { offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy)) }
                                         offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
-                                    }
-                                } else if (dragDirection == 3) { // Downward swipe (UNDO)
-                                    val isFlickDown = velocityY > 1000f && currentY >= -50f
-                                    if (currentCanUndo && (currentY > 250 || isFlickDown)) {
-                                        offsetY.animateTo(1500f, tween(150))
-                                        actions.onUndo()
-                                        // This card now sits behind the restored one, so reset it for when it returns to the top.
-                                        offsetY.snapTo(0f)
-                                    } else {
-                                        offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
                                     }
                                 } else if (dragDirection == 2) { // Vertical metadata
                                     if (offsetX.value != 0f) {
@@ -358,9 +356,9 @@ fun SwipeCard(
                                 val velocity = velocityTracker.calculateVelocity()
                                 val velocityY = velocity.y
 
-                                if (dragDirection == 1 || dragDirection == 3) {
+                                if (dragDirection == 1) {
+                                    launch { offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy)) }
                                     offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
-                                    offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
                                 } else {
                                     if (offsetX.value != 0f) {
                                         offsetX.snapTo(0f)
@@ -396,16 +394,16 @@ fun SwipeCard(
                             val accumulatedDX = abs(totalDX)
                             val accumulatedDY = abs(totalDY)
 
-                            // Nothing to undo: the card resists the pull instead of following the finger.
-                            val downOffset = if (currentCanUndo) totalDY else totalDY * 0.2f
+                            // Cards only travel downwards. With nothing to undo the card resists the pull instead of following the finger.
+                            val dragY = (if (currentCanUndo) totalDY else totalDY * 0.2f).coerceAtLeast(0f)
 
                             if (dragDirection == 0) {
                                 // Decision threshold: 12 pixels of movement
                                 if (accumulatedDX > 12f || accumulatedDY > 12f) {
                                     dragDirection = if (startProgress > 0.1f && accumulatedDY > 5f) {
                                         2
-                                    } else if (accumulatedDY > accumulatedDX) {
-                                        if (totalDY > 0) 3 else 2 // 3 is down (undo), 2 is up (metadata)
+                                    } else if (accumulatedDY > accumulatedDX && totalDY < 0) {
+                                        2 // up (metadata)
                                     } else {
                                         1
                                     }
@@ -414,15 +412,8 @@ fun SwipeCard(
                                         1 -> {
                                             scope.launch {
                                                 panelProgress.snapTo(startProgress)
-                                                if (offsetY.value != 0f) offsetY.snapTo(0f)
                                                 offsetX.snapTo(totalDX)
-                                            }
-                                        }
-                                        3 -> {
-                                            scope.launch {
-                                                panelProgress.snapTo(startProgress)
-                                                if (offsetX.value != 0f) offsetX.snapTo(0f)
-                                                offsetY.snapTo(downOffset)
+                                                offsetY.snapTo(dragY)
                                             }
                                         }
                                         else -> {
@@ -445,11 +436,8 @@ fun SwipeCard(
                             } else {
                                 scope.launch {
                                     if (dragDirection == 1) {
-                                        if (offsetY.value != 0f) offsetY.snapTo(0f)
                                         offsetX.snapTo(totalDX)
-                                    } else if (dragDirection == 3) {
-                                        if (offsetX.value != 0f) offsetX.snapTo(0f)
-                                        offsetY.snapTo(downOffset)
+                                        offsetY.snapTo(dragY)
                                     } else if (dragDirection == 2) {
                                         val heightPx = if (metadataHeightPx > 0f) metadataHeightPx else maxHeightPx
                                         if (heightPx > 0f) {
@@ -885,9 +873,7 @@ fun SwipeCard(
                     val currentX = offsetX.value
                     val currentY = offsetY.value
 
-                    if (config.canUndo &&
-                        (dragDirection == 3 || (dragDirection == 0 && currentY > 0f && currentY > abs(currentX)))
-                    ) {
+                    if (config.canUndo && currentY > abs(currentX)) {
                         IndicatorBadge(
                             stringResource(R.string.swipe_undo_upper),
                             Color(0xFF2196F3), // Blue for undo
