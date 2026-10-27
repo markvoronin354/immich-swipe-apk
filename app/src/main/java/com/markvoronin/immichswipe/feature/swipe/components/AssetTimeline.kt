@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -62,6 +63,8 @@ import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import com.markvoronin.immichswipe.feature.swipe.utils.rotateLayout
 import kotlin.math.abs
+
+private const val UNFOCUSED_ITEM_SCALE = 0.8f
 
 @Composable
 fun AssetTimeline(
@@ -122,32 +125,38 @@ fun AssetTimeline(
         }
     }
 
-    LazyRow(
-        state = listState,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(75.dp)
-            .padding(vertical = 5.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        itemsIndexed(assets, key = { _, asset -> asset.id }) { index, asset ->
-            AssetTimelineItem(
-                asset = asset,
-                index = index,
-                currentIndex = currentIndex,
-                nextIndex = nextIndex,
-                swipeProgress = if (isActivelySwiping) swipeProgress else 0f,
-                isSelected = bulkSelection.contains(asset.id),
-                decision = decisions[asset.id],
-                hasHeart = isFavorite(asset.id),
-                hasArchive = isArchived(asset.id),
-                hasLock = isLocked(asset.id),
-                isBulkDelete = isBulkDelete,
-                rotation = getRotation(asset.id),
-                baseUrl = baseUrlClean,
-                onAssetClick = onAssetClick
-            )
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        // Pad both ends so that an item scrolled to offset 0 sits in the middle of the row.
+        val sidePadding = ((maxWidth - 60.dp) / 2).coerceAtLeast(16.dp)
+
+        LazyRow(
+            state = listState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(75.dp)
+                .padding(vertical = 5.dp),
+            contentPadding = PaddingValues(horizontal = sidePadding),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            itemsIndexed(assets, key = { _, asset -> asset.id }) { index, asset ->
+                AssetTimelineItem(
+                    asset = asset,
+                    index = index,
+                    currentIndex = currentIndex,
+                    focusIndex = targetIndex,
+                    nextIndex = nextIndex,
+                    swipeProgress = if (isActivelySwiping) swipeProgress else 0f,
+                    isSelected = bulkSelection.contains(asset.id),
+                    decision = decisions[asset.id],
+                    hasHeart = isFavorite(asset.id),
+                    hasArchive = isArchived(asset.id),
+                    hasLock = isLocked(asset.id),
+                    isBulkDelete = isBulkDelete,
+                    rotation = getRotation(asset.id),
+                    baseUrl = baseUrlClean,
+                    onAssetClick = onAssetClick
+                )
+            }
         }
     }
 }
@@ -157,6 +166,7 @@ private fun AssetTimelineItem(
     asset: Asset,
     index: Int,
     currentIndex: Int,
+    focusIndex: Int,
     nextIndex: Int,
     swipeProgress: Float,
     isSelected: Boolean,
@@ -178,6 +188,14 @@ private fun AssetTimelineItem(
 
     val isCurrent = index == currentIndex
     val isNext = index == nextIndex
+
+    // The item in the middle of the row is full size; the rest shrink, easing over as a swipe hands focus to the next one.
+    val focusProgress = when {
+        index == focusIndex -> 1f - swipeProgress
+        isNext -> swipeProgress
+        else -> 0f
+    }
+    val itemScale = UNFOCUSED_ITEM_SCALE + ((1f - UNFOCUSED_ITEM_SCALE) * focusProgress)
 
     val borderProgress = when {
         isCurrent -> 1f - swipeProgress
@@ -206,6 +224,10 @@ private fun AssetTimelineItem(
     Box(
         modifier = Modifier
             .size(60.dp)
+            .graphicsLayer {
+                scaleX = itemScale
+                scaleY = itemScale
+            }
             .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .border(
