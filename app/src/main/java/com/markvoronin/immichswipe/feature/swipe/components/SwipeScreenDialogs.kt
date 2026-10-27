@@ -29,7 +29,7 @@ fun SwipeScreenDialogs(
 
     if (uiState.isFullscreenMode && uiState.currentAsset != null) {
         val currentAsset = uiState.currentAsset!!
-        val nextUnprocessedIndex = viewModel.getNextUnprocessedIndex()
+        val nextUnprocessedIndex = viewModel.getNextUnprocessedIndex(uiState)
         val nextAsset = if (nextUnprocessedIndex != -1 && nextUnprocessedIndex < uiState.assets.size) {
             uiState.assets[nextUnprocessedIndex]
         } else null

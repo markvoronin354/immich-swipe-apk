@@ -93,7 +93,7 @@ fun SwipeCardDeck(
                 // Keep the old background card until the restored card has settled.
                 heldNextIndex
             } else {
-                viewModel.getNextUnprocessedIndex()
+                viewModel.getNextUnprocessedIndex(uiState)
             }
 
             val visibleIndices = listOfNotNull(

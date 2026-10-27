@@ -48,7 +48,7 @@ fun SwipeScreenContent(
                     )
                 }
 
-                val nextUnprocessedIndex = viewModel.getNextUnprocessedIndex()
+                val nextUnprocessedIndex = viewModel.getNextUnprocessedIndex(uiState)
 
                 AssetTimeline(
                     assets = uiState.assets,

@@ -579,8 +579,7 @@ class SwipeViewModel @Inject constructor(
             loadAssetDetail(_uiState.value.assets[index].id, index)
         }
     }
-    fun getNextUnprocessedIndex(): Int {
-        val s = _uiState.value
+    fun getNextUnprocessedIndex(s: SwipeUiState = _uiState.value): Int {
         return s.assets.indices.firstOrNull { i -> i > s.currentIndex && !s.decisions[s.assets[i].id].isFinalProcessed() } ?: -1
     }
 
