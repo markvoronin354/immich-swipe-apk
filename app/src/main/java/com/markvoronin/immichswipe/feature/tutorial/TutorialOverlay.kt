@@ -311,24 +311,19 @@ fun TooltipCard(
                 .padding(14.dp)
                 .fillMaxWidth()
         ) {
-            // Header: Step Badge & Skip Button
+            // Header: Title & Skip Button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = CircleShape
-                ) {
-                    Text(
-                        text = stringResource(R.string.tutorial_step_counter, stepIndex + 1, totalSteps),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                    )
-                }
+                Text(
+                    text = stringResource(step.titleRes),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
 
                 TextButton(
                     onClick = onSkip,
@@ -341,16 +336,6 @@ fun TooltipCard(
                     )
                 }
             }
-
-            Spacer(Modifier.height(6.dp))
-
-            // Title
-            Text(
-                text = stringResource(step.titleRes),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
 
             Spacer(Modifier.height(4.dp))
 
@@ -369,59 +354,75 @@ fun TooltipCard(
 
             Spacer(Modifier.height(12.dp))
 
-            // Footer Navigation Buttons
+            // Footer: Step Badge & Navigation Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (stepIndex > 0) {
-                    OutlinedButton(
-                        onClick = onPrevious,
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                        modifier = Modifier.height(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(R.string.tutorial_previous),
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                    }
-                } else {
-                    Spacer(Modifier.width(1.dp))
-                }
-
-                Button(
-                    onClick = onNext,
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-                    modifier = Modifier.height(36.dp)
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = CircleShape
                 ) {
                     Text(
-                        text = if (stepIndex == totalSteps - 1) {
-                            stringResource(R.string.tutorial_finish)
-                        } else {
-                            stringResource(R.string.tutorial_next)
-                        },
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold
+                        text = stringResource(R.string.tutorial_step_counter, stepIndex + 1, totalSteps),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                     )
-                    if (stepIndex < totalSteps - 1) {
-                        Spacer(Modifier.width(4.dp))
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp)
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (stepIndex > 0) {
+                        OutlinedButton(
+                            onClick = onPrevious,
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                            modifier = Modifier.height(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = stringResource(R.string.tutorial_previous),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    }
+
+                    Button(
+                        onClick = onNext,
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                        modifier = Modifier.height(36.dp)
+                    ) {
+                        Text(
+                            text = if (stepIndex == totalSteps - 1) {
+                                stringResource(R.string.tutorial_finish)
+                            } else {
+                                stringResource(R.string.tutorial_next)
+                            },
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
                         )
+                        if (stepIndex < totalSteps - 1) {
+                            Spacer(Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
                     }
                 }
             }
