@@ -187,17 +187,16 @@ fun SwipeScreen(
                         assetId = nextAsset.id,
                         videoUrl = videoUrl,
                     )
-                } else {
-                    // Preload Image to Coil RAM Cache
-                    val imageUrl = if (nextAsset.isGif) "$baseUrl/api/assets/${nextAsset.id}/original"
-                    else "$baseUrl/api/assets/${nextAsset.id}/thumbnail?format=WEBP&size=preview&edited=true"
-                    val request = ImageRequest.Builder(localCtx)
-                        .data(imageUrl)
-                        .memoryCacheKey("${nextAsset.id}-preview")
-                        .memoryCachePolicy(CachePolicy.ENABLED)
-                        .build()
-                    localCtx.imageLoader.enqueue(request)
                 }
+                // Preload the image, or the video's thumbnail, to Coil RAM Cache
+                val imageUrl = if (nextAsset.isGif) "$baseUrl/api/assets/${nextAsset.id}/original"
+                else "$baseUrl/api/assets/${nextAsset.id}/thumbnail?format=WEBP&size=preview&edited=true"
+                val request = ImageRequest.Builder(localCtx)
+                    .data(imageUrl)
+                    .memoryCacheKey("${nextAsset.id}-preview")
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .build()
+                localCtx.imageLoader.enqueue(request)
             }
         }
     }
