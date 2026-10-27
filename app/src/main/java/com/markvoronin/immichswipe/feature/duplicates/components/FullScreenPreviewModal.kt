@@ -1,8 +1,10 @@
 package com.markvoronin.immichswipe.feature.duplicates.components
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -279,6 +281,27 @@ fun FullScreenPreviewModal(
     val currentDismissOffsetY = if (isDraggingDismiss) dismissOffsetY else animDismissOffsetY
     val backdropAlpha = (1f - (currentDismissOffsetY / 800f)).coerceIn(0f, 0.95f)
 
+    // Live horizontal drag (px) while pulling past the first/last asset towards a neighbouring cluster.
+    var boundaryDragX by remember { mutableFloatStateOf(0f) }
+    var isDraggingBoundary by remember { mutableStateOf(false) }
+    val animBoundaryDragX by animateFloatAsState(
+        targetValue = boundaryDragX,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+        label = "ClusterBoundaryDrag"
+    )
+
+    // Signed progress of the cluster transition: +1 / -1 right after moving to the next / previous
+    // cluster, easing to 0. Swiping between assets of the same cluster never touches it.
+    val clusterSlide = remember { Animatable(0f) }
+    var lastClusterIdx by remember(previewData) { mutableIntStateOf(currentClusterIdx) }
+    LaunchedEffect(currentClusterIdx) {
+        if (currentClusterIdx == lastClusterIdx) return@LaunchedEffect
+        val direction = if (currentClusterIdx > lastClusterIdx) 1f else -1f
+        lastClusterIdx = currentClusterIdx
+        clusterSlide.snapTo(direction)
+        clusterSlide.animateTo(0f, tween(durationMillis = 250))
+    }
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
@@ -541,12 +564,19 @@ fun FullScreenPreviewModal(
                 LaunchedEffect(currentAsset.id) {
                     dismissOffsetY = 0f
                     isDraggingDismiss = false
+                    boundaryDragX = 0f
+                    isDraggingBoundary = false
                 }
 
                 BoxWithConstraints(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
+                        .graphicsLayer {
+                            val dragX = if (isDraggingBoundary) boundaryDragX else animBoundaryDragX
+                            translationX = dragX + clusterSlide.value * size.width * 0.25f
+                            alpha = (1f - abs(clusterSlide.value)) * (1f - abs(dragX) / size.width).coerceIn(0f, 1f)
+                        }
                 ) {
                     val containerHeightPx = with(density) { maxHeight.toPx() }
 
@@ -592,6 +622,12 @@ fun FullScreenPreviewModal(
                                         }
 
                                         if (isDraggingHorizontal) {
+                                            val pullingNext = totalDragX < 0f &&
+                                                selectedIndex == assets.size - 1 && currentClusterIdx < clusters.size - 1
+                                            val pullingPrevious = totalDragX > 0f &&
+                                                selectedIndex == 0 && currentClusterIdx > 0
+                                            isDraggingBoundary = pullingNext || pullingPrevious
+                                            boundaryDragX = if (isDraggingBoundary) totalDragX else 0f
                                             change.consume()
                                         } else if (isDraggingVertical) {
                                             dismissOffsetY = (totalDragY - touchSlop).coerceAtLeast(0f)
@@ -608,6 +644,8 @@ fun FullScreenPreviewModal(
                                         dismissOffsetY = 0f
                                     }
                                 } else if (isDraggingHorizontal) {
+                                    isDraggingBoundary = false
+                                    boundaryDragX = 0f
                                     if (totalDragX < -100f) {
                                         if (selectedIndex < assets.size - 1) {
                                             selectedIndex++
