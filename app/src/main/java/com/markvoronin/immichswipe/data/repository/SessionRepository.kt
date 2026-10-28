@@ -330,6 +330,11 @@ class SessionRepository @Inject constructor(
         dataStore.setHasCompletedDuplicatesTutorial(completed)
     }
 
+    val skipDeepAnalyzeConfirmation: Flow<Boolean> = dataStore.skipDeepAnalyzeConfirmation()
+    suspend fun setSkipDeepAnalyzeConfirmation(skip: Boolean) {
+        dataStore.setSkipDeepAnalyzeConfirmation(skip)
+    }
+
     suspend fun resetTutorials() {
         dataStore.resetTutorials()
     }

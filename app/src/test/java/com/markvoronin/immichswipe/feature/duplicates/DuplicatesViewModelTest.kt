@@ -65,12 +65,14 @@ class DuplicatesViewModelTest {
     private val sessionConfig = MutableStateFlow<SessionConfig?>(SessionConfig("https://photos.example.com", "key", "u1"))
     private val storedDecisions = MutableStateFlow<List<SwipeDecisionEntity>>(emptyList())
     private val tutorialDone = MutableStateFlow(false)
+    private val skipDeepAnalyzeConfirmation = MutableStateFlow(false)
 
     private val swipeDecisionRepository = mockk<SwipeDecisionRepository>(relaxed = true) {
         every { getAllDecisionsForUser("u1") } returns storedDecisions
     }
     private val sessionRepository = mockk<SessionRepository>(relaxed = true) {
         every { hasCompletedDuplicatesTutorial } returns tutorialDone
+        every { this@mockk.skipDeepAnalyzeConfirmation } returns this@DuplicatesViewModelTest.skipDeepAnalyzeConfirmation
     }
     private val sessionManager = mockk<SessionManager>(relaxed = true) {
         every { this@mockk.api } returns this@DuplicatesViewModelTest.api
@@ -384,6 +386,36 @@ class DuplicatesViewModelTest {
         assertFalse(vm.uiState.value.isAnalyzingAi)
         assertNull(vm.uiState.value.aiProgress)
         coVerify { bestShotAnalyzer.analyzeCluster(any(), "https://photos.example.com") }
+    }
+
+    @Test
+    fun `skipping the deep analysis confirmation is saved and mirrored into the state`() {
+        val vm = createViewModel()
+        assertFalse(vm.uiState.value.skipDeepAnalyzeConfirmation)
+
+        vm.skipDeepAnalyzeConfirmation()
+        coVerify { sessionRepository.setSkipDeepAnalyzeConfirmation(true) }
+
+        skipDeepAnalyzeConfirmation.value = true
+        assertTrue(vm.uiState.value.skipDeepAnalyzeConfirmation)
+    }
+
+    @Test
+    fun `deep analysis applies the pick to one cluster and skips videos`() {
+        clusters = listOf(DuplicateCluster(listOf(small, large, video)))
+        val photos = slot<List<Asset>>()
+        coEvery { bestShotAnalyzer.analyzeClusterDeep(capture(photos), any()) } returns emptyList()
+        every { bestShotAnalyzer.selectKeptAssetIds(any(), BestShotAnalyzer.BestShotMode.SINGLE_BEST) } returns setOf("large")
+        val vm = createViewModel()
+
+        vm.deepAnalyzeCluster(vm.uiState.value.clusters.first())
+
+        assertEquals(setOf("small", "large"), photos.captured.map { it.id }.toSet())
+        assertEquals(
+            mapOf("small" to DuplicateDecision.DELETE, "large" to DuplicateDecision.KEEP),
+            vm.decisions()
+        )
+        assertFalse(vm.uiState.value.isAnalyzingAi)
     }
 
     @Test

@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Fullscreen
@@ -58,6 +59,7 @@ fun DuplicateClusterCard(
     onDecisionToggle: (String) -> Unit,
     onKeepAll: () -> Unit = {},
     onDeleteAll: () -> Unit = {},
+    onAnalyze: () -> Unit = {},
     onAssetLongPress: (Asset) -> Unit,
     onZoomStateUpdate: (ZoomData?) -> Unit,
     isFavorite: (Asset) -> Boolean = { it.isFavorite },
@@ -91,7 +93,24 @@ fun DuplicateClusterCard(
                     .padding(bottom = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(modifier = Modifier.weight(1f))
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (cluster.assets.any { !it.type.equals("VIDEO", ignoreCase = true) }) {
+                        IconButton(
+                            onClick = onAnalyze,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AutoAwesome,
+                                contentDescription = stringResource(R.string.duplicates_deep_analyze),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
 
                 Text(
                     text = "$sortedInCluster/${cluster.assets.size}",

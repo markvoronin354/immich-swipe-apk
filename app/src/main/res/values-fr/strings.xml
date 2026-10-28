@@ -235,6 +235,11 @@
     </plurals>
     <string name="duplicates_ai_analyzing">Analyse de la meilleure photo…</string>
     <string name="duplicates_ai_cluster_progress">Groupe %1$d sur %2$d</string>
+    <string name="duplicates_deep_analyze">Analyser en taille réelle</string>
+    <string name="duplicates_deep_analyze_title">Analyser en taille réelle ?</string>
+    <string name="duplicates_deep_analyze_msg">Cela télécharge les originaux de ce groupe en taille réelle (environ %1$s) et recherche les visages zone par zone. C’est plus lent et consomme plus de données, mais permet de lire des visages trop petits pour l’analyse normale.</string>
+    <string name="duplicates_deep_analyze_action">Analyser</string>
+    <string name="duplicates_deep_analyze_dont_ask">Ne plus demander</string>
 
     <!-- Statistiques -->
     <string name="stats_popup_title">Statistiques d\'usage</string>

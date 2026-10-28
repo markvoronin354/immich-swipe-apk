@@ -61,6 +61,7 @@ class SessionDataStore(private val context: Context) {
         private val KEY_INITIAL_INSTALL_PROCESSED = booleanPreferencesKey("initial_install_processed")
         private val KEY_HAS_COMPLETED_SWIPE_TUTORIAL = booleanPreferencesKey("has_completed_swipe_tutorial")
         private val KEY_HAS_COMPLETED_DUPLICATES_TUTORIAL = booleanPreferencesKey("has_completed_duplicates_tutorial")
+        private val KEY_SKIP_DEEP_ANALYZE_CONFIRMATION = booleanPreferencesKey("skip_deep_analyze_confirmation")
     }
 
     suspend fun saveSession(baseUrl: String, apiKey: String, userId: String) {
@@ -280,6 +281,11 @@ class SessionDataStore(private val context: Context) {
         prefs[KEY_HAS_COMPLETED_DUPLICATES_TUTORIAL] ?: (prefs[KEY_BASE_URL] != null || prefs[KEY_API_KEY] != null)
     }
     suspend fun setHasCompletedDuplicatesTutorial(completed: Boolean) { context.dataStore.edit { it[KEY_HAS_COMPLETED_DUPLICATES_TUTORIAL] = completed } }
+
+    fun skipDeepAnalyzeConfirmation(): Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[KEY_SKIP_DEEP_ANALYZE_CONFIRMATION] ?: false
+    }
+    suspend fun setSkipDeepAnalyzeConfirmation(skip: Boolean) { context.dataStore.edit { it[KEY_SKIP_DEEP_ANALYZE_CONFIRMATION] = skip } }
 
     suspend fun resetTutorials() {
         context.dataStore.edit {

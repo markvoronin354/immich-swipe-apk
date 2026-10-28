@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -60,6 +61,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -126,6 +128,7 @@ fun DuplicatesScreen(
     var activeZoomData by remember { mutableStateOf<ZoomData?>(null) }
     var fullScreenPreviewData by remember { mutableStateOf<FullScreenPreviewData?>(null) }
     var activeClusterIndex by remember { mutableIntStateOf(0) }
+    var deepAnalyzeTarget by remember { mutableStateOf<DuplicateClusterUiModel?>(null) }
     var listBottomPx by remember { mutableFloatStateOf(0f) }
     var bottomBarTopPx by remember { mutableFloatStateOf(0f) }
     // how far the bottom bar covers the list; 0 when the list already ends above the bar
@@ -354,6 +357,13 @@ fun DuplicatesScreen(
                                         onDecisionToggle = { assetId -> viewModel.toggleDecision(assetId) },
                                         onKeepAll = { viewModel.setClusterDecisions(cluster, DuplicateDecision.KEEP) },
                                         onDeleteAll = { viewModel.setClusterDecisions(cluster, DuplicateDecision.DELETE) },
+                                        onAnalyze = {
+                                            if (uiState.skipDeepAnalyzeConfirmation) {
+                                                viewModel.deepAnalyzeCluster(cluster)
+                                            } else {
+                                                deepAnalyzeTarget = cluster
+                                            }
+                                        },
                                         onAssetLongPress = { clickedAsset ->
                                             val clusterIdx = uiState.clusters.indexOfFirst { it.clusterId == cluster.clusterId }.coerceAtLeast(0)
                                             val initialIdx = cluster.assets.indexOfFirst { it.id == clickedAsset.id }.coerceAtLeast(0)
@@ -475,6 +485,51 @@ fun DuplicatesScreen(
                         }
                     },
                     shape = RoundedCornerShape(24.dp)
+                )
+            }
+
+            deepAnalyzeTarget?.let { cluster ->
+                val downloadBytes = cluster.assets
+                    .filter { !it.type.equals("VIDEO", ignoreCase = true) }
+                    .sumOf { it.exifInfo?.fileSizeInBytes ?: 0L }
+                AlertDialog(
+                    onDismissRequest = { deepAnalyzeTarget = null },
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = stringResource(R.string.duplicates_deep_analyze_title),
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(onClick = { deepAnalyzeTarget = null }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.common_close)
+                                )
+                            }
+                        }
+                    },
+                    text = { Text(stringResource(R.string.duplicates_deep_analyze_msg, formatSizeStr(downloadBytes))) },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                deepAnalyzeTarget = null
+                                viewModel.deepAnalyzeCluster(cluster)
+                            }
+                        ) {
+                            Text(stringResource(R.string.duplicates_deep_analyze_action))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = {
+                                deepAnalyzeTarget = null
+                                viewModel.skipDeepAnalyzeConfirmation()
+                                viewModel.deepAnalyzeCluster(cluster)
+                            }
+                        ) {
+                            Text(stringResource(R.string.duplicates_deep_analyze_dont_ask))
+                        }
+                    }
                 )
             }
 

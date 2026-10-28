@@ -234,6 +234,11 @@
     </plurals>
     <string name="duplicates_ai_analyzing">Analyzing Best Shot…</string>
     <string name="duplicates_ai_cluster_progress">Group %1$d of %2$d</string>
+    <string name="duplicates_deep_analyze">Analyze at full size</string>
+    <string name="duplicates_deep_analyze_title">Analyze at full size?</string>
+    <string name="duplicates_deep_analyze_msg">This downloads the full-size originals of this group (about %1$s) and looks for faces tile by tile. It is slower and uses more data, but can read faces that are too small in the normal analysis.</string>
+    <string name="duplicates_deep_analyze_action">Analyze</string>
+    <string name="duplicates_deep_analyze_dont_ask">Don\'t ask again</string>
 
     <!-- Statistics -->
     <string name="stats_popup_title">Usage Statistics</string>

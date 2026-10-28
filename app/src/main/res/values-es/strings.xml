@@ -234,6 +234,11 @@
     </plurals>
     <string name="duplicates_ai_analyzing">Analizando la mejor toma…</string>
     <string name="duplicates_ai_cluster_progress">Grupo %1$d de %2$d</string>
+    <string name="duplicates_deep_analyze">Analizar a tamaño completo</string>
+    <string name="duplicates_deep_analyze_title">¿Analizar a tamaño completo?</string>
+    <string name="duplicates_deep_analyze_msg">Esto descarga los originales a tamaño completo de este grupo (unos %1$s) y busca caras por zonas. Es más lento y consume más datos, pero puede leer caras demasiado pequeñas para el análisis normal.</string>
+    <string name="duplicates_deep_analyze_action">Analizar</string>
+    <string name="duplicates_deep_analyze_dont_ask">No volver a preguntar</string>
 
     <!-- Estadísticas -->
     <string name="stats_popup_title">Estadísticas de uso</string>

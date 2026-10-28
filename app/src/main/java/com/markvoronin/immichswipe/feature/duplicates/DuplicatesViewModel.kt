@@ -72,6 +72,17 @@ class DuplicatesViewModel @Inject constructor(
                 _uiState.update { it.copy(hasCompletedDuplicatesTutorial = completed) }
             }
         }
+        viewModelScope.launch {
+            sessionRepository.skipDeepAnalyzeConfirmation.collect { skip ->
+                _uiState.update { it.copy(skipDeepAnalyzeConfirmation = skip) }
+            }
+        }
+    }
+
+    fun skipDeepAnalyzeConfirmation() {
+        viewModelScope.launch {
+            sessionRepository.setSkipDeepAnalyzeConfirmation(true)
+        }
     }
 
     fun completeDuplicatesTutorial() {
@@ -451,16 +462,7 @@ class DuplicatesViewModel @Inject constructor(
 
                     val keptAssetIds = bestShotAnalyzer.selectKeptAssetIds(scores, mode)
 
-                    cluster.assets.forEach { asset ->
-                        if (asset.type.equals("VIDEO", ignoreCase = true)) {
-                            return@forEach // Skip videos, don't mark as KEEP or DELETE
-                        }
-                        if (_uiState.value.isFavorite(asset)) {
-                            newDecisions[asset.id] = DuplicateDecision.KEEP
-                        } else if (keptAssetIds.isNotEmpty()) {
-                            newDecisions[asset.id] = if (asset.id in keptAssetIds) DuplicateDecision.KEEP else DuplicateDecision.DELETE
-                        }
-                    }
+                    applyBestShot(newDecisions, cluster, keptAssetIds)
                 }
 
                 val autoSelectMode = when (mode) {
@@ -509,6 +511,64 @@ class DuplicatesViewModel @Inject constructor(
                         )
                     }
                 }
+            }
+        }
+    }
+
+    /** Re-runs the best shot pick for one cluster on the full-size originals, keeping only the single best shot. */
+    fun deepAnalyzeCluster(cluster: DuplicateClusterUiModel) {
+        aiJob?.cancel()
+        aiJob = viewModelScope.launch {
+            _uiState.update { it.copy(isAnalyzingAi = true, aiProgress = null) }
+            try {
+                val photosOnly = cluster.assets.filter { !it.type.equals("VIDEO", ignoreCase = true) }
+                val scores = bestShotAnalyzer.analyzeClusterDeep(photosOnly, _uiState.value.baseUrl)
+                ensureActive()
+
+                val newDecisions = _uiState.value.decisions.toMutableMap()
+                val keptAssetIds = bestShotAnalyzer.selectKeptAssetIds(scores, BestShotAnalyzer.BestShotMode.SINGLE_BEST)
+                applyBestShot(newDecisions, cluster, keptAssetIds)
+                _uiState.update { it.copy(decisions = newDecisions) }
+
+                val userId = sessionManager.getUserId() ?: return@launch
+                val entitiesToSave = cluster.assets.mapNotNull { asset ->
+                    val decision = newDecisions[asset.id]
+                    if (decision == null || decision == DuplicateDecision.NONE) null
+                    else {
+                        SwipeDecisionEntity(
+                            assetId = asset.id,
+                            albumId = Album.VIRTUAL_DUPLICATES_ID,
+                            userId = userId,
+                            decision = decision.name,
+                            fileSize = asset.exifInfo?.fileSizeInBytes,
+                            createdAt = System.currentTimeMillis()
+                        )
+                    }
+                }
+                if (entitiesToSave.isNotEmpty()) {
+                    swipeDecisionRepository.saveDecisions(entitiesToSave)
+                }
+            } finally {
+                withContext(NonCancellable) {
+                    _uiState.update { it.copy(isAnalyzingAi = false) }
+                }
+            }
+        }
+    }
+
+    private fun applyBestShot(
+        decisions: MutableMap<String, DuplicateDecision>,
+        cluster: DuplicateClusterUiModel,
+        keptAssetIds: Set<String>
+    ) {
+        cluster.assets.forEach { asset ->
+            if (asset.type.equals("VIDEO", ignoreCase = true)) {
+                return@forEach // Skip videos, don't mark as KEEP or DELETE
+            }
+            if (_uiState.value.isFavorite(asset)) {
+                decisions[asset.id] = DuplicateDecision.KEEP
+            } else if (keptAssetIds.isNotEmpty()) {
+                decisions[asset.id] = if (asset.id in keptAssetIds) DuplicateDecision.KEEP else DuplicateDecision.DELETE
             }
         }
     }

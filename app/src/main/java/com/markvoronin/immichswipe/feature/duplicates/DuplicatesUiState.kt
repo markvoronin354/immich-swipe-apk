@@ -14,6 +14,7 @@ data class DuplicatesUiState(
     val baseUrl: String = "",
     val error: String? = null,
     val hasCompletedDuplicatesTutorial: Boolean = true,
+    val skipDeepAnalyzeConfirmation: Boolean = false,
     val isAnalyzingAi: Boolean = false,
     val aiProgress: Pair<Int, Int>? = null
 ) {
