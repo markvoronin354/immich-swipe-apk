@@ -75,6 +75,7 @@ class SwipeViewModel @Inject constructor(
     private var assetsJob: Job? = null
     private var sortingJob: Job? = null
     private var pendingJumpToFirstUnprocessed = false
+    private var knownDbDecisionIds: Set<String> = emptySet()
     
     private val _downloadRequestChannel = Channel<Asset>(Channel.BUFFERED)
     val downloadRequestSignal = _downloadRequestChannel.receiveAsFlow()
@@ -253,8 +254,6 @@ class SwipeViewModel @Inject constructor(
             isFetchingAssetsFlow.value = false
         }
     }
-
-    private var knownDbDecisionIds: Set<String> = emptySet()
 
     private suspend fun observeDecisionsAndAssets(userId: String) {
         combine(
