@@ -133,6 +133,7 @@
     <string name="settings_mute_pos_label">Mute</string>
     <string name="settings_download_pos_label">Download </string>
     <string name="settings_share_pos_label">Share</string>
+    <string name="settings_full_size_pos_label">Full resolution</string>
     <string name="settings_show_add_to_album_label">Add to album button</string>
     <string name="settings_show_swipe_buttons_label">Keep/Delete buttons</string>
     <string name="settings_show_archive_label">Archive button</string>
@@ -387,6 +388,7 @@
     <string name="cd_paused">Paused</string>
     <string name="cd_download">Download</string>
     <string name="cd_share">Share</string>
+    <string name="cd_full_size">Load full resolution</string>
     <string name="cd_favorite">Favorite</string>
     <string name="cd_video">Video</string>
     <string name="cd_asset_info">Asset info</string>

@@ -7,7 +7,8 @@ data class ButtonPositions(
     val rotation: IconPosition,
     val mute: IconPosition,
     val download: IconPosition,
-    val share: IconPosition
+    val share: IconPosition,
+    val fullSize: IconPosition
 )
 
 /** Which action buttons are shown. */
@@ -18,6 +19,7 @@ data class ButtonVisibility(
     val mute: Boolean,
     val download: Boolean,
     val share: Boolean,
+    val fullSize: Boolean,
     val favorite: Boolean,
     val lock: Boolean,
     val archive: Boolean,

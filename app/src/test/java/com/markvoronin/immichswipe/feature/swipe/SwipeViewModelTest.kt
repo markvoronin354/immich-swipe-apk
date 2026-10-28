@@ -114,11 +114,11 @@ class SwipeViewModelTest {
     ) = SwipeSettings(
         positions = ButtonPositions(
             IconPosition.TOP_RIGHT, IconPosition.BOTTOM_LEFT, IconPosition.TOP_LEFT,
-            IconPosition.BOTTOM_RIGHT, IconPosition.BOTTOM_LEFT, IconPosition.BOTTOM_RIGHT
+            IconPosition.BOTTOM_RIGHT, IconPosition.BOTTOM_LEFT, IconPosition.BOTTOM_RIGHT, IconPosition.BOTTOM_LEFT
         ),
         visibility = ButtonVisibility(
             fullscreen = true, immich = false, rotation = true, mute = false, download = true,
-            share = true, favorite = true, lock = false, archive = true, swipeButtons = false
+            share = true, fullSize = false, favorite = true, lock = false, archive = true, swipeButtons = false
         ),
         behavior = SwipeBehavior(
             PlaybackBehavior.PAUSE_OTHERS, autoNextOnFavorite, syncLocalDeletion, trashLocalDeletion, order, tapToSwipe = false

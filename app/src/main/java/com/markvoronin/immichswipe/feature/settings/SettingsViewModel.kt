@@ -124,6 +124,11 @@ class SettingsViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            sessionRepository.fullSizeButtonPosition.collect { pos ->
+                _uiState.value = _uiState.value.copy(fullSizeButtonPosition = pos)
+            }
+        }
+        viewModelScope.launch {
             sessionRepository.buttonStackOrientation.collect { orientation ->
                 _uiState.value = _uiState.value.copy(buttonStackOrientation = orientation)
             }
@@ -156,6 +161,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             sessionRepository.showShareButton.collect { show ->
                 _uiState.value = _uiState.value.copy(showShareButton = show)
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.showFullSizeButton.collect { show ->
+                _uiState.value = _uiState.value.copy(showFullSizeButton = show)
             }
         }
         viewModelScope.launch {
@@ -322,6 +332,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setFullSizeButtonPosition(pos: IconPosition) {
+        viewModelScope.launch {
+            sessionRepository.saveFullSizeButtonPosition(pos)
+        }
+    }
+
     fun setShowFullscreenButton(show: Boolean) {
         viewModelScope.launch { sessionRepository.saveShowFullscreenButton(show) }
     }
@@ -344,6 +360,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setShowShareButton(show: Boolean) {
         viewModelScope.launch { sessionRepository.saveShowShareButton(show) }
+    }
+
+    fun setShowFullSizeButton(show: Boolean) {
+        viewModelScope.launch { sessionRepository.saveShowFullSizeButton(show) }
     }
 
     fun setShowFavorite(show: Boolean) {

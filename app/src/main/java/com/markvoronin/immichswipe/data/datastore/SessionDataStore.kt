@@ -31,6 +31,7 @@ class SessionDataStore(private val context: Context) {
         private val KEY_MUTE_ICON_POS = stringPreferencesKey("mute_icon_pos")
         private val KEY_DOWNLOAD_ICON_POS = stringPreferencesKey("download_icon_pos")
         private val KEY_SHARE_ICON_POS = stringPreferencesKey("share_icon_pos")
+        private val KEY_FULL_SIZE_ICON_POS = stringPreferencesKey("full_size_icon_pos")
         private val KEY_BUTTON_STACK_ORIENTATION = stringPreferencesKey("button_stack_orientation")
         private val KEY_SHOW_FULLSCREEN_ICON = booleanPreferencesKey("show_fullscreen_icon")
         private val KEY_SHOW_IMMICH_ICON = booleanPreferencesKey("show_immich_icon")
@@ -38,6 +39,7 @@ class SessionDataStore(private val context: Context) {
         private val KEY_SHOW_MUTE_ICON = booleanPreferencesKey("show_mute_icon")
         private val KEY_SHOW_DOWNLOAD_ICON = booleanPreferencesKey("show_download_icon")
         private val KEY_SHOW_SHARE_ICON = booleanPreferencesKey("show_share_icon")
+        private val KEY_SHOW_FULL_SIZE_ICON = booleanPreferencesKey("show_full_size_icon")
         private val KEY_DEFAULT_LAYOUT_GRID = booleanPreferencesKey("default_layout_grid")
         private val KEY_SHOW_FAVORITE = booleanPreferencesKey("show_favorite")
         private val KEY_AUTO_NEXT_ON_FAV = booleanPreferencesKey("auto_next_on_fav")
@@ -185,6 +187,12 @@ class SessionDataStore(private val context: Context) {
         context.dataStore.edit { it[KEY_SHARE_ICON_POS] = pos }
     }
 
+    fun getFullSizeIconPosition(): Flow<String?> = context.dataStore.data.map { it[KEY_FULL_SIZE_ICON_POS] }
+
+    suspend fun saveFullSizeIconPosition(pos: String) {
+        context.dataStore.edit { it[KEY_FULL_SIZE_ICON_POS] = pos }
+    }
+
     fun getButtonStackOrientation(): Flow<String?> = context.dataStore.data.map { it[KEY_BUTTON_STACK_ORIENTATION] }
 
     suspend fun saveButtonStackOrientation(orientation: String) {
@@ -208,6 +216,9 @@ class SessionDataStore(private val context: Context) {
 
     fun isShowShareIcon(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_SHARE_ICON] ?: true }
     suspend fun saveShowShareIcon(show: Boolean) { context.dataStore.edit { it[KEY_SHOW_SHARE_ICON] = show } }
+
+    fun isShowFullSizeIcon(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_FULL_SIZE_ICON] ?: false }
+    suspend fun saveShowFullSizeIcon(show: Boolean) { context.dataStore.edit { it[KEY_SHOW_FULL_SIZE_ICON] = show } }
 
     fun isDefaultLayoutGrid(): Flow<Boolean> = context.dataStore.data.map { it[KEY_DEFAULT_LAYOUT_GRID] ?: false }
 

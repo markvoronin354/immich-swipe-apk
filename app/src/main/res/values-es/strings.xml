@@ -133,6 +133,7 @@
     <string name="settings_mute_pos_label">Posición del botón Mute</string>
     <string name="settings_download_pos_label">Posición del botón Descargar</string>
     <string name="settings_share_pos_label">Posición del botón Compartir</string>
+    <string name="settings_full_size_pos_label">Posición del botón de resolución completa</string>
     <string name="settings_show_add_to_album_label">Botón Añadir a un álbum</string>
     <string name="settings_show_swipe_buttons_label">Mostrar botones Keep/Delete</string>
     <string name="settings_show_archive_label">Botón Archivar</string>
@@ -394,6 +395,7 @@
     <string name="cd_paused">En pausa</string>
     <string name="cd_download">Descargar</string>
     <string name="cd_share">Compartir</string>
+    <string name="cd_full_size">Cargar resolución completa</string>
     <string name="cd_favorite">Favorito</string>
     <string name="cd_video">Vídeo</string>
     <string name="cd_asset_info">Información del recurso</string>

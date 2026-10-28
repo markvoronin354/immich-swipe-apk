@@ -16,6 +16,7 @@ import com.markvoronin.immichswipe.core.SortOrder
 import com.markvoronin.immichswipe.core.SwipeBehavior
 import com.markvoronin.immichswipe.core.SwipeSettings
 import com.markvoronin.immichswipe.core.util.combine6
+import com.markvoronin.immichswipe.core.util.combine7
 import com.markvoronin.immichswipe.data.datastore.SessionDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -126,6 +127,10 @@ class SessionRepository @Inject constructor(
         it?.let { try { IconPosition.valueOf(it) } catch(_: Exception) { IconPosition.BOTTOM_RIGHT } } ?: IconPosition.BOTTOM_RIGHT
     }
 
+    val fullSizeButtonPosition: Flow<IconPosition> = dataStore.getFullSizeIconPosition().map {
+        it?.let { try { IconPosition.valueOf(it) } catch(_: Exception) { IconPosition.BOTTOM_LEFT } } ?: IconPosition.BOTTOM_LEFT
+    }
+
     val buttonStackOrientation: Flow<ButtonStackOrientation> = dataStore.getButtonStackOrientation().map {
         it?.let { try { ButtonStackOrientation.valueOf(it) } catch(_: Exception) { ButtonStackOrientation.VERTICAL } } ?: ButtonStackOrientation.VERTICAL
     }
@@ -137,6 +142,7 @@ class SessionRepository @Inject constructor(
     val showMuteButton: Flow<Boolean> = dataStore.isShowMuteIcon()
     val showDownloadButton: Flow<Boolean> = dataStore.isShowDownloadIcon()
     val showShareButton: Flow<Boolean> = dataStore.isShowShareIcon()
+    val showFullSizeButton: Flow<Boolean> = dataStore.isShowFullSizeIcon()
 
 
     val defaultLayoutGrid: Flow<Boolean> = dataStore.isDefaultLayoutGrid()
@@ -224,6 +230,10 @@ class SessionRepository @Inject constructor(
         dataStore.saveShareIconPosition(pos.name)
     }
 
+    suspend fun saveFullSizeButtonPosition(pos: IconPosition) {
+        dataStore.saveFullSizeIconPosition(pos.name)
+    }
+
     suspend fun saveButtonStackOrientation(orientation: ButtonStackOrientation) {
         dataStore.saveButtonStackOrientation(orientation.name)
     }
@@ -234,6 +244,7 @@ class SessionRepository @Inject constructor(
     suspend fun saveShowMuteButton(show: Boolean) { dataStore.saveShowMuteIcon(show) }
     suspend fun saveShowDownloadButton(show: Boolean) { dataStore.saveShowDownloadIcon(show) }
     suspend fun saveShowShareButton(show: Boolean) { dataStore.saveShowShareIcon(show) }
+    suspend fun saveShowFullSizeButton(show: Boolean) { dataStore.saveShowFullSizeIcon(show) }
 
 
     suspend fun saveDefaultLayoutGrid(isGrid: Boolean) {
@@ -289,24 +300,24 @@ class SessionRepository @Inject constructor(
      * small typed groups so nothing needs unchecked casts.
      */
     val swipeSettings: Flow<SwipeSettings> = combine(
-        combine6(
+        combine7(
             fullscreenButtonPosition, immichButtonPosition, cardDisplayButtonPosition,
-            muteButtonPosition, downloadButtonPosition, shareButtonPosition
-        ) { fullscreen, immich, rotation, mute, download, share ->
-            ButtonPositions(fullscreen, immich, rotation, mute, download, share)
+            muteButtonPosition, downloadButtonPosition, shareButtonPosition, fullSizeButtonPosition
+        ) { fullscreen, immich, rotation, mute, download, share, fullSize ->
+            ButtonPositions(fullscreen, immich, rotation, mute, download, share, fullSize)
         },
         combine(
-            combine6(
+            combine7(
                 showFullscreenButton, showImmichButton, showCardDisplayButton,
-                showMuteButton, showDownloadButton, showShareButton
-            ) { fullscreen, immich, rotation, mute, download, share ->
-                listOf(fullscreen, immich, rotation, mute, download, share)
+                showMuteButton, showDownloadButton, showShareButton, showFullSizeButton
+            ) { fullscreen, immich, rotation, mute, download, share, fullSize ->
+                listOf(fullscreen, immich, rotation, mute, download, share, fullSize)
             },
             showFavoriteButton, showLockButton, showArchiveButton, showSwipeButtons
         ) { first, favorite, lock, archive, swipeButtons ->
             ButtonVisibility(
                 fullscreen = first[0], immich = first[1], rotation = first[2],
-                mute = first[3], download = first[4], share = first[5],
+                mute = first[3], download = first[4], share = first[5], fullSize = first[6],
                 favorite = favorite, lock = lock, archive = archive, swipeButtons = swipeButtons
             )
         },
