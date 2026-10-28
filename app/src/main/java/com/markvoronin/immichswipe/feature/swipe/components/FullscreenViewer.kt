@@ -81,6 +81,7 @@ import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import com.markvoronin.immichswipe.feature.swipe.utils.findActivity
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
+import com.markvoronin.immichswipe.feature.swipe.utils.fullResolutionRequest
 import com.markvoronin.immichswipe.feature.swipe.utils.rotateLayout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -109,6 +110,7 @@ fun FullscreenViewer(
     showMuteButton: Boolean = true,
     rotation: Int = 0,
     baseUrl: String = "",
+    isFullSize: Boolean = false,
 ) {
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
@@ -600,17 +602,21 @@ fun FullscreenViewer(
                         label = "FullscreenRotation"
                     )
 
-                    val photoRequest = remember(asset.id, baseUrlClean, asset.isGif) {
-                        ImageRequest.Builder(context)
-                            .data(
-                                if (asset.isGif) "$baseUrlClean/api/assets/${asset.id}/original"
-                                else "$baseUrlClean/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview&edited=true"
-                            )
-                            .memoryCacheKey("${asset.id}-preview")
-                            .placeholderMemoryCacheKey("${asset.id}-preview")
-                            .crossfade(false)
-                            .precision(Precision.INEXACT)
-                            .build()
+                    val photoRequest = remember(asset.id, baseUrlClean, asset.isGif, isFullSize) {
+                        if (isFullSize) {
+                            fullResolutionRequest(context, baseUrlClean, asset)
+                        } else {
+                            ImageRequest.Builder(context)
+                                .data(
+                                    if (asset.isGif) "$baseUrlClean/api/assets/${asset.id}/original"
+                                    else "$baseUrlClean/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview&edited=true"
+                                )
+                                .memoryCacheKey("${asset.id}-preview")
+                                .placeholderMemoryCacheKey("${asset.id}-preview")
+                                .crossfade(false)
+                                .precision(Precision.INEXACT)
+                                .build()
+                        }
                     }
 
                     SubcomposeAsyncImage(

@@ -121,7 +121,7 @@ class SwipeViewModelTest {
             share = true, fullSize = false, favorite = true, lock = false, archive = true, swipeButtons = false
         ),
         behavior = SwipeBehavior(
-            PlaybackBehavior.PAUSE_OTHERS, autoNextOnFavorite, syncLocalDeletion, trashLocalDeletion, order, tapToSwipe = false
+            PlaybackBehavior.PAUSE_OTHERS, autoNextOnFavorite, syncLocalDeletion, trashLocalDeletion, order, tapToSwipe = false, keepFullResolution = false
         )
     )
 

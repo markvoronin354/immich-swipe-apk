@@ -134,6 +134,7 @@
     <string name="settings_download_pos_label">Download </string>
     <string name="settings_share_pos_label">Share</string>
     <string name="settings_full_size_pos_label">Full resolution</string>
+    <string name="settings_keep_full_resolution">Stay enabled while swiping</string>
     <string name="settings_show_add_to_album_label">Add to album button</string>
     <string name="settings_show_swipe_buttons_label">Keep/Delete buttons</string>
     <string name="settings_show_archive_label">Archive button</string>

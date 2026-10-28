@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Hd
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.HorizontalDivider
@@ -154,7 +155,37 @@ fun ActionButtonsScreen(
                 selectedPosition = uiState.fullSizeButtonPosition,
                 onPositionSelected = { viewModel.setFullSizeButtonPosition(it) },
                 showIcon = uiState.showFullSizeButton,
-                onShowIconChange = { viewModel.setShowFullSizeButton(it) }
+                onShowIconChange = { viewModel.setShowFullSizeButton(it) },
+                extraContent = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PushPin,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = stringResource(R.string.settings_keep_full_resolution),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Switch(
+                            checked = uiState.keepFullResolution,
+                            onCheckedChange = { viewModel.setKeepFullResolution(it) },
+                            modifier = Modifier.scale(0.8f)
+                        )
+                    }
+                }
             )
         }
 

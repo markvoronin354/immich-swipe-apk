@@ -134,6 +134,7 @@
     <string name="settings_download_pos_label">Posición del botón Descargar</string>
     <string name="settings_share_pos_label">Posición del botón Compartir</string>
     <string name="settings_full_size_pos_label">Posición del botón de resolución completa</string>
+    <string name="settings_keep_full_resolution">Mantener activado al deslizar</string>
     <string name="settings_show_add_to_album_label">Botón Añadir a un álbum</string>
     <string name="settings_show_swipe_buttons_label">Mostrar botones Keep/Delete</string>
     <string name="settings_show_archive_label">Botón Archivar</string>

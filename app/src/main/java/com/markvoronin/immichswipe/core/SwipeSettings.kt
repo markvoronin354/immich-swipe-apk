@@ -33,7 +33,8 @@ data class SwipeBehavior(
     val syncLocalDeletion: Boolean,
     val trashLocalDeletion: Boolean,
     val sortOrder: SortOrder,
-    val tapToSwipe: Boolean
+    val tapToSwipe: Boolean,
+    val keepFullResolution: Boolean
 )
 
 /** All user settings the swipe screen reacts to, as one typed value. */

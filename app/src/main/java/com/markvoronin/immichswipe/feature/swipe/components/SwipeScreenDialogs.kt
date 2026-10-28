@@ -9,6 +9,7 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.SortOrder
 import com.markvoronin.immichswipe.feature.swipe.SwipeUiState
 import com.markvoronin.immichswipe.feature.swipe.SwipeViewModel
+import com.markvoronin.immichswipe.feature.swipe.utils.supportsFullResolution
 
 @Composable
 fun SwipeScreenDialogs(
@@ -52,6 +53,7 @@ fun SwipeScreenDialogs(
             showMuteButton = true, // Mute button is always shown in fullscreen for videos
             rotation = uiState.getRotation(currentAsset.id),
             baseUrl = uiState.baseUrl,
+            isFullSize = uiState.isFullResolution && currentAsset.supportsFullResolution,
         )
     }
 
