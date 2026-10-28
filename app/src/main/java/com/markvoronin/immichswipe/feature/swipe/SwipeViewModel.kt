@@ -254,6 +254,8 @@ class SwipeViewModel @Inject constructor(
         }
     }
 
+    private var knownDbDecisionIds: Set<String> = emptySet()
+
     private suspend fun observeDecisionsAndAssets(userId: String) {
         combine(
             swipeDecisionRepository.getDecisionsForAlbum(_uiState.value.albumId, userId),
@@ -270,19 +272,25 @@ class SwipeViewModel @Inject constructor(
                 }
             val sizeMap = localDecisions.associate { it.assetId to (it.fileSize ?: 0L) }
             
-            val currentDecisions = _uiState.value.decisions.filterKeys { it in validAssetIds }
+            // Decisions the DB held on the previous emission but no longer does were removed elsewhere (e.g. duplicates screen reset)
+            val dbDecisionIds = localDecisions.mapTo(HashSet()) { it.assetId }
+            val removedExternally = knownDbDecisionIds - dbDecisionIds
+            knownDbDecisionIds = dbDecisionIds
+
+            val liveDecisions = _uiState.value.decisions.filterKeys { it in validAssetIds }
+            val currentDecisions = liveDecisions.filterKeys { it !in removedExternally }
             val currentSizes = _uiState.value.assetSizes
             val mergedDecisions = decisionMap + currentDecisions
             val mergedSizes = sizeMap + currentSizes
 
             val derivedHistory = if (_uiState.value.history.isEmpty()) {
                 localDecisions.filter { !it.isSynced && it.assetId in validAssetIds }.map { it.assetId }
-            } else _uiState.value.history.filter { it in validAssetIds }
+            } else _uiState.value.history.filter { it in validAssetIds && it !in removedExternally }
 
             val existingDetailsMap = masterWorkPile.associateBy { it.id }
             masterWorkPile = allAssetsFound.map { asset -> existingDetailsMap[asset.id] ?: asset }
             
-            val isResetting = localDecisions.isEmpty() && currentDecisions.isNotEmpty()
+            val isResetting = localDecisions.isEmpty() && liveDecisions.isNotEmpty()
             val shouldJump = pendingJumpToFirstUnprocessed || _uiState.value.assets.isEmpty() || isResetting
             if (shouldJump && !isInitialLoading) {
                 pendingJumpToFirstUnprocessed = false
