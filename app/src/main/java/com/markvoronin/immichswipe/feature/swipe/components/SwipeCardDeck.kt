@@ -43,6 +43,7 @@ import com.markvoronin.immichswipe.feature.swipe.SwipeUiState
 import com.markvoronin.immichswipe.feature.swipe.SwipeViewModel
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardActions
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardConfig
+import com.markvoronin.immichswipe.feature.swipe.utils.supportsFullResolution
 
 @Composable
 fun SwipeCardDeck(
@@ -125,6 +126,7 @@ fun SwipeCardDeck(
                             muteButtonPosition = uiState.muteButtonPosition,
                             downloadButtonPosition = uiState.downloadButtonPosition,
                             shareButtonPosition = uiState.shareButtonPosition,
+                            fullSizeButtonPosition = uiState.fullSizeButtonPosition,
                             buttonStackOrientation = uiState.buttonStackOrientation,
                             showFullscreenButton = uiState.showFullscreenButton,
                             showImmichButton = uiState.showImmichButton,
@@ -134,11 +136,13 @@ fun SwipeCardDeck(
                             showMuteButton = uiState.showMuteButton,
                             showDownloadButton = uiState.showDownloadButton,
                             showShareButton = uiState.showShareButton,
+                            showFullSizeButton = uiState.showFullSizeButton,
                             cardDisplayMode = uiState.cardDisplayMode,
                             tapToSwipeEnabled = uiState.tapToSwipeEnabled,
                             canUndo = !isBulk && uiState.history.isNotEmpty(),
                             showSizeIndicator = (uiState.sortOrder == SortOrder.SIZE_DESC) || (uiState.sortOrder == SortOrder.SIZE_ASC),
-                            rotationAngle = uiState.getRotation(asset.id)
+                            rotationAngle = uiState.getRotation(asset.id),
+                            isFullSize = uiState.isFullResolution && !isNextCard && asset.supportsFullResolution
                         ),
                         actions = SwipeCardActions(
                             onSwipe = { viewModel.onSwipe(it) },
@@ -160,6 +164,7 @@ fun SwipeCardDeck(
                             onDownload = { viewModel.downloadAsset(it) },
                             onShare = { viewModel.shareAsset(it) },
                             onToggleMute = { viewModel.toggleMute() },
+                            onToggleFullSize = { viewModel.toggleFullResolution() },
                             onSwipeOffsetChanged = { offset ->
                                 if (!isNextCard) {
                                     topCardOffsetX = offset

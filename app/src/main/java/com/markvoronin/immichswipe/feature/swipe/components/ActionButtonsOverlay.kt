@@ -17,6 +17,8 @@ import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.Hd
+import androidx.compose.material.icons.outlined.Hd
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,6 +32,7 @@ import com.markvoronin.immichswipe.core.ImmichLauncher
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardActions
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardConfig
+import com.markvoronin.immichswipe.feature.swipe.utils.supportsFullResolution
 
 @Composable
 fun ActionButtonsOverlay(
@@ -122,6 +125,17 @@ fun ActionButtonsOverlay(
                             contentDescription = stringResource(R.string.cd_share),
                             enabled = !isNext,
                             onClick = { actions.onShare(asset) }
+                        )
+                    }
+                }
+
+                if (config.showFullSizeButton && config.fullSizeButtonPosition == pos && asset.supportsFullResolution) {
+                    buttons.add {
+                        SwipeActionIconButton(
+                            icon = if (config.isFullSize) Icons.Default.Hd else Icons.Outlined.Hd,
+                            contentDescription = stringResource(R.string.cd_full_size),
+                            enabled = !isNext,
+                            onClick = actions.onToggleFullSize
                         )
                     }
                 }

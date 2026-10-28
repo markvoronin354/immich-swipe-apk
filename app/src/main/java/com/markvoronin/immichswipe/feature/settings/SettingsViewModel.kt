@@ -169,6 +169,11 @@ class SettingsViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            sessionRepository.keepFullResolution.collect { keep ->
+                _uiState.value = _uiState.value.copy(keepFullResolution = keep)
+            }
+        }
+        viewModelScope.launch {
             sessionRepository.showFavoriteButton.collect { show ->
                 _uiState.value = _uiState.value.copy(showFavoriteButton = show)
             }
@@ -364,6 +369,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setShowFullSizeButton(show: Boolean) {
         viewModelScope.launch { sessionRepository.saveShowFullSizeButton(show) }
+    }
+
+    fun setKeepFullResolution(keep: Boolean) {
+        viewModelScope.launch { sessionRepository.saveKeepFullResolution(keep) }
     }
 
     fun setShowFavorite(show: Boolean) {

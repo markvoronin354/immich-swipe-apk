@@ -92,6 +92,7 @@ import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardConfig
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
+import com.markvoronin.immichswipe.feature.swipe.utils.fullResolutionRequest
 import com.markvoronin.immichswipe.feature.swipe.utils.rotateLayout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -162,6 +163,7 @@ fun SwipeCard(
         mutableStateOf(asset.type == "VIDEO" && !(isSameAsset && providedPlayer.playbackState == Player.STATE_READY))
     }
     var showMuteIndicator by remember { mutableStateOf(value = false) }
+    var isFullSizeLoaded by remember(asset.id, config.isFullSize) { mutableStateOf(value = false) }
 
     LaunchedEffect(showMuteIndicator) {
         if (showMuteIndicator) {
@@ -659,18 +661,22 @@ fun SwipeCard(
                         )
                     }
                 } else {
-                    val photoRequest = remember(asset.id, baseUrl, asset.isGif) {
-                        ImageRequest.Builder(context)
-                            .data(
-                                if (asset.isGif) "$baseUrl/api/assets/${asset.id}/original"
-                                else "$baseUrl/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview&edited=true"
-                            )
-                            .memoryCacheKey("${asset.id}-preview")
-                            .placeholderMemoryCacheKey("${asset.id}-preview")
-                            .allowHardware(true)
-                            .crossfade(false)
-                            .precision(Precision.INEXACT)
-                            .build()
+                    val photoRequest = remember(asset.id, baseUrl, asset.isGif, config.isFullSize) {
+                        if (config.isFullSize) {
+                            fullResolutionRequest(context, baseUrl, asset)
+                        } else {
+                            ImageRequest.Builder(context)
+                                .data(
+                                    if (asset.isGif) "$baseUrl/api/assets/${asset.id}/original"
+                                    else "$baseUrl/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview&edited=true"
+                                )
+                                .memoryCacheKey("${asset.id}-preview")
+                                .placeholderMemoryCacheKey("${asset.id}-preview")
+                                .allowHardware(true)
+                                .crossfade(false)
+                                .precision(Precision.INEXACT)
+                                .build()
+                        }
                     }
                     ZoomableBox(
                         modifier = Modifier.fillMaxSize(),
@@ -764,9 +770,22 @@ fun SwipeCard(
                                 .fillMaxSize()
                                 .graphicsLayer { rotationZ = animatedRotation }
                                 .rotateLayout(config.rotationAngle),
+                            onSuccess = { isFullSizeLoaded = true },
+                            // Fall back to the preview rather than an error view when the original fails.
+                            onError = { if (config.isFullSize) actions.onToggleFullSize() },
                             error = {
                                 AssetErrorView()
                             }
+                        )
+                    }
+                }
+
+                if (config.isFullSize && !isFullSizeLoaded) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            strokeWidth = 3.dp,
+                            modifier = Modifier.size(40.dp)
                         )
                     }
                 }

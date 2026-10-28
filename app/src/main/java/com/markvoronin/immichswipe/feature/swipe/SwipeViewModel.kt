@@ -179,6 +179,8 @@ class SwipeViewModel @Inject constructor(
             downloadButtonPosition = pos.download,
             showShareButton = vis.share,
             shareButtonPosition = pos.share,
+            showFullSizeButton = vis.fullSize,
+            fullSizeButtonPosition = pos.fullSize,
             showSwipeButtons = vis.swipeButtons,
             autoNextOnFav = behavior.autoNextOnFavorite,
             showArchiveButton = vis.archive,
@@ -187,6 +189,7 @@ class SwipeViewModel @Inject constructor(
             sortOrder = order,
             sortCategory = category,
             tapToSwipeEnabled = behavior.tapToSwipe,
+            keepFullResolution = behavior.keepFullResolution,
             showFavoriteButton = vis.favorite,
             showLockButton = vis.lock
         )}
@@ -426,7 +429,8 @@ class SwipeViewModel @Inject constructor(
         _uiState.update { it.copy(
             currentIndex = nextIndex,
             decisions = newDecisions,
-            history = newHistory
+            history = newHistory,
+            isFullResolution = it.isFullResolution && it.keepFullResolution
         )}
 
         viewModelScope.launch {
@@ -454,7 +458,8 @@ class SwipeViewModel @Inject constructor(
         _uiState.update { it.copy(
             currentIndex = if (prevIndex != -1) prevIndex else it.currentIndex,
             history = newHistory,
-            decisions = newDecisions
+            decisions = newDecisions,
+            isFullResolution = it.isFullResolution && it.keepFullResolution
         )}
 
         viewModelScope.launch {
@@ -506,6 +511,7 @@ class SwipeViewModel @Inject constructor(
     fun toggleSummary(visible: Boolean) { _uiState.update { it.copy(showSummary = visible) } }
     fun toggleFullscreen(visible: Boolean) { _uiState.update { it.copy(isFullscreenMode = visible) } }
     fun toggleResetConfirmation(visible: Boolean) { _uiState.update { it.copy(showResetConfirmation = visible) } }
+    fun toggleFullResolution() { _uiState.update { it.copy(isFullResolution = !it.isFullResolution) } }
     fun toggleMute() { _uiState.update { it.copy(isMuted = !_uiState.value.isMuted) } }
 
     fun openAddToAlbumDialog() {

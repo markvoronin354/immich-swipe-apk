@@ -17,6 +17,7 @@ data class SwipeCardConfig(
     val muteButtonPosition: IconPosition,
     val downloadButtonPosition: IconPosition = IconPosition.TOP_LEFT,
     val shareButtonPosition: IconPosition = IconPosition.TOP_RIGHT,
+    val fullSizeButtonPosition: IconPosition = IconPosition.BOTTOM_LEFT,
     val buttonStackOrientation: ButtonStackOrientation = ButtonStackOrientation.VERTICAL,
     val showFullscreenButton: Boolean = true,
     val showImmichButton: Boolean = false,
@@ -24,13 +25,15 @@ data class SwipeCardConfig(
     val showMuteButton: Boolean = true,
     val showDownloadButton: Boolean = false,
     val showShareButton: Boolean = false,
+    val showFullSizeButton: Boolean = false,
     val immichOpenMode: ImmichOpenMode = ImmichOpenMode.APP,
     val immichLongPressWeb: Boolean = true,
     val cardDisplayMode: CardDisplayMode,
     val tapToSwipeEnabled: Boolean = false,
     val canUndo: Boolean = false,
     val showSizeIndicator: Boolean = false,
-    val rotationAngle: Int = 0
+    val rotationAngle: Int = 0,
+    val isFullSize: Boolean = false
 )
 
 data class SwipeCardActions(
@@ -42,5 +45,6 @@ data class SwipeCardActions(
     val onDownload: (Asset) -> Unit = {},
     val onShare: (Asset) -> Unit = {},
     val onToggleMute: () -> Unit = {},
+    val onToggleFullSize: () -> Unit = {},
     val onSwipeOffsetChanged: (Float) -> Unit = {}
 )

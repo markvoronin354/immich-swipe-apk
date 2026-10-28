@@ -128,7 +128,7 @@ class SessionRepository @Inject constructor(
     }
 
     val fullSizeButtonPosition: Flow<IconPosition> = dataStore.getFullSizeIconPosition().map {
-        it?.let { try { IconPosition.valueOf(it) } catch(_: Exception) { IconPosition.BOTTOM_LEFT } } ?: IconPosition.BOTTOM_LEFT
+        it?.let { try { IconPosition.valueOf(it) } catch(_: Exception) { IconPosition.BOTTOM_RIGHT } } ?: IconPosition.BOTTOM_RIGHT
     }
 
     val buttonStackOrientation: Flow<ButtonStackOrientation> = dataStore.getButtonStackOrientation().map {
@@ -143,6 +143,7 @@ class SessionRepository @Inject constructor(
     val showDownloadButton: Flow<Boolean> = dataStore.isShowDownloadIcon()
     val showShareButton: Flow<Boolean> = dataStore.isShowShareIcon()
     val showFullSizeButton: Flow<Boolean> = dataStore.isShowFullSizeIcon()
+    val keepFullResolution: Flow<Boolean> = dataStore.isKeepFullResolution()
 
 
     val defaultLayoutGrid: Flow<Boolean> = dataStore.isDefaultLayoutGrid()
@@ -245,6 +246,7 @@ class SessionRepository @Inject constructor(
     suspend fun saveShowDownloadButton(show: Boolean) { dataStore.saveShowDownloadIcon(show) }
     suspend fun saveShowShareButton(show: Boolean) { dataStore.saveShowShareIcon(show) }
     suspend fun saveShowFullSizeButton(show: Boolean) { dataStore.saveShowFullSizeIcon(show) }
+    suspend fun saveKeepFullResolution(keep: Boolean) { dataStore.saveKeepFullResolution(keep) }
 
 
     suspend fun saveDefaultLayoutGrid(isGrid: Boolean) {
@@ -321,11 +323,11 @@ class SessionRepository @Inject constructor(
                 favorite = favorite, lock = lock, archive = archive, swipeButtons = swipeButtons
             )
         },
-        combine6(
+        combine7(
             playbackBehavior, autoNextOnFav, syncLocalDeletion,
-            trashLocalDeletion, sortOrder, tapToSwipeEnabled
-        ) { playback, autoNext, sync, trash, order, tap ->
-            SwipeBehavior(playback, autoNext, sync, trash, order, tap)
+            trashLocalDeletion, sortOrder, tapToSwipeEnabled, keepFullResolution
+        ) { playback, autoNext, sync, trash, order, tap, keepFullResolution ->
+            SwipeBehavior(playback, autoNext, sync, trash, order, tap, keepFullResolution)
         }
     ) { positions, visibility, behavior ->
         SwipeSettings(positions, visibility, behavior)
