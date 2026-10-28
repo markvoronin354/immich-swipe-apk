@@ -124,7 +124,7 @@ fun ZoomableBox(
                         if (pressedCount >= 2) {
                             if (zoomChange != 1f || panChange != Offset.Zero) {
                                 val oldScale = if (resetOnRelease) animatedScale.value else scale
-                                val newScale = (oldScale * zoomChange).coerceIn(0.7f, 5f)
+                                val newScale = (oldScale * zoomChange).coerceIn(0.7f, 10f)
                                 val effectiveZoomChange = if (oldScale > 0.0001f) newScale / oldScale else 1f
 
                                 val oldOffset = if (resetOnRelease) animatedOffset.value else offset
