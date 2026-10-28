@@ -245,10 +245,12 @@ class DuplicatesViewModel @Inject constructor(
     }
 
     fun clearAllDecisions() {
-        val currentDecidedAssetIds = _uiState.value.decisions.keys.toList()
+        // Decisions are loaded for the whole user; only clear the ones for assets in duplicate clusters
+        val clusterAssetIds = _uiState.value.clusters.flatMap { cluster -> cluster.assets.map { it.id } }.toSet()
+        val currentDecidedAssetIds = _uiState.value.decisions.keys.filter { it in clusterAssetIds }
         _uiState.update { state ->
             state.copy(
-                decisions = emptyMap(),
+                decisions = state.decisions - currentDecidedAssetIds.toSet(),
                 selectedAutoSelectMode = null
             )
         }
