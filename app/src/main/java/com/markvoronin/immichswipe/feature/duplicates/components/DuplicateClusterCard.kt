@@ -91,69 +91,13 @@ fun DuplicateClusterCard(
                     .padding(bottom = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Text(
-                        text = "$sortedInCluster/${cluster.assets.size}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                Box(modifier = Modifier.weight(1f))
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Surface(
-                        onClick = onKeepAll,
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isAllKeep) Color(0xFF4CAF50) else Color(0xFF4CAF50).copy(alpha = 0.15f),
-                        contentColor = if (isAllKeep) Color.White else Color(0xFF4CAF50)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Text(
-                                text = stringResource(R.string.duplicates_keep_all),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    Surface(
-                        onClick = onDeleteAll,
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isAllDelete) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
-                        contentColor = if (isAllDelete) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.error
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Text(
-                                text = stringResource(R.string.duplicates_delete_all),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
+                Text(
+                    text = "$sortedInCluster/${cluster.assets.size}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
 
                 Box(
                     modifier = Modifier.weight(1f),
@@ -223,6 +167,67 @@ fun DuplicateClusterCard(
                                 onZoomStateUpdate = onZoomStateUpdate
                             )
                         }
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Surface(
+                    onClick = onKeepAll,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isAllKeep) Color(0xFF4CAF50) else Color(0xFF4CAF50).copy(alpha = 0.15f),
+                    contentColor = if (isAllKeep) Color.White else Color(0xFF4CAF50)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.duplicates_keep_all),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Surface(
+                    onClick = onDeleteAll,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isAllDelete) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
+                    contentColor = if (isAllDelete) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.error
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.duplicates_delete_all),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
