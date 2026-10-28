@@ -4,12 +4,13 @@ import android.content.Context
 import android.graphics.Bitmap
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
+import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.toBitmap
 import com.google.mediapipe.framework.image.BitmapImageBuilder
-import com.google.mediapipe.tasks.components.containers.NormalizedLandmark
+import com.google.mediapipe.tasks.components.containers.Category
 import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
@@ -18,11 +19,12 @@ import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.domain.model.Asset
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.math.pow
-import kotlin.math.sqrt
+import kotlin.math.roundToInt
 
 @Singleton
 class BestShotAnalyzer @Inject constructor(
@@ -46,7 +48,8 @@ class BestShotAnalyzer @Inject constructor(
             val options = FaceLandmarkerOptions.builder()
                 .setBaseOptions(BaseOptions.builder().setModelAssetPath("face_landmarker.task").build())
                 .setRunningMode(RunningMode.IMAGE)
-                .setNumFaces(3)
+                .setNumFaces(MAX_FACES)
+                .setOutputFaceBlendshapes(true)
                 .build()
             FaceLandmarker.createFromOptions(context, options).also { faceLandmarker = it }
         } catch (e: Exception) {
@@ -62,13 +65,55 @@ class BestShotAnalyzer @Inject constructor(
         faceLandmarker = null
     }
 
+    private companion object {
+        const val TAG = "BestShotAnalyzer"
+        const val MAX_FACES = 30
+        // Blendshapes are noise on faces smaller than this many pixels wide.
+        const val MIN_FACE_PX = 48
+        // Originals are scaled down to fit this, which also bounds the decoded bitmap to about 50 MB.
+        const val DEEP_MAX_SIDE = 4096
+        const val ANALYSIS_SIDE = 1024
+    }
+
+    // Pixel box of a detected face in the coordinates of the full image being analyzed.
+    private class Face(
+        val left: Float,
+        val top: Float,
+        val right: Float,
+        val bottom: Float,
+        val blendshapes: List<Category>
+    ) {
+        val width get() = right - left
+        val centerX get() = (left + right) / 2f
+        val centerY get() = (top + bottom) / 2f
+
+        fun containsCenterOf(other: Face) =
+            other.centerX in left..right && other.centerY in top..bottom
+
+        // Faces cut by the tile edge give unreliable blendshapes and are found whole by a neighbouring tile.
+        fun isWithin(tile: Tile) =
+            left > tile.x && top > tile.y && right < tile.x + tile.width && bottom < tile.y + tile.height
+
+        fun isCentredIn(tile: Tile) =
+            centerX >= tile.cellLeft && centerX < tile.cellRight && centerY >= tile.cellTop && centerY < tile.cellBottom
+    }
+
     data class AssetScore(
         val assetId: String,
         val totalScore: Float,
         val hasFaces: Boolean,
         val sharpnessScore: Float,
-        val avgEar: Float?,
-        val avgMar: Float?
+        val eyesOpen: Float?,
+        val smile: Float?,
+        // False when the image could not be loaded; such assets are never recommended for deletion.
+        val analyzed: Boolean = true
+    )
+
+    private data class Measurement(
+        val asset: Asset,
+        val sharpness: Float,
+        val eyesOpen: Float?,
+        val smile: Float?
     )
 
     enum class BestShotMode {
@@ -78,44 +123,85 @@ class BestShotAnalyzer @Inject constructor(
         TOP_3
     }
 
-    suspend fun analyzeCluster(assets: List<Asset>, baseUrl: String): List<AssetScore> = withContext(Dispatchers.Default) {
-        if (assets.isEmpty()) return@withContext emptyList()
+    suspend fun analyzeCluster(assets: List<Asset>, baseUrl: String): List<AssetScore> =
+        scoreCluster(assets) { asset ->
+            fetchThumbnailBitmap(asset, baseUrl)?.let { measureAsset(asset, it) }
+        }
 
-        val scores = assets.map { asset ->
-            if (asset.type.equals("VIDEO", ignoreCase = true)) {
-                analyzeVideoAsset(asset)
-            } else {
-                val bitmap = fetchThumbnailBitmap(asset, baseUrl)
-                if (bitmap != null) {
-                    analyzeAsset(asset, bitmap)
-                } else {
-                    analyzeVideoAsset(asset)
+    /**
+     * Like [analyzeCluster], but downloads the originals and searches them tile by tile, which is the
+     * only way to read the faces in a large group photo. Costs one full-size download per photo.
+     */
+    suspend fun analyzeClusterDeep(assets: List<Asset>, baseUrl: String): List<AssetScore> =
+        scoreCluster(assets) { asset ->
+            fetchOriginalBitmap(asset, baseUrl)?.let { original ->
+                try {
+                    measureDeep(asset, original)
+                } finally {
+                    original.recycle()
                 }
             }
         }
 
-        scores.sortedByDescending { it.totalScore }
+    private suspend fun scoreCluster(
+        assets: List<Asset>,
+        measure: suspend (Asset) -> Measurement?
+    ): List<AssetScore> = withContext(Dispatchers.Default) {
+        if (assets.isEmpty()) return@withContext emptyList()
+
+        val scores = mutableListOf<AssetScore>()
+        val measurements = mutableListOf<Measurement>()
+        assets.forEach { asset ->
+            if (asset.type.equals("VIDEO", ignoreCase = true)) {
+                scores += analyzeVideoAsset(asset)
+            } else {
+                val measurement = measure(asset)
+                if (measurement != null) {
+                    measurements += measurement
+                } else {
+                    scores += AssetScore(asset.id, 0f, hasFaces = false, 0f, null, null, analyzed = false)
+                }
+            }
+        }
+
+        // Sharpness only matters relative to the other shots of the same scene.
+        val maxSharpness = measurements.maxOfOrNull { it.sharpness } ?: 0f
+        measurements.mapTo(scores) { scoreMeasurement(it, maxSharpness) }
+        scores.forEach {
+            AppLogger.d(
+                TAG,
+                "${it.assetId}: score=%.3f eyes=%s smile=%s sharpness=%.2f".format(
+                    it.totalScore, it.eyesOpen?.let { v -> "%.2f".format(v) }, it.smile?.let { v -> "%.2f".format(v) }, it.sharpnessScore
+                )
+            )
+        }
+
+        scores.sortedWith(byBestFirst)
     }
 
     fun selectKeptAssetIds(scores: List<AssetScore>, mode: BestShotMode): Set<String> {
         if (scores.isEmpty()) return emptySet()
 
-        val sortedScores = scores.sortedByDescending { it.totalScore }
+        // Assets that could not be analyzed are always kept rather than guessed at.
+        val unanalyzedIds = scores.filterNot { it.analyzed }.map { it.assetId }.toSet()
+        val sortedScores = scores.filter { it.analyzed }.sortedWith(byBestFirst)
+        if (sortedScores.isEmpty()) return unanalyzedIds
         val topScore = sortedScores.first().totalScore
+        // At least one shot of a cluster is always left for deletion.
+        val maxKeepLimit = maxOf(1, sortedScores.size - 1)
 
-        return when (mode) {
+        return unanalyzedIds + when (mode) {
             BestShotMode.SINGLE_BEST -> {
                 setOf(sortedScores.first().assetId)
             }
             BestShotMode.TOP_2 -> {
-                sortedScores.take(2).map { it.assetId }.toSet()
+                sortedScores.take(minOf(2, maxKeepLimit)).map { it.assetId }.toSet()
             }
             BestShotMode.TOP_3 -> {
-                sortedScores.take(3).map { it.assetId }.toSet()
+                sortedScores.take(minOf(3, maxKeepLimit)).map { it.assetId }.toSet()
             }
             BestShotMode.AUTO -> {
                 val scoreThreshold = maxOf(0f, topScore - 0.05f)
-                val maxKeepLimit = maxOf(2, sortedScores.size - 1)
 
                 val topTierAssets = sortedScores.filter { it.totalScore >= scoreThreshold }
                 if (topTierAssets.isNotEmpty()) {
@@ -127,6 +213,9 @@ class BestShotAnalyzer @Inject constructor(
         }
     }
 
+    // Ties are common once scores saturate, so fall back to sharpness rather than input order.
+    private val byBestFirst = compareByDescending<AssetScore> { it.totalScore }.thenByDescending { it.sharpnessScore }
+
     private fun analyzeVideoAsset(asset: Asset): AssetScore {
         val fileSize = asset.exifInfo?.fileSizeInBytes ?: 0L
         val fileSizeScore = (fileSize.toFloat() / (100 * 1024 * 1024f)).coerceIn(0f, 1f)
@@ -136,83 +225,136 @@ class BestShotAnalyzer @Inject constructor(
             totalScore = score,
             hasFaces = false,
             sharpnessScore = 0f,
-            avgEar = null,
-            avgMar = null
+            eyesOpen = null,
+            smile = null
         )
     }
 
-    private suspend fun fetchThumbnailBitmap(asset: Asset, baseUrl: String): Bitmap? = withContext(Dispatchers.IO) {
-        val request = ImageRequest.Builder(context)
+    private suspend fun fetchThumbnailBitmap(asset: Asset, baseUrl: String): Bitmap? =
+        ImageRequest.Builder(context)
             .data("${baseUrl.removeSuffix("/")}/api/assets/${asset.id}/thumbnail?size=preview")
-            .size(512) // Limit size for performance
+            .size(ANALYSIS_SIDE) // Limit size for performance
             .allowHardware(false) // Software bitmap for pixel access
             .build()
+            .loadBitmap()
 
-        val result = imageLoader.execute(request)
-        if (result is SuccessResult) {
-            result.image.toBitmap()
-        } else {
+    private suspend fun fetchOriginalBitmap(asset: Asset, baseUrl: String): Bitmap? =
+        ImageRequest.Builder(context)
+            .data("${baseUrl.removeSuffix("/")}/api/assets/${asset.id}/original")
+            // Coil also scales up to fit, so never ask for more than the original has.
+            .size(minOf(DEEP_MAX_SIDE, asset.longSidePx() ?: DEEP_MAX_SIDE))
+            .allowHardware(false)
+            // A one-off multi-megabyte original should not push the thumbnails the app relies on out of the caches.
+            .memoryCachePolicy(CachePolicy.DISABLED)
+            .diskCachePolicy(CachePolicy.DISABLED)
+            .build()
+            .loadBitmap()
+
+    private suspend fun ImageRequest.loadBitmap(): Bitmap? = withContext(Dispatchers.IO) {
+        try {
+            val result = imageLoader.execute(this@loadBitmap)
+            if (result is SuccessResult) result.image.toBitmap() else null
+        } catch (e: OutOfMemoryError) {
+            AppLogger.e(TAG, "Out of memory decoding $data", e)
             null
         }
     }
 
     // The MediaPipe task is not thread-safe, so detection is serialized.
     @Synchronized
-    private fun analyzeAsset(asset: Asset, bitmap: Bitmap): AssetScore {
-        val mpImage = BitmapImageBuilder(bitmap).build()
-        val result = landmarker()?.detect(mpImage)
-        
-        val sharpness = calculateSharpness(bitmap)
+    private fun detectFaces(bitmap: Bitmap, offsetX: Float = 0f, offsetY: Float = 0f, scale: Float = 1f): List<Face> {
+        val result = landmarker()?.detect(BitmapImageBuilder(bitmap).build()) ?: return emptyList()
+        val blendshapes = result.faceBlendshapes().orElse(null) ?: return emptyList()
+        return result.faceLandmarks().zip(blendshapes) { landmarks, shapes ->
+            Face(
+                left = offsetX + landmarks.minOf { it.x() } * bitmap.width * scale,
+                top = offsetY + landmarks.minOf { it.y() } * bitmap.height * scale,
+                right = offsetX + landmarks.maxOf { it.x() } * bitmap.width * scale,
+                bottom = offsetY + landmarks.maxOf { it.y() } * bitmap.height * scale,
+                blendshapes = shapes
+            )
+        }
+    }
 
-        if (result == null || result.faceLandmarks().isEmpty()) {
-            val score = (sharpness * 0.7f) + (asset.resolutionScore() * 0.3f)
-            return AssetScore(asset.id, score, hasFaces = false, sharpness, null, null)
+    private fun measureAsset(asset: Asset, bitmap: Bitmap): Measurement {
+        val sharpness = calculateSharpness(bitmap)
+        val detected = detectFaces(bitmap)
+        // Only faces big enough to read are scored; the rest are just logged.
+        val faces = detected.filter { it.width >= MIN_FACE_PX }
+        AppLogger.d(
+            TAG,
+            "${asset.id}: ${bitmap.width}x${bitmap.height}, ${detected.size} faces detected, " +
+                "${faces.size} usable, widths(px)=${detected.map { it.width.toInt() }}"
+        )
+        return summarize(asset, sharpness, faces)
+    }
+
+    private suspend fun measureDeep(asset: Asset, original: Bitmap): Measurement {
+        val startedAt = System.currentTimeMillis()
+
+        // The normal-size pass still catches the large faces, which a tile would cut in half.
+        val shrink = ANALYSIS_SIDE.toFloat() / maxOf(original.width, original.height)
+        val overview = if (shrink < 1f) {
+            Bitmap.createScaledBitmap(
+                original,
+                (original.width * shrink).roundToInt().coerceAtLeast(1),
+                (original.height * shrink).roundToInt().coerceAtLeast(1),
+                true
+            )
+        } else {
+            original
+        }
+        val sharpness = calculateSharpness(overview)
+        val large = detectFaces(overview, scale = original.width.toFloat() / overview.width)
+        if (overview !== original) overview.recycle()
+
+        val tiles = tilesFor(original.width, original.height)
+        val small = mutableListOf<Face>()
+        for (tile in tiles) {
+            currentCoroutineContext().ensureActive()
+            val crop = Bitmap.createBitmap(original, tile.x, tile.y, tile.width, tile.height)
+            try {
+                detectFaces(crop, tile.x.toFloat(), tile.y.toFloat()).filterTo(small) { face ->
+                    face.isWithin(tile) && face.isCentredIn(tile) && large.none { it.containsCenterOf(face) }
+                }
+            } finally {
+                if (crop !== original) crop.recycle()
+            }
         }
 
-        val faces = result.faceLandmarks()
-        
-        val earScores = faces.map { calculateEAR(it) }
-        val marScores = faces.map { calculateMAR(it) }
-        
-        val avgEar = earScores.average().toFloat()
-        val avgMar = marScores.average().toFloat()
-        
-        // Penalize blinking heavily. Normalize EAR (usually around 0.2 - 0.35). If EAR < 0.2, eyes might be closed.
-        val earScore = (avgEar / 0.3f).coerceIn(0f, 1f)
-        
-        // Smiles. Normalize MAR. Smiling tends to increase MAR slightly or change shape, but basic MAR > 0.1 usually means mouth open/smiling.
-        val marScore = (avgMar / 0.2f).coerceIn(0f, 1f)
-
-        val faceScore = (earScore * 0.6f) + (marScore * 0.2f) + (sharpness * 0.1f) + (asset.resolutionScore() * 0.1f)
-        
-        return AssetScore(asset.id, faceScore, hasFaces = true, sharpness, avgEar, avgMar)
+        val faces = (large + small).filter { it.width >= MIN_FACE_PX }
+        AppLogger.d(
+            TAG,
+            "${asset.id}: deep ${original.width}x${original.height} " +
+                "(original ${asset.exifInfo?.imageWidth}x${asset.exifInfo?.imageHeight}), ${tiles.size} tiles, " +
+                "${large.size} large + ${small.size} small faces detected, ${faces.size} usable, " +
+                "${System.currentTimeMillis() - startedAt} ms"
+        )
+        return summarize(asset, sharpness, faces)
     }
 
-    private fun distance(p1: NormalizedLandmark, p2: NormalizedLandmark): Float {
-        return sqrt((p1.x() - p2.x()).pow(2) + (p1.y() - p2.y()).pow(2))
+    private fun summarize(asset: Asset, sharpness: Float, faces: List<Face>): Measurement {
+        if (faces.isEmpty()) return Measurement(asset, sharpness, null, null)
+
+        // Averaged rather than taking the worst face: the number of faces found differs between shots,
+        // and a minimum would penalize the shot that simply found more of them.
+        val eyesOpen = faces.map { 1f - (it.blendshapes.blendshape("eyeBlinkLeft") + it.blendshapes.blendshape("eyeBlinkRight")) / 2f }
+            .average().toFloat()
+        val smile = faces.map { (it.blendshapes.blendshape("mouthSmileLeft") + it.blendshapes.blendshape("mouthSmileRight")) / 2f }
+            .average().toFloat()
+        return Measurement(asset, sharpness, eyesOpen, smile)
     }
 
-    private fun calculateEAR(landmarks: List<NormalizedLandmark>): Float {
-        // Left Eye
-        val leftV1 = distance(landmarks[159], landmarks[145])
-        val leftV2 = distance(landmarks[158], landmarks[153])
-        val leftH = distance(landmarks[33], landmarks[133])
-        val leftEar = (leftV1 + leftV2) / (2.0f * leftH)
+    private fun List<Category>.blendshape(name: String): Float =
+        firstOrNull { it.categoryName() == name }?.score() ?: 0f
 
-        // Right Eye
-        val rightV1 = distance(landmarks[386], landmarks[374])
-        val rightV2 = distance(landmarks[385], landmarks[373])
-        val rightH = distance(landmarks[362], landmarks[263])
-        val rightEar = (rightV1 + rightV2) / (2.0f * rightH)
-
-        return (leftEar + rightEar) / 2.0f
-    }
-
-    private fun calculateMAR(landmarks: List<NormalizedLandmark>): Float {
-        val v1 = distance(landmarks[13], landmarks[14])
-        val v2 = distance(landmarks[81], landmarks[178])
-        val h = distance(landmarks[78], landmarks[308])
-        return (v1 + v2) / (2.0f * h)
+    private fun scoreMeasurement(m: Measurement, maxSharpness: Float): AssetScore {
+        val relativeSharpness = if (maxSharpness > 0f) m.sharpness / maxSharpness else 0f
+        // Shots without a detected face use a neutral eye score, so a lost face ranks below an
+        // open-eyed one but above a blink.
+        val score = ((m.eyesOpen ?: 0.5f) * 0.5f) + ((m.smile ?: 0f) * 0.2f) +
+            (relativeSharpness * 0.2f) + (m.asset.resolutionScore() * 0.1f)
+        return AssetScore(m.asset.id, score, m.eyesOpen != null, relativeSharpness, m.eyesOpen, m.smile)
     }
 
     private fun calculateSharpness(bitmap: Bitmap): Float {
@@ -253,10 +395,11 @@ class BestShotAnalyzer @Inject constructor(
         val mean = sumLaplacian / count
         val variance = (sumLaplacianSq / count) - (mean * mean)
 
-        // Normalize variance somewhat (varies a lot, usually 0 to 2000+)
-        // Cap at 2000 for normalization
-        return (variance / 2000.0).coerceIn(0.0, 1.0).toFloat()
+        return variance.toFloat()
     }
+
+    private fun Asset.longSidePx(): Int? =
+        maxOf(exifInfo?.imageWidth ?: 0, exifInfo?.imageHeight ?: 0).takeIf { it > 0 }
 
     private fun Asset.resolutionScore(): Float {
         val width = exifInfo?.imageWidth ?: 0
@@ -264,5 +407,46 @@ class BestShotAnalyzer @Inject constructor(
         val res = (width * height).toFloat()
         // Max expected is around 24MP (6000x4000) = 24,000,000
         return (res / 24_000_000f).coerceIn(0f, 1f)
+    }
+}
+
+private const val TILE_PX = 512
+private const val TILE_OVERLAP = 256
+private const val TILE_STRIDE = TILE_PX - TILE_OVERLAP
+
+/**
+ * A square crop of the image to run face detection on, plus the [cell] of the image it is responsible for.
+ * Cells partition the image, so a face is only counted by the one tile its centre falls in, while the
+ * overlap around each cell lets that tile see the whole face.
+ */
+internal class Tile(
+    val x: Int,
+    val y: Int,
+    val width: Int,
+    val height: Int,
+    val cellLeft: Int,
+    val cellTop: Int,
+    val cellRight: Int,
+    val cellBottom: Int
+)
+
+internal fun tilesFor(width: Int, height: Int): List<Tile> {
+    val columns = tileSpans(width)
+    val rows = tileSpans(height)
+    return rows.flatMap { row ->
+        columns.map { column ->
+            Tile(column.start, row.start, column.size, row.size, column.cellStart, row.cellStart, column.cellEnd, row.cellEnd)
+        }
+    }
+}
+
+private class TileSpan(val start: Int, val size: Int, val cellStart: Int, val cellEnd: Int)
+
+private fun tileSpans(length: Int): List<TileSpan> {
+    if (length <= TILE_PX) return listOf(TileSpan(0, length, 0, length))
+    val size = TILE_PX
+    return (0 until length step TILE_STRIDE).map { cellStart ->
+        val start = (cellStart - TILE_OVERLAP / 2).coerceIn(0, length - size)
+        TileSpan(start, size, cellStart, minOf(cellStart + TILE_STRIDE, length))
     }
 }

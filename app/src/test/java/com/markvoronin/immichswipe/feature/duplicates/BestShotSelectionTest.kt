@@ -33,8 +33,13 @@ class BestShotSelectionTest {
     }
 
     @Test
-    fun `top n keeps everything when the cluster is smaller than n`() {
-        assertEquals(setOf("a", "b"), select(BestShotMode.TOP_3, score("a", 0.2f), score("b", 0.9f)))
+    fun `top n always leaves one shot of the cluster to delete`() {
+        assertEquals(setOf("b"), select(BestShotMode.TOP_2, score("a", 0.2f), score("b", 0.9f)))
+        assertEquals(setOf("b"), select(BestShotMode.TOP_3, score("a", 0.2f), score("b", 0.9f)))
+        assertEquals(
+            setOf("b", "c"),
+            select(BestShotMode.TOP_3, score("a", 0.2f), score("b", 0.9f), score("c", 0.5f))
+        )
     }
 
     @Test
@@ -53,8 +58,27 @@ class BestShotSelectionTest {
     }
 
     @Test
-    fun `auto keeps both shots of a tied pair`() {
-        assertEquals(setOf("a", "b"), select(BestShotMode.AUTO, score("a", 0.9f), score("b", 0.9f)))
+    fun `auto keeps only one shot of a tied pair`() {
+        assertEquals(1, select(BestShotMode.AUTO, score("a", 0.9f), score("b", 0.9f)).size)
+    }
+
+    @Test
+    fun `ties are broken by sharpness`() {
+        val kept = select(
+            BestShotMode.SINGLE_BEST,
+            AssetScore("soft", 0.9f, false, 0.4f, null, null), AssetScore("sharp", 0.9f, false, 0.8f, null, null)
+        )
+        assertEquals(setOf("sharp"), kept)
+    }
+
+    @Test
+    fun `assets that could not be analyzed are always kept`() {
+        val failed = AssetScore("failed", 0f, false, 0f, null, null, analyzed = false)
+        assertEquals(
+            setOf("a", "failed"),
+            select(BestShotMode.SINGLE_BEST, score("a", 0.9f), score("b", 0.2f), failed)
+        )
+        assertEquals(setOf("failed"), select(BestShotMode.AUTO, failed))
     }
 
     @Test
