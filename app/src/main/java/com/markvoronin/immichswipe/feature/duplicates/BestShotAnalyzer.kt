@@ -49,6 +49,8 @@ class BestShotAnalyzer @Inject constructor(
                 .setBaseOptions(BaseOptions.builder().setModelAssetPath("face_landmarker.task").build())
                 .setRunningMode(RunningMode.IMAGE)
                 .setNumFaces(MAX_FACES)
+                .setMinFaceDetectionConfidence(MIN_FACE_CONFIDENCE)
+                .setMinFacePresenceConfidence(MIN_FACE_CONFIDENCE)
                 .setOutputFaceBlendshapes(true)
                 .build()
             FaceLandmarker.createFromOptions(context, options).also { faceLandmarker = it }
@@ -68,6 +70,8 @@ class BestShotAnalyzer @Inject constructor(
     private companion object {
         const val TAG = "BestShotAnalyzer"
         const val MAX_FACES = 30
+        // Below MediaPipe's 0.5 default so small, soft faces in the 1024px preview are still found.
+        const val MIN_FACE_CONFIDENCE = 0.3f
         // Blendshapes are noise on faces smaller than this many pixels wide.
         const val MIN_FACE_PX = 48
         // Originals are scaled down to fit this, which also bounds the decoded bitmap to about 50 MB.
