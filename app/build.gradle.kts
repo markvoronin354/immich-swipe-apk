@@ -8,7 +8,7 @@ plugins {
 
 // Opt-in: ./gradlew assembleRelease -PabiSplits=true builds one small APK per CPU type plus a universal
 // one (for GitHub releases). Default builds, the Play bundle and F-Droid are unaffected.
-val abiSplitsEnabled = providers.gradleProperty("abiSplits").isPresent
+val abiSplitsEnabled = providers.gradleProperty("abiSplits").orNull == "true"
 
 android {
     namespace = "com.markvoronin.immichswipe"
