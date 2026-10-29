@@ -8,6 +8,7 @@ import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
+import coil3.request.transformations
 import coil3.toBitmap
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.tasks.components.containers.Category
@@ -17,6 +18,7 @@ import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker.FaceLandmarkerOptions
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.domain.model.Asset
+import com.markvoronin.immichswipe.feature.swipe.utils.rawOrientationTransformation
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
@@ -251,6 +253,8 @@ class BestShotAnalyzer @Inject constructor(
             // A one-off multi-megabyte original should not push the thumbnails the app relies on out of the caches.
             .memoryCachePolicy(CachePolicy.DISABLED)
             .diskCachePolicy(CachePolicy.DISABLED)
+            // A RAW original is decoded sideways, which the face detector cannot read.
+            .apply { asset.rawOrientationTransformation()?.let { transformations(it) } }
             .build()
             .loadBitmap()
 
