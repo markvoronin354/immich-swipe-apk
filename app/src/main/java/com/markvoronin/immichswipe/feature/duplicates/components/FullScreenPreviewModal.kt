@@ -144,8 +144,12 @@ fun FullScreenPreviewModal(
     val currentOnDecisionToggle by rememberUpdatedState(onDecisionToggle)
     val currentOnFavoriteToggle by rememberUpdatedState(onFavoriteToggle)
 
+    // Set when swiping back from the first asset, so the previous cluster opens on its last asset.
+    var enterClusterAtLast by remember(previewData) { mutableStateOf(false) }
     val initialIndex = remember(currentCluster.clusterId, previewData) {
-        if (currentCluster.clusterId == previewData.cluster.clusterId) {
+        if (enterClusterAtLast) {
+            assets.size - 1
+        } else if (currentCluster.clusterId == previewData.cluster.clusterId) {
             previewData.initialIndex.coerceIn(0, assets.size - 1)
         } else {
             0
@@ -295,6 +299,7 @@ fun FullScreenPreviewModal(
     val clusterSlide = remember { Animatable(0f) }
     var lastClusterIdx by remember(previewData) { mutableIntStateOf(currentClusterIdx) }
     LaunchedEffect(currentClusterIdx) {
+        enterClusterAtLast = false
         if (currentClusterIdx == lastClusterIdx) return@LaunchedEffect
         val direction = if (currentClusterIdx > lastClusterIdx) 1f else -1f
         lastClusterIdx = currentClusterIdx
@@ -656,6 +661,7 @@ fun FullScreenPreviewModal(
                                         if (selectedIndex > 0) {
                                             selectedIndex--
                                         } else if (currentClusterIdx > 0) {
+                                            enterClusterAtLast = true
                                             currentClusterIdx--
                                         }
                                     }
