@@ -127,7 +127,8 @@ fun SwipeCard(
     val offsetX = remember(asset.id) { Animatable(0f) }
     // A card restored by undo starts below the screen and springs up into the stack.
     val offsetY = remember(asset.id) { Animatable(if (enterFromBelow && !isNext) 1500f else 0f) }
-    val panelProgress = remember(asset.id) { Animatable(0f) }
+    // Bounded so the bouncy springs can't carry the metadata panel past fully open or fully closed.
+    val panelProgress = remember(asset.id) { Animatable(0f).apply { updateBounds(0f, 1f) } }
     // The card's own colour is drawn first so transparent letterbox pixels don't smear into the glass.
     val cardColor = CardDefaults.cardColors().containerColor
     val glassBackdrop = rememberLayerBackdrop {
