@@ -81,6 +81,8 @@ import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.request.crossfade
 import coil3.size.Precision
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.CardDisplayMode
@@ -126,6 +128,12 @@ fun SwipeCard(
     // A card restored by undo starts below the screen and springs up into the stack.
     val offsetY = remember(asset.id) { Animatable(if (enterFromBelow && !isNext) 1500f else 0f) }
     val panelProgress = remember(asset.id) { Animatable(0f) }
+    // The card's own colour is drawn first so transparent letterbox pixels don't smear into the glass.
+    val cardColor = CardDefaults.cardColors().containerColor
+    val glassBackdrop = rememberLayerBackdrop {
+        drawRect(cardColor)
+        drawContent()
+    }
     var isEnteringFromBelow by remember(asset.id) { mutableStateOf(offsetY.value != 0f) }
 
     // Albums containing this asset, fetched the first time its metadata panel is opened.
@@ -506,6 +514,8 @@ fun SwipeCard(
                     .fillMaxSize()
                     .clip(RoundedCornerShape(16.dp))
             ) {
+                // Everything inside is recorded live so the metadata panel can refract it.
+                Box(modifier = Modifier.fillMaxSize().layerBackdrop(glassBackdrop)) {
                 if (asset.type == "VIDEO") {
                     val placeholderRequest = remember(asset.id, baseUrl) {
                         ImageRequest.Builder(context)
@@ -844,6 +854,7 @@ fun SwipeCard(
                         showMuteIndicator = true
                     }
                 )
+                }
 
                 if (!isNext) {
                     Box(
@@ -865,6 +876,7 @@ fun SwipeCard(
                             MetadataPanel(
                                 asset = asset,
                                 albumNames = albumNames,
+                                backdrop = glassBackdrop,
                                 onClose = {
                                     scope.launch {
                                         offsetX.animateTo(

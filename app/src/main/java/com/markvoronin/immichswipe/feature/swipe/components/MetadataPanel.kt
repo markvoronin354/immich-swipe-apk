@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -44,6 +45,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.effects.blur
+import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.effects.vibrancy
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
@@ -52,6 +58,7 @@ import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 fun MetadataPanel(
     asset: Asset,
     albumNames: List<String>?,
+    backdrop: Backdrop,
     onClose: () -> Unit,
     onDrag: (Float) -> Unit = {},
     onDragEnd: (Float) -> Unit = {},
@@ -103,12 +110,28 @@ fun MetadataPanel(
         }
     }
 
+    // Same corner radius as the swipe card so the panel sits exactly on top of it. The lens effect needs every
+    // corner rounded and its height can't exceed that radius.
+    val panelShape = RoundedCornerShape(16.dp)
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .nestedScroll(nestedScrollConnection),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            .nestedScroll(nestedScrollConnection)
+            .drawBackdrop(
+                backdrop = backdrop,
+                shape = { panelShape },
+                // The default rim highlight and drop shadow trace the edge and read as a seam against the card.
+                highlight = null,
+                shadow = null,
+                effects = {
+                    vibrancy()
+                    blur(4.dp.toPx())
+                    lens(16.dp.toPx(), 32.dp.toPx(), true)
+                },
+                onDrawSurface = { drawRect(Color.Black.copy(alpha = 0.25f)) }
+            ),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent, contentColor = Color.White),
+        shape = panelShape
     ) {
         Column(
             modifier = Modifier
@@ -116,13 +139,13 @@ fun MetadataPanel(
                 .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp)
                 .verticalScroll(scrollState)
         ) {
-            Box(modifier = Modifier.size(40.dp, 4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.outlineVariant).align(Alignment.CenterHorizontally))
+            Box(modifier = Modifier.size(40.dp, 4.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.55f)).align(Alignment.CenterHorizontally))
             Spacer(Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(text = stringResource(R.string.swipe_metadata_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 IconButton(onClick = onClose) { Icon(Icons.Default.Close, stringResource(R.string.common_close), modifier = Modifier.size(20.dp)) }
             }
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = Color.White.copy(alpha = 0.3f))
             MetadataRow(Icons.Default.Description, stringResource(R.string.swipe_metadata_file), asset.originalFileName ?: stringResource(R.string.diag_unknown))
             MetadataRow(Icons.Default.CalendarToday, stringResource(R.string.swipe_metadata_date), asset.fileCreatedAt.substringBefore("T"))
             val formatLabel = if (asset.fileExtension != null) "${asset.type} (.${asset.fileExtension.lowercase()})" else asset.type
@@ -148,9 +171,9 @@ fun MetadataPanel(
 @Composable
 fun MetadataRow(icon: ImageVector, label: String, value: String) {
     Row(modifier = Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
+        Icon(imageVector = icon, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(12.dp))
-        Text(text = label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline, modifier = Modifier.width(80.dp))
+        Text(text = label, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f), modifier = Modifier.width(80.dp))
         Text(text = value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
     }
 }

@@ -171,4 +171,7 @@ dependencies {
 
     // ML for "Best Shot" feature (FOSS-friendly)
     implementation(libs.mediapipe.tasks.vision)
+
+    // Liquid glass backdrop effect for the swipe metadata panel
+    implementation(libs.backdrop)
 }
