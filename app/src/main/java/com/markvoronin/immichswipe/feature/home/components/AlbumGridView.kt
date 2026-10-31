@@ -41,7 +41,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -92,7 +91,7 @@ fun AlbumGrid(
     var expansionTimes by remember { mutableStateOf<Map<AlbumStatus, Long>>(emptyMap()) }
 
     Box(modifier = modifier.fillMaxSize()) {
-        PullToRefreshBox(
+        ExpressivePullToRefresh(
             isRefreshing = isRefreshing,
             onRefresh = onRefresh,
             modifier = Modifier.fillMaxSize()
