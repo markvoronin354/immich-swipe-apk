@@ -47,7 +47,7 @@ data class SwipeUiState(
     val showFullscreenButton: Boolean = true,
     val showImmichButton: Boolean = false,
     val showRotationButton: Boolean = true,
-    val showMuteButton: Boolean = false,
+    val showMuteButton: Boolean = true,
     val showDownloadButton: Boolean = true,
     val showShareButton: Boolean = false,
     val showFullSizeButton: Boolean = true,

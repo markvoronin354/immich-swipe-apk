@@ -209,7 +209,7 @@ class SessionDataStore(private val context: Context) {
     fun isShowCardDisplayIcon(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_CARD_DISPLAY_ICON] ?: true }
     suspend fun saveShowCardDisplayIcon(show: Boolean) { context.dataStore.edit { it[KEY_SHOW_CARD_DISPLAY_ICON] = show } }
 
-    fun isShowMuteIcon(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_MUTE_ICON] ?: false }
+    fun isShowMuteIcon(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_MUTE_ICON] ?: true }
     suspend fun saveShowMuteIcon(show: Boolean) { context.dataStore.edit { it[KEY_SHOW_MUTE_ICON] = show } }
 
     fun isShowDownloadIcon(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_DOWNLOAD_ICON] ?: true }
