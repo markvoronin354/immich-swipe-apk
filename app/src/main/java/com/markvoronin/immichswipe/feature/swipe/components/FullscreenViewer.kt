@@ -73,6 +73,8 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.domain.model.Asset
@@ -277,6 +279,15 @@ fun FullscreenViewer(
         }
 
         val fadeAlpha = (1f - (swipeY.value / 1000f)).coerceIn(0f, 1f)
+        // Live copies of the media for the glass buttons to refract; black is drawn first so empty pixels don't smear.
+        val mediaBackdrop = rememberLayerBackdrop {
+            drawRect(Color.Black)
+            drawContent()
+        }
+        val nextMediaBackdrop = rememberLayerBackdrop {
+            drawRect(Color.Black)
+            drawContent()
+        }
 
         Box(
             modifier = Modifier
@@ -315,7 +326,7 @@ fun FullscreenViewer(
                         model = nextPhotoRequest,
                         contentDescription = null,
                         contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().layerBackdrop(nextMediaBackdrop),
                         error = {
                             AssetErrorView()
                         }
@@ -346,6 +357,7 @@ fun FullscreenViewer(
                     }
 
                     PreviewControls(
+                        backdrop = nextMediaBackdrop,
                         visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
                         isFavorite = isNextFavorite,
                         onToggleFavorite = onToggleFavoriteNext,
@@ -420,6 +432,7 @@ fun FullscreenViewer(
             ) {
             val finalControlsVisible = controlsVisible && !isHoldingByPress && !wasHoldDetected
 
+            Box(modifier = Modifier.fillMaxSize().layerBackdrop(mediaBackdrop), contentAlignment = Alignment.Center) {
             if (asset.type == "VIDEO" && exoPlayer != null) {
                 SharedVideoPlayer(
                     player = exoPlayer,
@@ -633,6 +646,7 @@ fun FullscreenViewer(
                     )
                 }
             }
+            }
 
             if (showSizeIndicator && asset.type != "VIDEO") {
                 AnimatedVisibility(
@@ -670,6 +684,7 @@ fun FullscreenViewer(
             ) { (-swipeX.value / 200f).coerceIn(0f, 1f) * 0.9f }
 
                 PreviewControls(
+                    backdrop = mediaBackdrop,
                     visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
                     isFavorite = isFavorite,
                     onToggleFavorite = onToggleFavorite,

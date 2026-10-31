@@ -6,7 +6,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,7 +20,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,10 +29,28 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.effects.blur
+import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.effects.vibrancy
 import com.markvoronin.immichswipe.R
+
+private fun Modifier.glassCircle(backdrop: Backdrop): Modifier = drawBackdrop(
+    backdrop = backdrop,
+    shape = { CircleShape },
+    shadow = null,
+    effects = {
+        vibrancy()
+        blur(2.dp.toPx())
+        lens(8.dp.toPx(), 16.dp.toPx(), true)
+    },
+    onDrawSurface = { drawRect(Color.Black.copy(alpha = 0.25f)) }
+)
 
 @Composable
 fun PreviewControls(
+    backdrop: Backdrop,
     visible: Boolean,
     isFavorite: Boolean,
     onToggleFavorite: () -> Unit,
@@ -68,7 +84,7 @@ fun PreviewControls(
                         scaleX = heartScale
                         scaleY = heartScale
                     }
-                    .background(Color.Black.copy(alpha = 0.3f), CircleShape)
+                    .glassCircle(backdrop)
                     .clip(CircleShape)
                     .clickable { onToggleFavorite() }
                     .padding(8.dp)
@@ -82,12 +98,16 @@ fun PreviewControls(
             }
 
             // Close Button
-            IconButton(
-                onClick = onClose,
+            // Plain boxes rather than IconButton: its own container drew a second ring inside the glass.
+            Box(
+                contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(vertical = 50.dp, horizontal = 20.dp)
-                    .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                    .glassCircle(backdrop)
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onClose)
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
@@ -98,12 +118,15 @@ fun PreviewControls(
             
             // Undo Button
             if (onUndo != null) {
-                IconButton(
-                    onClick = onUndo,
+                Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .padding(start = 24.dp, bottom = (if (isLandscape) 20.dp else 100.dp) + controlsOffset)
-                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                        .glassCircle(backdrop)
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .clickable(onClick = onUndo)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Undo,
@@ -115,12 +138,15 @@ fun PreviewControls(
 
             // Mute Button
             if (showMuteButton && assetType == "VIDEO") {
-                IconButton(
-                    onClick = onToggleMute,
+                Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(bottom = (if (isLandscape) 20.dp else 100.dp) + controlsOffset, end = 24.dp)
-                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                        .glassCircle(backdrop)
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .clickable(onClick = onToggleMute)
                 ) {
                     Icon(
                         imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
