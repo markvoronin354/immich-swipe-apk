@@ -515,7 +515,12 @@ fun SwipeCard(
                     .clip(RoundedCornerShape(16.dp))
             ) {
                 // Everything inside is recorded live so the metadata panel can refract it.
-                Box(modifier = Modifier.fillMaxSize().layerBackdrop(glassBackdrop)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        // Videos record through SharedVideoPlayer instead, so their controls aren't captured.
+                        .then(if (asset.type == "VIDEO") Modifier else Modifier.layerBackdrop(glassBackdrop))
+                ) {
                 if (asset.type == "VIDEO") {
                     val placeholderRequest = remember(asset.id, baseUrl) {
                         ImageRequest.Builder(context)
@@ -557,6 +562,8 @@ fun SwipeCard(
                             isPaused = pausedByHoldState,
                             isVideoReady = isVideoReady,
                             showControls = !isHoldingByPress && !wasHoldDetected,
+                            // The player records its own video surface here, leaving its controls out of the panel's glass.
+                            backdrop = glassBackdrop,
                             cardDisplayMode = config.cardDisplayMode,
                             fileSize = asset.exifInfo?.fileSizeInBytes,
                             showSize = config.showSizeIndicator,

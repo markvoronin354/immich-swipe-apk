@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.VideocamOff
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -68,6 +69,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
 import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.drawBackdrop
@@ -113,6 +115,8 @@ fun SharedVideoPlayer(
     showSize: Boolean = false,
     onControllerVisibilityChanged: ((Boolean) -> Unit)? = null,
     controlsOffset: Dp = 0.dp,
+    // Lets the caller record the video surface (without these controls) into a backdrop it owns.
+    backdrop: LayerBackdrop? = null,
     videoSurfaceWrapper: @Composable (surfaceContent: @Composable () -> Unit) -> Unit = { surfaceContent -> surfaceContent() },
 ) {
     var currentTime by remember(assetId) { mutableLongStateOf(0L) }
@@ -189,10 +193,13 @@ fun SharedVideoPlayer(
         val baseUrlClean = baseUrl.removeSuffix("/")
 
         // Records the video itself (not the controls) so the glass controls can refract it without a feedback loop.
-        val playerBackdrop = rememberLayerBackdrop {
-            drawRect(Color.Black)
+        // Empty (letterbox) pixels are filled with what is really behind them: black fullscreen, the card colour on the card.
+        val emptyColor = if (isFullscreen) Color.Black else CardDefaults.cardColors().containerColor
+        val ownBackdrop = rememberLayerBackdrop {
+            drawRect(emptyColor)
             drawContent()
         }
+        val playerBackdrop = backdrop ?: ownBackdrop
 
         Box(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.fillMaxSize().layerBackdrop(playerBackdrop)) {
@@ -320,6 +327,11 @@ fun SharedVideoPlayer(
                             .fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        // The card's pills are larger than the fullscreen ones; a pill's lens can't exceed its corner radius.
+                        val pillTextStyle = if (isFullscreen) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium
+                        val pillVerticalPadding = if (isFullscreen) 2.dp else 4.dp
+                        val pillLens = if (isFullscreen) 4.dp else 6.dp
+
                         // 1. Indicators Row (Pause, Timestamp, Size) - Now ABOVE
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -331,19 +343,19 @@ fun SharedVideoPlayer(
                                 if (!isFullscreen) {
                                     Box(
                                         modifier = Modifier
-                                            .glassSurface(playerBackdrop, CircleShape, 5.dp)
+                                            .glassSurface(playerBackdrop, CircleShape, 8.dp)
                                             .clip(CircleShape)
                                             .clickable(onClick = togglePlayPause)
                                     ) {
                                         Box(
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
                                                 imageVector = if (isVideoPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                                                 contentDescription = if (isVideoPlaying) stringResource(R.string.cd_pause) else stringResource(R.string.cd_play),
                                                 tint = Color.White,
-                                                modifier = Modifier.size(14.dp)
+                                                modifier = Modifier.size(17.dp)
                                             )
                                         }
                                     }
@@ -353,7 +365,7 @@ fun SharedVideoPlayer(
 
                                 Box(
                                     modifier = Modifier
-                                        .glassSurface(playerBackdrop, CircleShape, 4.dp)
+                                        .glassSurface(playerBackdrop, CircleShape, pillLens)
                                         .padding(horizontal = 4.dp)
                                 ) {
                                     Text(
@@ -363,9 +375,9 @@ fun SharedVideoPlayer(
                                             )
                                         }",
                                         color = Color.White,
-                                        style = MaterialTheme.typography.labelSmall,
+                                        style = pillTextStyle,
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = pillVerticalPadding)
                                     )
                                 }
                             }
@@ -374,15 +386,15 @@ fun SharedVideoPlayer(
                                 if (duration > 0 || isFullscreen) Spacer(Modifier.width(8.dp))
                                 Box(
                                     modifier = Modifier
-                                        .glassSurface(playerBackdrop, CircleShape, 4.dp)
+                                        .glassSurface(playerBackdrop, CircleShape, pillLens)
                                         .padding(horizontal = 4.dp)
                                 ) {
                                     Text(
                                         text = formatSize(fileSize),
                                         color = Color.White,
-                                        style = MaterialTheme.typography.labelSmall,
+                                        style = pillTextStyle,
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = pillVerticalPadding)
                                     )
                                 }
                             }
