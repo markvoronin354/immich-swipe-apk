@@ -10,7 +10,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,17 +24,14 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.VideocamOff
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -50,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -70,6 +67,13 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
+import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.effects.blur
+import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.effects.vibrancy
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.CardDisplayMode
@@ -78,6 +82,19 @@ import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
+
+/** Small glass surface for the player controls; [lensHeight] must not exceed the shape's smallest corner radius. */
+private fun Modifier.glassSurface(backdrop: Backdrop, shape: Shape, lensHeight: Dp): Modifier = drawBackdrop(
+    backdrop = backdrop,
+    shape = { shape },
+    shadow = null,
+    effects = {
+        vibrancy()
+        blur(2.dp.toPx())
+        lens(lensHeight.toPx(), (lensHeight * 2f).toPx(), true)
+    },
+    onDrawSurface = { drawRect(Color.Black.copy(alpha = 0.25f)) }
+)
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -171,7 +188,14 @@ fun SharedVideoPlayer(
         val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         val baseUrlClean = baseUrl.removeSuffix("/")
 
+        // Records the video itself (not the controls) so the glass controls can refract it without a feedback loop.
+        val playerBackdrop = rememberLayerBackdrop {
+            drawRect(Color.Black)
+            drawContent()
+        }
+
         Box(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.fillMaxSize().layerBackdrop(playerBackdrop)) {
             videoSurfaceWrapper {
                 Box(modifier = Modifier.fillMaxSize()) {
                     if (assetId != null && baseUrlClean.isNotEmpty() && !isVideoReady) {
@@ -276,6 +300,7 @@ fun SharedVideoPlayer(
                     }
                 }
             }
+            }
 
             val indicatorsVisible = (showSize && fileSize != null) || (duration > 0) || isFullscreen
             // Controls visibility logic - respect showControls even in fullscreen to allow hiding on hold
@@ -304,11 +329,10 @@ fun SharedVideoPlayer(
                                 val timeToDisplay = if (isScrubbing) scrubValue else currentTime
 
                                 if (!isFullscreen) {
-                                    Surface(
-                                        color = Color.Black.copy(alpha = 0.5f),
-                                        shape = RoundedCornerShape(4.dp),
+                                    Box(
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(4.dp))
+                                            .glassSurface(playerBackdrop, CircleShape, 5.dp)
+                                            .clip(CircleShape)
                                             .clickable(onClick = togglePlayPause)
                                     ) {
                                         Box(
@@ -327,9 +351,10 @@ fun SharedVideoPlayer(
                                     Spacer(Modifier.width(6.dp))
                                 }
 
-                                Surface(
-                                    color = Color.Black.copy(alpha = 0.5f),
-                                    shape = RoundedCornerShape(4.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .glassSurface(playerBackdrop, CircleShape, 4.dp)
+                                        .padding(horizontal = 4.dp)
                                 ) {
                                     Text(
                                         text = "${formatMediaTime(timeToDisplay)} / ${
@@ -347,9 +372,10 @@ fun SharedVideoPlayer(
 
                             if (showSize && fileSize != null) {
                                 if (duration > 0 || isFullscreen) Spacer(Modifier.width(8.dp))
-                                Surface(
-                                    color = Color.Black.copy(alpha = 0.5f),
-                                    shape = RoundedCornerShape(4.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .glassSurface(playerBackdrop, CircleShape, 4.dp)
+                                        .padding(horizontal = 4.dp)
                                 ) {
                                     Text(
                                         text = formatSize(fileSize),
@@ -364,14 +390,20 @@ fun SharedVideoPlayer(
 
                         // 2. Progress Bar Row (Slider) - Now BELOW
                         if (isFullscreen) {
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(2.dp))
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                IconButton(
-                                    onClick = togglePlayPause,
-                                    modifier = Modifier.size(32.dp).background(Color.Black.copy(alpha = 0.3f), CircleShape)
+                                // A plain box rather than IconButton: its 48dp minimum touch target and own container
+                                // drew a second circle around the glass.
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .glassSurface(playerBackdrop, CircleShape, 12.dp)
+                                        .clip(CircleShape)
+                                        .clickable(onClick = togglePlayPause)
                                 ) {
                                     Icon(
                                         imageVector = if (isVideoPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
@@ -417,7 +449,7 @@ fun SharedVideoPlayer(
                 Box(
                     modifier = Modifier
                         .requiredSize(64.dp)
-                        .background(Color.Black.copy(alpha = 0.5f), CircleShape),
+                        .glassSurface(playerBackdrop, CircleShape, 12.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
