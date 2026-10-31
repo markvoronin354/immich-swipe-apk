@@ -51,7 +51,6 @@ import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.colorControls
-import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Asset
@@ -113,8 +112,7 @@ fun MetadataPanel(
         }
     }
 
-    // Same corner radius as the swipe card so the panel sits exactly on top of it. The lens effect needs every
-    // corner rounded and its height can't exceed that radius.
+    // Same corner radius as the swipe card so the panel sits exactly on top of it.
     val panelShape = RoundedCornerShape(16.dp)
     // Light theme gets a white glass surface with dark text; dark theme keeps the dark surface with light text.
     val isLightTheme = MaterialTheme.colorScheme.surface.luminance() > 0.5f
@@ -137,7 +135,6 @@ fun MetadataPanel(
                         saturation = 1f  // default 1f. 1.5f is what vibrancy() does. 0f is greyscale.
                     )
                     blur(12.dp.toPx())
-                    lens(16.dp.toPx(), 32.dp.toPx(), false)
                 },
                 onDrawSurface = { drawRect(glassTint.copy(alpha = .5f)) }
             ),
