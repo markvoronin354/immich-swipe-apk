@@ -276,7 +276,10 @@ class SwipeViewModel @Inject constructor(
             val removedExternally = knownDbDecisionIds - dbDecisionIds
             knownDbDecisionIds = dbDecisionIds
 
-            val liveDecisions = _uiState.value.decisions.filterKeys { it in validAssetIds }
+            // While a sync is still paging, the batch is partial: an asset missing from it is not gone yet,
+            // so its decision and undo entry are kept instead of being pruned (which dropped its badge).
+            fun isStillValid(assetId: String) = isFetching || assetId in validAssetIds
+            val liveDecisions = _uiState.value.decisions.filterKeys { isStillValid(it) }
             val currentDecisions = liveDecisions.filterKeys { it !in removedExternally }
             val currentSizes = _uiState.value.assetSizes
             val mergedDecisions = decisionMap + currentDecisions
@@ -284,7 +287,7 @@ class SwipeViewModel @Inject constructor(
 
             val derivedHistory = if (_uiState.value.history.isEmpty()) {
                 localDecisions.filter { !it.isSynced && it.assetId in validAssetIds }.map { it.assetId }
-            } else _uiState.value.history.filter { it in validAssetIds && it !in removedExternally }
+            } else _uiState.value.history.filter { isStillValid(it) && it !in removedExternally }
 
             val existingDetailsMap = masterWorkPile.associateBy { it.id }
             masterWorkPile = allAssetsFound.map { asset -> existingDetailsMap[asset.id] ?: asset }
@@ -745,19 +748,12 @@ class SwipeViewModel @Inject constructor(
                 // 5. Success state
                 val remainingDecisions = currentState.decisions.filterKeys { id -> id !in toRemoveFromWorkPile }
                 _uiState.update { it.copy(
-                    isSyncing = false, 
-                    showSummary = false, 
-                    showSuccessAnimation = !result.hasFailures,
-                    localDeletePendingIntent = pendingDeleteIntent,
                     // Remove deleted & locked assets from current UI decisions too
                     decisions = remainingDecisions,
                     history = emptyList(), // Reset history for undo after sync
                     // Keep favorites that failed to sync so they are retried on the next apply
                     localFavorites = currentState.localFavorites.filterKeys { it in result.failedFavoriteIds }
                 ) }
-                if (result.hasFailures) {
-                    _syncIssueChannel.trySend(Unit)
-                }
 
                 // Force refresh sorted work pile so `_uiState.value.assets` and `currentIndex` are updated immediately
                 pendingJumpToFirstUnprocessed = true
@@ -766,6 +762,19 @@ class SwipeViewModel @Inject constructor(
                     overrideDecisions = remainingDecisions,
                     overrideHistory = emptyList()
                 )
+
+                // The server changes are done, but an album sync that is still paging keeps changing the list.
+                // Stay in the syncing state until it settles, so "done" matches what is on screen.
+                isFetchingAssetsFlow.first { !it }
+                _uiState.update { it.copy(
+                    isSyncing = false,
+                    showSummary = false,
+                    showSuccessAnimation = !result.hasFailures,
+                    localDeletePendingIntent = pendingDeleteIntent
+                ) }
+                if (result.hasFailures) {
+                    _syncIssueChannel.trySend(Unit)
+                }
 
                 if (!result.hasFailures) {
                     delay(2000.milliseconds)

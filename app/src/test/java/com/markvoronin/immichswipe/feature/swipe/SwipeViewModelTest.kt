@@ -194,6 +194,25 @@ class SwipeViewModelTest {
     }
 
     @Test
+    fun `decisions survive a partial batch while the sync is still paging`() {
+        val batches = MutableStateFlow(AssetBatch(assets = assets, total = assets.size))
+        every { assetRepository.getAssetsByAlbum("album", any(), any(), any(), any()) } returns batches
+        val vm = openAlbum()
+        vm.onSwipe(SwipeDecision.KEEP)
+        vm.onSwipe(SwipeDecision.KEEP)
+
+        batches.value = AssetBatch(assets = listOf(a3, a4), total = 4, isSyncing = true)
+        val partial = vm.await { it.assets.map { a -> a.id } == listOf("a3", "a4") }
+        assertEquals(mapOf("a1" to SwipeDecision.KEEP, "a2" to SwipeDecision.KEEP), partial.decisions)
+        assertEquals(listOf("a1", "a2"), partial.history)
+
+        // A complete batch still drops the decisions of assets that really left the album.
+        batches.value = AssetBatch(assets = listOf(a2, a3, a4), total = 3)
+        val complete = vm.await { !it.isFetchingAssets && it.assets.size == 3 }
+        assertEquals(mapOf("a2" to SwipeDecision.KEEP), complete.decisions)
+    }
+
+    @Test
     fun `an unknown saved decision counts as keep`() {
         storedDecisions.value = listOf(entity("a1", "SOMETHING_NEW"))
         assertEquals(SwipeDecision.KEEP, openAlbum().decisions()["a1"])
@@ -620,6 +639,29 @@ class SwipeViewModelTest {
 
         dispatcher.scheduler.advanceTimeBy(2_001)
         assertFalse(vm.uiState.value.showSuccessAnimation)
+    }
+
+    @Test
+    fun `an apply during an album sync stays in the syncing state until the sync settles`() {
+        val batches = MutableStateFlow(AssetBatch(assets = assets, total = assets.size))
+        every { assetRepository.getAssetsByAlbum("album", any(), any(), any(), any()) } returns batches
+        val vm = openAlbum()
+        vm.onSwipe(SwipeDecision.KEEP)
+        batches.value = AssetBatch(assets = assets, total = assets.size, isSyncing = true)
+        vm.await { it.isFetchingAssets }
+        vm.toggleSummary(true)
+        stubApply(applyResult())
+
+        vm.applyChanges()
+
+        val waiting = vm.uiState.value
+        assertTrue(waiting.isSyncing && waiting.showSummary)
+        assertFalse(waiting.showSuccessAnimation)
+
+        batches.value = AssetBatch(assets = assets, total = assets.size, isSyncing = false)
+        val done = vm.await { !it.isSyncing }
+        assertFalse(done.showSummary)
+        assertTrue(done.showSuccessAnimation)
     }
 
     @Test
