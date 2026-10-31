@@ -16,19 +16,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -41,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -61,16 +60,21 @@ import androidx.media3.ui.PlayerView
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.cache.VideoCache
 import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
 import com.markvoronin.immichswipe.data.datastore.SessionDataStore
 import com.markvoronin.immichswipe.domain.model.Asset
+import com.markvoronin.immichswipe.feature.swipe.components.SeekThumb
+import com.markvoronin.immichswipe.feature.swipe.components.glassSurface
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(UnstableApi::class)
+@kotlin.OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DuplicateVideoPlayer(
     asset: Asset,
@@ -183,9 +187,16 @@ fun DuplicateVideoPlayer(
         }
     }
 
+    // Records the video itself (not the controls) so the glass controls can refract it without a feedback loop.
+    val backdrop = rememberLayerBackdrop {
+        drawRect(Color.Black)
+        drawContent()
+    }
+
     Box(
         modifier = outerBoxModifier
     ) {
+        Box(modifier = Modifier.fillMaxSize().layerBackdrop(backdrop)) {
         videoSurfaceWrapper {
             Box(modifier = Modifier.fillMaxSize()) {
                 if (effectiveBaseUrl.isNotEmpty()) {
@@ -230,6 +241,7 @@ fun DuplicateVideoPlayer(
                 )
             }
         }
+        }
 
         if (!isVideoReady) {
             Box(
@@ -255,37 +267,43 @@ fun DuplicateVideoPlayer(
         ) {
             if (duration > 0) {
                 val timeToDisplay = if (isScrubbing) scrubValue else currentTime
-                Surface(
-                    color = Color.Black.copy(alpha = 0.6f),
-                    shape = RoundedCornerShape(4.dp)
-                ) {
+                Box(modifier = Modifier.glassSurface(backdrop, CircleShape, 6.dp)) {
                     Text(
                         text = "${formatMediaTime(timeToDisplay)} / ${formatMediaTime(duration)}",
                         color = Color.White,
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
             }
 
+            val seekBarColors = SliderDefaults.colors(
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary,
+                inactiveTrackColor = Color.Transparent
+            )
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                IconButton(
-                    onClick = {
-                        val player = exoPlayer ?: return@IconButton
-                        if (player.isPlaying) {
-                            player.pause()
-                        } else {
-                            player.play()
-                        }
-                    },
+                // Plain boxes rather than IconButton: its own container would draw a second ring inside the glass.
+                Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
                         .size(36.dp)
+                        .glassSurface(backdrop, CircleShape, 8.dp)
+                        .clip(CircleShape)
+                        .clickable {
+                            val player = exoPlayer ?: return@clickable
+                            if (player.isPlaying) {
+                                player.pause()
+                            } else {
+                                player.play()
+                            }
+                        }
                 ) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
@@ -309,26 +327,32 @@ fun DuplicateVideoPlayer(
                         exoPlayer?.seekTo(scrubValue)
                     },
                     valueRange = 0f..duration.toFloat().coerceAtLeast(1f),
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.primary,
-                        activeTrackColor = MaterialTheme.colorScheme.primary,
-                        inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(24.dp)
+                    colors = seekBarColors,
+                    thumb = { SeekThumb(backdrop) },
+                    // The glass is the track itself; its inactive colour is transparent so only the glass shows.
+                    track = { sliderState ->
+                        SliderDefaults.Track(
+                            sliderState = sliderState,
+                            colors = seekBarColors,
+                            thumbTrackGapSize = 0.dp,
+                            modifier = Modifier.glassSurface(backdrop, CircleShape, 5.dp)
+                        )
+                    },
+                    modifier = Modifier.weight(1f)
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                IconButton(
-                    onClick = {
-                        isMuted = !isMuted
-                        exoPlayer?.volume = if (isMuted) 0f else 1f
-                    },
+                Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
                         .size(36.dp)
+                        .glassSurface(backdrop, CircleShape, 8.dp)
+                        .clip(CircleShape)
+                        .clickable {
+                            isMuted = !isMuted
+                            exoPlayer?.volume = if (isMuted) 0f else 1f
+                        }
                 ) {
                     Icon(
                         imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,

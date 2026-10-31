@@ -87,7 +87,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 
 /** Small glass surface for the player controls; [lensHeight] must not exceed the shape's smallest corner radius. */
-private fun Modifier.glassSurface(backdrop: Backdrop, shape: Shape, lensHeight: Dp): Modifier = drawBackdrop(
+internal fun Modifier.glassSurface(backdrop: Backdrop, shape: Shape, lensHeight: Dp): Modifier = drawBackdrop(
     backdrop = backdrop,
     shape = { shape },
     shadow = null,
@@ -101,7 +101,7 @@ private fun Modifier.glassSurface(backdrop: Backdrop, shape: Shape, lensHeight: 
 
 /** Seek bar thumb: a small glass lens in place of the flat bar. */
 @Composable
-private fun SeekThumb(backdrop: Backdrop) {
+internal fun SeekThumb(backdrop: Backdrop) {
     Box(
         modifier = Modifier
             .size(width = 14.dp, height = 30.dp)
