@@ -52,10 +52,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
@@ -295,7 +295,6 @@ fun SwipeCard(
         Card(
             modifier = Modifier
                 .fillMaxSize()
-                .alpha(animatedAlpha)
                 .pointerInput(isNext, asset.id) {
                     if (isNext) return@pointerInput
                     var startProgress = 0f
@@ -498,7 +497,7 @@ fun SwipeCard(
                         rotationZ = offsetX.value / 40f
                     }
                 },
-            elevation = CardDefaults.cardElevation(defaultElevation = if (isNext) 0.dp else 8.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             shape = RoundedCornerShape(16.dp)
         ) {
             val animatedRotation by animateFloatAsState(targetValue = config.rotationAngle.toFloat(), label = "rotationZ")
@@ -972,6 +971,15 @@ fun SwipeCard(
                         )
                     }
                 }
+
+                // Fade the card behind by covering it with the screen background; fading the Card itself
+                // would clip or show through its shadow.
+                val fadeColor = MaterialTheme.colorScheme.background
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .drawBehind { drawRect(fadeColor, alpha = 1f - animatedAlpha) }
+                )
             }
         }
     }
