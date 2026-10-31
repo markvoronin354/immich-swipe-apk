@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.VideocamOff
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -98,7 +99,26 @@ private fun Modifier.glassSurface(backdrop: Backdrop, shape: Shape, lensHeight: 
     onDrawSurface = { drawRect(Color.Black.copy(alpha = 0.25f)) }
 )
 
+/** Seek bar thumb: a small glass lens in place of the flat bar. */
+@Composable
+private fun SeekThumb(backdrop: Backdrop) {
+    Box(
+        modifier = Modifier
+            .size(width = 14.dp, height = 30.dp)
+            .drawBackdrop(
+                backdrop = backdrop,
+                shape = { CircleShape },
+                effects = {
+                    vibrancy()
+                    lens(6.dp.toPx(), 12.dp.toPx(), true)
+                },
+                onDrawSurface = { drawRect(Color.White.copy(alpha = 0.3f)) }
+            )
+    )
+}
+
 @OptIn(UnstableApi::class)
+@kotlin.OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SharedVideoPlayer(
     player: Player,
@@ -402,6 +422,11 @@ fun SharedVideoPlayer(
 
                         // 2. Progress Bar Row (Slider) - Now BELOW
                         if (isFullscreen) {
+                            val seekBarColors = SliderDefaults.colors(
+                                thumbColor = MaterialTheme.colorScheme.primary,
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
+                                inactiveTrackColor = Color.Transparent
+                            )
                             Spacer(Modifier.height(2.dp))
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -439,12 +464,18 @@ fun SharedVideoPlayer(
                                         player.seekTo(scrubValue)
                                     },
                                     valueRange = 0f..duration.toFloat().coerceAtLeast(1f),
-                                    colors = SliderDefaults.colors(
-                                        thumbColor = MaterialTheme.colorScheme.primary,
-                                        activeTrackColor = MaterialTheme.colorScheme.primary,
-                                        inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                                    ),
-                                    modifier = Modifier.weight(1f).height(24.dp)
+                                    colors = seekBarColors,
+                                    thumb = { SeekThumb(playerBackdrop) },
+                                    // The glass is the track itself; its inactive colour is transparent so only the glass shows.
+                                    track = { sliderState ->
+                                        SliderDefaults.Track(
+                                            sliderState = sliderState,
+                                            colors = seekBarColors,
+                                            thumbTrackGapSize = 0.dp,
+                                            modifier = Modifier.glassSurface(playerBackdrop, CircleShape, 5.dp)
+                                        )
+                                    },
+                                    modifier = Modifier.weight(1f)
                                 )
                             }
                         }
