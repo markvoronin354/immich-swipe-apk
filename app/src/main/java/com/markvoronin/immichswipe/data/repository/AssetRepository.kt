@@ -23,8 +23,11 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArraySet
 
 data class AssetBatch(
     val assets: List<Asset>,
@@ -41,6 +44,11 @@ class AssetRepository(
 ) {
     private val api: ImmichApi
         get() = customApi ?: sessionManager.api ?: error("No active API session")
+
+    // One set per running album sync, collecting the ids removed locally (deleted or locked) while it runs.
+    // Its cache snapshot and in-flight pages predate the removal, so it filters them out of later batches.
+    private val activeSyncRemovals = CopyOnWriteArraySet<MutableSet<String>>()
+
     fun getAssetsByAlbum(
         albumId: String,
         includeArchived: Boolean = false,
@@ -53,6 +61,12 @@ class AssetRepository(
             AppLogger.w("AssetRepo", "Session mismatch at start: requested $userId but active is ${sessionManager.getUserId()}")
             return@channelFlow
         }
+
+        val removedDuringSync: MutableSet<String> = ConcurrentHashMap.newKeySet()
+        activeSyncRemovals += removedDuringSync
+        coroutineContext.job.invokeOnCompletion { activeSyncRemovals -= removedDuringSync }
+        fun List<Asset>.withoutRemoved() =
+            if (removedDuringSync.isEmpty()) this else filter { it.id !in removedDuringSync }
 
         val cachedEntities = when (sortOrder) {
             SortOrder.CHRONOLOGICAL_DESC -> albumAssetDao.getAssetsChronologicalDesc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
@@ -127,7 +141,7 @@ class AssetRepository(
         if (isRealAlbum) {
             try {
                 val albumDetail = api.getAlbumDetail(albumId)
-                val serverItems = albumDetail.assets
+                val serverItems = albumDetail.assets.withoutRemoved()
                 val finalItems = applySort(serverItems, sortOrder, shuffleSeed)
 
                 withContext(Dispatchers.IO) {
@@ -198,12 +212,12 @@ class AssetRepository(
             e.rethrowIfCancelled()
             AppLogger.e("AssetRepo", "Error fetching first page: ${e.message}")
             if (mappedLocal.isEmpty()) send(AssetBatch(emptyList(), totalFromServer, isLocalCache = false, isSyncing = false))
-            else send(AssetBatch(mappedLocal, mappedLocal.size, isLocalCache = true, isSyncing = false))
+            else send(AssetBatch(mappedLocal.withoutRemoved(), mappedLocal.size, isLocalCache = true, isSyncing = false))
             return@channelFlow
         }
 
         val totalInDb = albumAssetDao.getAssetCountForAlbum(albumId, userId)
-        val page1ServerItems = firstPageResp.assets.items
+        val page1ServerItems = firstPageResp.assets.items.withoutRemoved()
         val page1ServerIds = page1ServerItems.map { it.id }.toSet()
         val cachedIds = cachedEntities.map { it.assetId }.toSet()
 
@@ -259,7 +273,7 @@ class AssetRepository(
                 staleFromPage1.isEmpty()
 
         if (isCacheComplete) {
-            send(AssetBatch(mappedLocal, maxOf(effectiveTotal, mappedLocal.size), isLocalCache = true, isSyncing = false))
+            send(AssetBatch(mappedLocal.withoutRemoved(), maxOf(effectiveTotal, mappedLocal.size), isLocalCache = true, isSyncing = false))
             return@channelFlow
         }
 
@@ -276,7 +290,7 @@ class AssetRepository(
             }
             try {
                 val resp = if (nextPage == "1") firstPageResp else api.searchAssets(baseRequest.copy(page = nextPage.toIntOrNull() ?: 1, size = 500))
-                val items = resp.assets.items
+                val items = resp.assets.items.withoutRemoved()
                 
                 if (items.isNotEmpty()) {
                     allServerFetchedIds.addAll(items.map { it.id })
@@ -305,7 +319,8 @@ class AssetRepository(
                         }
                     }
                     
-                    // Progressive emission
+                    // Progressive emission. The list was seeded from the cache snapshot, so drop what was removed since.
+                    if (removedDuringSync.isNotEmpty()) allFetchedAssets.removeAll { it.id in removedDuringSync }
                     send(AssetBatch(allFetchedAssets.toList(), effectiveTotal, isLocalCache = false, isSyncing = resp.assets.nextPage != null))
                 }
                 nextPage = resp.assets.nextPage
@@ -461,6 +476,7 @@ class AssetRepository(
 
     suspend fun deleteLocalAssets(assetIds: List<String>) {
         if (assetIds.isNotEmpty()) {
+            activeSyncRemovals.forEach { it.addAll(assetIds) }
             assetIds.chunked(500).forEach { chunk ->
                 albumAssetDao?.deleteAssets(chunk)
             }
