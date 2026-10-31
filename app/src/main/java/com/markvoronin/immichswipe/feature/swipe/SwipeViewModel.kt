@@ -25,6 +25,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -234,7 +235,7 @@ class SwipeViewModel @Inject constructor(
                     sortOrder = sortOrder,
                     shuffleSeed = sessionManager.globalShuffleSeed
                 )
-            }.collect { batch ->
+            }.buffer(Channel.RENDEZVOUS).collect { batch ->
                 _uiState.update { it.copy(
                     remoteTotalCount = if (!batch.isLocalCache || batch.total > it.remoteTotalCount) batch.total else it.remoteTotalCount,
                     syncLoadedCount = batch.assets.size,
@@ -248,6 +249,10 @@ class SwipeViewModel @Inject constructor(
                     isAssetsLoadingFlow.value = false
                 }
                 isFetchingAssetsFlow.value = batch.isSyncing
+
+                // The tutorial starts once assets exist; holding the collector here keeps the repository from
+                // fetching the next page (which would lag the tutorial animations) until the tutorial is done.
+                if (batch.assets.isNotEmpty()) _uiState.first { it.hasCompletedSwipeTutorial }
             }
         } finally {
             isAssetsLoadingFlow.value = false
