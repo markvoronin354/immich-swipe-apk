@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.Backdrop
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.ButtonStackOrientation
 import com.markvoronin.immichswipe.core.IconPosition
@@ -44,6 +45,7 @@ fun ActionButtonsOverlay(
     isMuted: Boolean,
     baseUrl: String,
     context: Context,
+    backdrop: Backdrop,
     onToggleMuteWithIndicator: () -> Unit
 ) {
     AnimatedVisibility(
@@ -68,6 +70,7 @@ fun ActionButtonsOverlay(
                         SwipeActionIconButton(
                             icon = Icons.Default.Fullscreen,
                             contentDescription = stringResource(R.string.settings_fullscreen_pos_label),
+                            backdrop = backdrop,
                             enabled = !isNext,
                             onClick = actions.onOpenFullscreen
                         )
@@ -78,6 +81,7 @@ fun ActionButtonsOverlay(
                         SwipeActionIconButton(
                             icon = Icons.AutoMirrored.Filled.RotateRight,
                             contentDescription = stringResource(R.string.swipe_rotate_asset),
+                            backdrop = backdrop,
                             enabled = !isNext,
                             onClick = actions.onRotateAsset
                         )
@@ -88,6 +92,7 @@ fun ActionButtonsOverlay(
                         SwipeActionIconButton(
                             icon = Icons.AutoMirrored.Filled.OpenInNew,
                             contentDescription = stringResource(R.string.settings_immich_pos_label),
+                            backdrop = backdrop,
                             enabled = !isNext,
                             onClick = {
                                 ImmichLauncher.openAssetInImmich(context, baseUrl, asset.id, mode = config.immichOpenMode)
@@ -103,6 +108,7 @@ fun ActionButtonsOverlay(
                         SwipeActionIconButton(
                             icon = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                             contentDescription = stringResource(R.string.cd_mute),
+                            backdrop = backdrop,
                             enabled = !isNext,
                             onClick = onToggleMuteWithIndicator
                         )
@@ -113,6 +119,7 @@ fun ActionButtonsOverlay(
                         SwipeActionIconButton(
                             icon = Icons.Default.FileDownload,
                             contentDescription = stringResource(R.string.cd_download),
+                            backdrop = backdrop,
                             enabled = !isNext,
                             onClick = { actions.onDownload(asset) }
                         )
@@ -123,6 +130,7 @@ fun ActionButtonsOverlay(
                         SwipeActionIconButton(
                             icon = Icons.Default.Share,
                             contentDescription = stringResource(R.string.cd_share),
+                            backdrop = backdrop,
                             enabled = !isNext,
                             onClick = { actions.onShare(asset) }
                         )
@@ -134,6 +142,7 @@ fun ActionButtonsOverlay(
                         SwipeActionIconButton(
                             icon = if (config.isFullSize) Icons.Default.Hd else Icons.Outlined.Hd,
                             contentDescription = stringResource(R.string.cd_full_size),
+                            backdrop = backdrop,
                             enabled = !isNext,
                             onClick = actions.onToggleFullSize
                         )

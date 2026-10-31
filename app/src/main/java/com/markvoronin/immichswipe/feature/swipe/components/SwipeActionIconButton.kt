@@ -1,6 +1,5 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -14,11 +13,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.effects.blur
+import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.effects.vibrancy
 
 @Composable
 fun SwipeActionIconButton(
     icon: ImageVector,
     contentDescription: String,
+    backdrop: Backdrop,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     onLongClick: (() -> Unit)? = null,
@@ -27,8 +32,18 @@ fun SwipeActionIconButton(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
+            .drawBackdrop(
+                backdrop = backdrop,
+                shape = { CircleShape },
+                shadow = null,
+                effects = {
+                    vibrancy()
+                    blur(2.dp.toPx())
+                    lens(8.dp.toPx(), 16.dp.toPx(), true)
+                },
+                onDrawSurface = { drawRect(Color.Black.copy(alpha = 0.25f)) }
+            )
             .clip(CircleShape)
-            .background(Color.Black.copy(alpha = 0.3f))
             .combinedClickable(
                 enabled = enabled,
                 onClick = onClick,

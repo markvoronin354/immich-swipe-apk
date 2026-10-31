@@ -840,6 +840,9 @@ fun SwipeCard(
                     }
                 }
 
+                }
+
+                // Outside the captured box: glass buttons sample that backdrop and must not be part of it.
                 ActionButtonsOverlay(
                     visible = !isHoldingByPress && !wasHoldDetected,
                     isNext = isNext,
@@ -849,12 +852,12 @@ fun SwipeCard(
                     isMuted = isMuted,
                     baseUrl = baseUrl,
                     context = context,
+                    backdrop = glassBackdrop,
                     onToggleMuteWithIndicator = {
                         actions.onToggleMute()
                         showMuteIndicator = true
                     }
                 )
-                }
 
                 if (!isNext) {
                     Box(
