@@ -670,7 +670,7 @@ fun SwipeCard(
                         )
                     }
                 } else {
-                    val photoRequest = remember(asset.id, baseUrl, asset.isGif, config.isFullSize) {
+                    val photoRequest = remember(asset.id, baseUrl, asset.isGif, config.isFullSize, asset.exifInfo?.orientation) {
                         if (config.isFullSize) {
                             fullResolutionRequest(context, baseUrl, asset)
                         } else {

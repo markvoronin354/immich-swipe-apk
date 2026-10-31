@@ -602,7 +602,7 @@ fun FullscreenViewer(
                         label = "FullscreenRotation"
                     )
 
-                    val photoRequest = remember(asset.id, baseUrlClean, asset.isGif, isFullSize) {
+                    val photoRequest = remember(asset.id, baseUrlClean, asset.isGif, isFullSize, asset.exifInfo?.orientation) {
                         if (isFullSize) {
                             fullResolutionRequest(context, baseUrlClean, asset)
                         } else {

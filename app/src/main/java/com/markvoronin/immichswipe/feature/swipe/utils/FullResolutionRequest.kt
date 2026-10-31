@@ -59,9 +59,11 @@ val Asset.supportsFullResolution: Boolean get() = type != "VIDEO" && !isGif
 fun fullResolutionRequest(context: Context, baseUrl: String, asset: Asset): ImageRequest {
     // Never decode past the original's own size or the GPU's texture limit.
     val longSide = maxOf(asset.exifInfo?.imageWidth ?: 0, asset.exifInfo?.imageHeight ?: 0)
+    val rotation = asset.rawOrientationTransformation()
     return ImageRequest.Builder(context)
         .data("$baseUrl/api/assets/${asset.id}/original")
-        .memoryCacheKey("${asset.id}-original")
+        // An explicit key ignores transformations, so keep an unrotated decode from being reused once the orientation is known.
+        .memoryCacheKey("${asset.id}-original${rotation?.let { "-${it.cacheKey}" } ?: ""}")
         .placeholderMemoryCacheKey("${asset.id}-preview")
         .size(if (longSide > 0) minOf(FULL_RESOLUTION_MAX_SIDE, longSide) else FULL_RESOLUTION_MAX_SIDE)
         .allowHardware(true)
@@ -69,6 +71,6 @@ fun fullResolutionRequest(context: Context, baseUrl: String, asset: Asset): Imag
         .precision(Precision.INEXACT)
         // A one-off multi-megabyte original should not be written to disk.
         .diskCachePolicy(CachePolicy.DISABLED)
-        .apply { asset.rawOrientationTransformation()?.let { transformations(it) } }
+        .apply { rotation?.let { transformations(it) } }
         .build()
 }
