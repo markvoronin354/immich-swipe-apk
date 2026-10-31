@@ -60,9 +60,7 @@ fun SortOrderPopupMenu(
     }
 
     val handleDismiss = {
-        if (selectedSortOrder != uiState.sortOrder) {
-            viewModel.setSortOrder(selectedSortOrder)
-        }
+        viewModel.setSortOrder(selectedSortOrder)
         onDismiss()
     }
 

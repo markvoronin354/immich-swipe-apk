@@ -498,6 +498,9 @@ class SwipeViewModel @Inject constructor(
             pendingJumpToFirstUnprocessed = true
             _uiState.update { it.copy(isLoading = true, sortOrder = order) }
             viewModelScope.launch { sessionRepository.saveSortOrder(order) }
+        } else {
+            // Same order re-selected: the saved value won't re-emit, so re-sort the current pile directly
+            refreshSortedWorkPile(jumpToFirstUnprocessed = true)
         }
     }
 
