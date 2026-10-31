@@ -56,6 +56,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
@@ -129,6 +130,8 @@ fun SwipeCard(
     val offsetY = remember(asset.id) { Animatable(if (enterFromBelow && !isNext) 1500f else 0f) }
     // Bounded so the bouncy springs can't carry the metadata panel past fully open or fully closed.
     val panelProgress = remember(asset.id) { Animatable(0f).apply { updateBounds(0f, 1f) } }
+    // How far (px) the open metadata panel is being pulled past fully open; it stretches taller and squashes narrower.
+    val panelStretch = remember(asset.id) { Animatable(0f) }
     // The card's own colour is drawn first so transparent letterbox pixels don't smear into the glass.
     val cardColor = CardDefaults.cardColors().containerColor
     val glassBackdrop = rememberLayerBackdrop {
@@ -319,6 +322,7 @@ fun SwipeCard(
                         },
                         onDragEnd = {
                             scope.launch {
+                                launch { panelStretch.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy)) }
                                 if (currentIsHolding) {
                                     offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
                                     offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
@@ -374,6 +378,16 @@ fun SwipeCard(
                                         0f
                                     }
 
+                                    if (targetProgress == 1f && velocityY < -500f) {
+                                        // A fast flick kicks the panel into a stretch that bounces back; the faster, the bigger.
+                                        launch {
+                                            panelStretch.animateTo(
+                                                0f,
+                                                spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                                                initialVelocity = (-velocityY * 0.6f).coerceAtMost(3000f)
+                                            )
+                                        }
+                                    }
                                     panelProgress.animateTo(
                                         targetValue = targetProgress,
                                         initialVelocity = progressVelocity,
@@ -390,6 +404,7 @@ fun SwipeCard(
                         },
                         onDragCancel = {
                             scope.launch {
+                                launch { panelStretch.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy)) }
                                 if (currentIsHolding) {
                                     offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
                                     offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
@@ -488,8 +503,16 @@ fun SwipeCard(
                                     } else if (dragDirection == 2) {
                                         val heightPx = if (metadataHeightPx > 0f) metadataHeightPx else maxHeightPx
                                         if (heightPx > 0f) {
-                                            val deltaProgress = -dragAmount.y / heightPx
-                                            panelProgress.snapTo((panelProgress.value + deltaProgress).coerceIn(0f, 1f))
+                                            val pull = -dragAmount.y
+                                            val maxStretch = heightPx * 0.15f
+                                            if (panelProgress.value >= 1f && (pull > 0f || panelStretch.value > 0f)) {
+                                                // Past fully open: the panel follows the finger with growing resistance.
+                                                val resist = (1f - panelStretch.value / maxStretch).coerceAtLeast(0f)
+                                                val delta = if (pull > 0f) pull * 0.5f * resist else pull
+                                                panelStretch.snapTo((panelStretch.value + delta).coerceIn(0f, maxStretch))
+                                            } else {
+                                                panelProgress.snapTo((panelProgress.value + pull / heightPx).coerceIn(0f, 1f))
+                                            }
                                         }
                                     }
                                 }
@@ -883,6 +906,11 @@ fun SwipeCard(
                                     val yOffset = (metadataHeightPx * (1f - panelProgress.value)).toInt()
                                     IntOffset(0, yOffset)
                                 }
+                                .graphicsLayer {
+                                    val stretch = if (metadataHeightPx > 0f) panelStretch.value / metadataHeightPx else 0f
+                                    transformOrigin = TransformOrigin(0.5f, 1f)
+                                    scaleY = 1f + stretch
+                                }
                         ) {
                             MetadataPanel(
                                 asset = asset,
@@ -906,18 +934,22 @@ fun SwipeCard(
                                             offsetX.snapTo(0f)
                                         }
                                         if (metadataHeightPx > 0f) {
-                                            val deltaProgress = -deltaY / metadataHeightPx
-                                            panelProgress.snapTo(
-                                                (panelProgress.value + deltaProgress).coerceIn(
-                                                    0f,
-                                                    1f
-                                                )
-                                            )
+                                            val pull = -deltaY
+                                            val maxStretch = metadataHeightPx * 0.15f
+                                            if (panelProgress.value >= 1f && (pull > 0f || panelStretch.value > 0f)) {
+                                                // Past fully open: the panel follows the finger with growing resistance.
+                                                val resist = (1f - panelStretch.value / maxStretch).coerceAtLeast(0f)
+                                                val delta = if (pull > 0f) pull * 0.5f * resist else pull
+                                                panelStretch.snapTo((panelStretch.value + delta).coerceIn(0f, maxStretch))
+                                            } else {
+                                                panelProgress.snapTo((panelProgress.value + pull / metadataHeightPx).coerceIn(0f, 1f))
+                                            }
                                         }
                                     }
                                 },
                                 onDragEnd = { velocityY ->
                                     scope.launch {
+                                        launch { panelStretch.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy)) }
                                         if (offsetX.value != 0f) {
                                             offsetX.snapTo(0f)
                                         }
@@ -936,6 +968,15 @@ fun SwipeCard(
                                             0f
                                         }
 
+                                        if (targetProgress == 1f && velocityY < -500f) {
+                                            launch {
+                                                panelStretch.animateTo(
+                                                    0f,
+                                                    spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                                                    initialVelocity = (-velocityY * 0.6f).coerceAtMost(3000f)
+                                                )
+                                            }
+                                        }
                                         panelProgress.animateTo(
                                             targetValue = targetProgress,
                                             initialVelocity = progressVelocity,

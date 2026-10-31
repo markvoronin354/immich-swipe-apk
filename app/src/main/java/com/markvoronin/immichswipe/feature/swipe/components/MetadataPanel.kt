@@ -101,6 +101,12 @@ fun MetadataPanel(
                     onDrag(available.y)
                     return Offset(0f, available.y)
                 }
+                // Fully open and the content has nothing left to scroll: keep pulling to stretch the panel.
+                // Only for finger input; consuming fling leftovers would keep the fling (and the spring-back) running.
+                if (available.y < 0 && panelProgress >= 1f && source == NestedScrollSource.UserInput) {
+                    onDrag(available.y)
+                    return Offset(0f, available.y)
+                }
                 return Offset.Zero
             }
 
