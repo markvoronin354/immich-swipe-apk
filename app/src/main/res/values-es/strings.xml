@@ -64,6 +64,7 @@
     <string name="profile_remove_all_accounts_confirm_msg">¿Seguro que quieres eliminar todas las cuentas guardadas? Se cerrará tu sesión.</string>
     <string name="profile_source_code">Código fuente</string>
     <string name="profile_saved_accounts">Cuentas guardadas</string>
+    <string name="profile_account_title">Cuenta</string>
     <string name="profile_add_account">Añadir otra cuenta</string>
     <string name="profile_add_account_title">Añadir cuenta</string>
     <string name="diag_online">Servidor en línea</string>

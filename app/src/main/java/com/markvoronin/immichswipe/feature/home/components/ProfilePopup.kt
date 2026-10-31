@@ -3,7 +3,6 @@ package com.markvoronin.immichswipe.feature.home.components
 import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -52,11 +51,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -110,24 +106,20 @@ fun ProfilePopup(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 4.dp),
+                        .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = onClose) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close), modifier = Modifier.size(28.dp))
                     }
-                    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-                    val logoRes = if (isDark) R.drawable.immichswipe_logo_colors_dark else R.drawable.immichswipe_logo_colors_light
-                    
-                    Image(
-                        painter = painterResource(id = logoRes),
-                        contentDescription = null,
-                        modifier = Modifier.height(22.dp),
-                        contentScale = ContentScale.Fit
+                    Text(
+                        text = stringResource(R.string.profile_account_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
                     )
                     IconButton(onClick = onSettingsClick) {
-                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_title))
+                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_title), modifier = Modifier.size(28.dp))
                     }
                 }
 

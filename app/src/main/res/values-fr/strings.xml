@@ -65,6 +65,7 @@
     <string name="profile_remove_all_accounts_confirm_msg">Voulez-vous vraiment supprimer tous les comptes enregistrés ? Vous serez déconnecté.</string>
     <string name="profile_source_code">Code source</string>
     <string name="profile_saved_accounts">Comptes enregistrés</string>
+    <string name="profile_account_title">Compte</string>
     <string name="profile_add_account">Ajouter un compte</string>
     <string name="profile_add_account_title">Ajouter un compte</string>
     <string name="diag_online">Serveur opérationnel</string>
