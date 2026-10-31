@@ -46,5 +46,6 @@ data class SwipeCardActions(
     val onShare: (Asset) -> Unit = {},
     val onToggleMute: () -> Unit = {},
     val onToggleFullSize: () -> Unit = {},
+    val loadAlbumNames: suspend (String) -> List<String> = { emptyList() },
     val onSwipeOffsetChanged: (Float) -> Unit = {}
 )

@@ -524,6 +524,15 @@ class SwipeViewModel @Inject constructor(
     fun toggleFullResolution() { _uiState.update { it.copy(isFullResolution = !it.isFullResolution) } }
     fun toggleMute() { _uiState.update { it.copy(isMuted = !_uiState.value.isMuted) } }
 
+    /** Names of the real albums containing [assetId]; empty when the lookup fails. */
+    suspend fun loadAlbumNames(assetId: String): List<String> = try {
+        albumRepository.getAlbumsForAsset(assetId).filter { !it.isVirtual }.map { it.albumName }
+    } catch (e: Exception) {
+        e.rethrowIfCancelled()
+        AppLogger.e("SwipeViewModel", "Error loading albums for asset", e)
+        emptyList()
+    }
+
     fun openAddToAlbumDialog() {
         _uiState.update { it.copy(showAddToAlbumDialog = true, isFetchingAlbumsForDialog = true) }
         viewModelScope.launch {

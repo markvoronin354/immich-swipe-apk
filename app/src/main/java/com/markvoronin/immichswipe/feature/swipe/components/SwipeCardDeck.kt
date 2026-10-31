@@ -165,6 +165,7 @@ fun SwipeCardDeck(
                             onShare = { viewModel.shareAsset(it) },
                             onToggleMute = { viewModel.toggleMute() },
                             onToggleFullSize = { viewModel.toggleFullResolution() },
+                            loadAlbumNames = { viewModel.loadAlbumNames(it) },
                             onSwipeOffsetChanged = { offset ->
                                 if (!isNextCard) {
                                     topCardOffsetX = offset

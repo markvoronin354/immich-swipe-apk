@@ -10,6 +10,7 @@ import retrofit2.http.HTTP
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ImmichApi {
 
@@ -18,6 +19,9 @@ interface ImmichApi {
 
     @GET("api/albums")
     suspend fun getAlbums(): List<Album>
+
+    @GET("api/albums")
+    suspend fun getAlbumsForAsset(@Query("assetId") assetId: String): List<Album>
 
     @GET("api/albums/{id}")
     suspend fun getAlbumDetail(@Path("id") albumId: String): AlbumDetailResponse

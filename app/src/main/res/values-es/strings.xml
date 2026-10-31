@@ -174,6 +174,8 @@
     <string name="swipe_metadata_format">Formato</string>
     <string name="swipe_metadata_size">Tamaño</string>
     <string name="swipe_metadata_resolution">Resolución</string>
+    <string name="swipe_metadata_albums">Álbumes</string>
+    <string name="swipe_metadata_no_albums">Ninguno</string>
     <string name="swipe_loading">Cargando…</string>
     <string name="swipe_fetching_assets">Cargando elementos…</string>
     <string name="swipe_syncing">Sincronizando…</string>

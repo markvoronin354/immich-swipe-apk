@@ -40,6 +40,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -126,6 +127,15 @@ fun SwipeCard(
     val offsetY = remember(asset.id) { Animatable(if (enterFromBelow && !isNext) 1500f else 0f) }
     val panelProgress = remember(asset.id) { Animatable(0f) }
     var isEnteringFromBelow by remember(asset.id) { mutableStateOf(offsetY.value != 0f) }
+
+    // Albums containing this asset, fetched the first time its metadata panel is opened.
+    var albumNames by remember(asset.id) { mutableStateOf<List<String>?>(null) }
+    val isMetadataOpen by remember { derivedStateOf { panelProgress.value > 0f } }
+    LaunchedEffect(asset.id, isMetadataOpen) {
+        if (isMetadataOpen && !isNext && albumNames == null) {
+            albumNames = actions.loadAlbumNames(asset.id)
+        }
+    }
 
     LaunchedEffect(offsetY) {
         if (isEnteringFromBelow) {
@@ -846,7 +856,7 @@ fun SwipeCard(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(max = 300.dp)
+                                .heightIn(max = 360.dp)
                                 .onSizeChanged { metadataHeightPx = it.height.toFloat() }
                                 .offset {
                                     val yOffset = (metadataHeightPx * (1f - panelProgress.value)).toInt()
@@ -855,6 +865,7 @@ fun SwipeCard(
                         ) {
                             MetadataPanel(
                                 asset = asset,
+                                albumNames = albumNames,
                                 onClose = {
                                     scope.launch {
                                         offsetX.animateTo(

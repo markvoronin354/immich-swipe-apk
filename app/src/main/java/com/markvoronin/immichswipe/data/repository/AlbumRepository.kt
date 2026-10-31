@@ -29,6 +29,10 @@ class AlbumRepository(
     }
 
 
+    suspend fun getAlbumsForAsset(assetId: String): List<Album> {
+        return api.getAlbumsForAsset(assetId)
+    }
+
     suspend fun getAlbumArchiveCount(albumId: String): Int {
         return try {
             api.getSearchStatistics(

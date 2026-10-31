@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.PhotoAlbum
 import androidx.compose.material.icons.filled.SdStorage
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -50,6 +51,7 @@ import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 @Composable
 fun MetadataPanel(
     asset: Asset,
+    albumNames: List<String>?,
     onClose: () -> Unit,
     onDrag: (Float) -> Unit = {},
     onDragEnd: (Float) -> Unit = {},
@@ -133,6 +135,12 @@ fun MetadataPanel(
                 MetadataRow(Icons.Default.SdStorage, stringResource(R.string.swipe_metadata_size), stringResource(R.string.swipe_loading))
                 MetadataRow(Icons.Default.AspectRatio, stringResource(R.string.swipe_metadata_resolution), stringResource(R.string.swipe_loading))
             }
+            val albumsLabel = when {
+                albumNames == null -> stringResource(R.string.swipe_loading)
+                albumNames.isEmpty() -> stringResource(R.string.swipe_metadata_no_albums)
+                else -> albumNames.joinToString(", ")
+            }
+            MetadataRow(Icons.Default.PhotoAlbum, stringResource(R.string.swipe_metadata_albums), albumsLabel)
         }
     }
 }
