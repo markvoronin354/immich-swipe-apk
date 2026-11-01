@@ -23,13 +23,15 @@ import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -38,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
@@ -54,6 +57,7 @@ import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SwipeHeader(
     uiState: SwipeUiState,
@@ -241,12 +245,12 @@ fun SwipeHeader(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            StatBadge(label = stringResource(R.string.swipe_keep), count = uiState.allKeptCount, color = MaterialGreen)
+            StatBadge(label = stringResource(R.string.swipe_keep), count = uiState.allKeptCount, color = MaterialGreen, shape = MaterialShapes.Cookie6Sided.toShape())
             if (uiState.skippedCount > 0) {
-                StatBadge(label = stringResource(R.string.swipe_skip), count = uiState.skippedCount, color = Color(0xFFFFA500))
+                StatBadge(label = stringResource(R.string.swipe_skip), count = uiState.skippedCount, color = Color(0xFFFFA500), shape = MaterialShapes.Clover4Leaf.toShape())
             }
-            StatBadge(label = stringResource(R.string.swipe_delete), count = uiState.deletedCount, color = MaterialRed)
-            StatBadge(label = stringResource(R.string.swipe_total), count = uiState.totalCount, color = MaterialTheme.colorScheme.outline)
+            StatBadge(label = stringResource(R.string.swipe_delete), count = uiState.deletedCount, color = MaterialRed, shape = MaterialShapes.Gem.toShape())
+            StatBadge(label = stringResource(R.string.swipe_total), count = uiState.totalCount, color = MaterialTheme.colorScheme.outline, shape = MaterialShapes.Flower.toShape())
         }
     }
 }
@@ -298,12 +302,12 @@ fun HeaderInfo(
 }
 
 @Composable
-fun StatBadge(label: String, count: Int, color: Color) {
+fun StatBadge(label: String, count: Int, color: Color, shape: Shape) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             modifier = Modifier
-                .size(8.dp)
-                .clip(CircleShape)
+                .size(12.dp)
+                .clip(shape)
                 .background(color)
         )
         Spacer(Modifier.width(6.dp))

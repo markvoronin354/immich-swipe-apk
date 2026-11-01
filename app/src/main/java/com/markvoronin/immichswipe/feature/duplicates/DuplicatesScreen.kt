@@ -37,7 +37,6 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -58,13 +57,16 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -83,6 +85,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -641,6 +644,7 @@ fun DuplicatesScreen(
 }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DuplicatesHeader(
     clustersCount: Int,
@@ -785,9 +789,9 @@ private fun DuplicatesHeader(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            StatBadge(label = stringResource(R.string.swipe_keep), count = keepCount, color = MaterialGreen)
-            StatBadge(label = stringResource(R.string.swipe_delete), count = deleteCount, color = MaterialRed)
-            StatBadge(text = groupsText, color = MaterialTheme.colorScheme.outline)
+            StatBadge(label = stringResource(R.string.swipe_keep), count = keepCount, color = MaterialGreen, shape = MaterialShapes.Cookie6Sided.toShape())
+            StatBadge(label = stringResource(R.string.swipe_delete), count = deleteCount, color = MaterialRed, shape = MaterialShapes.Gem.toShape())
+            StatBadge(text = groupsText, color = MaterialTheme.colorScheme.outline, shape = MaterialShapes.Flower.toShape())
         }
     }
 }
@@ -836,17 +840,17 @@ private fun HeaderInfo(
 }
 
 @Composable
-private fun StatBadge(label: String, count: Int, color: Color) {
-    StatBadge(text = "$count $label", color = color)
+private fun StatBadge(label: String, count: Int, color: Color, shape: Shape) {
+    StatBadge(text = "$count $label", color = color, shape = shape)
 }
 
 @Composable
-private fun StatBadge(text: String, color: Color) {
+private fun StatBadge(text: String, color: Color, shape: Shape) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             modifier = Modifier
-                .size(8.dp)
-                .clip(CircleShape)
+                .size(12.dp)
+                .clip(shape)
                 .background(color)
         )
         Spacer(Modifier.width(6.dp))
