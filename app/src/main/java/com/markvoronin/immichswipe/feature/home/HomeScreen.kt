@@ -28,7 +28,6 @@ import androidx.compose.material.icons.filled.SyncLock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -61,6 +60,7 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.feature.auth.AuthScreen
 import com.markvoronin.immichswipe.feature.auth.AuthViewModel
+import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.DuplicatesScreen
 import com.markvoronin.immichswipe.feature.duplicates.DuplicatesViewModel
 import com.markvoronin.immichswipe.feature.home.components.AlbumGrid
@@ -246,7 +246,7 @@ fun HomeScreen(
                                 Box(modifier = Modifier.weight(1f)) {
                                     if (uiState.isLoading && uiState.albums.isEmpty()) {
                                         Box(Modifier.fillMaxSize()) {
-                                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                                            WavyLoadingIndicator(modifier = Modifier.align(Alignment.Center))
                                         }
                                     } else if (uiState.error != null) {
                                         ErrorView(error = uiState.error!!) { viewModel.loadUser() }

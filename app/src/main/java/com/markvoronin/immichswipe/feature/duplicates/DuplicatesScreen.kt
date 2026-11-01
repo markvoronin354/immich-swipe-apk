@@ -56,7 +56,6 @@ import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -87,7 +86,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -98,6 +96,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.markvoronin.immichswipe.R
+import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.components.DuplicateClusterCard
 import com.markvoronin.immichswipe.feature.duplicates.components.FullScreenPreviewData
 import com.markvoronin.immichswipe.feature.duplicates.components.FullScreenPreviewModal
@@ -223,7 +222,7 @@ fun DuplicatesScreen(
         ) {
             val boxScope = this
             if (uiState.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                WavyLoadingIndicator(modifier = Modifier.align(Alignment.Center))
             } else if (uiState.clusters.isEmpty()) {
                 Column(
                     modifier = Modifier.align(Alignment.Center),
@@ -589,7 +588,7 @@ fun DuplicatesScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            CircularProgressIndicator()
+                            WavyLoadingIndicator()
                             Text(
                                 text = stringResource(R.string.swipe_syncing),
                                 style = MaterialTheme.typography.bodyLarge
@@ -611,7 +610,7 @@ fun DuplicatesScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            CircularProgressIndicator()
+                            WavyLoadingIndicator()
                             Text(
                                 text = stringResource(R.string.duplicates_ai_analyzing),
                                 style = MaterialTheme.typography.titleMedium

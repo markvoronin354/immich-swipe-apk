@@ -41,10 +41,8 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -84,6 +82,8 @@ import coil3.request.crossfade
 import coil3.size.Precision
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Asset
+import com.markvoronin.immichswipe.feature.common.WavyLoadingBar
+import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.components.DuplicateVideoPlayer
 import com.markvoronin.immichswipe.feature.swipe.SwipeUiState
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
@@ -201,11 +201,7 @@ fun SummaryDialog(
                     val isLoadingDeletedAssets = uiState.deletedCount > uiState.deletedAssets.size
                     if (isLoadingDeletedAssets) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(12.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            WavyLoadingIndicator(size = 12.dp, strokeWidth = 2.dp)
                             Spacer(Modifier.width(6.dp))
                             Text(
                                 "${uiState.deletedAssets.size} / ${uiState.deletedCount}",
@@ -256,11 +252,7 @@ fun SummaryDialog(
                                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
-                                            CircularProgressIndicator(
-                                                modifier = Modifier.size(24.dp),
-                                                strokeWidth = 2.5.dp,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
+                                            WavyLoadingIndicator(size = 24.dp, strokeWidth = 2.5.dp)
                                         }
                                     }
                                 }
@@ -274,11 +266,7 @@ fun SummaryDialog(
                         modifier = Modifier.fillMaxWidth().height(100.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(28.dp),
-                                strokeWidth = 3.dp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            WavyLoadingIndicator(size = 28.dp, strokeWidth = 3.dp)
                         }
                     }
                 } else {
@@ -299,8 +287,8 @@ fun SummaryDialog(
 
                 if (uiState.isSyncing) {
                     Spacer(Modifier.height(16.dp))
-                    LinearProgressIndicator(
-                        modifier = Modifier.fillMaxWidth().clip(CircleShape),
+                    WavyLoadingBar(
+                        modifier = Modifier.fillMaxWidth(),
                         color = Color(0xFFD32F2F)
                     )
                 }
