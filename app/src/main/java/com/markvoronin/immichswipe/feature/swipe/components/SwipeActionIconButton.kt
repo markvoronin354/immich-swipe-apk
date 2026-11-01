@@ -14,10 +14,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
-import com.kyant.backdrop.drawBackdrop
-import com.kyant.backdrop.effects.blur
-import com.kyant.backdrop.effects.lens
-import com.kyant.backdrop.effects.vibrancy
 
 @Composable
 fun SwipeActionIconButton(
@@ -32,17 +28,7 @@ fun SwipeActionIconButton(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .drawBackdrop(
-                backdrop = backdrop,
-                shape = { CircleShape },
-                shadow = null,
-                effects = {
-                    vibrancy()
-                    blur(2.dp.toPx())
-                    lens(8.dp.toPx(), 16.dp.toPx(), true)
-                },
-                onDrawSurface = { drawRect(Color.Black.copy(alpha = 0.25f)) }
-            )
+            .glassCircle(backdrop)
             .clip(CircleShape)
             .combinedClickable(
                 enabled = enabled,

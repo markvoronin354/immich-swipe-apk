@@ -6,6 +6,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,29 +26,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
-import com.kyant.backdrop.drawBackdrop
-import com.kyant.backdrop.effects.blur
-import com.kyant.backdrop.effects.lens
-import com.kyant.backdrop.effects.vibrancy
 import com.markvoronin.immichswipe.R
 
-private fun Modifier.glassCircle(backdrop: Backdrop): Modifier = drawBackdrop(
-    backdrop = backdrop,
-    shape = { CircleShape },
-    shadow = null,
-    effects = {
-        vibrancy()
-        blur(2.dp.toPx())
-        lens(8.dp.toPx(), 16.dp.toPx(), true)
-    },
-    onDrawSurface = { drawRect(Color.Black.copy(alpha = 0.25f)) }
-)
+// Library-free glass look: dark scrim plus a rim highlight that is brightest on opposite corners.
+// `backdrop` is unused; kept so call sites don't change.
+@Suppress("UNUSED_PARAMETER")
+internal fun Modifier.glassCircle(backdrop: Backdrop): Modifier = this
+    .background(Color.Black.copy(alpha = 0.25f), CircleShape)
+    .border(
+        width = 1.dp,
+        brush = Brush.linearGradient(
+            listOf(Color.White.copy(alpha = 0.5f), Color.White.copy(alpha = 0.12f), Color.White.copy(alpha = 0.35f))
+        ),
+        shape = CircleShape
+    )
 
 @Composable
 fun PreviewControls(

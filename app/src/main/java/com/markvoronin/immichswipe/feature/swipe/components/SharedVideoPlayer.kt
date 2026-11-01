@@ -10,6 +10,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
@@ -49,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
@@ -75,10 +79,6 @@ import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import com.kyant.backdrop.drawBackdrop
-import com.kyant.backdrop.effects.blur
-import com.kyant.backdrop.effects.lens
-import com.kyant.backdrop.effects.vibrancy
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.CardDisplayMode
@@ -88,36 +88,18 @@ import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 
-/** Small glass surface for the player controls; [lensHeight] must not exceed the shape's smallest corner radius. */
-internal fun Modifier.glassSurface(backdrop: Backdrop, shape: Shape, lensHeight: Dp): Modifier = drawBackdrop(
-    backdrop = backdrop,
-    shape = { shape },
-    shadow = null,
-    effects = {
-        vibrancy()
-        blur(2.dp.toPx())
-        lens(lensHeight.toPx(), (lensHeight * 2f).toPx(), true)
-    },
-    onDrawSurface = { drawRect(Color.Black.copy(alpha = 0.25f)) }
+private fun rimBrush() = Brush.linearGradient(
+    listOf(Color.White.copy(alpha = 0.5f), Color.White.copy(alpha = 0.12f), Color.White.copy(alpha = 0.35f))
 )
 
-/** Seek bar thumb: a small glass lens in place of the flat bar. */
-@Composable
-internal fun SeekThumb(backdrop: Backdrop) {
-    Box(
-        modifier = Modifier
-            .size(width = 14.dp, height = 30.dp)
-            .drawBackdrop(
-                backdrop = backdrop,
-                shape = { CircleShape },
-                effects = {
-                    vibrancy()
-                    lens(6.dp.toPx(), 12.dp.toPx(), true)
-                },
-                onDrawSurface = { drawRect(Color.White.copy(alpha = 0.3f)) }
-            )
-    )
-}
+/** Small glass-look surface for the player controls: dark scrim plus rim highlight. */
+internal fun Modifier.glassSurface(shape: Shape): Modifier = this
+    .background(Color.Black.copy(alpha = 0.25f), shape)
+    .border(1.dp, rimBrush(), shape)
+
+/** `backdrop` and `lensHeight` are unused; kept so call sites don't change. */
+@Suppress("UNUSED_PARAMETER")
+internal fun Modifier.glassSurface(backdrop: Backdrop, shape: Shape, lensHeight: Dp): Modifier = glassSurface(shape)
 
 @OptIn(UnstableApi::class)
 @kotlin.OptIn(ExperimentalMaterial3Api::class)
@@ -356,6 +338,8 @@ fun SharedVideoPlayer(
 
                         // 1. Indicators Row (Pause, Timestamp, Size) - Now ABOVE
                         Row(
+                            // Landscape fullscreen: nudge down so the pills clear the favorite button above them.
+                            modifier = if (isFullscreen && isLandscape) Modifier.offset(y = 8.dp) else Modifier,
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
@@ -427,7 +411,7 @@ fun SharedVideoPlayer(
                             val seekBarColors = SliderDefaults.colors(
                                 thumbColor = MaterialTheme.colorScheme.primary,
                                 activeTrackColor = MaterialTheme.colorScheme.primary,
-                                inactiveTrackColor = Color.Transparent
+                                inactiveTrackColor = Color.White.copy(alpha = 0.3f)
                             )
                             Spacer(Modifier.height(2.dp))
                             Row(
@@ -451,10 +435,10 @@ fun SharedVideoPlayer(
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
-                                
+
                                 Spacer(Modifier.width(12.dp))
 
-                                // Material3 1.5 only allows custom thumb/track through SliderState; it works in 0..1 fractions of the duration.
+                                // SliderState works in 0..1 fractions of the duration.
                                 val durationMs = duration.toFloat().coerceAtLeast(1f)
                                 val sliderState = remember { SliderState() }
                                 SideEffect {
@@ -474,16 +458,6 @@ fun SharedVideoPlayer(
                                         player.seekTo(scrubValue)
                                     },
                                     colors = seekBarColors,
-                                    thumb = { SeekThumb(playerBackdrop) },
-                                    // The glass is the track itself; its inactive colour is transparent so only the glass shows.
-                                    track = { sliderState ->
-                                        SliderDefaults.Track(
-                                            sliderState = sliderState,
-                                            colors = seekBarColors,
-                                            thumbTrackGapSize = 0.dp,
-                                            modifier = Modifier.glassSurface(playerBackdrop, CircleShape, 5.dp)
-                                        )
-                                    },
                                     modifier = Modifier.weight(1f)
                                 )
                             }

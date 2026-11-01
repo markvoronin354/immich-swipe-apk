@@ -16,22 +16,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Surface
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -67,10 +68,12 @@ import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
 import com.markvoronin.immichswipe.data.datastore.SessionDataStore
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.common.MediaLoadingIndicator
+import com.markvoronin.immichswipe.feature.swipe.components.glassSurface
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(UnstableApi::class)
+@kotlin.OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DuplicateVideoPlayer(
     asset: Asset,
@@ -251,16 +254,13 @@ fun DuplicateVideoPlayer(
         ) {
             if (duration > 0) {
                 val timeToDisplay = if (isScrubbing) scrubValue else currentTime
-                Surface(
-                    color = Color.Black.copy(alpha = 0.6f),
-                    shape = RoundedCornerShape(4.dp)
-                ) {
+                Box(modifier = Modifier.glassSurface(CircleShape)) {
                     Text(
                         text = "${formatMediaTime(timeToDisplay)} / ${formatMediaTime(duration)}",
                         color = Color.White,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
@@ -280,7 +280,7 @@ fun DuplicateVideoPlayer(
                         }
                     },
                     modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                        .glassSurface(CircleShape)
                         .size(36.dp)
                 ) {
                     Icon(
@@ -293,26 +293,32 @@ fun DuplicateVideoPlayer(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
+                // SliderState works in 0..1 fractions of the duration.
+                val seekBarColors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
+                )
+                val durationMs = duration.toFloat().coerceAtLeast(1f)
+                val sliderState = remember { SliderState() }
+                SideEffect {
+                    sliderState.value = ((if (isScrubbing) scrubValue else currentTime).toFloat() / durationMs).coerceIn(0f, 1f)
+                }
+
                 Slider(
-                    value = (if (isScrubbing) scrubValue else currentTime).toFloat(),
+                    state = sliderState,
                     onValueChange = {
+                        sliderState.value = it
                         isScrubbing = true
-                        scrubValue = it.toLong()
+                        scrubValue = (it * durationMs).toLong()
                         exoPlayer?.seekTo(scrubValue)
                     },
                     onValueChangeFinished = {
                         isScrubbing = false
                         exoPlayer?.seekTo(scrubValue)
                     },
-                    valueRange = 0f..duration.toFloat().coerceAtLeast(1f),
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.primary,
-                        activeTrackColor = MaterialTheme.colorScheme.primary,
-                        inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(24.dp)
+                    colors = seekBarColors,
+                    modifier = Modifier.weight(1f)
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))
@@ -323,7 +329,7 @@ fun DuplicateVideoPlayer(
                         exoPlayer?.volume = if (isMuted) 0f else 1f
                     },
                     modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                        .glassSurface(CircleShape)
                         .size(36.dp)
                 ) {
                     Icon(
