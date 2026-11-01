@@ -19,8 +19,8 @@ android {
         minSdk = 26
         //noinspection OldTargetApi
         targetSdk = 36
-        versionCode = 431
-        versionName = "4.3.1"
+        versionCode = 440
+        versionName = "4.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -30,7 +30,7 @@ android {
             abi {
                 isEnable = true
                 reset()
-                include("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
+                include("arm64-v8a", "armeabi-v7a")
                 isUniversalApk = true
             }
         }
