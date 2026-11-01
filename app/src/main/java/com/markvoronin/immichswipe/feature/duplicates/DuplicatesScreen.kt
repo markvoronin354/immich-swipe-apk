@@ -222,7 +222,7 @@ fun DuplicatesScreen(
         ) {
             val boxScope = this
             if (uiState.isLoading) {
-                WavyLoadingIndicator(modifier = Modifier.align(Alignment.Center))
+                WavyLoadingIndicator(modifier = Modifier.align(Alignment.Center), delayed = true)
             } else if (uiState.clusters.isEmpty()) {
                 Column(
                     modifier = Modifier.align(Alignment.Center),

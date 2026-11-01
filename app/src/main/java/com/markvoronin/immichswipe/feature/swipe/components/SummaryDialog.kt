@@ -201,7 +201,7 @@ fun SummaryDialog(
                     val isLoadingDeletedAssets = uiState.deletedCount > uiState.deletedAssets.size
                     if (isLoadingDeletedAssets) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            WavyLoadingIndicator(size = 12.dp, strokeWidth = 2.dp)
+                            WavyLoadingIndicator(size = 12.dp, strokeWidth = 2.dp, delayed = true)
                             Spacer(Modifier.width(6.dp))
                             Text(
                                 "${uiState.deletedAssets.size} / ${uiState.deletedCount}",
@@ -252,7 +252,7 @@ fun SummaryDialog(
                                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
-                                            WavyLoadingIndicator(size = 24.dp, strokeWidth = 2.5.dp)
+                                            WavyLoadingIndicator(size = 24.dp, strokeWidth = 2.5.dp, delayed = true)
                                         }
                                     }
                                 }
@@ -266,7 +266,7 @@ fun SummaryDialog(
                         modifier = Modifier.fillMaxWidth().height(100.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            WavyLoadingIndicator(size = 28.dp, strokeWidth = 3.dp)
+                            WavyLoadingIndicator(size = 28.dp, strokeWidth = 3.dp, delayed = true)
                         }
                     }
                 } else {

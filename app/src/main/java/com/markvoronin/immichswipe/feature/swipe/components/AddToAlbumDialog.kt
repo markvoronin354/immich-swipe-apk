@@ -237,7 +237,7 @@ fun AddToAlbumDialog(
                 ) {
                     when {
                         isLoading -> {
-                            WavyLoadingIndicator(size = 36.dp)
+                            WavyLoadingIndicator(size = 36.dp, delayed = true)
                         }
                         filteredAlbums.isEmpty() && !showLockInDialog -> {
                             Column(
