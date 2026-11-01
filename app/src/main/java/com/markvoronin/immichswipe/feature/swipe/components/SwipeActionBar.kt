@@ -1,12 +1,18 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
@@ -26,11 +32,17 @@ import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -40,11 +52,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.SortOrder
@@ -53,7 +69,100 @@ import com.markvoronin.immichswipe.feature.swipe.SwipeUiState
 import com.markvoronin.immichswipe.feature.swipe.SwipeViewModel
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
+import kotlinx.coroutines.delay
 
+/**
+ * Borderless icon button: at rest it is just the icon. Pressing blooms a [shape] blob behind it that springs in
+ * and spins slightly while the icon dips. When [checked] is non-null it is a toggle whose blob stays while on,
+ * and [active] keeps the blob up while a menu or dialog opened by the button is showing. With [linger] the
+ * blob also stays for half a second after a tap, so instant actions still get visible feedback.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun BarIconButton(
+    onClick: () -> Unit,
+    buttonSize: Dp,
+    shape: Shape,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    checked: Boolean? = null,
+    active: Boolean = false,
+    linger: Boolean = false,
+    content: @Composable () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    var lingering by remember { mutableStateOf(false) }
+    LaunchedEffect(pressed) {
+        if (pressed) {
+            lingering = linger
+        } else if (lingering) {
+            delay(500)
+            lingering = false
+        }
+    }
+    val showBlob = pressed || active || lingering
+    val spec = remember { MotionScheme.expressive().fastSpatialSpec<Float>() }
+    val blobScale by animateFloatAsState(
+        targetValue = if (showBlob || checked == true) 1f else 0f,
+        animationSpec = spec,
+        label = "barBlobScale"
+    )
+    val blobRotation by animateFloatAsState(
+        targetValue = if (showBlob) 25f else 0f,
+        animationSpec = spec,
+        label = "barBlobRotation"
+    )
+    val iconScale by animateFloatAsState(
+        targetValue = if (pressed) 0.88f else 1f,
+        animationSpec = spec,
+        label = "barIconScale"
+    )
+    val blobColor = if (checked == true) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer
+
+    val clickModifier = if (checked == null) {
+        Modifier.clickable(
+            interactionSource = interactionSource,
+            indication = null,
+            enabled = enabled,
+            role = Role.Button,
+            onClick = onClick
+        )
+    } else {
+        Modifier.toggleable(
+            value = checked,
+            interactionSource = interactionSource,
+            indication = null,
+            enabled = enabled,
+            role = Role.Switch,
+            onValueChange = { onClick() }
+        )
+    }
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .size(buttonSize)
+            .then(clickModifier)
+            .graphicsLayer { alpha = if (enabled) 1f else 0.38f }
+    ) {
+        Box(
+            Modifier
+                .size(buttonSize)
+                .graphicsLayer {
+                    scaleX = blobScale
+                    scaleY = blobScale
+                    rotationZ = blobRotation
+                }
+                .background(blobColor, shape)
+        )
+        Box(Modifier.graphicsLayer { scaleX = iconScale; scaleY = iconScale }) {
+            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground, content = content)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SwipeActionBar(
     uiState: SwipeUiState,
@@ -134,79 +243,81 @@ fun SwipeActionBar(
             }
         }
 
-        IconButton(
+        val buttonSize = if (uiState.showSwipeButtons) 40.dp else 44.dp
+        val iconSize = if (uiState.showSwipeButtons) 22.dp else 26.dp
+
+        BarIconButton(
             onClick = { viewModel.undo() },
             enabled = uiState.history.isNotEmpty(),
-            modifier = Modifier.size(if (uiState.showSwipeButtons) 36.dp else 44.dp)
+            buttonSize = buttonSize,
+            shape = MaterialShapes.Clover4Leaf.toShape(),
+            linger = true
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.Undo,
                 contentDescription = stringResource(R.string.swipe_undo),
-                modifier = Modifier.size(if (uiState.showSwipeButtons) 22.dp else 26.dp)
+                modifier = Modifier.size(iconSize)
             )
         }
 
         if (uiState.showArchiveButton) {
-            IconButton(
-                onClick = { viewModel.toggleArchive() },
-                modifier = Modifier.size(if (uiState.showSwipeButtons) 36.dp else 44.dp)
-            ) {
+            BarIconButton(onClick = { viewModel.toggleArchive() }, buttonSize = buttonSize, shape = MaterialShapes.Cookie6Sided.toShape(), linger = true) {
                 Icon(
                     imageVector = Icons.Default.Archive,
                     contentDescription = stringResource(R.string.swipe_archive),
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.size(if (uiState.showSwipeButtons) 22.dp else 26.dp)
+                    modifier = Modifier.size(iconSize)
                 )
             }
         }
 
         if (uiState.showFavoriteButton) {
             val isFav = uiState.currentAsset?.let { uiState.isFavorite(it.id) } ?: false
-            IconButton(
+            BarIconButton(
                 onClick = { viewModel.toggleFavorite() },
-                modifier = Modifier.size(if (uiState.showSwipeButtons) 36.dp else 44.dp)
+                buttonSize = buttonSize,
+                shape = MaterialShapes.Cookie9Sided.toShape(),
+                checked = isFav
             ) {
                 Icon(
                     imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                     contentDescription = stringResource(R.string.swipe_favorite),
-                    tint = if (isFav) Color.Red else MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.size(if (uiState.showSwipeButtons) 22.dp else 26.dp)
+                    tint = if (isFav) Color.Red else LocalContentColor.current,
+                    modifier = Modifier.size(iconSize)
                 )
             }
         }
 
         if (uiState.showAddToAlbumButton) {
-            IconButton(
+            BarIconButton(
                 onClick = { viewModel.openAddToAlbumDialog() },
-                modifier = Modifier.size(if (uiState.showSwipeButtons) 36.dp else 44.dp)
+                buttonSize = buttonSize,
+                shape = MaterialShapes.Flower.toShape(),
+                active = uiState.showAddToAlbumDialog
             ) {
                 Icon(
                     imageVector = Icons.Default.LibraryAdd,
                     contentDescription = stringResource(R.string.add_to_album_title),
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.size(if (uiState.showSwipeButtons) 22.dp else 26.dp)
+                    modifier = Modifier.size(iconSize)
                 )
             }
         }
 
         if (uiState.showLockButton) {
-            IconButton(
-                onClick = { viewModel.toggleLock() },
-                modifier = Modifier.size(if (uiState.showSwipeButtons) 36.dp else 44.dp)
-            ) {
+            BarIconButton(onClick = { viewModel.toggleLock() }, buttonSize = buttonSize, shape = MaterialShapes.Gem.toShape(), linger = true) {
                 Icon(
                     imageVector = Icons.Default.Lock,
                     contentDescription = stringResource(R.string.swipe_locked),
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.size(if (uiState.showSwipeButtons) 22.dp else 26.dp)
+                    modifier = Modifier.size(iconSize)
                 )
             }
         }
 
         Box {
-            IconButton(
+            BarIconButton(
                 onClick = { onSortMenuToggle(true) },
-                modifier = Modifier.size(if (uiState.showSwipeButtons) 36.dp else 44.dp)
+                buttonSize = buttonSize,
+                shape = MaterialShapes.Cookie12Sided.toShape(),
+                active = showSortMenu
             ) {
                 val icon = when (uiState.sortOrder) {
                     SortOrder.SHUFFLED -> Icons.Default.Shuffle
@@ -218,7 +329,7 @@ fun SwipeActionBar(
                     SortOrder.TYPE_PHOTO_FIRST, SortOrder.TYPE_PHOTO_FIRST_ASC, SortOrder.TYPE_PHOTO_FIRST_SHUFFLED -> Icons.Default.Image
                 }
 
-                val tint = if (uiState.sortOrder != SortOrder.CHRONOLOGICAL_DESC) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
+                val tint = if (uiState.sortOrder != SortOrder.CHRONOLOGICAL_DESC) MaterialTheme.colorScheme.primary else LocalContentColor.current
                 val baseSize = if (uiState.showSwipeButtons) 24.dp else 28.dp
 
                 Icon(
