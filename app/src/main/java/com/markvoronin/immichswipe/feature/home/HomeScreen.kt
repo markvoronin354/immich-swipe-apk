@@ -9,31 +9,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.SearchOff
-import androidx.compose.material.icons.filled.Swipe
 import androidx.compose.material.icons.filled.SyncLock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -61,6 +51,7 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.feature.auth.AuthScreen
 import com.markvoronin.immichswipe.feature.auth.AuthViewModel
+import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.DuplicatesScreen
 import com.markvoronin.immichswipe.feature.duplicates.DuplicatesViewModel
 import com.markvoronin.immichswipe.feature.home.components.AlbumGrid
@@ -246,7 +237,7 @@ fun HomeScreen(
                                 Box(modifier = Modifier.weight(1f)) {
                                     if (uiState.isLoading && uiState.albums.isEmpty()) {
                                         Box(Modifier.fillMaxSize()) {
-                                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                                            WavyLoadingIndicator(modifier = Modifier.align(Alignment.Center))
                                         }
                                     } else if (uiState.error != null) {
                                         ErrorView(error = uiState.error!!) { viewModel.loadUser() }
@@ -347,71 +338,6 @@ fun HomeScreen(
                         }
                     }
                 )
-
-                // Temporarily hidden floating navigation bar
-                if (false) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .fillMaxWidth()
-                            .padding(horizontal = 64.dp, vertical = 24.dp)
-                            .navigationBarsPadding()
-                    ) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
-                        shape = CircleShape,
-                        shadowElevation = 8.dp,
-                        tonalElevation = 4.dp,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        NavigationBar(
-                            containerColor = Color.Transparent,
-                            tonalElevation = 0.dp,
-                            modifier = Modifier.height(52.dp),
-                            windowInsets = WindowInsets(0, 0, 0, 0)
-                        ) {
-                            NavigationBarItem(
-                                selected = currentTopKey is NavKey.Home,
-                                onClick = {
-                                    if (currentTopKey !is NavKey.Home) {
-                                        backStack.clear()
-                                        backStack.add(NavKey.Home)
-                                        viewModel.refreshAlbums()
-                                    }
-                                },
-                                icon = { Icon(Icons.Default.Home, contentDescription = stringResource(R.string.nav_home), modifier = Modifier.size(24.dp)) },
-                                alwaysShowLabel = false,
-                                colors = NavigationBarItemDefaults.colors(
-                                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                )
-                            )
-                            NavigationBarItem(
-                                selected = currentTopKey is NavKey.Swipe || currentTopKey is NavKey.Duplicates,
-                                onClick = {
-                                    if (currentTopKey !is NavKey.Swipe && currentTopKey !is NavKey.Duplicates) {
-                                        val targetAlbum = uiState.selectedAlbum
-                                        if (targetAlbum?.id == Album.VIRTUAL_DUPLICATES_ID) {
-                                            backStack.add(NavKey.Duplicates)
-                                        } else {
-                                            val targetId = targetAlbum?.id ?: Album.VIRTUAL_ALL_ID
-                                            backStack.add(NavKey.Swipe(targetId))
-                                        }
-                                    }
-                                },
-                                icon = { Icon(Icons.Default.Swipe, contentDescription = stringResource(R.string.nav_swipe), modifier = Modifier.size(24.dp)) },
-                                alwaysShowLabel = false,
-                                colors = NavigationBarItemDefaults.colors(
-                                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                )
-                            )
-                        }
-                    }
-                }
-            }
             }
         }
     }

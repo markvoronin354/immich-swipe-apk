@@ -237,6 +237,18 @@ fun SwipeScreen(
             }
     }
 
+    val isTutorialShowing = tutorialController.isVisible && tutorialController.phase == TutorialPhase.SWIPE
+    val currentIsTutorialShowing by rememberUpdatedState(isTutorialShowing)
+
+    // Keeps the first video paused behind the tutorial and resumes it once the tutorial closes.
+    LaunchedEffect(isTutorialShowing) {
+        if (isTutorialShowing) {
+            sharedPlayer.playWhenReady = false
+        } else if (currentAsset?.type == "VIDEO") {
+            sharedPlayer.playWhenReady = true
+        }
+    }
+
      LaunchedEffect(currentAsset?.id) {
         if (currentAsset?.type == "VIDEO") {
             // Do NOT stop/clear the player, as it forces the underlying surface to go blank
@@ -255,7 +267,7 @@ fun SwipeScreen(
             // Using setMediaSource with resetPosition=true is smoother than stop()+clear()
             sharedPlayer.setMediaSource(mediaSource, true)
             sharedPlayer.prepare()
-            sharedPlayer.playWhenReady = true
+            sharedPlayer.playWhenReady = !currentIsTutorialShowing
         } else {
             sharedPlayer.stop()
             sharedPlayer.clearMediaItems()

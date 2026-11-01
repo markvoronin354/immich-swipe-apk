@@ -65,6 +65,7 @@
     <string name="profile_remove_all_accounts_confirm_msg">Voulez-vous vraiment supprimer tous les comptes enregistrés ? Vous serez déconnecté.</string>
     <string name="profile_source_code">Code source</string>
     <string name="profile_saved_accounts">Comptes enregistrés</string>
+    <string name="profile_account_title">Compte</string>
     <string name="profile_add_account">Ajouter un compte</string>
     <string name="profile_add_account_title">Ajouter un compte</string>
     <string name="diag_online">Serveur opérationnel</string>
@@ -114,6 +115,7 @@
     <string name="settings_immich_open_mode_app">Application</string>
     <string name="settings_immich_open_mode_web">Web</string>
     <string name="settings_immich_long_press_web">Appui long pour ouvrir dans le navigateur</string>
+    <string name="settings_immich_long_press_app">Appui long pour ouvrir dans l\'application</string>
     <string name="settings_video_behavior_label">Comportement vidéo</string>
     <string name="settings_video_behavior_desc">Gérer l\'interaction avec les autres sons de l\'appareil lors de la lecture d\'une vidéo</string>
     <string name="settings_video_pause">Couper tous les autres sons</string>

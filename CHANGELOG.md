@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+Changes since v4.3.0.
+
+### Added
+- **Full-resolution button on the swipe screen** to view the current photo or video in full
+  resolution.
+- **Setting to keep full resolution on while swiping.**
+- **The fullscreen viewer shows the full-resolution original**, and it stays on across swipes.
+- **Pinch-to-zoom goes up to 10x**, up from 5x.
+
+### Fixed
+- **Stale swipe decisions are cleared** after they are reset from the duplicates screen.
+- **Resetting on the duplicates screen only affects photos in duplicate clusters.**
+- **Fixed an initialization-order bug** where early collectors could see `knownDbDecisionIds`
+  before it was set up.
+
+### Under the hood
+- Android Gradle Plugin upgrade.
+
 ## 4.2.0 - 2026-10-21
 
 A security and reliability release. Highlights: saved API keys are now encrypted, failed syncs no

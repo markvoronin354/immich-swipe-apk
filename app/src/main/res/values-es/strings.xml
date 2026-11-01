@@ -64,6 +64,7 @@
     <string name="profile_remove_all_accounts_confirm_msg">¿Seguro que quieres eliminar todas las cuentas guardadas? Se cerrará tu sesión.</string>
     <string name="profile_source_code">Código fuente</string>
     <string name="profile_saved_accounts">Cuentas guardadas</string>
+    <string name="profile_account_title">Cuenta</string>
     <string name="profile_add_account">Añadir otra cuenta</string>
     <string name="profile_add_account_title">Añadir cuenta</string>
     <string name="diag_online">Servidor en línea</string>
@@ -113,6 +114,7 @@
     <string name="settings_immich_open_mode_app">Aplicación</string>
     <string name="settings_immich_open_mode_web">Web</string>
     <string name="settings_immich_long_press_web">Manten presionado para abrir en el navegador</string>
+    <string name="settings_immich_long_press_app">Mantén presionado para abrir en la app</string>
     <string name="settings_video_behavior_label">Comportamiento del vídeo</string>
     <string name="settings_video_behavior_desc">Gestiona la interacción con otros sonidos del dispositivo al reproducir un vídeo</string>
     <string name="settings_video_pause">Pausar otros sonidos</string>

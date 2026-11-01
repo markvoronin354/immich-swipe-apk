@@ -53,7 +53,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SdStorage
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -101,6 +100,7 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.ImmichLauncher
 import com.markvoronin.immichswipe.core.cache.VideoPreloader
 import com.markvoronin.immichswipe.domain.model.Asset
+import com.markvoronin.immichswipe.feature.common.MediaLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
 import com.markvoronin.immichswipe.feature.settings.components.horizontalFadingEdges
 import com.markvoronin.immichswipe.feature.swipe.components.ZoomableBox
@@ -740,11 +740,7 @@ fun FullScreenPreviewModal(
                                         .background(Color.Black.copy(alpha = 0.2f)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    CircularProgressIndicator(
-                                        color = Color.White,
-                                        strokeWidth = 3.dp,
-                                        modifier = Modifier.size(40.dp)
-                                    )
+                                    MediaLoadingIndicator()
                                 }
                             }
                         }

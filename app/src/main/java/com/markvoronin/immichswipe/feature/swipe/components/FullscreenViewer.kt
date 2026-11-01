@@ -24,13 +24,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -78,6 +76,7 @@ import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.domain.model.Asset
+import com.markvoronin.immichswipe.feature.common.MediaLoadingIndicator
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
@@ -124,6 +123,7 @@ fun FullscreenViewer(
     var pausedByHoldState by remember(asset.id) { mutableStateOf(false) }
     var ignoreNextTap by remember { mutableStateOf(false) }
     var isZoomedIn by remember(asset.id) { mutableStateOf(false) }
+    var isFullSizeLoaded by remember(asset.id, isFullSize) { mutableStateOf(false) }
 
     val swipeY = remember { Animatable(0f) }
     val swipeX = remember { Animatable(0f) }
@@ -542,11 +542,7 @@ fun FullscreenViewer(
                                         .background(Color.Black.copy(alpha = 0.2f)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    CircularProgressIndicator(
-                                        color = Color.White,
-                                        strokeWidth = 3.dp,
-                                        modifier = Modifier.size(40.dp)
-                                    )
+                                    MediaLoadingIndicator()
                                 }
                             }
                         }
@@ -640,12 +636,17 @@ fun FullscreenViewer(
                             .graphicsLayer { rotationZ = animatedRotation }
                             .rotateLayout(rotation),
                         contentScale = ContentScale.Fit,
+                        onSuccess = { isFullSizeLoaded = true },
                         error = {
                             AssetErrorView()
                         }
                     )
                 }
             }
+            }
+
+            if (isFullSize && !isFullSizeLoaded && asset.type != "VIDEO") {
+                MediaLoadingIndicator(modifier = Modifier.align(Alignment.Center))
             }
 
             if (showSizeIndicator && asset.type != "VIDEO") {

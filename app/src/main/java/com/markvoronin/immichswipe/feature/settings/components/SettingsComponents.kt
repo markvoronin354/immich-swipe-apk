@@ -1,11 +1,15 @@
 package com.markvoronin.immichswipe.feature.settings.components
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,13 +21,25 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -37,6 +53,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+
+// How much the tapped button grows (as a fraction of its size); neighbours shrink to compensate.
+private const val JiggleGrow = 0.07f
 
 fun Modifier.verticalFadingEdges(
     scrollState: ScrollState,
@@ -330,11 +350,34 @@ fun SettingsToggleItem(
                 )
             }
         }
-        Switch(
+        SettingsSwitch(
             checked = checked,
             onCheckedChange = onCheckedChange
         )
     }
+}
+
+/** Settings switch with a check icon in the thumb when on (the expressive switch look). */
+@Composable
+fun SettingsSwitch(
+    checked: Boolean,
+    onCheckedChange: ((Boolean) -> Unit)?,
+    modifier: Modifier = Modifier
+) {
+    Switch(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        modifier = modifier,
+        thumbContent = if (checked) {
+            {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                )
+            }
+        } else null
+    )
 }
 
 @Composable
@@ -360,14 +403,107 @@ fun SettingsToggleItemSmall(
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.weight(1f)
         )
-        Switch(
-            checked = checked, 
+        SettingsSwitch(
+            checked = checked,
             onCheckedChange = onCheckedChange,
             modifier = Modifier.scale(0.8f)
         )
     }
 }
 
+/**
+ * Tracks which button in a group was just tapped so the group can jiggle: the tapped button grows
+ * slightly and its neighbours give way, keeping the group's total width constant.
+ */
+@Stable
+class JiggleGroup(private val count: Int) {
+    var tappedIndex by mutableIntStateOf(-1)
+        private set
+    var tapToken by mutableIntStateOf(0)
+        private set
+
+    fun tap(index: Int) {
+        tappedIndex = index
+        tapToken++
+    }
+
+    internal fun clear() {
+        tappedIndex = -1
+    }
+
+    /** Animated size multiplier for the button at [index], ~1 at rest. */
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    @Composable
+    fun factor(index: Int): Float {
+        val target = when {
+            tappedIndex < 0 -> 1f
+            tappedIndex == index -> 1f + JiggleGrow
+            else -> 1f - JiggleGrow / (count - 1).coerceAtLeast(1)
+        }
+        val spec = remember { MotionScheme.expressive().fastSpatialSpec<Float>() }
+        return animateFloatAsState(targetValue = target, animationSpec = spec, label = "jiggleFactor").value
+    }
+}
+
+/**
+ * The jiggle is triggered by the tap itself, not the pressed state: inside a scrolling screen a quick tap
+ * reports press and release together, so the pressed state is never observed.
+ */
+@Composable
+fun rememberJiggleGroup(count: Int): JiggleGroup {
+    val group = remember(count) { JiggleGroup(count) }
+    LaunchedEffect(group.tapToken) {
+        if (group.tappedIndex >= 0) {
+            delay(120)
+            group.clear()
+        }
+    }
+    return group
+}
+
+/** A [Row] whose buttons jiggle together; call [JiggleGroup.tap] on click and size items with [JiggleGroup.factor]. */
+@Composable
+fun JiggleRow(
+    count: Int,
+    modifier: Modifier = Modifier,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp),
+    content: @Composable RowScope.(JiggleGroup) -> Unit
+) {
+    val group = rememberJiggleGroup(count)
+    Row(modifier = modifier, horizontalArrangement = horizontalArrangement) {
+        content(group)
+    }
+}
+
+/** Expressive selector button: morphs shape when selected and keeps the settings colours and outline. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun SettingsToggleButton(
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit
+) {
+    ToggleButton(
+        checked = selected,
+        onCheckedChange = { onClick() },
+        modifier = modifier.height(40.dp),
+        colors = ToggleButtonDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            checkedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        ),
+        border = BorderStroke(
+            width = if (selected) 1.5.dp else 1.dp,
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        ),
+        contentPadding = PaddingValues(horizontal = 8.dp),
+        content = content
+    )
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ThemeButton(
     text: String,
@@ -376,10 +512,16 @@ fun ThemeButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Corners tighten when selected, with the expressive spring.
+    val corner by animateDpAsState(
+        targetValue = if (selected) 14.dp else 22.dp,
+        animationSpec = remember { MotionScheme.expressive().fastSpatialSpec() },
+        label = "themeButtonCorner"
+    )
     Surface(
         onClick = onClick,
         modifier = modifier.height(72.dp),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(corner),
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLowest,
         border = BorderStroke(
             width = if (selected) 1.5.dp else 1.dp,

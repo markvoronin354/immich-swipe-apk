@@ -41,7 +41,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -117,9 +116,7 @@ fun ActionButtonsScreen(
                 showIcon = uiState.showImmichButton,
                 onShowIconChange = { viewModel.setShowImmichButton(it) },
                 openMode = uiState.immichOpenMode,
-                onOpenModeSelected = { viewModel.setImmichOpenMode(it) },
-                longPressWeb = uiState.immichLongPressWeb,
-                onLongPressWebChange = { viewModel.setImmichLongPressWeb(it) }
+                onOpenModeSelected = { viewModel.setImmichOpenMode(it) }
             )
 
             IconPositionPickerCard(
@@ -179,7 +176,7 @@ fun ActionButtonsScreen(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
-                        Switch(
+                        SettingsSwitch(
                             checked = uiState.keepFullResolution,
                             onCheckedChange = { viewModel.setKeepFullResolution(it) },
                             modifier = Modifier.scale(0.8f)
@@ -256,7 +253,7 @@ fun IconPositionPickerCard(
                     }
                 }
 
-                Switch(
+                SettingsSwitch(
                     checked = showIcon,
                     onCheckedChange = onShowIconChange,
                     modifier = Modifier.scale(0.8f)
@@ -281,28 +278,32 @@ fun IconPositionPickerCard(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        JiggleRow(count = 2) { jiggle ->
                             CornerButton(
                                 position = IconPosition.TOP_LEFT,
                                 selected = selectedPosition == IconPosition.TOP_LEFT,
-                                onClick = { onPositionSelected(IconPosition.TOP_LEFT) }
+                                onClick = { jiggle.tap(0); onPositionSelected(IconPosition.TOP_LEFT) },
+                                widthFactor = jiggle.factor(0)
                             )
                             CornerButton(
                                 position = IconPosition.TOP_RIGHT,
                                 selected = selectedPosition == IconPosition.TOP_RIGHT,
-                                onClick = { onPositionSelected(IconPosition.TOP_RIGHT) }
+                                onClick = { jiggle.tap(1); onPositionSelected(IconPosition.TOP_RIGHT) },
+                                widthFactor = jiggle.factor(1)
                             )
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        JiggleRow(count = 2) { jiggle ->
                             CornerButton(
                                 position = IconPosition.BOTTOM_LEFT,
                                 selected = selectedPosition == IconPosition.BOTTOM_LEFT,
-                                onClick = { onPositionSelected(IconPosition.BOTTOM_LEFT) }
+                                onClick = { jiggle.tap(0); onPositionSelected(IconPosition.BOTTOM_LEFT) },
+                                widthFactor = jiggle.factor(0)
                             )
                             CornerButton(
                                 position = IconPosition.BOTTOM_RIGHT,
                                 selected = selectedPosition == IconPosition.BOTTOM_RIGHT,
-                                onClick = { onPositionSelected(IconPosition.BOTTOM_RIGHT) }
+                                onClick = { jiggle.tap(1); onPositionSelected(IconPosition.BOTTOM_RIGHT) },
+                                widthFactor = jiggle.factor(1)
                             )
                         }
                     }
@@ -335,33 +336,19 @@ fun CornerButton(
     position: IconPosition,
     selected: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    widthFactor: Float = 1f
 ) {
-    Surface(
+    SettingsToggleButton(
+        selected = selected,
         onClick = onClick,
-        modifier = modifier
-            .width(125.dp)
-            .height(40.dp),
-        shape = RoundedCornerShape(12.dp),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(
-            width = if (selected) 1.5.dp else 1.dp,
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-        )
+        modifier = modifier.width(125.dp * widthFactor)
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 8.dp)
-        ) {
-            Text(
-                text = stringResource(position.labelRes),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        Text(
+            text = stringResource(position.labelRes),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+        )
     }
 }
 
@@ -374,9 +361,7 @@ fun ImmichCardAction(
     showIcon: Boolean,
     onShowIconChange: (Boolean) -> Unit,
     openMode: ImmichOpenMode,
-    onOpenModeSelected: (ImmichOpenMode) -> Unit,
-    longPressWeb: Boolean,
-    onLongPressWebChange: (Boolean) -> Unit
+    onOpenModeSelected: (ImmichOpenMode) -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -414,7 +399,7 @@ fun ImmichCardAction(
                     )
                 }
 
-                Switch(
+                SettingsSwitch(
                     checked = showIcon,
                     onCheckedChange = onShowIconChange,
                     modifier = Modifier.scale(0.8f)
@@ -444,28 +429,32 @@ fun ImmichCardAction(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        JiggleRow(count = 2) { jiggle ->
                             CornerButton(
                                 position = IconPosition.TOP_LEFT,
                                 selected = selectedPosition == IconPosition.TOP_LEFT,
-                                onClick = { onPositionSelected(IconPosition.TOP_LEFT) }
+                                onClick = { jiggle.tap(0); onPositionSelected(IconPosition.TOP_LEFT) },
+                                widthFactor = jiggle.factor(0)
                             )
                             CornerButton(
                                 position = IconPosition.TOP_RIGHT,
                                 selected = selectedPosition == IconPosition.TOP_RIGHT,
-                                onClick = { onPositionSelected(IconPosition.TOP_RIGHT) }
+                                onClick = { jiggle.tap(1); onPositionSelected(IconPosition.TOP_RIGHT) },
+                                widthFactor = jiggle.factor(1)
                             )
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        JiggleRow(count = 2) { jiggle ->
                             CornerButton(
                                 position = IconPosition.BOTTOM_LEFT,
                                 selected = selectedPosition == IconPosition.BOTTOM_LEFT,
-                                onClick = { onPositionSelected(IconPosition.BOTTOM_LEFT) }
+                                onClick = { jiggle.tap(0); onPositionSelected(IconPosition.BOTTOM_LEFT) },
+                                widthFactor = jiggle.factor(0)
                             )
                             CornerButton(
                                 position = IconPosition.BOTTOM_RIGHT,
                                 selected = selectedPosition == IconPosition.BOTTOM_RIGHT,
-                                onClick = { onPositionSelected(IconPosition.BOTTOM_RIGHT) }
+                                onClick = { jiggle.tap(1); onPositionSelected(IconPosition.BOTTOM_RIGHT) },
+                                widthFactor = jiggle.factor(1)
                             )
                         }
                     }
@@ -480,59 +469,48 @@ fun ImmichCardAction(
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
-                    Row(
+                    JiggleRow(
+                        count = 2,
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-                    ) {
+                    ) { jiggle ->
                         OpenModeButton(
                             text = stringResource(R.string.settings_immich_open_mode_app),
                             icon = Icons.Default.PhoneAndroid,
                             selected = openMode == ImmichOpenMode.APP,
-                            onClick = { onOpenModeSelected(ImmichOpenMode.APP) }
+                            onClick = { jiggle.tap(0); onOpenModeSelected(ImmichOpenMode.APP) },
+                            widthFactor = jiggle.factor(0)
                         )
                         OpenModeButton(
                             text = stringResource(R.string.settings_immich_open_mode_web),
                             icon = Icons.Default.Language,
                             selected = openMode == ImmichOpenMode.WEB,
-                            onClick = { onOpenModeSelected(ImmichOpenMode.WEB) }
+                            onClick = { jiggle.tap(1); onOpenModeSelected(ImmichOpenMode.WEB) },
+                            widthFactor = jiggle.factor(1)
                         )
                     }
 
-                    AnimatedVisibility(
-                        visible = openMode == ImmichOpenMode.APP,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.TouchApp,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = stringResource(R.string.settings_immich_long_press_web),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                            Switch(
-                                checked = longPressWeb,
-                                onCheckedChange = onLongPressWebChange,
-                                modifier = Modifier.scale(0.8f)
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.TouchApp,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = stringResource(
+                                if (openMode == ImmichOpenMode.APP) R.string.settings_immich_long_press_web
+                                else R.string.settings_immich_long_press_app
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 }
             }
@@ -546,41 +524,25 @@ fun OpenModeButton(
     icon: ImageVector,
     selected: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    widthFactor: Float = 1f
 ) {
-    Surface(
+    SettingsToggleButton(
+        selected = selected,
         onClick = onClick,
-        modifier = modifier
-            .width(125.dp)
-            .height(40.dp),
-        shape = RoundedCornerShape(12.dp),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(
-            width = if (selected) 1.5.dp else 1.dp,
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-        )
+        modifier = modifier.width(125.dp * widthFactor)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.outline
-            )
-            Spacer(Modifier.width(6.dp))
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+        )
     }
 }
 
@@ -663,23 +625,24 @@ fun StackOrientationPickerCard(
             )
             Spacer(Modifier.height(12.dp))
 
-            Row(
+            JiggleRow(
+                count = 2,
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-            ) {
+            ) { jiggle ->
                 StackOrientationButton(
                     text = stringResource(R.string.settings_button_stacking_horizontal),
                     selected = orientation == ButtonStackOrientation.HORIZONTAL,
                     isHorizontal = true,
-                    onClick = { onOrientationSelected(ButtonStackOrientation.HORIZONTAL) },
-                    modifier = Modifier.weight(1f)
+                    onClick = { jiggle.tap(0); onOrientationSelected(ButtonStackOrientation.HORIZONTAL) },
+                    modifier = Modifier.weight(jiggle.factor(0))
                 )
                 StackOrientationButton(
                     text = stringResource(R.string.settings_button_stacking_vertical),
                     selected = orientation == ButtonStackOrientation.VERTICAL,
                     isHorizontal = false,
-                    onClick = { onOrientationSelected(ButtonStackOrientation.VERTICAL) },
-                    modifier = Modifier.weight(1f)
+                    onClick = { jiggle.tap(1); onOrientationSelected(ButtonStackOrientation.VERTICAL) },
+                    modifier = Modifier.weight(jiggle.factor(1))
                 )
             }
         }
@@ -726,35 +689,21 @@ fun StackOrientationButton(
 ) {
     val tint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.outline
 
-    Surface(
+    SettingsToggleButton(
+        selected = selected,
         onClick = onClick,
-        modifier = modifier.height(42.dp),
-        shape = RoundedCornerShape(12.dp),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(
-            width = if (selected) 1.5.dp else 1.dp,
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-        )
+        modifier = modifier
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (isHorizontal) {
-                HorizontalCirclesIcon(tint = tint)
-            } else {
-                VerticalCirclesIcon(tint = tint)
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        if (isHorizontal) {
+            HorizontalCirclesIcon(tint = tint)
+        } else {
+            VerticalCirclesIcon(tint = tint)
         }
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+        )
     }
 }

@@ -18,8 +18,8 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Hd
-import androidx.compose.material.icons.outlined.Hd
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.Hd
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +30,7 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.ButtonStackOrientation
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichLauncher
+import com.markvoronin.immichswipe.core.ImmichOpenMode
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardActions
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardConfig
@@ -97,9 +98,10 @@ fun ActionButtonsOverlay(
                             onClick = {
                                 ImmichLauncher.openAssetInImmich(context, baseUrl, asset.id, mode = config.immichOpenMode)
                             },
-                            onLongClick = if (config.immichLongPressWeb && baseUrl.isNotBlank()) {
-                                { ImmichLauncher.openInWeb(context, baseUrl, asset.id) }
-                            } else null
+                            onLongClick = {
+                                val altMode = if (config.immichOpenMode == ImmichOpenMode.WEB) ImmichOpenMode.APP else ImmichOpenMode.WEB
+                                ImmichLauncher.openAssetInImmich(context, baseUrl, asset.id, mode = altMode)
+                            }
                         )
                     }
                 }

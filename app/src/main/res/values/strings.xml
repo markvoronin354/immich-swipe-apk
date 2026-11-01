@@ -64,6 +64,7 @@
     <string name="profile_remove_all_accounts_confirm_msg">Are you sure you want to remove all saved accounts? You will be logged out.</string>
     <string name="profile_source_code">Source code</string>
     <string name="profile_saved_accounts">Saved accounts</string>
+    <string name="profile_account_title">Account</string>
     <string name="profile_add_account">Add another account</string>
     <string name="profile_add_account_title">Add account</string>
     <string name="diag_online">Server online</string>
@@ -113,6 +114,7 @@
     <string name="settings_immich_open_mode_app">App</string>
     <string name="settings_immich_open_mode_web">Web</string>
     <string name="settings_immich_long_press_web">Long press to open in browser</string>
+    <string name="settings_immich_long_press_app">Long press to open in app</string>
     <string name="settings_video_behavior_label">Video behavior</string>
     <string name="settings_video_behavior_desc">Manage interaction with other device sounds when playing a video</string>
     <string name="settings_video_pause">Pause other sounds</string>

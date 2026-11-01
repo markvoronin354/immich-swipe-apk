@@ -34,10 +34,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
@@ -452,18 +454,25 @@ fun SharedVideoPlayer(
                                 
                                 Spacer(Modifier.width(12.dp))
 
+                                // Material3 1.5 only allows custom thumb/track through SliderState; it works in 0..1 fractions of the duration.
+                                val durationMs = duration.toFloat().coerceAtLeast(1f)
+                                val sliderState = remember { SliderState() }
+                                SideEffect {
+                                    sliderState.value = ((if (isScrubbing) scrubValue else currentTime).toFloat() / durationMs).coerceIn(0f, 1f)
+                                }
+
                                 Slider(
-                                    value = (if (isScrubbing) scrubValue else currentTime).toFloat(),
-                                    onValueChange = { 
+                                    state = sliderState,
+                                    onValueChange = {
+                                        sliderState.value = it
                                         isScrubbing = true
-                                        scrubValue = it.toLong()
+                                        scrubValue = (it * durationMs).toLong()
                                         player.seekTo(scrubValue)
                                     },
                                     onValueChangeFinished = {
                                         isScrubbing = false
                                         player.seekTo(scrubValue)
                                     },
-                                    valueRange = 0f..duration.toFloat().coerceAtLeast(1f),
                                     colors = seekBarColors,
                                     thumb = { SeekThumb(playerBackdrop) },
                                     // The glass is the track itself; its inactive colour is transparent so only the glass shows.
