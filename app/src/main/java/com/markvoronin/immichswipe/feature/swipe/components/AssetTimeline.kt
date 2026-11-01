@@ -30,8 +30,10 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.BrokenImage
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -180,6 +182,7 @@ fun AssetTimeline(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AssetTimelineItem(
     asset: Asset,
@@ -209,11 +212,17 @@ private fun AssetTimelineItem(
     val isNext = index == nextIndex
 
     // The item in the middle of the row is full size; the rest shrink, easing over as a swipe hands focus to the next one.
-    val focusProgress = when {
+    val targetFocus = when {
         index == focusIndex -> 1f - swipeProgress
         isNext -> swipeProgress
         else -> 0f
     }
+    // Springy follow, so focus changes that aren't driven by a swipe (taps, undo) bounce into place instead of snapping.
+    val focusProgress by animateFloatAsState(
+        targetValue = targetFocus,
+        animationSpec = MotionScheme.expressive().fastSpatialSpec(),
+        label = "TimelineFocus"
+    )
     val itemScale = UNFOCUSED_ITEM_SCALE + ((1f - UNFOCUSED_ITEM_SCALE) * focusProgress)
 
     val borderProgress = when {
