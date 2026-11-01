@@ -17,11 +17,13 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -330,11 +332,34 @@ fun SettingsToggleItem(
                 )
             }
         }
-        Switch(
+        SettingsSwitch(
             checked = checked,
             onCheckedChange = onCheckedChange
         )
     }
+}
+
+/** Settings switch with a check icon in the thumb when on (the expressive switch look). */
+@Composable
+fun SettingsSwitch(
+    checked: Boolean,
+    onCheckedChange: ((Boolean) -> Unit)?,
+    modifier: Modifier = Modifier
+) {
+    Switch(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        modifier = modifier,
+        thumbContent = if (checked) {
+            {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                )
+            }
+        } else null
+    )
 }
 
 @Composable
@@ -360,8 +385,8 @@ fun SettingsToggleItemSmall(
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.weight(1f)
         )
-        Switch(
-            checked = checked, 
+        SettingsSwitch(
+            checked = checked,
             onCheckedChange = onCheckedChange,
             modifier = Modifier.scale(0.8f)
         )

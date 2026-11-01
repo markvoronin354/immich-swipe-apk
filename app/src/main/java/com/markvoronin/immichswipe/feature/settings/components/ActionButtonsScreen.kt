@@ -41,7 +41,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -179,7 +178,7 @@ fun ActionButtonsScreen(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
-                        Switch(
+                        SettingsSwitch(
                             checked = uiState.keepFullResolution,
                             onCheckedChange = { viewModel.setKeepFullResolution(it) },
                             modifier = Modifier.scale(0.8f)
@@ -256,7 +255,7 @@ fun IconPositionPickerCard(
                     }
                 }
 
-                Switch(
+                SettingsSwitch(
                     checked = showIcon,
                     onCheckedChange = onShowIconChange,
                     modifier = Modifier.scale(0.8f)
@@ -414,7 +413,7 @@ fun ImmichCardAction(
                     )
                 }
 
-                Switch(
+                SettingsSwitch(
                     checked = showIcon,
                     onCheckedChange = onShowIconChange,
                     modifier = Modifier.scale(0.8f)
@@ -527,7 +526,7 @@ fun ImmichCardAction(
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
-                            Switch(
+                            SettingsSwitch(
                                 checked = longPressWeb,
                                 onCheckedChange = onLongPressWebChange,
                                 modifier = Modifier.scale(0.8f)
