@@ -93,7 +93,7 @@ fun SortPopupItem(
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).padding(end = 16.dp)
             )
         }
     }

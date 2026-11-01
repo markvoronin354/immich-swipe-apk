@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,7 +44,6 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteForever
@@ -56,11 +56,13 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -107,6 +109,7 @@ import com.markvoronin.immichswipe.feature.duplicates.components.InstagramZoomOv
 import com.markvoronin.immichswipe.feature.duplicates.components.ZoomData
 import com.markvoronin.immichswipe.feature.duplicates.components.formatSizeStr
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
+import com.markvoronin.immichswipe.feature.swipe.components.SortPopupItem
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import com.markvoronin.immichswipe.feature.tutorial.LocalTutorialController
@@ -863,6 +866,7 @@ private fun StatBadge(text: String, color: Color, shape: Shape) {
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DuplicatesBottomBar(
     uiState: DuplicatesUiState,
@@ -895,25 +899,16 @@ private fun DuplicatesBottomBar(
             }
 
             Box {
-                Surface(
+                FilledTonalIconButton(
                     onClick = { sortMenuExpanded = true },
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    shape = RoundedCornerShape(24.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    tonalElevation = 3.dp
+                    modifier = Modifier.size(IconButtonDefaults.mediumContainerSize()),
+                    shapes = IconButtonDefaults.shapes()
                 ) {
-                    Box(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = sortIcon,
-                            contentDescription = stringResource(R.string.duplicates_sort_button),
-                            modifier = Modifier.size(26.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    Icon(
+                        imageVector = sortIcon,
+                        contentDescription = stringResource(R.string.duplicates_sort_button),
+                        modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
+                    )
                 }
 
                 DropdownMenu(
@@ -925,75 +920,30 @@ private fun DuplicatesBottomBar(
                     shadowElevation = 8.dp,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.duplicates_sort_cluster_size)) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Sort,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        trailingIcon = if (uiState.sortOrder == DuplicatesSortOrder.CLUSTER_SIZE) {
-                            {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        } else null,
-                        onClick = {
-                            sortMenuExpanded = false
-                            onSortOrderSelected(DuplicatesSortOrder.CLUSTER_SIZE)
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.duplicates_sort_photos_first)) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Image,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        trailingIcon = if (uiState.sortOrder == DuplicatesSortOrder.PHOTOS_FIRST) {
-                            {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        } else null,
-                        onClick = {
-                            sortMenuExpanded = false
-                            onSortOrderSelected(DuplicatesSortOrder.PHOTOS_FIRST)
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.duplicates_sort_videos_first)) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Videocam,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        trailingIcon = if (uiState.sortOrder == DuplicatesSortOrder.VIDEOS_FIRST) {
-                            {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        } else null,
-                        onClick = {
-                            sortMenuExpanded = false
-                            onSortOrderSelected(DuplicatesSortOrder.VIDEOS_FIRST)
-                        }
-                    )
+                    SortPopupItem(
+                        R.string.duplicates_sort_cluster_size,
+                        Icons.AutoMirrored.Filled.Sort,
+                        uiState.sortOrder == DuplicatesSortOrder.CLUSTER_SIZE
+                    ) {
+                        sortMenuExpanded = false
+                        onSortOrderSelected(DuplicatesSortOrder.CLUSTER_SIZE)
+                    }
+                    SortPopupItem(
+                        R.string.duplicates_sort_photos_first,
+                        Icons.Default.Image,
+                        uiState.sortOrder == DuplicatesSortOrder.PHOTOS_FIRST
+                    ) {
+                        sortMenuExpanded = false
+                        onSortOrderSelected(DuplicatesSortOrder.PHOTOS_FIRST)
+                    }
+                    SortPopupItem(
+                        R.string.duplicates_sort_videos_first,
+                        Icons.Default.Videocam,
+                        uiState.sortOrder == DuplicatesSortOrder.VIDEOS_FIRST
+                    ) {
+                        sortMenuExpanded = false
+                        onSortOrderSelected(DuplicatesSortOrder.VIDEOS_FIRST)
+                    }
                 }
             }
 
@@ -1010,37 +960,28 @@ private fun DuplicatesBottomBar(
             }
 
             Box {
-                Surface(
+                FilledTonalButton(
                     onClick = { selectMenuExpanded = true },
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    shape = RoundedCornerShape(24.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    tonalElevation = 3.dp
+                    // Wide enough for the longest label so the button and its popup don't shift between modes.
+                    modifier = Modifier.defaultMinSize(minWidth = 176.dp, minHeight = ButtonDefaults.MediumContainerHeight),
+                    shapes = ButtonDefaults.shapes(),
+                    contentPadding = ButtonDefaults.contentPaddingFor(ButtonDefaults.MediumContainerHeight)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = selectButtonText,
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = null,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.AutoAwesome,
+                        contentDescription = null,
+                        modifier = Modifier.size(ButtonDefaults.iconSizeFor(ButtonDefaults.MediumContainerHeight))
+                    )
+                    Spacer(Modifier.width(ButtonDefaults.iconSpacingFor(ButtonDefaults.MediumContainerHeight)))
+                    Text(
+                        text = selectButtonText,
+                        fontWeight = FontWeight.Bold,
+                        style = ButtonDefaults.textStyleFor(ButtonDefaults.MediumContainerHeight)
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = null
+                    )
                 }
 
                 DropdownMenu(
@@ -1052,145 +993,55 @@ private fun DuplicatesBottomBar(
                     shadowElevation = 8.dp,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.duplicates_keep_largest)) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.ExpandMore,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        trailingIcon = if (uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_LARGEST) {
-                            {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        } else null,
-                        onClick = {
-                            selectMenuExpanded = false
-                            viewModel.autoSelect(keepLargest = true)
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.duplicates_keep_smallest)) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.ExpandLess,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        trailingIcon = if (uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_SMALLEST) {
-                            {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        } else null,
-                        onClick = {
-                            selectMenuExpanded = false
-                            viewModel.autoSelect(keepLargest = false)
-                        }
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.duplicates_best_shot_auto)) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.AutoAwesome,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        trailingIcon = if (uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_BEST_SHOT_AUTO) {
-                            {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        } else null,
-                        onClick = {
-                            selectMenuExpanded = false
-                            viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.AUTO)
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.duplicates_best_shot_single)) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.AutoAwesome,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        trailingIcon = if (uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_BEST_SHOT_SINGLE) {
-                            {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        } else null,
-                        onClick = {
-                            selectMenuExpanded = false
-                            viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.SINGLE_BEST)
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.duplicates_best_shot_top_2)) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.AutoAwesome,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        trailingIcon = if (uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_BEST_SHOT_TOP_2) {
-                            {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        } else null,
-                        onClick = {
-                            selectMenuExpanded = false
-                            viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.TOP_2)
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.duplicates_best_shot_top_3)) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.AutoAwesome,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        trailingIcon = if (uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_BEST_SHOT_TOP_3) {
-                            {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        } else null,
-                        onClick = {
-                            selectMenuExpanded = false
-                            viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.TOP_3)
-                        }
-                    )
+                    SortPopupItem(
+                        R.string.duplicates_keep_largest,
+                        Icons.Default.ExpandMore,
+                        uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_LARGEST
+                    ) {
+                        selectMenuExpanded = false
+                        viewModel.autoSelect(keepLargest = true)
+                    }
+                    SortPopupItem(
+                        R.string.duplicates_keep_smallest,
+                        Icons.Default.ExpandLess,
+                        uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_SMALLEST
+                    ) {
+                        selectMenuExpanded = false
+                        viewModel.autoSelect(keepLargest = false)
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                    SortPopupItem(
+                        R.string.duplicates_best_shot_auto,
+                        Icons.Default.AutoAwesome,
+                        uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_BEST_SHOT_AUTO
+                    ) {
+                        selectMenuExpanded = false
+                        viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.AUTO)
+                    }
+                    SortPopupItem(
+                        R.string.duplicates_best_shot_single,
+                        Icons.Default.AutoAwesome,
+                        uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_BEST_SHOT_SINGLE
+                    ) {
+                        selectMenuExpanded = false
+                        viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.SINGLE_BEST)
+                    }
+                    SortPopupItem(
+                        R.string.duplicates_best_shot_top_2,
+                        Icons.Default.AutoAwesome,
+                        uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_BEST_SHOT_TOP_2
+                    ) {
+                        selectMenuExpanded = false
+                        viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.TOP_2)
+                    }
+                    SortPopupItem(
+                        R.string.duplicates_best_shot_top_3,
+                        Icons.Default.AutoAwesome,
+                        uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_BEST_SHOT_TOP_3
+                    ) {
+                        selectMenuExpanded = false
+                        viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.TOP_3)
+                    }
                 }
             }
         }
