@@ -227,8 +227,8 @@ fun DuplicateClusterCard(
                 val weightSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
                 val keepWeight by animateFloatAsState(
                     targetValue = when {
-                        keepPressed -> 1.15f
-                        deletePressed -> 0.9f
+                        keepPressed -> 1.07f
+                        deletePressed -> 0.93f
                         else -> 1f
                     },
                     animationSpec = weightSpec,
@@ -236,8 +236,8 @@ fun DuplicateClusterCard(
                 )
                 val deleteWeight by animateFloatAsState(
                     targetValue = when {
-                        deletePressed -> 1.15f
-                        keepPressed -> 0.9f
+                        deletePressed -> 1.07f
+                        keepPressed -> 0.93f
                         else -> 1f
                     },
                     animationSpec = weightSpec,
