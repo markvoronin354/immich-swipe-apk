@@ -1,10 +1,13 @@
 package com.markvoronin.immichswipe.feature.duplicates.components
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollableDefaults
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -24,12 +27,21 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -46,9 +58,11 @@ import com.markvoronin.immichswipe.feature.duplicates.DuplicateClusterUiModel
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DuplicateClusterCard(
     cluster: DuplicateClusterUiModel,
@@ -190,61 +204,102 @@ fun DuplicateClusterCard(
                 }
             }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            val keepInteraction = remember { MutableInteractionSource() }
+            val deleteInteraction = remember { MutableInteractionSource() }
+            val keepTouched by keepInteraction.collectIsPressedAsState()
+            val deleteTouched by deleteInteraction.collectIsPressedAsState()
+            // Inside a scrolling list a quick tap reports press and release together, so the pressed state
+            // is never seen; a click also triggers a short pulse so every tap jiggles.
+            var keepClicked by remember { mutableStateOf(false) }
+            var deleteClicked by remember { mutableStateOf(false) }
+            LaunchedEffect(keepClicked) { if (keepClicked) { delay(120); keepClicked = false } }
+            LaunchedEffect(deleteClicked) { if (deleteClicked) { delay(120); deleteClicked = false } }
+            val keepPressed = keepTouched || keepClicked
+            val deletePressed = deleteTouched || deleteClicked
+            // Expressive motion gives the pressed button its springy overshoot; scoped so the rest of the app is unaffected.
+            MaterialTheme(
+                colorScheme = MaterialTheme.colorScheme,
+                shapes = MaterialTheme.shapes,
+                typography = MaterialTheme.typography,
+                motionScheme = MotionScheme.expressive()
             ) {
-                Surface(
-                    onClick = onKeepAll,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (isAllKeep) Color(0xFF4CAF50) else Color(0xFF4CAF50).copy(alpha = 0.15f),
-                    contentColor = if (isAllKeep) Color.White else Color(0xFF4CAF50)
+                // The pressed button grows and its neighbour gives way; the spring overshoots for the jiggle.
+                val weightSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
+                val keepWeight by animateFloatAsState(
+                    targetValue = when {
+                        keepPressed -> 1.15f
+                        deletePressed -> 0.9f
+                        else -> 1f
+                    },
+                    animationSpec = weightSpec,
+                    label = "keepAllWeight"
+                )
+                val deleteWeight by animateFloatAsState(
+                    targetValue = when {
+                        deletePressed -> 1.15f
+                        keepPressed -> 0.9f
+                        else -> 1f
+                    },
+                    animationSpec = weightSpec,
+                    label = "deleteAllWeight"
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)
+                    // Pill when off, morphs to a rounded rectangle when on.
+                    ToggleButton(
+                        checked = isAllKeep,
+                        onCheckedChange = {
+                            keepClicked = true
+                            onKeepAll()
+                        },
+                        colors = ToggleButtonDefaults.colors(
+                            containerColor = Color(0xFF4CAF50).copy(alpha = 0.15f),
+                            contentColor = Color(0xFF4CAF50),
+                            checkedContainerColor = Color(0xFF4CAF50),
+                            checkedContentColor = Color.White
+                        ),
+                        interactionSource = keepInteraction,
+                        modifier = Modifier.weight(keepWeight.coerceAtLeast(0.1f)),
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null
+                            )
+                        }
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
                         Text(
                             text = stringResource(R.string.duplicates_keep_all),
-                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold
                         )
                     }
-                }
 
-                Surface(
-                    onClick = onDeleteAll,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (isAllDelete) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
-                    contentColor = if (isAllDelete) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.error
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)
+                    ToggleButton(
+                        checked = isAllDelete,
+                        onCheckedChange = {
+                            deleteClicked = true
+                            onDeleteAll()
+                        },
+                        colors = ToggleButtonDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
+                            contentColor = MaterialTheme.colorScheme.error,
+                            checkedContainerColor = MaterialTheme.colorScheme.error,
+                            checkedContentColor = MaterialTheme.colorScheme.onError
+                        ),
+                        interactionSource = deleteInteraction,
+                        modifier = Modifier.weight(deleteWeight.coerceAtLeast(0.1f)),
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = null
+                            )
+                        }
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
                         Text(
                             text = stringResource(R.string.duplicates_delete_all),
-                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold
                         )
                     }
