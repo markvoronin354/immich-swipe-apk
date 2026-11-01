@@ -116,9 +116,7 @@ fun ActionButtonsScreen(
                 showIcon = uiState.showImmichButton,
                 onShowIconChange = { viewModel.setShowImmichButton(it) },
                 openMode = uiState.immichOpenMode,
-                onOpenModeSelected = { viewModel.setImmichOpenMode(it) },
-                longPressWeb = uiState.immichLongPressWeb,
-                onLongPressWebChange = { viewModel.setImmichLongPressWeb(it) }
+                onOpenModeSelected = { viewModel.setImmichOpenMode(it) }
             )
 
             IconPositionPickerCard(
@@ -363,9 +361,7 @@ fun ImmichCardAction(
     showIcon: Boolean,
     onShowIconChange: (Boolean) -> Unit,
     openMode: ImmichOpenMode,
-    onOpenModeSelected: (ImmichOpenMode) -> Unit,
-    longPressWeb: Boolean,
-    onLongPressWebChange: (Boolean) -> Unit
+    onOpenModeSelected: (ImmichOpenMode) -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -494,41 +490,27 @@ fun ImmichCardAction(
                         )
                     }
 
-                    AnimatedVisibility(
-                        visible = openMode == ImmichOpenMode.APP,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.TouchApp,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = stringResource(R.string.settings_immich_long_press_web),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                            SettingsSwitch(
-                                checked = longPressWeb,
-                                onCheckedChange = onLongPressWebChange,
-                                modifier = Modifier.scale(0.8f)
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.TouchApp,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = stringResource(
+                                if (openMode == ImmichOpenMode.APP) R.string.settings_immich_long_press_web
+                                else R.string.settings_immich_long_press_app
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 }
             }
