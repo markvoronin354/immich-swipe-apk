@@ -26,8 +26,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,7 +51,6 @@ import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.colorControls
-import com.kyant.backdrop.effects.vibrancy
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
@@ -120,9 +119,9 @@ fun MetadataPanel(
 
     // Same corner radius as the swipe card so the panel sits exactly on top of it.
     val panelShape = RoundedCornerShape(16.dp)
-    // Light theme gets a white glass surface with dark text; dark theme keeps the dark surface with light text.
+    // Glass is tinted with the theme's container colour; light theme gets dark text, dark theme light text.
     val isLightTheme = MaterialTheme.colorScheme.surface.luminance() > 0.5f
-    val glassTint = if (isLightTheme) Color.White else Color.Black
+    val glassTint = MaterialTheme.colorScheme.surfaceContainer
     val glassContent = if (isLightTheme) Color.Black else Color.White
     Card(
         modifier = Modifier
