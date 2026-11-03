@@ -315,109 +315,27 @@ fun SharedVideoPlayer(
             val finalShowControls = showControls
             
             if (indicatorsVisible) {
-                AnimatedVisibility(
+                VideoControls(
                     visible = finalShowControls,
-                    enter = fadeIn(),
-                    exit = fadeOut(),
+                    isFullscreen = isFullscreen,
+                    isLandscape = isLandscape,
+                    controlsOffset = controlsOffset,
+                    backdrop = playerBackdrop,
+                    timeMs = if (isScrubbing) scrubValue else currentTime,
+                    durationMs = duration,
+                    showSize = showSize,
+                    fileSize = fileSize,
+                    onSeek = {
+                        isScrubbing = true
+                        scrubValue = it
+                        player.seekTo(it)
+                    },
+                    onSeekFinished = {
+                        isScrubbing = false
+                        player.seekTo(scrubValue)
+                    },
                     modifier = Modifier.align(Alignment.BottomCenter)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(bottom = (if (isFullscreen) (if (isLandscape) 12.dp else 24.dp) else 12.dp) + (if (isLandscape) 0.dp else controlsOffset))
-                            .padding(horizontal = if (isFullscreen) 24.dp else 16.dp)
-                            .fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        // The card's pills are larger than the fullscreen ones; a pill's lens can't exceed its corner radius.
-                        val pillTextStyle = if (isFullscreen) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium
-                        val pillVerticalPadding = if (isFullscreen) 2.dp else 4.dp
-                        val pillLens = if (isFullscreen) 4.dp else 6.dp
-
-                        // 1. Indicators Row (Timestamp, Size) - Now ABOVE
-                        Row(
-                            // Landscape fullscreen: nudge down so the pills clear the favorite button above them.
-                            modifier = if (isFullscreen && isLandscape) Modifier.offset(y = 8.dp) else Modifier,
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            if (duration > 0 || isFullscreen) {
-                                val timeToDisplay = if (isScrubbing) scrubValue else currentTime
-
-                                Box(
-                                    modifier = Modifier
-                                        .glassSurface(playerBackdrop, CircleShape, pillLens)
-                                        .padding(horizontal = 4.dp)
-                                ) {
-                                    Text(
-                                        text = "${formatMediaTime(timeToDisplay)} / ${
-                                            formatMediaTime(
-                                                duration
-                                            )
-                                        }",
-                                        color = Color.White,
-                                        style = pillTextStyle,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = pillVerticalPadding)
-                                    )
-                                }
-                            }
-
-                            if (showSize && fileSize != null) {
-                                if (duration > 0 || isFullscreen) Spacer(Modifier.width(8.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .glassSurface(playerBackdrop, CircleShape, pillLens)
-                                        .padding(horizontal = 4.dp)
-                                ) {
-                                    Text(
-                                        text = formatSize(fileSize),
-                                        color = Color.White,
-                                        style = pillTextStyle,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = pillVerticalPadding)
-                                    )
-                                }
-                            }
-                        }
-
-                        // 2. Progress Bar Row (Slider) - Now BELOW
-                        if (isFullscreen) {
-                            val seekBarColors = SliderDefaults.colors(
-                                thumbColor = MaterialTheme.colorScheme.primary,
-                                activeTrackColor = MaterialTheme.colorScheme.primary,
-                                inactiveTrackColor = Color.White.copy(alpha = 0.3f)
-                            )
-                            Spacer(Modifier.height(2.dp))
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                // SliderState works in 0..1 fractions of the duration.
-                                val durationMs = duration.toFloat().coerceAtLeast(1f)
-                                val sliderState = remember { SliderState() }
-                                SideEffect {
-                                    sliderState.value = ((if (isScrubbing) scrubValue else currentTime).toFloat() / durationMs).coerceIn(0f, 1f)
-                                }
-
-                                Slider(
-                                    state = sliderState,
-                                    onValueChange = {
-                                        sliderState.value = it
-                                        isScrubbing = true
-                                        scrubValue = (it * durationMs).toLong()
-                                        player.seekTo(scrubValue)
-                                    },
-                                    onValueChangeFinished = {
-                                        isScrubbing = false
-                                        player.seekTo(scrubValue)
-                                    },
-                                    colors = seekBarColors,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-                    }
-                }
+                )
             }
 
             AnimatedVisibility(
@@ -442,4 +360,118 @@ fun SharedVideoPlayer(
                 }
             }
         }
+}
+
+/**
+ * Timestamp and size pills, plus the seekbar in fullscreen. Also drawn on the next fullscreen card before its video
+ * loads, so the controls are already in place when it becomes the current one.
+ */
+@kotlin.OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun VideoControls(
+    visible: Boolean,
+    isFullscreen: Boolean,
+    isLandscape: Boolean,
+    controlsOffset: Dp,
+    backdrop: Backdrop,
+    timeMs: Long,
+    durationMs: Long,
+    showSize: Boolean,
+    fileSize: Long?,
+    onSeek: (Long) -> Unit,
+    onSeekFinished: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(bottom = (if (isFullscreen) (if (isLandscape) 12.dp else 24.dp) else 12.dp) + (if (isLandscape) 0.dp else controlsOffset))
+                .padding(horizontal = if (isFullscreen) 24.dp else 16.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // The card's pills are larger than the fullscreen ones; a pill's lens can't exceed its corner radius.
+            val pillTextStyle = if (isFullscreen) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium
+            val pillVerticalPadding = if (isFullscreen) 2.dp else 4.dp
+            val pillLens = if (isFullscreen) 4.dp else 6.dp
+
+            // 1. Indicators Row (Timestamp, Size) - Now ABOVE
+            Row(
+                // Landscape fullscreen: nudge down so the pills clear the favorite button above them.
+                modifier = if (isFullscreen && isLandscape) Modifier.offset(y = 8.dp) else Modifier,
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                if (durationMs > 0 || isFullscreen) {
+                    Box(
+                        modifier = Modifier
+                            .glassSurface(backdrop, CircleShape, pillLens)
+                            .padding(horizontal = 4.dp)
+                    ) {
+                        Text(
+                            text = "${formatMediaTime(timeMs)} / ${formatMediaTime(durationMs)}",
+                            color = Color.White,
+                            style = pillTextStyle,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = pillVerticalPadding)
+                        )
+                    }
+                }
+
+                if (showSize && fileSize != null) {
+                    if (durationMs > 0 || isFullscreen) Spacer(Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .glassSurface(backdrop, CircleShape, pillLens)
+                            .padding(horizontal = 4.dp)
+                    ) {
+                        Text(
+                            text = formatSize(fileSize),
+                            color = Color.White,
+                            style = pillTextStyle,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = pillVerticalPadding)
+                        )
+                    }
+                }
+            }
+
+            // 2. Progress Bar Row (Slider) - Now BELOW
+            if (isFullscreen) {
+                val seekBarColors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                )
+                Spacer(Modifier.height(2.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // SliderState works in 0..1 fractions of the duration.
+                    val sliderDuration = durationMs.toFloat().coerceAtLeast(1f)
+                    val sliderState = remember { SliderState() }
+                    SideEffect {
+                        sliderState.value = (timeMs.toFloat() / sliderDuration).coerceIn(0f, 1f)
+                    }
+
+                    Slider(
+                        state = sliderState,
+                        onValueChange = {
+                            sliderState.value = it
+                            onSeek((it * sliderDuration).toLong())
+                        },
+                        onValueChangeFinished = onSeekFinished,
+                        colors = seekBarColors,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    }
 }
