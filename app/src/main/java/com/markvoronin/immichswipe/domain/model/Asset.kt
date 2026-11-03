@@ -41,5 +41,7 @@ data class ExifInfo(
     @SerializedName("exifImageWidth")
     val imageWidth: Int? = null,
     @SerializedName("exifImageHeight")
-    val imageHeight: Int? = null
+    val imageHeight: Int? = null,
+    val make: String? = null,
+    val model: String? = null
 )

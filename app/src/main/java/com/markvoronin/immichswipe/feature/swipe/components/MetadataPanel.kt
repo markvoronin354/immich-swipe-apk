@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -15,13 +17,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AspectRatio
-import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.PhotoAlbum
-import androidx.compose.material.icons.filled.SdStorage
+import androidx.compose.material.icons.outlined.AspectRatio
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Collections
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -45,6 +47,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
@@ -54,6 +57,10 @@ import com.kyant.backdrop.effects.colorControls
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
+import com.markvoronin.immichswipe.feature.swipe.utils.samsungModelName
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @Composable
 fun MetadataPanel(
@@ -139,7 +146,7 @@ fun MetadataPanel(
                         contrast = 1f,     // default 1f. Above 1 punchier, below 1 flatter.
                         saturation = 1f  // default 1f. 1.5f is what vibrancy() does. 0f is greyscale.
                     )
-                    blur(12.dp.toPx())
+                    blur(20.dp.toPx())
                 },
                 onDrawSurface = { drawRect(glassTint.copy(alpha = .5f)) }
             ),
@@ -153,41 +160,82 @@ fun MetadataPanel(
                 .verticalScroll(scrollState)
         ) {
             Box(modifier = Modifier.size(40.dp, 4.dp).clip(CircleShape).background(glassContent.copy(alpha = 0.55f)).align(Alignment.CenterHorizontally))
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val titleRes = if (asset.isVideo) R.string.swipe_metadata_title_video else R.string.swipe_metadata_title
-                Text(text = stringResource(titleRes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                IconButton(onClick = onClose) { Icon(Icons.Default.Close, stringResource(R.string.common_close), modifier = Modifier.size(20.dp)) }
+                Text(text = stringResource(titleRes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                // Offset cancels the button's internal padding so the glyph's right edge meets the content edge.
+                IconButton(onClick = onClose, modifier = Modifier.size(40.dp).offset(x = 8.dp)) {
+                    Icon(Icons.Default.Close, stringResource(R.string.common_close), modifier = Modifier.size(28.dp))
+                }
             }
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = glassContent.copy(alpha = 0.3f))
-            MetadataRow(Icons.Default.Description, stringResource(R.string.swipe_metadata_file), asset.originalFileName ?: stringResource(R.string.diag_unknown))
-            MetadataRow(Icons.Default.CalendarToday, stringResource(R.string.swipe_metadata_date), asset.fileCreatedAt.substringBefore("T"))
-            val formatLabel = if (asset.fileExtension != null) "${asset.type} (.${asset.fileExtension.lowercase()})" else asset.type
-            MetadataRow(Icons.Default.Info, stringResource(R.string.swipe_metadata_format), formatLabel)
+            Spacer(Modifier.height(4.dp))
+            val date = runCatching { LocalDate.parse(asset.fileCreatedAt.substringBefore("T")) }.getOrNull()
+                ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
+                ?: asset.fileCreatedAt.substringBefore("T")
+            MetadataRow(Icons.Outlined.CalendarMonth, stringResource(R.string.swipe_metadata_date), date, showDivider = false)
+            val extension = (asset.fileExtension ?: asset.originalFileName?.substringAfterLast('.', ""))
+                ?.removePrefix(".")?.takeIf { it.isNotEmpty() }
+            val typeLabel = asset.type.lowercase().replaceFirstChar { it.uppercase() }
+            val formatLabel = if (extension != null) "$typeLabel (.${extension.uppercase()})" else typeLabel
+            MetadataRow(Icons.Outlined.Info, stringResource(R.string.swipe_metadata_format), formatLabel)
             asset.exifInfo?.let { exif ->
                 val sizeLabel = exif.fileSizeInBytes?.let { formatSize(it) } ?: stringResource(R.string.swipe_metadata_unavailable)
-                MetadataRow(Icons.Default.SdStorage, stringResource(R.string.swipe_metadata_size), sizeLabel)
-                MetadataRow(Icons.Default.AspectRatio, stringResource(R.string.swipe_metadata_resolution), "${exif.imageWidth ?: "?"} x ${exif.imageHeight ?: "?"}")
+                MetadataRow(Icons.Outlined.Storage, stringResource(R.string.swipe_metadata_size), sizeLabel)
+                MetadataRow(Icons.Outlined.AspectRatio, stringResource(R.string.swipe_metadata_resolution), "${exif.imageWidth ?: "?"} × ${exif.imageHeight ?: "?"}")
+                val camera = cameraLabel(exif.make, exif.model)
+                if (camera.isNotEmpty()) {
+                    MetadataRow(Icons.Outlined.PhotoCamera, stringResource(R.string.swipe_metadata_camera), camera)
+                }
             } ?: run {
-                MetadataRow(Icons.Default.SdStorage, stringResource(R.string.swipe_metadata_size), stringResource(R.string.swipe_loading))
-                MetadataRow(Icons.Default.AspectRatio, stringResource(R.string.swipe_metadata_resolution), stringResource(R.string.swipe_loading))
+                MetadataRow(Icons.Outlined.Storage, stringResource(R.string.swipe_metadata_size), stringResource(R.string.swipe_loading))
+                MetadataRow(Icons.Outlined.AspectRatio, stringResource(R.string.swipe_metadata_resolution), stringResource(R.string.swipe_loading))
             }
             val albumsLabel = when {
                 albumNames == null -> stringResource(R.string.swipe_loading)
                 albumNames.isEmpty() -> stringResource(R.string.swipe_metadata_no_albums)
                 else -> albumNames.joinToString(", ")
             }
-            MetadataRow(Icons.Default.PhotoAlbum, stringResource(R.string.swipe_metadata_albums), albumsLabel)
+            MetadataRow(Icons.Outlined.Collections, stringResource(R.string.swipe_metadata_albums), albumsLabel)
         }
     }
 }
 
+private val CompanyWords = Regex("""(?<!\w)(Co\.?,?\s*Ltd\.?|Corporation|Corp\.?|Company|Inc\.?|Ltd\.?|Imaging)(?!\w)""", RegexOption.IGNORE_CASE)
+
+/** Drops corporate suffixes from a camera make, e.g. "NIKON CORPORATION" -> "NIKON". */
+private fun stripCompanyWords(make: String): String =
+    make.replace(CompanyWords, "").replace(Regex("""\s+"""), " ").trim(' ', ',')
+
+/** Joins make and model, dropping the make from the model when it is repeated, e.g. "SAMSUNG SAMSUNG-SM-G900A" -> "SAMSUNG SM-G900A". */
+private fun cameraLabel(make: String?, model: String?): String {
+    val cleanMake = make?.let(::stripCompanyWords)?.takeIf { it.isNotBlank() }
+    val cleanModel = model?.trim()?.let { m ->
+        val repeatsMake = cleanMake != null && m.startsWith(cleanMake, ignoreCase = true) &&
+            m.getOrNull(cleanMake.length)?.isLetterOrDigit() != true
+        if (repeatsMake) m.drop(cleanMake.length).trimStart(' ', '-', '_') else m
+    }?.takeIf { it.isNotBlank() }
+    // Samsung only exposes model codes; show the marketing name and keep the code for reference.
+    if (cleanMake?.contains("samsung", ignoreCase = true) == true && cleanModel != null) {
+        samsungModelName(cleanModel)?.let { return "$it ($cleanModel)" }
+    }
+    return listOfNotNull(cleanMake, cleanModel).joinToString(" ")
+}
+
 @Composable
-fun MetadataRow(icon: ImageVector, label: String, value: String) {
-    Row(modifier = Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(imageVector = icon, contentDescription = null, tint = LocalContentColor.current.copy(alpha = 0.85f), modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(12.dp))
-        Text(text = label, style = MaterialTheme.typography.bodySmall, color = LocalContentColor.current.copy(alpha = 0.7f), modifier = Modifier.width(80.dp))
-        Text(text = value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+fun MetadataRow(icon: ImageVector, label: String, value: String, showDivider: Boolean = true) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(imageVector = icon, contentDescription = null, tint = LocalContentColor.current.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            if (showDivider) {
+                HorizontalDivider(thickness = 0.5.dp, color = LocalContentColor.current.copy(alpha = 0.2f))
+            }
+            Row(modifier = Modifier.heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(text = label, style = MaterialTheme.typography.bodyMedium, color = LocalContentColor.current.copy(alpha = 0.7f))
+                Spacer(Modifier.width(12.dp))
+                Text(text = value, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
+            }
+        }
     }
 }
