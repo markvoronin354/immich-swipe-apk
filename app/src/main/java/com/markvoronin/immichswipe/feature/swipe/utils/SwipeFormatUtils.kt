@@ -29,3 +29,13 @@ fun formatMediaTime(ms: Long): String {
         String.format(Locale.US, "%d:%02d", minutes, seconds)
     }
 }
+
+/** Parses Immich's "H:MM:SS.ffffff" asset duration into milliseconds; 0 if missing or malformed. */
+fun parseDurationMs(duration: String?): Long {
+    val parts = duration?.split(":") ?: return 0L
+    if (parts.size != 3) return 0L
+    val hours = parts[0].toLongOrNull() ?: return 0L
+    val minutes = parts[1].toLongOrNull() ?: return 0L
+    val seconds = parts[2].toDoubleOrNull() ?: return 0L
+    return (hours * 3600 + minutes * 60) * 1000 + (seconds * 1000).toLong()
+}

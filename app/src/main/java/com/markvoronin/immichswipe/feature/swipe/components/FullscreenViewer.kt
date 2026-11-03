@@ -74,6 +74,7 @@ import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import com.markvoronin.immichswipe.feature.swipe.utils.findActivity
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
+import com.markvoronin.immichswipe.feature.swipe.utils.parseDurationMs
 import com.markvoronin.immichswipe.feature.swipe.utils.fullResolutionRequest
 import com.markvoronin.immichswipe.feature.swipe.utils.rotateLayout
 import kotlinx.coroutines.delay
@@ -337,6 +338,24 @@ fun FullscreenViewer(
                                 )
                             }
                         }
+                    }
+
+                    if (nextAsset.type == "VIDEO") {
+                        // Same controls the video gets once it is current, so they don't pop in after the swipe.
+                        VideoControls(
+                            visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
+                            isFullscreen = true,
+                            isLandscape = isLandscape,
+                            controlsOffset = controlsOffset,
+                            backdrop = nextMediaBackdrop,
+                            timeMs = 0L,
+                            durationMs = parseDurationMs(nextAsset.duration),
+                            showSize = showSizeIndicator,
+                            fileSize = nextAsset.exifInfo?.fileSizeInBytes,
+                            onSeek = {},
+                            onSeekFinished = {},
+                            modifier = Modifier.align(Alignment.BottomCenter)
+                        )
                     }
 
                     PreviewControls(
