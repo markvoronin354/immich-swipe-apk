@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.width
@@ -30,12 +29,15 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.outlined.VideocamOff
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingToolbarDefaults
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -110,7 +112,7 @@ internal fun Player.togglePlayPause() {
 }
 
 @OptIn(UnstableApi::class)
-@kotlin.OptIn(ExperimentalMaterial3Api::class)
+@kotlin.OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SharedVideoPlayer(
     player: Player,
@@ -345,16 +347,27 @@ fun SharedVideoPlayer(
                 exit = fadeOut() + scaleOut(targetScale = 1.2f),
                 modifier = Modifier.align(Alignment.Center)
             ) {
+                // Fullscreen matches the translucent Material 3 Expressive toolbar; the card keeps its glass look.
+                val toolbarColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
                 Box(
                     modifier = Modifier
                         .requiredSize(64.dp)
-                        .glassSurface(playerBackdrop, CircleShape, 12.dp),
+                        .then(
+                            if (isFullscreen) {
+                                Modifier.background(
+                                    toolbarColors.toolbarContainerColor.copy(alpha = 0.7f),
+                                    MaterialShapes.Cookie9Sided.toShape()
+                                )
+                            } else {
+                                Modifier.glassSurface(playerBackdrop, CircleShape, 12.dp)
+                            }
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Pause,
                         contentDescription = stringResource(R.string.cd_paused),
-                        tint = Color.White.copy(alpha = 0.9f),
+                        tint = if (isFullscreen) toolbarColors.toolbarContentColor else Color.White.copy(alpha = 0.9f),
                         modifier = Modifier.requiredSize(32.dp)
                     )
                 }
@@ -390,7 +403,8 @@ internal fun VideoControls(
     ) {
         Column(
             modifier = Modifier
-                .padding(bottom = (if (isFullscreen) (if (isLandscape) 12.dp else 24.dp) else 12.dp) + (if (isLandscape) 0.dp else controlsOffset))
+                // Fullscreen: sits above PreviewControls' floating toolbar (plus a 4dp gap).
+                .padding(bottom = (if (isFullscreen) (if (isLandscape) 12.dp else 24.dp) + PreviewToolbarHeight + 4.dp else 12.dp) + (if (isLandscape) 0.dp else controlsOffset))
                 .padding(horizontal = if (isFullscreen) 24.dp else 16.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -399,15 +413,20 @@ internal fun VideoControls(
             val pillTextStyle = if (isFullscreen) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium
             val pillVerticalPadding = if (isFullscreen) 2.dp else 4.dp
             val pillLens = if (isFullscreen) 4.dp else 6.dp
+            // Fullscreen uses a plain Material 3 tonal pill; the card keeps its glass look.
+            val pillModifier = if (isFullscreen) {
+                Modifier.background(MaterialTheme.colorScheme.secondaryContainer, CircleShape)
+            } else {
+                Modifier.glassSurface(backdrop, CircleShape, pillLens)
+            }
+            val pillTextColor = if (isFullscreen) MaterialTheme.colorScheme.onSecondaryContainer else Color.White
 
-            // 1. Indicators Row (Timestamp, Size) - Now ABOVE
+            // 1. Indicators Row (Timestamp, Size) - Now ABOVE. In fullscreen the times sit beside the seekbar instead.
             Row(
-                // Landscape fullscreen: nudge down so the pills clear the favorite button above them.
-                modifier = if (isFullscreen && isLandscape) Modifier.offset(y = 8.dp) else Modifier,
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                if (durationMs > 0 || isFullscreen) {
+                if (!isFullscreen && durationMs > 0) {
                     Box(
                         modifier = Modifier
                             .glassSurface(backdrop, CircleShape, pillLens)
@@ -424,15 +443,14 @@ internal fun VideoControls(
                 }
 
                 if (showSize && fileSize != null) {
-                    if (durationMs > 0 || isFullscreen) Spacer(Modifier.width(8.dp))
+                    if (!isFullscreen && durationMs > 0) Spacer(Modifier.width(8.dp))
                     Box(
-                        modifier = Modifier
-                            .glassSurface(backdrop, CircleShape, pillLens)
+                        modifier = pillModifier
                             .padding(horizontal = 4.dp)
                     ) {
                         Text(
                             text = formatSize(fileSize),
-                            color = Color.White,
+                            color = pillTextColor,
                             style = pillTextStyle,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = pillVerticalPadding)
@@ -443,11 +461,6 @@ internal fun VideoControls(
 
             // 2. Progress Bar Row (Slider) - Now BELOW
             if (isFullscreen) {
-                val seekBarColors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                    inactiveTrackColor = Color.White.copy(alpha = 0.3f)
-                )
                 Spacer(Modifier.height(2.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -460,6 +473,12 @@ internal fun VideoControls(
                         sliderState.value = (timeMs.toFloat() / sliderDuration).coerceIn(0f, 1f)
                     }
 
+                    Text(
+                        text = formatMediaTime(timeMs),
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    Spacer(Modifier.width(12.dp))
                     Slider(
                         state = sliderState,
                         onValueChange = {
@@ -467,8 +486,13 @@ internal fun VideoControls(
                             onSeek((it * sliderDuration).toLong())
                         },
                         onValueChangeFinished = onSeekFinished,
-                        colors = seekBarColors,
                         modifier = Modifier.weight(1f)
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        text = formatMediaTime(durationMs),
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelLarge
                     )
                 }
             }

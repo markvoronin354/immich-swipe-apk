@@ -325,7 +325,7 @@ fun FullscreenViewer(
                         ) {
                             Surface(
                                 modifier = Modifier
-                                    .padding(bottom = (if (isLandscape) 80.dp else 80.dp) + controlsOffset),
+                                    .padding(bottom = previewToolbarBottom(isLandscape) + PreviewToolbarHeight + 4.dp),
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                                 shape = RoundedCornerShape(4.dp)
                             ) {
@@ -366,7 +366,6 @@ fun FullscreenViewer(
                         onClose = onClose,
                         onUndo = onUndo,
                         isLandscape = isLandscape,
-                        controlsOffset = controlsOffset,
                         showMuteButton = showMuteButton,
                         isMuted = isMuted,
                         onToggleMute = onToggleMute,
@@ -664,7 +663,7 @@ fun FullscreenViewer(
                 ) {
                     Surface(
                         modifier = Modifier
-                            .padding(bottom = (if (isLandscape) 80.dp else 80.dp) + controlsOffset),
+                            .padding(bottom = previewToolbarBottom(isLandscape) + PreviewToolbarHeight + 4.dp),
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                         shape = RoundedCornerShape(4.dp)
                     ) {
@@ -698,7 +697,6 @@ fun FullscreenViewer(
                     onClose = onClose,
                     onUndo = onUndo,
                     isLandscape = isLandscape,
-                    controlsOffset = controlsOffset,
                     showMuteButton = showMuteButton,
                     isMuted = isMuted,
                     onToggleMute = onToggleMute,
