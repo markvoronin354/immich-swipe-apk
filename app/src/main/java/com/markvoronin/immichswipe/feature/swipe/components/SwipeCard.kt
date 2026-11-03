@@ -621,14 +621,10 @@ fun SwipeCard(
                                                         com.markvoronin.immichswipe.feature.swipe.SwipeDecision.KEEP
                                                     )
 
-                                                    else -> {
-                                                        actions.onToggleMute()
-                                                        showMuteIndicator = true
-                                                    }
+                                                    else -> exoPlayer.togglePlayPause()
                                                 }
                                             } else {
-                                                actions.onToggleMute()
-                                                showMuteIndicator = true
+                                                exoPlayer.togglePlayPause()
                                             }
                                         }
                                         ignoreNextTap = false

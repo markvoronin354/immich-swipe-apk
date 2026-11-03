@@ -12,7 +12,6 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,12 +23,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.VideocamOff
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,7 +48,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -101,6 +97,18 @@ internal fun Modifier.glassSurface(shape: Shape): Modifier = this
 @Suppress("UNUSED_PARAMETER")
 internal fun Modifier.glassSurface(backdrop: Backdrop, shape: Shape, lensHeight: Dp): Modifier = glassSurface(shape)
 
+/** Pauses a playing video, or resumes it (restarting from the beginning if it has ended). */
+internal fun Player.togglePlayPause() {
+    if (playWhenReady && playbackState != Player.STATE_ENDED) {
+        pause()
+    } else {
+        if (playbackState == Player.STATE_ENDED) {
+            seekTo(0)
+        }
+        play()
+    }
+}
+
 @OptIn(UnstableApi::class)
 @kotlin.OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -125,29 +133,18 @@ fun SharedVideoPlayer(
 ) {
     var currentTime by remember(assetId) { mutableLongStateOf(0L) }
     var duration by remember(assetId) { mutableLongStateOf(0L) }
-    var isVideoPlaying by remember(player) { mutableStateOf(player.isPlaying) }
+    var isPlayWhenReady by remember(player) { mutableStateOf(player.playWhenReady) }
     var isScrubbing by remember(assetId) { mutableStateOf(value = false) }
     var scrubValue by remember(assetId) { mutableLongStateOf(0L) }
 
     var hasPlaybackError by remember(player, assetId) { mutableStateOf(false) }
 
-        val togglePlayPause = {
-            if (player.playWhenReady && (player.playbackState != Player.STATE_ENDED)) {
-                player.pause()
-            } else {
-                if (player.playbackState == Player.STATE_ENDED) {
-                    player.seekTo(0)
-                }
-                player.play()
-            }
-        }
-
         var currentMediaId by remember(player, assetId) { mutableStateOf(player.currentMediaItem?.mediaId) }
 
         DisposableEffect(player, assetId) {
             val listener = object : Player.Listener {
-                override fun onIsPlayingChanged(isPlaying: Boolean) {
-                    isVideoPlaying = isPlaying
+                override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                    isPlayWhenReady = playWhenReady
                 }
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                     currentMediaId = mediaItem?.mediaId
@@ -336,7 +333,7 @@ fun SharedVideoPlayer(
                         val pillVerticalPadding = if (isFullscreen) 2.dp else 4.dp
                         val pillLens = if (isFullscreen) 4.dp else 6.dp
 
-                        // 1. Indicators Row (Pause, Timestamp, Size) - Now ABOVE
+                        // 1. Indicators Row (Timestamp, Size) - Now ABOVE
                         Row(
                             // Landscape fullscreen: nudge down so the pills clear the favorite button above them.
                             modifier = if (isFullscreen && isLandscape) Modifier.offset(y = 8.dp) else Modifier,
@@ -345,29 +342,6 @@ fun SharedVideoPlayer(
                         ) {
                             if (duration > 0 || isFullscreen) {
                                 val timeToDisplay = if (isScrubbing) scrubValue else currentTime
-
-                                if (!isFullscreen) {
-                                    Box(
-                                        modifier = Modifier
-                                            .glassSurface(playerBackdrop, CircleShape, 8.dp)
-                                            .clip(CircleShape)
-                                            .clickable(onClick = togglePlayPause)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = if (isVideoPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                                contentDescription = if (isVideoPlaying) stringResource(R.string.cd_pause) else stringResource(R.string.cd_play),
-                                                tint = Color.White,
-                                                modifier = Modifier.size(17.dp)
-                                            )
-                                        }
-                                    }
-
-                                    Spacer(Modifier.width(6.dp))
-                                }
 
                                 Box(
                                     modifier = Modifier
@@ -418,26 +392,6 @@ fun SharedVideoPlayer(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                // A plain box rather than IconButton: its 48dp minimum touch target and own container
-                                // drew a second circle around the glass.
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .glassSurface(playerBackdrop, CircleShape, 12.dp)
-                                        .clip(CircleShape)
-                                        .clickable(onClick = togglePlayPause)
-                                ) {
-                                    Icon(
-                                        imageVector = if (isVideoPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                        contentDescription = if (isVideoPlaying) stringResource(R.string.cd_pause) else stringResource(R.string.cd_play),
-                                        tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-
-                                Spacer(Modifier.width(12.dp))
-
                                 // SliderState works in 0..1 fractions of the duration.
                                 val durationMs = duration.toFloat().coerceAtLeast(1f)
                                 val sliderState = remember { SliderState() }
@@ -467,7 +421,8 @@ fun SharedVideoPlayer(
             }
 
             AnimatedVisibility(
-                visible = isPaused && finalShowControls,
+                // Shown while the video is paused (e.g. by a tap); hidden during hold-to-pause along with the other controls.
+                visible = !isPlayWhenReady && isCorrectMediaBound && finalShowControls,
                 enter = fadeIn() + scaleIn(initialScale = 0.8f),
                 exit = fadeOut() + scaleOut(targetScale = 1.2f),
                 modifier = Modifier.align(Alignment.Center)

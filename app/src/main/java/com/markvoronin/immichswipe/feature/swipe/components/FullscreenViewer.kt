@@ -14,8 +14,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.GestureCancellationException
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -23,13 +21,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.VolumeOff
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -149,15 +141,6 @@ fun FullscreenViewer(
         val isSameAsset = providedPlayer?.currentMediaItem?.mediaId == asset.id
         mutableStateOf(asset.type == "VIDEO" && !(isSameAsset && providedPlayer.playbackState == Player.STATE_READY))
     }
-    var showMuteIndicator by remember { mutableStateOf(false) }
-
-    LaunchedEffect(showMuteIndicator) {
-        if (showMuteIndicator) {
-            delay(1000.milliseconds)
-            showMuteIndicator = false
-        }
-    }
-
     LaunchedEffect(asset.id, isVideoReady) {
         AppLogger.d("Fullscreen", "Video readiness: ready=$isVideoReady, indicator=$showLoadingIndicator, asset=${asset.id}")
         if (isVideoReady) {
@@ -465,8 +448,7 @@ fun FullscreenViewer(
                                                     SwipeDecision.KEEP)
                                             }
                                         } else if (asset.type == "VIDEO") {
-                                            onToggleMute()
-                                            showMuteIndicator = true
+                                            exoPlayer.togglePlayPause()
                                             toggleControllerTrigger++
                                         }
                                     }
@@ -704,27 +686,6 @@ fun FullscreenViewer(
                     assetType = asset.type
                 )
 
-            // Mute/Unmute popup indicator
-                AnimatedVisibility(
-                    visible = showMuteIndicator,
-                    enter = fadeIn() + scaleIn(initialScale = 0.8f),
-                    exit = fadeOut() + scaleOut(targetScale = 1.2f),
-                    modifier = Modifier.align(Alignment.Center)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .requiredSize(64.dp)
-                            .background(Color.Black.copy(alpha = 0.6f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.requiredSize(32.dp)
-                        )
-                    }
-                }
         }
     }
 }
