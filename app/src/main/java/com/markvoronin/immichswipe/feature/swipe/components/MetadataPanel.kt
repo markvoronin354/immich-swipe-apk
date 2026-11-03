@@ -155,7 +155,8 @@ fun MetadataPanel(
             Box(modifier = Modifier.size(40.dp, 4.dp).clip(CircleShape).background(glassContent.copy(alpha = 0.55f)).align(Alignment.CenterHorizontally))
             Spacer(Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = stringResource(R.string.swipe_metadata_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                val titleRes = if (asset.isVideo) R.string.swipe_metadata_title_video else R.string.swipe_metadata_title
+                Text(text = stringResource(titleRes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 IconButton(onClick = onClose) { Icon(Icons.Default.Close, stringResource(R.string.common_close), modifier = Modifier.size(20.dp)) }
             }
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = glassContent.copy(alpha = 0.3f))

@@ -457,8 +457,9 @@ fun FullScreenPreviewModal(
                                             modifier = Modifier.size(22.dp)
                                         )
                                         Spacer(Modifier.width(8.dp))
+                                        val titleRes = if (currentAsset.isVideo) R.string.swipe_metadata_title_video else R.string.swipe_metadata_title
                                         Text(
-                                            text = stringResource(R.string.swipe_metadata_title),
+                                            text = stringResource(titleRes),
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold
                                         )

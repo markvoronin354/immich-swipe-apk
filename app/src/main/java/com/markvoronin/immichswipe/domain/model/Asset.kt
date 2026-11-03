@@ -27,6 +27,9 @@ data class Asset(
     val isGif: Boolean
         get() = fileExtension?.removePrefix(".")?.equals("gif", ignoreCase = true) == true ||
                 originalFileName?.endsWith(".gif", ignoreCase = true) == true
+
+    val isVideo: Boolean
+        get() = type.equals("VIDEO", ignoreCase = true)
 }
 
 data class ExifInfo(

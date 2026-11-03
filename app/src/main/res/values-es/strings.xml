@@ -171,6 +171,7 @@
     <string name="swipe_liberate_button">Liberar %1$s (%2$d elementos)</string>
     <string name="swipe_no_deletions">No hay fotos para eliminar.</string>
     <string name="swipe_metadata_title">Detalles de la imagen</string>
+    <string name="swipe_metadata_title_video">Detalles del video</string>
     <string name="swipe_metadata_file">Archivo</string>
     <string name="swipe_metadata_date">Fecha</string>
     <string name="swipe_metadata_format">Formato</string>
