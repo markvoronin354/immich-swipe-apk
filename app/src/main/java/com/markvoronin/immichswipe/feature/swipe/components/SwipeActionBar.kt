@@ -329,13 +329,11 @@ fun SwipeActionBar(
                     SortOrder.TYPE_PHOTO_FIRST, SortOrder.TYPE_PHOTO_FIRST_ASC, SortOrder.TYPE_PHOTO_FIRST_SHUFFLED -> Icons.Default.Image
                 }
 
-                val tint = if (uiState.sortOrder != SortOrder.CHRONOLOGICAL_DESC) MaterialTheme.colorScheme.primary else LocalContentColor.current
                 val baseSize = if (uiState.showSwipeButtons) 24.dp else 28.dp
 
                 Icon(
                     imageVector = icon,
                     contentDescription = stringResource(R.string.settings_sort_order_label),
-                    tint = tint,
                     modifier = Modifier.size(baseSize)
                 )
             }
