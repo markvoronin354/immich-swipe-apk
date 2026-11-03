@@ -827,7 +827,11 @@ fun SwipeCard(
 
                 if (config.isFullSize && !isFullSizeLoaded) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        MediaLoadingIndicator()
+                        // The preview stays visible underneath, so keep this small and see-through.
+                        MediaLoadingIndicator(
+                            size = 32.dp,
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                        )
                     }
                 }
 

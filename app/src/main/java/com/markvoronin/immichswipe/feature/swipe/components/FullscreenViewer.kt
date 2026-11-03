@@ -646,7 +646,12 @@ fun FullscreenViewer(
             }
 
             if (isFullSize && !isFullSizeLoaded && asset.type != "VIDEO") {
-                MediaLoadingIndicator(modifier = Modifier.align(Alignment.Center))
+                // The preview stays visible underneath, so keep this small and see-through.
+                MediaLoadingIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    size = 32.dp,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                )
             }
 
             if (showSizeIndicator && asset.type != "VIDEO") {

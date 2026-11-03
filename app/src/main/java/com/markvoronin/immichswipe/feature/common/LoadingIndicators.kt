@@ -125,11 +125,12 @@ fun SolidShapeLoadingIndicator(
 fun MediaLoadingIndicator(
     modifier: Modifier = Modifier,
     size: Dp = 48.dp,
+    containerColor: Color = MaterialTheme.colorScheme.primaryContainer,
 ) {
     DelayedVisibility(modifier) {
         ContainedLoadingIndicator(
             modifier = Modifier.size(size),
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            containerColor = containerColor,
             indicatorColor = MaterialTheme.colorScheme.onPrimaryContainer,
             polygons = listOf(
                 MaterialShapes.Cookie6Sided,
