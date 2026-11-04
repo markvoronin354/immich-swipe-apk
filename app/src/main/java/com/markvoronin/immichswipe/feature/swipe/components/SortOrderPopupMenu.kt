@@ -6,10 +6,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -89,13 +88,11 @@ fun SortOrderPopupMenu(
                             detectTapGestures { /* Consume taps inside surface */ }
                         },
                     shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 3.dp,
-                    shadowElevation = 10.dp,
-                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    shadowElevation = 10.dp
                 ) {
             Column(
-                modifier = Modifier.padding(vertical = 20.dp),
+                modifier = Modifier.padding(vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 AnimatedContent(
@@ -113,7 +110,7 @@ fun SortOrderPopupMenu(
                 ) { category ->
                     Column {
                         when (category) {
-                            SortCategory.TIME -> {
+                            SortCategory.TIME -> SortOptionGroup {
                                 SortPopupItem(
                                     R.string.settings_sort_newest,
                                     Icons.Default.ArrowDownward,
@@ -136,7 +133,7 @@ fun SortOrderPopupMenu(
                                     selectedSortOrder = SortOrder.SHUFFLED
                                 }
                             }
-                            SortCategory.SIZE -> {
+                            SortCategory.SIZE -> SortOptionGroup {
                                 SortPopupItem(
                                     R.string.settings_sort_biggest,
                                     Icons.Default.ExpandMore,
@@ -157,6 +154,7 @@ fun SortOrderPopupMenu(
                                         selectedSortOrder == SortOrder.TYPE_PHOTO_FIRST_ASC ||
                                         selectedSortOrder == SortOrder.TYPE_PHOTO_FIRST_SHUFFLED
 
+                                SortOptionGroup {
                                 SortPopupItem(
                                     R.string.settings_sort_videos,
                                     Icons.Default.Videocam,
@@ -180,10 +178,12 @@ fun SortOrderPopupMenu(
                                     }
                                 }
 
-                                Spacer(Modifier.height(8.dp))
-                                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp), thickness = 0.5.dp)
+                                }
+
+                                // Order within the type: a separate group instead of a divider.
                                 Spacer(Modifier.height(8.dp))
 
+                                SortOptionGroup {
                                 SortPopupItem(
                                     R.string.settings_sort_newest,
                                     Icons.Default.ArrowDownward,
@@ -205,13 +205,12 @@ fun SortOrderPopupMenu(
                                 ) {
                                     selectedSortOrder = if (currentIsPhoto) SortOrder.TYPE_PHOTO_FIRST_SHUFFLED else SortOrder.TYPE_PHOTO_FIRST_SHUFFLED
                                 }
+                                }
                             }
                         }
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), thickness = 0.5.dp)
                 Spacer(Modifier.height(16.dp))
 
                 CategorySegmentedRow(
@@ -232,4 +231,18 @@ fun SortOrderPopupMenu(
     }
 }
 }
+}
+
+/** Tonal block grouping sort options, like a settings section. Groups are separated by gaps, not dividers. */
+@Composable
+private fun SortOptionGroup(content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
+    ) {
+        Column(modifier = Modifier.padding(vertical = 6.dp), content = content)
+    }
 }

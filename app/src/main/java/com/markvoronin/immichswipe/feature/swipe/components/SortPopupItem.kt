@@ -75,7 +75,7 @@ fun SortPopupItem(
                 modifier = Modifier
                     .size(36.dp)
                     .background(
-                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
+                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
                         shape = if (selected) MaterialShapes.Cookie6Sided.toShape() else CircleShape
                     ),
                 contentAlignment = Alignment.Center

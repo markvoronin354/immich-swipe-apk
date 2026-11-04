@@ -1,8 +1,6 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,8 +13,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -42,6 +41,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -64,6 +65,9 @@ import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.home.components.getVirtualCollectionStyle
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
 import java.text.Normalizer
+
+// Gap between album tiles; shows the popup background, like settings tiles.
+private val AlbumTileGap = 3.dp
 
 private fun String.normalizeForSearch(): String {
     val normalized = Normalizer.normalize(this, Normalizer.Form.NFD)
@@ -124,11 +128,9 @@ fun AddToAlbumDialog(
         ) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 3.dp,
-                shadowElevation = 10.dp,
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shadowElevation = 10.dp
             ) {
             Column(
                 modifier = Modifier.padding(20.dp)
@@ -165,7 +167,7 @@ fun AddToAlbumDialog(
                             text = stringResource(R.string.add_to_album_title),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -174,9 +176,9 @@ fun AddToAlbumDialog(
 
                 Spacer(Modifier.height(16.dp))
 
-                val searchShape = RoundedCornerShape(16.dp)
+                val searchShape = CircleShape
 
-                // Search field styled like Settings search/input cards
+                // Filled pill search field, same as the home screen search bar
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -216,10 +218,10 @@ fun AddToAlbumDialog(
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent
                     ),
                     textStyle = MaterialTheme.typography.bodyMedium.copy(
                         color = MaterialTheme.colorScheme.onSurface
@@ -265,21 +267,27 @@ fun AddToAlbumDialog(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .verticalFadingEdges(listState, length = 24.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                verticalArrangement = Arrangement.spacedBy(AlbumTileGap)
                             ) {
                                 if (showLockInDialog) {
                                     item(key = "locked_folder_item") {
+                                        // Separate tile: moving to the locked folder is a different action.
                                         LockedFolderSelectionItem(onClick = onLockSelect)
+                                        Spacer(Modifier.height(8.dp))
                                     }
                                 }
 
-                                items(
+                                // Albums are gap-joined tiles: large corners only at the ends of the list.
+                                itemsIndexed(
                                     items = filteredAlbums,
-                                    key = { it.id }
-                                ) { album ->
+                                    key = { _, album -> album.id }
+                                ) { index, album ->
+                                    val top = if (index == 0) 28.dp else 0.dp
+                                    val bottom = if (index == filteredAlbums.lastIndex) 28.dp else 0.dp
                                     AlbumSelectionItem(
                                         album = album,
                                         baseUrl = baseUrlClean,
+                                        shape = RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom)
                                     ) {
                                         onAlbumSelect(album)
                                     }
@@ -298,17 +306,16 @@ fun AddToAlbumDialog(
 private fun AlbumSelectionItem(
     album: Album,
     baseUrl: String?,
+    shape: Shape,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
 
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
         Row(
             modifier = Modifier
@@ -392,12 +399,10 @@ private fun LockedFolderSelectionItem(
     onClick: () -> Unit
 ) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
     ) {
         Row(
             modifier = Modifier
