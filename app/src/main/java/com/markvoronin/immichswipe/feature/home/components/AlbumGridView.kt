@@ -5,7 +5,6 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -289,9 +288,7 @@ fun AlbumGridItem(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        shape = RoundedCornerShape(16.dp)
     ) {
         Box(modifier = modifier.fillMaxSize()) {
             val isVirtualCollection = album.id == Album.VIRTUAL_ALL_ID ||
@@ -333,30 +330,38 @@ fun AlbumGridItem(
                 )
             } else {
                 val (icon, brush, tint) = getVirtualCollectionStyle(album.id, album.albumName)
+                // Icon sits top-left so it never collides with the name at the bottom.
                 Box(
                     modifier = Modifier.fillMaxSize().background(brush),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.TopStart
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
                         tint = tint,
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.padding(12.dp).size(28.dp)
                     )
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.6f)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
+            // Special collections use light pastel gradients: skip the dark scrim and use dark text.
+            if (!isVirtualCollection) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.75f)
+                        .background(
+                            // Ramps up early so the name stays readable even when the pill pushes it higher.
+                            Brush.verticalGradient(
+                                0f to Color.Transparent,
+                                0.35f to Color.Black.copy(alpha = 0.45f),
+                                1f to Color.Black.copy(alpha = 0.85f)
+                            )
                         )
-                    )
-            )
+                )
+            }
+            val labelColor = if (isVirtualCollection) Color.Black.copy(alpha = 0.87f) else Color.White
 
             if (isCompleted) {
                 Surface(
@@ -380,24 +385,30 @@ fun AlbumGridItem(
                     .padding(8.dp)
             ) {
                 if (hasUnsyncedChanges) {
-                    Text(
-                        text = stringResource(R.string.home_unsynced_badge),
-                        color = Color(0xFFD32F2F),
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Black,
-                        modifier = Modifier.padding(bottom = 2.dp)
-                    )
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                        shape = CircleShape,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.home_unsynced_badge),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
                 }
                 Text(
                     text = album.albumName,
-                    color = Color.White,
+                    color = labelColor,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1
                 )
                 Text(
                     text = stringResource(R.string.home_sorted_count, effectiveTreatedCount, album.assetCount),
-                    color = Color.White.copy(alpha = 0.8f),
+                    color = labelColor.copy(alpha = if (isVirtualCollection) 0.7f else 0.8f),
                     fontSize = 11.sp
                 )
             }
@@ -410,7 +421,9 @@ fun AlbumGridItem(
                         .height(4.dp)
                         .align(Alignment.BottomCenter),
                     color = MaterialTheme.colorScheme.primary,
-                    trackColor = Color.Transparent
+                    trackColor = Color.Transparent,
+                    gapSize = 0.dp,
+                    drawStopIndicator = {}
                 )
             }
         }

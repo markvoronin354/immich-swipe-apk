@@ -38,7 +38,11 @@
     <string name="home_status_completed">Completado</string>
     <string name="home_status_virtual">Colecciones especiales</string>
     <string name="home_album_completed">Completado</string>
-    <string name="home_unsynced_changes">Contiene %1$d eliminaciones sin sincronizar</string>
+    <plurals name="home_unsynced_changes">
+        <item quantity="one">%1$d cambio sin sincronizar</item>
+        <item quantity="many">%1$d cambios sin sincronizar</item>
+        <item quantity="other">%1$d cambios sin sincronizar</item>
+    </plurals>
     <string name="home_sorted_count">%1$d / %2$d ordenadas</string>
     <string name="home_unsynced_badge">SIN SINCRONIZAR</string>
     <string name="home_virtual_all_assets">Todos los archivos</string>

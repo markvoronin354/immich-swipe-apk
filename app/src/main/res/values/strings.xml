@@ -38,7 +38,10 @@
     <string name="home_status_completed">Completed</string>
     <string name="home_status_virtual">Special collections</string>
     <string name="home_album_completed">Completed</string>
-    <string name="home_unsynced_changes" tools:ignore="PluralsCandidate">Contains %1$d unsynced changes</string>
+    <plurals name="home_unsynced_changes">
+        <item quantity="one">%1$d unsynced change</item>
+        <item quantity="other">%1$d unsynced changes</item>
+    </plurals>
     <string name="home_sorted_count" tools:ignore="PluralsCandidate">%1$d / %2$d sorted</string>
     <string name="home_unsynced_badge">NOT SYNCED</string>
     <string name="home_virtual_all_assets">All Assets</string>

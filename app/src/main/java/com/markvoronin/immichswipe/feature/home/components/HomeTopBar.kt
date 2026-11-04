@@ -56,6 +56,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -346,7 +347,7 @@ fun SearchBarField(
     onSearchQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val searchShape = RoundedCornerShape(16.dp)
+    val searchShape = CircleShape
     OutlinedTextField(
         value = searchQuery,
         onValueChange = onSearchQueryChange,
@@ -367,10 +368,10 @@ fun SearchBarField(
         singleLine = true,
         shape = searchShape,
         colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f),
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f),
-            focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            focusedBorderColor = Color.Transparent,
+            unfocusedBorderColor = Color.Transparent
         ),
         textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp)
     )

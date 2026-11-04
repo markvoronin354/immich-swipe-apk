@@ -55,6 +55,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -281,9 +282,7 @@ fun AlbumItem(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        shape = RoundedCornerShape(18.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
@@ -370,9 +369,9 @@ fun AlbumItem(
                     }
                     if (hasUnsyncedChanges) {
                         Text(
-                            text = stringResource(R.string.home_unsynced_changes, unsyncedCount),
+                            text = pluralStringResource(R.plurals.home_unsynced_changes, unsyncedCount, unsyncedCount),
                             fontSize = 11.sp,
-                            color = Color(0xFFD32F2F),
+                            color = MaterialTheme.colorScheme.error,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -390,19 +389,19 @@ fun AlbumItem(
                         color = if (isCompleted) Color(0xFF388E3C) else MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium
                     )
+                    if (progress > 0 && !isCompleted) {
+                        LinearProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier
+                                .padding(top = 6.dp)
+                                .fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.primaryContainer,
+                            drawStopIndicator = {}
+                        )
+                    }
                 }
                 Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.outlineVariant)
-            }
-
-            if (progress > 0 && !isCompleted) {
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(4.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                )
             }
         }
     }
