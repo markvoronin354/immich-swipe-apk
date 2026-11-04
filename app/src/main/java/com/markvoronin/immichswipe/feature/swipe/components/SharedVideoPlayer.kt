@@ -35,6 +35,7 @@ import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.material3.toShape
@@ -404,7 +405,7 @@ internal fun VideoControls(
         Column(
             modifier = Modifier
                 // Fullscreen: sits above PreviewControls' floating toolbar (plus a 4dp gap).
-                .padding(bottom = (if (isFullscreen) (if (isLandscape) 12.dp else 24.dp) + PreviewToolbarHeight + 4.dp else 12.dp) + (if (isLandscape) 0.dp else controlsOffset))
+                .padding(bottom = (if (isFullscreen) (if (isLandscape) 12.dp else 24.dp) + PreviewToolbarHeight + PreviewToolbarGap else 12.dp) + (if (isLandscape) 0.dp else controlsOffset))
                 .padding(horizontal = if (isFullscreen) 24.dp else 16.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -486,6 +487,7 @@ internal fun VideoControls(
                             onSeek((it * sliderDuration).toLong())
                         },
                         onValueChangeFinished = onSeekFinished,
+                        colors = SliderDefaults.colors(inactiveTrackColor = previewTileColor()),
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(Modifier.width(12.dp))

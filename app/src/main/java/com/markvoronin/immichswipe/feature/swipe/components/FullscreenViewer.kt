@@ -331,7 +331,7 @@ fun FullscreenViewer(
                         ) {
                             Surface(
                                 modifier = Modifier
-                                    .padding(bottom = previewToolbarBottom(isLandscape) + PreviewToolbarHeight + 4.dp),
+                                    .padding(bottom = previewToolbarBottom(isLandscape) + PreviewToolbarHeight + PreviewToolbarGap),
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                                 shape = RoundedCornerShape(4.dp)
                             ) {
@@ -669,7 +669,7 @@ fun FullscreenViewer(
                 ) {
                     Surface(
                         modifier = Modifier
-                            .padding(bottom = previewToolbarBottom(isLandscape) + PreviewToolbarHeight + 4.dp),
+                            .padding(bottom = previewToolbarBottom(isLandscape) + PreviewToolbarHeight + PreviewToolbarGap),
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                         shape = RoundedCornerShape(4.dp)
                     ) {
