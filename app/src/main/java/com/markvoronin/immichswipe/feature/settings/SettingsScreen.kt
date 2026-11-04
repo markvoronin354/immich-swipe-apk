@@ -16,7 +16,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -64,7 +63,6 @@ import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -102,6 +100,7 @@ import com.markvoronin.immichswipe.feature.settings.components.InteractionsScree
 import com.markvoronin.immichswipe.feature.settings.components.JiggleRow
 import com.markvoronin.immichswipe.feature.settings.components.LogsDialog
 import com.markvoronin.immichswipe.feature.settings.components.SettingsClickableItem
+import com.markvoronin.immichswipe.feature.settings.components.SettingsItemGap
 import com.markvoronin.immichswipe.feature.settings.components.SettingsSection
 import com.markvoronin.immichswipe.feature.settings.components.SettingsToggleItem
 import com.markvoronin.immichswipe.feature.settings.components.SettingsToggleItemSmall
@@ -228,6 +227,7 @@ fun SettingsScreen(
                 ) {
                     Spacer(Modifier.height(16.dp))
                     SettingsSection(title = stringResource(R.string.settings_section_appearance), icon = Icons.Default.Palette) {
+            Column {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = stringResource(R.string.settings_theme_label),
@@ -262,9 +262,11 @@ fun SettingsScreen(
                         modifier = Modifier.weight(jiggle.factor(2))
                     )
                 }
+            }
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    Spacer(Modifier.height(16.dp))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                SettingsItemGap()
+                Column(modifier = Modifier.padding(16.dp)) {
                     SettingsToggleItemSmall(
                         title = stringResource(R.string.settings_dynamic_color_label),
                         checked = uiState.dynamicColor,
@@ -278,6 +280,7 @@ fun SettingsScreen(
                         modifier = Modifier.padding(start = 40.dp, end = 16.dp)
                     )
                 }
+            }
             }
         }
 
@@ -294,7 +297,7 @@ fun SettingsScreen(
                     onClick = { viewModel.setShowInteractionsDialog(true) }
                 )
 
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
+                SettingsItemGap()
 
                 SettingsClickableItem(
                     title = stringResource(R.string.settings_action_buttons_label),
@@ -303,7 +306,7 @@ fun SettingsScreen(
                     onClick = { viewModel.setShowActionButtonsDialog(true) }
                 )
 
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
+                SettingsItemGap()
 
                 Column(modifier = Modifier.padding(16.dp)) {
                     SettingsToggleItemSmall(
@@ -339,7 +342,7 @@ fun SettingsScreen(
                     )
                 }
 
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
+                SettingsItemGap()
 
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
@@ -492,14 +495,14 @@ fun SettingsScreen(
                     isDestructive = true,
                     onClick = { viewModel.requestDatabaseAction(DatabaseAction.DELETE, DatabaseScope.USER) }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
+                SettingsItemGap()
                 SettingsClickableItem(
                     title = stringResource(R.string.settings_db_export_label),
                     subtitle = stringResource(R.string.settings_db_export_desc),
                     icon = Icons.Default.FileUpload,
                     onClick = { viewModel.requestDatabaseAction(DatabaseAction.EXPORT, DatabaseScope.USER) }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
+                SettingsItemGap()
                 SettingsClickableItem(
                     title = stringResource(R.string.settings_db_import_label),
                     subtitle = stringResource(R.string.settings_db_import_desc),
@@ -519,7 +522,7 @@ fun SettingsScreen(
                     icon = Icons.Default.History,
                     onClick = { viewModel.setShowLogs(true) }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
+                SettingsItemGap()
                 SettingsClickableItem(
                     title = stringResource(R.string.settings_clear_cache_label),
                     subtitle = stringResource(R.string.settings_clear_cache_desc),
@@ -545,14 +548,14 @@ fun SettingsScreen(
                         Toast.makeText(context, replayToastText, Toast.LENGTH_SHORT).show()
                     }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
+                SettingsItemGap()
                 SettingsClickableItem(
                     title = stringResource(R.string.settings_privacy_policy_label),
                     subtitle = stringResource(R.string.settings_privacy_policy_desc),
                     icon = Icons.Default.PrivacyTip,
                     onClick = { uriHandler.openUri("https://github.com/markvoronin354/immich-swipe-android/blob/HEAD/PRIVACY_POLICY.md") }
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
+                SettingsItemGap()
                 SettingsClickableItem(
                     title = stringResource(R.string.settings_source_code_label),
                     subtitle = stringResource(R.string.settings_source_code_desc),
@@ -570,9 +573,8 @@ fun SettingsScreen(
                 .fillMaxWidth()
                 .height(56.dp),
             shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            tonalElevation = 0.dp,
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 0.dp
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
