@@ -308,39 +308,32 @@ fun SettingsScreen(
 
                 SettingsItemGap()
 
-                Column(modifier = Modifier.padding(16.dp)) {
-                    SettingsToggleItemSmall(
-                        title = stringResource(R.string.settings_sync_local_deletion_label),
-                        checked = uiState.syncLocalDeletion,
-                        onCheckedChange = { checked ->
-                            if (checked) {
-                                val perms = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                                    arrayOf(
-                                        Manifest.permission.READ_MEDIA_IMAGES,
-                                        Manifest.permission.READ_MEDIA_VIDEO,
-                                        Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
-                                    )
-                                } else if (Build.VERSION.SDK_INT >= 33) {
-                                    arrayOf(
-                                        Manifest.permission.READ_MEDIA_IMAGES,
-                                        Manifest.permission.READ_MEDIA_VIDEO
-                                    )
-                                } else {
-                                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
-                                }
-                                permissionLauncher.launch(perms)
+                SettingsToggleItem(
+                    title = stringResource(R.string.settings_sync_local_deletion_label),
+                    subtitle = stringResource(R.string.settings_sync_local_deletion_desc),
+                    checked = uiState.syncLocalDeletion,
+                    onCheckedChange = { checked ->
+                        if (checked) {
+                            val perms = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                                arrayOf(
+                                    Manifest.permission.READ_MEDIA_IMAGES,
+                                    Manifest.permission.READ_MEDIA_VIDEO,
+                                    Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+                                )
+                            } else if (Build.VERSION.SDK_INT >= 33) {
+                                arrayOf(
+                                    Manifest.permission.READ_MEDIA_IMAGES,
+                                    Manifest.permission.READ_MEDIA_VIDEO
+                                )
+                            } else {
+                                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
                             }
-                            viewModel.setSyncLocalDeletion(checked)
-                        },
-                        icon = Icons.Default.PhonelinkErase
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_sync_local_deletion_desc),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.padding(start = 40.dp, end = 16.dp)
-                    )
-                }
+                            permissionLauncher.launch(perms)
+                        }
+                        viewModel.setSyncLocalDeletion(checked)
+                    },
+                    icon = Icons.Default.PhonelinkErase
+                )
 
                 SettingsItemGap()
 
