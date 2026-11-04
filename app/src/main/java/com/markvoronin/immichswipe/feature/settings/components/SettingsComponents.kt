@@ -278,14 +278,17 @@ fun SettingsSection(
     }
 }
 
-/** Separates rows inside a [SettingsSection] with a thin gap of page background, splitting it into tiles. */
+/**
+ * Separates rows inside a [SettingsSection] with a thin gap of page background, splitting it into tiles.
+ * Pass [color] when the tiles sit on something other than the page (e.g. a popup).
+ */
 @Composable
-fun SettingsItemGap() {
+fun SettingsItemGap(color: Color = MaterialTheme.colorScheme.background) {
     Spacer(
         Modifier
             .fillMaxWidth()
             .height(3.dp)
-            .background(MaterialTheme.colorScheme.background)
+            .background(color)
     )
 }
 

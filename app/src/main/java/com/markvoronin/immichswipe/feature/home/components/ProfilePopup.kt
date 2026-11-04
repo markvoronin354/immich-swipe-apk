@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -65,6 +64,7 @@ import com.markvoronin.immichswipe.core.ConnectionLevel
 import com.markvoronin.immichswipe.core.ConnectionStatus
 import com.markvoronin.immichswipe.domain.model.AccountSummary
 import com.markvoronin.immichswipe.domain.model.User
+import com.markvoronin.immichswipe.feature.settings.components.SettingsItemGap
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 
@@ -86,6 +86,8 @@ fun ProfilePopup(
 
     var showLogoutConfirmation by remember { mutableStateOf(false) }
     var accountToRemove by remember { mutableStateOf<AccountSummary?>(null) }
+    // Popup background; tile gaps use it so tiles look separated.
+    val popupColor = MaterialTheme.colorScheme.surfaceContainerLow
 
     Dialog(
         onDismissRequest = onClose,
@@ -97,9 +99,7 @@ fun ProfilePopup(
                 .fillMaxHeight(0.85f)
                 .padding(16.dp),
             shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 3.dp,
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+            color = popupColor
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 // Header with logo and close button (static)
@@ -160,10 +160,17 @@ fun ProfilePopup(
                     color = MaterialTheme.colorScheme.outline
                 )
 
+                Spacer(Modifier.height(20.dp))
+
+                // Account details: storage and server status as gap-separated tiles
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh
+                ) {
+                Column {
                 val quotaUsage = user?.quotaUsageInBytes
                 if (quotaUsage != null) {
-                    Spacer(Modifier.height(16.dp))
-
                     val quotaSize = user.quotaSizeInBytes
                     val usageStr = formatSize(quotaUsage)
                     val quotaStr = if (quotaSize != null && quotaSize > 0L) {
@@ -173,25 +180,22 @@ fun ProfilePopup(
                     }
 
                     Column(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(R.string.profile_storage_usage),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.outline
-                            )
-                            Text(
-                                text = "$usageStr / $quotaStr",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
+                        // Label above the value: side by side they collide in the narrow popup.
+                        Text(
+                            text = stringResource(R.string.profile_storage_usage),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                        Text(
+                            text = "$usageStr / $quotaStr",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
 
                         if (quotaSize != null && quotaSize > 0L) {
                             Spacer(Modifier.height(8.dp))
@@ -243,19 +247,14 @@ fun ProfilePopup(
                             }
                         }
                     }
+                    SettingsItemGap(color = popupColor)
                 }
 
-                Spacer(Modifier.height(20.dp))
-
-                // Connection Diagnostic Card
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = connectionStatus.level.color.copy(alpha = 0.1f),
-                    border = BorderStroke(1.dp, connectionStatus.level.color.copy(alpha = 0.4f))
-                ) {
+                    // Server status
                     Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
@@ -270,11 +269,12 @@ fun ProfilePopup(
                                 ConnectionLevel.ISSUES -> stringResource(R.string.diag_issues)
                                 ConnectionLevel.OFFLINE -> stringResource(R.string.diag_offline)
                             },
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = connectionStatus.level.color
                         )
                     }
+                }
                 }
 
                 Spacer(Modifier.height(16.dp))
@@ -304,19 +304,17 @@ fun ProfilePopup(
                 // Saved Accounts Card Container
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 2.dp,
-                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh
                 ) {
                     Column {
-                        savedAccounts.forEachIndexed { index, account ->
+                        savedAccounts.forEach { account ->
                             val isCurrent = account.userId == user?.id
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { if (!isCurrent) onSwitchAccount(account.userId) }
-                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Box(contentAlignment = Alignment.BottomEnd) {
@@ -335,7 +333,7 @@ fun ProfilePopup(
                                             modifier = Modifier.size(12.dp),
                                             color = MaterialTheme.colorScheme.primary,
                                             shape = CircleShape,
-                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surface)
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh)
                                         ) {
                                             Icon(Icons.Default.Check, null, modifier = Modifier.padding(1.dp), tint = Color.White)
                                         }
@@ -370,18 +368,14 @@ fun ProfilePopup(
                                     }
                                 }
                             }
-                            if (index < savedAccounts.size - 1) {
-                                HorizontalDivider(modifier = Modifier.padding(horizontal = 14.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                            }
+                            SettingsItemGap(color = popupColor)
                         }
-                        
-                        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                        
+
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { onAddAccount() }
-                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
@@ -411,8 +405,7 @@ fun ProfilePopup(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.error,
                             contentColor = MaterialTheme.colorScheme.onError
-                        ),
-                        shape = RoundedCornerShape(12.dp)
+                        )
                     ) {
                         Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
