@@ -734,7 +734,7 @@ fun SettingsScreen(
 
     if (uiState.showLogsDialog) {
         LogsDialog(
-            rawLogs = viewModel.getLogs(),
+            loadLogs = viewModel::getLogs,
             context = context,
             clipboard = clipboard,
             scope = scope,

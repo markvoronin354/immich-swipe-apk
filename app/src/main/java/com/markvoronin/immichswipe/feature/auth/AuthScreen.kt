@@ -514,7 +514,7 @@ fun AuthScreen(
 
         if (showLogsDialog) {
             LogsDialog(
-                rawLogs = AppLogger.getLogs(),
+                loadLogs = AppLogger::getLogs,
                 context = context,
                 clipboard = clipboard,
                 scope = scope,

@@ -15,24 +15,27 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,24 +45,22 @@ import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.markvoronin.immichswipe.R
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
 @Composable
 fun LogsDialog(
-    rawLogs: String,
+    loadLogs: () -> String,
     context: Context,
     clipboard: Clipboard,
     scope: CoroutineScope,
@@ -70,6 +71,15 @@ fun LogsDialog(
     val logsClipLabel = stringResource(R.string.settings_logs_clip_label)
     val errorColor = MaterialTheme.colorScheme.error
     val warningColor = Color(0xFFFFA500)
+
+    // Reading up to ~2 MB of log files must not block the UI thread. null = still loading.
+    val logs by produceState<Pair<String, List<String>>?>(initialValue = null) {
+        value = withContext(Dispatchers.IO) {
+            val raw = loadLogs()
+            raw to raw.lines()
+        }
+    }
+    val rawLogs = logs?.first
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -98,48 +108,56 @@ fun LogsDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier.fillMaxSize().padding(16.dp),
         text = {
-            val annotatedLogs = remember(rawLogs, errorColor) {
-                buildAnnotatedString {
-                    if (rawLogs.isNotEmpty()) {
-                        rawLogs.lineSequence().forEach { line ->
-                            val color = when {
-                                line.contains(" E/") -> errorColor
-                                line.contains(" W/") -> warningColor
-                                else -> Color.Unspecified
-                            }
-                            withStyle(style = SpanStyle(color = color)) {
-                                append(line + "\n")
-                            }
-                        }
-                    }
-                }
-            }
-
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
                     .padding(8.dp)
             ) {
-                val scroll = rememberScrollState()
+                val currentLogs = logs
+                if (currentLogs == null) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    return@BoxWithConstraints
+                }
+                val lines = currentLogs.second
+                if (currentLogs.first.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.settings_logs_empty),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = FontFamily.Monospace
+                    )
+                    return@BoxWithConstraints
+                }
 
-                LaunchedEffect(scroll.maxValue) {
-                    if (scroll.maxValue > 0) {
-                        scroll.scrollTo(scroll.maxValue)
+                // Start at the newest entry.
+                val listState = remember(lines) { LazyListState(firstVisibleItemIndex = lines.lastIndex) }
+
+                // Only the visible lines get laid out, so opening stays fast regardless of log size.
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(end = 20.dp)
+                ) {
+                    itemsIndexed(lines) { _, line ->
+                        Text(
+                            text = line,
+                            color = when {
+                                line.contains(" E/") -> errorColor
+                                line.contains(" W/") -> warningColor
+                                else -> Color.Unspecified
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
-                Text(
-                    text = if (rawLogs.isEmpty()) AnnotatedString(stringResource(R.string.settings_logs_empty)) else annotatedLogs,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = FontFamily.Monospace,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(end = 20.dp)
-                        .verticalScroll(scroll)
-                )
 
-                val isScrollable = remember { derivedStateOf { scroll.maxValue > 0 } }
-                if (rawLogs.isNotEmpty() && isScrollable.value) {
+                val isScrollable by remember {
+                    derivedStateOf { listState.canScrollForward || listState.canScrollBackward }
+                }
+                if (isScrollable) {
                     val density = LocalDensity.current
                     val coroutineScope = rememberCoroutineScope()
                     var isDragging by remember { mutableStateOf(false) }
@@ -149,11 +167,14 @@ fun LogsDialog(
                     val trackWidthDp = 12.dp
 
                     val availableHeightPx = with(density) { maxHeight.toPx() }
-                    val maxScrollPx = scroll.maxValue.toFloat()
+                    val totalItems = lines.size
+                    val visibleItems by remember {
+                        derivedStateOf { listState.layoutInfo.visibleItemsInfo.size.coerceAtLeast(1) }
+                    }
+                    val maxFirstIndex = (totalItems - visibleItems).coerceAtLeast(1)
 
-                    val (thumbHeightPx, trackDraggableRangePx) = remember(maxScrollPx, availableHeightPx) {
-                        val contentHeightPx = maxScrollPx + availableHeightPx
-                        val rawThumbHeightPx = availableHeightPx * (availableHeightPx / contentHeightPx)
+                    val (thumbHeightPx, trackDraggableRangePx) = remember(totalItems, visibleItems, availableHeightPx) {
+                        val rawThumbHeightPx = availableHeightPx * (visibleItems.toFloat() / totalItems)
                         val thumbHeight = rawThumbHeightPx.coerceIn(minThumbHeightPx, availableHeightPx * 0.8f)
                         val draggableRange = (availableHeightPx - thumbHeight).coerceAtLeast(1f)
                         thumbHeight to draggableRange
@@ -164,12 +185,15 @@ fun LogsDialog(
                     fun updateScrollPosition(touchYPx: Float) {
                         val targetThumbTopPx = touchYPx - (thumbHeightPx / 2f)
                         val targetRatio = (targetThumbTopPx / trackDraggableRangePx).coerceIn(0f, 1f)
-                        val targetScrollValue = (targetRatio * maxScrollPx).roundToInt()
+                        val targetIndex = (targetRatio * maxFirstIndex).roundToInt()
                         scrollJob?.cancel()
                         scrollJob = coroutineScope.launch {
-                            scroll.scrollTo(targetScrollValue)
+                            listState.scrollToItem(targetIndex)
                         }
                     }
+                    // The visible item count changes while scrolling, so the gesture must not be keyed on it
+                    // (a restart cancels the drag). Read the latest scroll logic instead.
+                    val currentUpdateScrollPosition by rememberUpdatedState(::updateScrollPosition)
 
                     Box(
                         modifier = Modifier
@@ -181,11 +205,11 @@ fun LogsDialog(
                                         else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
                                 shape = RoundedCornerShape(6.dp)
                             )
-                            .pointerInput(maxScrollPx, availableHeightPx) {
+                            .pointerInput(Unit) {
                                 awaitEachGesture {
                                     val down = awaitFirstDown(requireUnconsumed = false)
                                     isDragging = true
-                                    updateScrollPosition(down.position.y)
+                                    currentUpdateScrollPosition(down.position.y)
 
                                     val dragPointerId = down.id
                                     while (true) {
@@ -195,7 +219,7 @@ fun LogsDialog(
                                             break
                                         }
                                         dragChange.consume()
-                                        updateScrollPosition(dragChange.position.y)
+                                        currentUpdateScrollPosition(dragChange.position.y)
                                     }
                                     isDragging = false
                                 }
@@ -207,7 +231,7 @@ fun LogsDialog(
                                 .width(trackWidthDp)
                                 .height(with(density) { thumbHeightPx.toDp() })
                                 .offset {
-                                    val currentScrollRatio = (scroll.value.toFloat() / maxScrollPx).coerceIn(0f, 1f)
+                                    val currentScrollRatio = (listState.firstVisibleItemIndex.toFloat() / maxFirstIndex).coerceIn(0f, 1f)
                                     val thumbOffsetPx = trackDraggableRangePx * currentScrollRatio
                                     IntOffset(x = 0, y = thumbOffsetPx.roundToInt())
                                 }
@@ -223,7 +247,9 @@ fun LogsDialog(
         },
         confirmButton = {
             TextButton(
+                enabled = rawLogs != null,
                 onClick = { 
+                    if (rawLogs == null) return@TextButton
                     scope.launch {
                         val clipData = ClipData.newPlainText(logsClipLabel, rawLogs)
                         clipboard.setClipEntry(ClipEntry(clipData))
