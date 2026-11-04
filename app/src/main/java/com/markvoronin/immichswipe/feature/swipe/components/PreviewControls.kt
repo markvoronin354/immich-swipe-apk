@@ -23,7 +23,9 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.IconToggleButtonColors
 import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -35,6 +37,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
 import com.markvoronin.immichswipe.R
+import com.markvoronin.immichswipe.feature.settings.components.rememberJiggleGroup
 
 // Library-free glass look: dark scrim plus a rim highlight that is brightest on opposite corners.
 // `backdrop` is unused; kept so call sites don't change.
@@ -57,6 +60,25 @@ internal val PreviewToolbarHeight = 52.dp
 internal fun previewTileColor(): Color =
     FloatingToolbarDefaults.vibrantFloatingToolbarColors().toolbarContainerColor.copy(alpha = 0.7f)
 
+/** Colors of a tile in the fullscreen toolbar. */
+@Composable
+internal fun previewButtonColors(): IconButtonColors = IconButtonDefaults.filledTonalIconButtonColors(
+    containerColor = previewTileColor(),
+    contentColor = FloatingToolbarDefaults.vibrantFloatingToolbarColors().toolbarContentColor
+)
+
+/** Like [previewButtonColors], but a checked tile inverts to the content color. */
+@Composable
+internal fun previewToggleColors(): IconToggleButtonColors {
+    val toolbarColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
+    return IconButtonDefaults.filledTonalIconToggleButtonColors(
+        containerColor = previewTileColor(),
+        contentColor = toolbarColors.toolbarContentColor,
+        checkedContainerColor = toolbarColors.toolbarContentColor,
+        checkedContentColor = toolbarColors.toolbarContainerColor
+    )
+}
+
 /** Space between the bottom toolbar and the seekbar or size pill above it. */
 internal val PreviewToolbarGap = 12.dp
 
@@ -64,8 +86,7 @@ internal val PreviewToolbarGap = 12.dp
 internal fun previewToolbarBottom(isLandscape: Boolean): Dp = if (isLandscape) 12.dp else 24.dp
 
 /** Shape of tile [index] in a connected group of [count]: fully rounded outer ends, nearly square inner corners. */
-private fun connectedTileShape(index: Int, count: Int): RoundedCornerShape {
-    val outer = 26.dp
+internal fun connectedTileShape(index: Int, count: Int, outer: Dp = 26.dp): RoundedCornerShape {
     val inner = 6.dp
     val start = if (index == 0) outer else inner
     val end = if (index == count - 1) outer else inner
@@ -99,22 +120,12 @@ fun PreviewControls(
 
             // A connected button group: separate tiles with a gap showing the media between them.
             // Only the outer ends are fully rounded; the inner corners stay nearly square.
-            val toolbarColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
-            val tileColor = previewTileColor()
-            val contentColor = toolbarColors.toolbarContentColor
-            val buttonColors = IconButtonDefaults.filledTonalIconButtonColors(
-                containerColor = tileColor,
-                contentColor = contentColor
-            )
-            val toggleColors = IconButtonDefaults.filledTonalIconToggleButtonColors(
-                containerColor = tileColor,
-                contentColor = contentColor,
-                checkedContainerColor = contentColor,
-                checkedContentColor = toolbarColors.toolbarContainerColor
-            )
+            val buttonColors = previewButtonColors()
+            val toggleColors = previewToggleColors()
             val showMute = showMuteButton && isVideo
             val buttonCount = (if (onUndo != null) 1 else 0) + 1 + (if (showMute) 1 else 0)
-            val tileSize = Modifier.size(width = 56.dp, height = PreviewToolbarHeight)
+            // The tapped tile grows and its neighbours give way; the widths always sum to the same total.
+            val jiggle = rememberJiggleGroup(buttonCount, grow = 0.14f)
             val pressedShape = RoundedCornerShape(10.dp)
 
             Row(
@@ -126,12 +137,13 @@ fun PreviewControls(
                 var index = 0
 
                 if (onUndo != null) {
-                    val shape = connectedTileShape(index++, buttonCount)
+                    val i = index++
+                    val shape = connectedTileShape(i, buttonCount)
                     FilledTonalIconButton(
-                        onClick = onUndo,
+                        onClick = { jiggle.tap(i); onUndo() },
                         shapes = IconButtonDefaults.shapes(shape = shape, pressedShape = pressedShape),
                         colors = buttonColors,
-                        modifier = tileSize
+                        modifier = Modifier.size(width = 56.dp * jiggle.factor(i), height = PreviewToolbarHeight)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Undo,
@@ -140,17 +152,18 @@ fun PreviewControls(
                     }
                 }
 
-                val favoriteShape = connectedTileShape(index++, buttonCount)
+                val favoriteIndex = index++
+                val favoriteShape = connectedTileShape(favoriteIndex, buttonCount)
                 FilledTonalIconToggleButton(
                     checked = isFavorite,
-                    onCheckedChange = { onToggleFavorite() },
+                    onCheckedChange = { jiggle.tap(favoriteIndex); onToggleFavorite() },
                     shapes = IconButtonDefaults.toggleableShapes(
                         shape = favoriteShape,
                         pressedShape = pressedShape,
                         checkedShape = favoriteShape
                     ),
                     colors = toggleColors,
-                    modifier = tileSize
+                    modifier = Modifier.size(width = 56.dp * jiggle.factor(favoriteIndex), height = PreviewToolbarHeight)
                 ) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -159,17 +172,18 @@ fun PreviewControls(
                 }
 
                 if (showMute) {
-                    val muteShape = connectedTileShape(index, buttonCount)
+                    val muteIndex = index
+                    val muteShape = connectedTileShape(muteIndex, buttonCount)
                     FilledTonalIconToggleButton(
                         checked = isMuted,
-                        onCheckedChange = { onToggleMute() },
+                        onCheckedChange = { jiggle.tap(muteIndex); onToggleMute() },
                         shapes = IconButtonDefaults.toggleableShapes(
                             shape = muteShape,
                             pressedShape = pressedShape,
                             checkedShape = muteShape
                         ),
                         colors = toggleColors,
-                        modifier = tileSize
+                        modifier = Modifier.size(width = 56.dp * jiggle.factor(muteIndex), height = PreviewToolbarHeight)
                     ) {
                         Icon(
                             imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,

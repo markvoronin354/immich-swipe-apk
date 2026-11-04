@@ -430,7 +430,7 @@ fun SettingsToggleItemSmall(
  * slightly and its neighbours give way, keeping the group's total width constant.
  */
 @Stable
-class JiggleGroup(private val count: Int) {
+class JiggleGroup(private val count: Int, private val grow: Float = JiggleGrow) {
     var tappedIndex by mutableIntStateOf(-1)
         private set
     var tapToken by mutableIntStateOf(0)
@@ -451,8 +451,8 @@ class JiggleGroup(private val count: Int) {
     fun factor(index: Int): Float {
         val target = when {
             tappedIndex < 0 -> 1f
-            tappedIndex == index -> 1f + JiggleGrow
-            else -> 1f - JiggleGrow / (count - 1).coerceAtLeast(1)
+            tappedIndex == index -> 1f + grow
+            else -> 1f - grow / (count - 1).coerceAtLeast(1)
         }
         val spec = remember { MotionScheme.expressive().fastSpatialSpec<Float>() }
         return animateFloatAsState(targetValue = target, animationSpec = spec, label = "jiggleFactor").value
@@ -464,8 +464,8 @@ class JiggleGroup(private val count: Int) {
  * reports press and release together, so the pressed state is never observed.
  */
 @Composable
-fun rememberJiggleGroup(count: Int): JiggleGroup {
-    val group = remember(count) { JiggleGroup(count) }
+fun rememberJiggleGroup(count: Int, grow: Float = JiggleGrow): JiggleGroup {
+    val group = remember(count, grow) { JiggleGroup(count, grow) }
     LaunchedEffect(group.tapToken) {
         if (group.tappedIndex >= 0) {
             delay(120)

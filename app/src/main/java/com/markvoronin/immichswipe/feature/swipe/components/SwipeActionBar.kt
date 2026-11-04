@@ -1,19 +1,15 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Archive
@@ -33,16 +29,14 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MotionScheme
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -53,112 +47,63 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.feature.settings.components.rememberJiggleGroup
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.swipe.SwipeUiState
 import com.markvoronin.immichswipe.feature.swipe.SwipeViewModel
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
-import kotlinx.coroutines.delay
 
 /**
- * Borderless icon button: at rest it is just the icon. Pressing blooms a [shape] blob behind it that springs in
- * and spins slightly while the icon dips. When [checked] is non-null it is a toggle whose blob stays while on,
- * and [active] keeps the blob up while a menu or dialog opened by the button is showing. With [linger] the
- * blob also stays for half a second after a tap, so instant actions still get visible feedback.
+ * One tile of the connected action group, styled like the fullscreen toolbar. When [checked] is non-null it is a
+ * toggle whose tile inverts while on; it is also used to mark a button whose menu or dialog is open.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun BarIconButton(
+private fun ActionTile(
     onClick: () -> Unit,
-    buttonSize: Dp,
     shape: Shape,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     checked: Boolean? = null,
-    active: Boolean = false,
-    linger: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    var lingering by remember { mutableStateOf(false) }
-    LaunchedEffect(pressed) {
-        if (pressed) {
-            lingering = linger
-        } else if (lingering) {
-            delay(500)
-            lingering = false
-        }
-    }
-    val showBlob = pressed || active || lingering
-    val spec = remember { MotionScheme.expressive().fastSpatialSpec<Float>() }
-    val blobScale by animateFloatAsState(
-        targetValue = if (showBlob || checked == true) 1f else 0f,
-        animationSpec = spec,
-        label = "barBlobScale"
-    )
-    val blobRotation by animateFloatAsState(
-        targetValue = if (showBlob) 25f else 0f,
-        animationSpec = spec,
-        label = "barBlobRotation"
-    )
-    val iconScale by animateFloatAsState(
-        targetValue = if (pressed) 0.88f else 1f,
-        animationSpec = spec,
-        label = "barIconScale"
-    )
-    val blobColor = if (checked == true) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer
-
-    val clickModifier = if (checked == null) {
-        Modifier.clickable(
-            interactionSource = interactionSource,
-            indication = null,
+    val pressedShape = RoundedCornerShape(10.dp)
+    val tileModifier = modifier.height(48.dp)
+    if (checked == null) {
+        FilledTonalIconButton(
+            onClick = onClick,
+            shapes = IconButtonDefaults.shapes(shape = shape, pressedShape = pressedShape),
+            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ),
             enabled = enabled,
-            role = Role.Button,
-            onClick = onClick
+            modifier = tileModifier,
+            content = content
         )
     } else {
-        Modifier.toggleable(
-            value = checked,
-            interactionSource = interactionSource,
-            indication = null,
+        FilledTonalIconToggleButton(
+            checked = checked,
+            onCheckedChange = { onClick() },
+            shapes = IconButtonDefaults.toggleableShapes(shape = shape, pressedShape = pressedShape, checkedShape = shape),
+            colors = IconButtonDefaults.filledTonalIconToggleButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                checkedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                checkedContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            ),
             enabled = enabled,
-            role = Role.Switch,
-            onValueChange = { onClick() }
+            modifier = tileModifier,
+            content = content
         )
-    }
-
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-            .size(buttonSize)
-            .then(clickModifier)
-            .graphicsLayer { alpha = if (enabled) 1f else 0.38f }
-    ) {
-        Box(
-            Modifier
-                .size(buttonSize)
-                .graphicsLayer {
-                    scaleX = blobScale
-                    scaleY = blobScale
-                    rotationZ = blobRotation
-                }
-                .background(blobColor, shape)
-        )
-        Box(Modifier.graphicsLayer { scaleX = iconScale; scaleY = iconScale }) {
-            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground, content = content)
-        }
     }
 }
 
@@ -174,7 +119,7 @@ fun SwipeActionBar(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = if (uiState.showSwipeButtons) 16.dp else 24.dp),
-        horizontalArrangement = if (uiState.showSwipeButtons) Arrangement.SpaceEvenly else Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (uiState.showSwipeButtons) {
@@ -243,107 +188,133 @@ fun SwipeActionBar(
             }
         }
 
-        val buttonSize = if (uiState.showSwipeButtons) 40.dp else 44.dp
-        val iconSize = if (uiState.showSwipeButtons) 22.dp else 26.dp
+        // A connected group: separate tiles with a gap between them, fully rounded only at the outer ends.
+        val iconSize = 24.dp
+        val tileCount = 2 + listOf(
+            uiState.showArchiveButton,
+            uiState.showFavoriteButton,
+            uiState.showAddToAlbumButton,
+            uiState.showLockButton
+        ).count { it }
 
-        BarIconButton(
-            onClick = { viewModel.undo() },
-            enabled = uiState.history.isNotEmpty(),
-            buttonSize = buttonSize,
-            shape = MaterialShapes.Clover4Leaf.toShape(),
-            linger = true
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.Undo,
-                contentDescription = stringResource(R.string.swipe_undo),
-                modifier = Modifier.size(iconSize)
-            )
-        }
+            var index = 0
+            // The tapped tile grows and its neighbours give way; the weights always sum to the same total.
+            val jiggle = rememberJiggleGroup(tileCount, grow = 0.14f)
 
-        if (uiState.showArchiveButton) {
-            BarIconButton(onClick = { viewModel.toggleArchive() }, buttonSize = buttonSize, shape = MaterialShapes.Cookie6Sided.toShape(), linger = true) {
-                Icon(
-                    imageVector = Icons.Default.Archive,
-                    contentDescription = stringResource(R.string.swipe_archive),
-                    modifier = Modifier.size(iconSize)
-                )
-            }
-        }
-
-        if (uiState.showFavoriteButton) {
-            val isFav = uiState.currentAsset?.let { uiState.isFavorite(it.id) } ?: false
-            BarIconButton(
-                onClick = { viewModel.toggleFavorite() },
-                buttonSize = buttonSize,
-                shape = MaterialShapes.Cookie9Sided.toShape(),
-                checked = isFav
+            val undoIndex = index++
+            ActionTile(
+                onClick = { jiggle.tap(undoIndex); viewModel.undo() },
+                enabled = uiState.history.isNotEmpty(),
+                shape = connectedTileShape(undoIndex, tileCount, outer = 24.dp),
+                modifier = Modifier.weight(jiggle.factor(undoIndex))
             ) {
                 Icon(
-                    imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = stringResource(R.string.swipe_favorite),
-                    tint = if (isFav) Color.Red else LocalContentColor.current,
+                    imageVector = Icons.AutoMirrored.Filled.Undo,
+                    contentDescription = stringResource(R.string.swipe_undo),
                     modifier = Modifier.size(iconSize)
                 )
             }
-        }
 
-        if (uiState.showAddToAlbumButton) {
-            BarIconButton(
-                onClick = { viewModel.openAddToAlbumDialog() },
-                buttonSize = buttonSize,
-                shape = MaterialShapes.Flower.toShape(),
-                active = uiState.showAddToAlbumDialog
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LibraryAdd,
-                    contentDescription = stringResource(R.string.add_to_album_title),
-                    modifier = Modifier.size(iconSize)
-                )
+            if (uiState.showArchiveButton) {
+                val archiveIndex = index++
+                ActionTile(
+                    onClick = { jiggle.tap(archiveIndex); viewModel.toggleArchive() },
+                    shape = connectedTileShape(archiveIndex, tileCount, outer = 24.dp),
+                    modifier = Modifier.weight(jiggle.factor(archiveIndex))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Archive,
+                        contentDescription = stringResource(R.string.swipe_archive),
+                        modifier = Modifier.size(iconSize)
+                    )
+                }
             }
-        }
 
-        if (uiState.showLockButton) {
-            BarIconButton(onClick = { viewModel.toggleLock() }, buttonSize = buttonSize, shape = MaterialShapes.Gem.toShape(), linger = true) {
-                Icon(
-                    imageVector = Icons.Default.Lock,
-                    contentDescription = stringResource(R.string.swipe_locked),
-                    modifier = Modifier.size(iconSize)
-                )
+            if (uiState.showFavoriteButton) {
+                val isFav = uiState.currentAsset?.let { uiState.isFavorite(it.id) } ?: false
+                val favoriteIndex = index++
+                ActionTile(
+                    onClick = { jiggle.tap(favoriteIndex); viewModel.toggleFavorite() },
+                    shape = connectedTileShape(favoriteIndex, tileCount, outer = 24.dp),
+                    checked = isFav,
+                    modifier = Modifier.weight(jiggle.factor(favoriteIndex))
+                ) {
+                    Icon(
+                        imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = stringResource(R.string.swipe_favorite),
+                        tint = if (isFav) Color.Red else LocalContentColor.current,
+                        modifier = Modifier.size(iconSize)
+                    )
+                }
             }
-        }
 
-        Box {
-            BarIconButton(
-                onClick = { onSortMenuToggle(true) },
-                buttonSize = buttonSize,
-                shape = MaterialShapes.Cookie12Sided.toShape(),
-                active = showSortMenu
-            ) {
-                val icon = when (uiState.sortOrder) {
-                    SortOrder.SHUFFLED -> Icons.Default.Shuffle
-                    SortOrder.CHRONOLOGICAL_ASC -> Icons.Default.ArrowUpward
-                    SortOrder.CHRONOLOGICAL_DESC -> Icons.Default.ArrowDownward
-                    SortOrder.SIZE_DESC -> Icons.Default.ExpandMore
-                    SortOrder.SIZE_ASC -> Icons.Default.ExpandLess
-                    SortOrder.TYPE_VIDEO_FIRST, SortOrder.TYPE_VIDEO_FIRST_ASC, SortOrder.TYPE_VIDEO_FIRST_SHUFFLED -> Icons.Default.Videocam
-                    SortOrder.TYPE_PHOTO_FIRST, SortOrder.TYPE_PHOTO_FIRST_ASC, SortOrder.TYPE_PHOTO_FIRST_SHUFFLED -> Icons.Default.Image
+            if (uiState.showAddToAlbumButton) {
+                val albumIndex = index++
+                ActionTile(
+                    onClick = { jiggle.tap(albumIndex); viewModel.openAddToAlbumDialog() },
+                    shape = connectedTileShape(albumIndex, tileCount, outer = 24.dp),
+                    checked = uiState.showAddToAlbumDialog,
+                    modifier = Modifier.weight(jiggle.factor(albumIndex))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LibraryAdd,
+                        contentDescription = stringResource(R.string.add_to_album_title),
+                        modifier = Modifier.size(iconSize)
+                    )
+                }
+            }
+
+            if (uiState.showLockButton) {
+                val lockIndex = index++
+                ActionTile(
+                    onClick = { jiggle.tap(lockIndex); viewModel.toggleLock() },
+                    shape = connectedTileShape(lockIndex, tileCount, outer = 24.dp),
+                    modifier = Modifier.weight(jiggle.factor(lockIndex))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = stringResource(R.string.swipe_locked),
+                        modifier = Modifier.size(iconSize)
+                    )
+                }
+            }
+
+            val sortIndex = index
+            Box(modifier = Modifier.weight(jiggle.factor(sortIndex))) {
+                ActionTile(
+                    onClick = { jiggle.tap(sortIndex); onSortMenuToggle(true) },
+                    shape = connectedTileShape(sortIndex, tileCount, outer = 24.dp),
+                    checked = showSortMenu,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val icon = when (uiState.sortOrder) {
+                        SortOrder.SHUFFLED -> Icons.Default.Shuffle
+                        SortOrder.CHRONOLOGICAL_ASC -> Icons.Default.ArrowUpward
+                        SortOrder.CHRONOLOGICAL_DESC -> Icons.Default.ArrowDownward
+                        SortOrder.SIZE_DESC -> Icons.Default.ExpandMore
+                        SortOrder.SIZE_ASC -> Icons.Default.ExpandLess
+                        SortOrder.TYPE_VIDEO_FIRST, SortOrder.TYPE_VIDEO_FIRST_ASC, SortOrder.TYPE_VIDEO_FIRST_SHUFFLED -> Icons.Default.Videocam
+                        SortOrder.TYPE_PHOTO_FIRST, SortOrder.TYPE_PHOTO_FIRST_ASC, SortOrder.TYPE_PHOTO_FIRST_SHUFFLED -> Icons.Default.Image
+                    }
+
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = stringResource(R.string.settings_sort_order_label),
+                        modifier = Modifier.size(iconSize)
+                    )
                 }
 
-                val baseSize = if (uiState.showSwipeButtons) 24.dp else 28.dp
-
-                Icon(
-                    imageVector = icon,
-                    contentDescription = stringResource(R.string.settings_sort_order_label),
-                    modifier = Modifier.size(baseSize)
-                )
-            }
-
-            if (showSortMenu) {
-                SortOrderPopupMenu(
-                    uiState = uiState,
-                    viewModel = viewModel,
-                    onDismiss = { onSortMenuToggle(false) }
-                )
+                if (showSortMenu) {
+                    SortOrderPopupMenu(
+                        uiState = uiState,
+                        viewModel = viewModel,
+                        onDismiss = { onSortMenuToggle(false) }
+                    )
+                }
             }
         }
 
