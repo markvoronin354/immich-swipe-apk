@@ -1,21 +1,15 @@
 package com.markvoronin.immichswipe.navigation
 
 import android.content.Intent
-import android.net.Uri
-import androidx.core.net.toUri
 import com.markvoronin.immichswipe.domain.model.Album
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
-// Robolectric 4.14 does not support the project's target SDK yet.
-@RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class DeepLinkHandlerTest {
-    private fun parse(uri: String) = DeepLinkHandler.parseUri(uri.toUri())
+    private fun parse(uri: String) = DeepLinkHandler.parseUri(uri)
 
     @Test
     fun `swipe and album links open the album from the path`() {
@@ -73,12 +67,15 @@ class DeepLinkHandlerTest {
     @Test
     fun `intents without data are ignored`() {
         assertNull(DeepLinkHandler.parseIntent(null))
-        assertNull(DeepLinkHandler.parseIntent(Intent()))
+        val intent = mockk<Intent>()
+        every { intent.dataString } returns null
+        assertNull(DeepLinkHandler.parseIntent(intent))
     }
 
     @Test
     fun `intents carry their link through`() {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("immichswipe://duplicates"))
+        val intent = mockk<Intent>()
+        every { intent.dataString } returns "immichswipe://duplicates"
         assertEquals(NavKey.Duplicates, DeepLinkHandler.parseIntent(intent))
     }
 }

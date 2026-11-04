@@ -19,22 +19,29 @@ object DeepLinkHandler {
      * Parses an incoming Intent and extracts a NavKey destination if a valid deep link URI is present.
      */
     fun parseIntent(intent: Intent?): NavKey? {
-        val uri: Uri = intent?.data ?: return null
-        return parseUri(uri)
+        val uriString = intent?.dataString ?: return null
+        return parseUri(uriString)
     }
 
-    fun parseUri(uri: Uri): NavKey? {
-        val scheme = uri.scheme
-        if (scheme != "immichswipe" && scheme != "http" && scheme != "https") {
+    fun parseUri(uri: Uri?): NavKey? {
+        return parseUri(uri?.toString())
+    }
+
+    fun parseUri(uriString: String?): NavKey? {
+        if (uriString.isNullOrBlank()) return null
+        val javaUri = runCatching { java.net.URI.create(uriString) }.getOrNull() ?: return null
+        val scheme = javaUri.scheme ?: return null
+        if ((scheme != "immichswipe") && (scheme != "http") && (scheme != "https")) {
             return null
         }
-        AppLogger.d("DeepLinkHandler", "Parsing deep link URI: $uri")
-        val host = uri.host ?: ""
-        val pathSegments = uri.pathSegments
+        AppLogger.d("DeepLinkHandler", "Parsing deep link URI: $uriString")
+        val host = javaUri.host ?: return null
+        val pathSegments = javaUri.path?.split("/")?.filter { it.isNotEmpty() } ?: emptyList()
 
         return when (host) {
             "swipe", "album" -> {
-                val rawId = pathSegments.firstOrNull() ?: uri.getQueryParameter("id") ?: Album.VIRTUAL_ALL_ID
+                val queryId = parseQueryParameter(javaUri.query, "id")
+                val rawId = pathSegments.firstOrNull() ?: queryId ?: Album.VIRTUAL_ALL_ID
                 NavKey.Swipe(normalizeAlbumId(rawId))
             }
             "duplicates" -> NavKey.Duplicates
@@ -42,6 +49,14 @@ object DeepLinkHandler {
             "home" -> parseHomePath(pathSegments)
             else -> null
         }
+    }
+
+    private fun parseQueryParameter(query: String?, key: String): String? {
+        if (query.isNullOrBlank()) return null
+        return query.split("&")
+            .map { it.split("=", limit = 2) }
+            .firstOrNull { it[0] == key }
+            ?.getOrNull(1)
     }
 
     private fun parseHomePath(pathSegments: List<String>): NavKey {
