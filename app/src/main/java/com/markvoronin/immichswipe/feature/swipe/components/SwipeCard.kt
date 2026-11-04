@@ -27,8 +27,11 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.VideocamOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -529,13 +532,13 @@ fun SwipeCard(
                     }
                 },
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(28.dp)
         ) {
             val animatedRotation by animateFloatAsState(targetValue = config.rotationAngle.toFloat(), label = "rotationZ")
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(28.dp))
             ) {
                 // Everything inside is recorded live so the metadata panel can refract it.
                 Box(
@@ -987,18 +990,22 @@ fun SwipeCard(
                     if (config.canUndo && !isEnteringFromBelow && currentY > abs(currentX)) {
                         IndicatorBadge(
                             stringResource(R.string.swipe_undo_upper),
-                            Color(0xFF2196F3), // Blue for undo
-                            Alignment.TopCenter
+                            Icons.AutoMirrored.Filled.Undo,
+                            MaterialTheme.colorScheme.primary,
+                            Alignment.TopCenter,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         ) { (currentY / 200f).coerceIn(0f, 1f) * 0.9f }
                     } else if (currentX > 0f) {
                         IndicatorBadge(
                             stringResource(R.string.swipe_keep_upper),
+                            Icons.Default.Check,
                             MaterialGreen,
                             Alignment.TopStart
                         ) { (currentX / 200f).coerceIn(0f, 1f) * 0.9f }
                     } else if (currentX < 0f) {
                         IndicatorBadge(
                             stringResource(R.string.swipe_delete_upper),
+                            Icons.Default.Delete,
                             MaterialRed,
                             Alignment.TopEnd
                         ) { (-currentX / 200f).coerceIn(0f, 1f) * 0.9f }

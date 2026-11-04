@@ -22,6 +22,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -83,6 +86,9 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
+
+/** Keeps the KEEP/DELETE badge below the close button, which spans 50dp to 98dp from the top. */
+private val FullscreenBadgeTopPadding = 110.dp
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -680,13 +686,17 @@ fun FullscreenViewer(
 
             if (swipeX.value > 0f) IndicatorBadge(
                 stringResource(R.string.swipe_keep_upper),
+                Icons.Default.Check,
                 MaterialGreen,
-                Alignment.TopStart
+                Alignment.TopStart,
+                topPadding = FullscreenBadgeTopPadding
             ) { (swipeX.value / 200f).coerceIn(0f, 1f) * 0.9f }
             else if (swipeX.value < 0f) IndicatorBadge(
                 stringResource(R.string.swipe_delete_upper),
+                Icons.Default.Delete,
                 MaterialRed,
-                Alignment.TopEnd
+                Alignment.TopEnd,
+                topPadding = FullscreenBadgeTopPadding
             ) { (-swipeX.value / 200f).coerceIn(0f, 1f) * 0.9f }
 
                 PreviewControls(
