@@ -84,11 +84,11 @@
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_palette_label">Color palette</string>
     <string name="settings_palette_desc">Pick the app\'s accent. Wallpaper follows your system colors.</string>
-    <string name="settings_palette_aurora">Aurora</string>
     <string name="settings_palette_ocean">Ocean</string>
-    <string name="settings_palette_ember">Ember</string>
-    <string name="settings_palette_meadow">Meadow</string>
-    <string name="settings_palette_graphite">Graphite</string>
+    <string name="settings_palette_forest">Forest</string>
+    <string name="settings_palette_sunset">Sunset</string>
+    <string name="settings_palette_rose">Rose</string>
+    <string name="settings_palette_mono">Mono</string>
     <string name="settings_palette_wallpaper">Wallpaper</string>
     <string name="settings_layout_list">List</string>
     <string name="settings_layout_grid">Grid</string>

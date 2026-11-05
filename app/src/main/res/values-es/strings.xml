@@ -85,11 +85,11 @@
     <string name="settings_theme_dark">Oscuro</string>
     <string name="settings_palette_label">Paleta de colores</string>
     <string name="settings_palette_desc">Elige el color de acento de la app. Fondo de pantalla sigue los colores de tu sistema.</string>
-    <string name="settings_palette_aurora">Aurora</string>
     <string name="settings_palette_ocean">Océano</string>
-    <string name="settings_palette_ember">Brasa</string>
-    <string name="settings_palette_meadow">Prado</string>
-    <string name="settings_palette_graphite">Grafito</string>
+    <string name="settings_palette_forest">Bosque</string>
+    <string name="settings_palette_sunset">Atardecer</string>
+    <string name="settings_palette_rose">Rosa</string>
+    <string name="settings_palette_mono">Mono</string>
     <string name="settings_palette_wallpaper">Fondo de pantalla</string>
     <string name="settings_layout_list">Lista</string>
     <string name="settings_layout_grid">Cuadrícula</string>

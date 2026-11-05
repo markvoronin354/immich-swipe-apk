@@ -137,7 +137,7 @@ class SessionDataStore(private val context: Context) {
 
     // Falls back to the legacy dynamic-color toggle so existing users keep their current look.
     fun getAppPalette(): Flow<String> = context.dataStore.data.map {
-        it[KEY_APP_PALETTE] ?: if (it[KEY_DYNAMIC_COLOR] == false) "AURORA" else "WALLPAPER"
+        it[KEY_APP_PALETTE] ?: if (it[KEY_DYNAMIC_COLOR] == false) "OCEAN" else "WALLPAPER"
     }
 
     suspend fun saveAppPalette(palette: String) {

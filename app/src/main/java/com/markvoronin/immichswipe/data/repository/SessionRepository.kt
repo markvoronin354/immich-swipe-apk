@@ -79,7 +79,7 @@ class SessionRepository @Inject constructor(
 
 
     val appPalette: Flow<AppPalette> = dataStore.getAppPalette().map {
-        try { AppPalette.valueOf(it) } catch (_: Exception) { AppPalette.AURORA }
+        try { AppPalette.valueOf(it) } catch (_: Exception) { AppPalette.OCEAN }
     }
 
 
