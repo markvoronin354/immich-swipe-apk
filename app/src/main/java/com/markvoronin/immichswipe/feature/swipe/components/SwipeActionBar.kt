@@ -3,6 +3,7 @@ package com.markvoronin.immichswipe.feature.swipe.components
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -54,6 +55,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.markvoronin.immichswipe.R
@@ -68,24 +70,25 @@ import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 /**
  * One tile of the connected action group, styled like the fullscreen toolbar. When [checked] is non-null it is a
  * toggle whose tile inverts while on; it is also used to mark a button whose menu or dialog is open.
- * [label] is shown as small text under the icon.
+ * [label] is shown as small text under the icon when [showLabel] is true.
  */
 @Composable
 private fun ActionTile(
     onClick: () -> Unit,
     shape: Shape,
     label: String,
+    showLabel: Boolean,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     checked: Boolean? = null,
     icon: @Composable () -> Unit
 ) {
     val pressedShape = RoundedCornerShape(10.dp)
-    val tileModifier = modifier.height(56.dp)
+    val tileModifier = modifier.height(if (showLabel) 56.dp else 48.dp)
     val content: @Composable () -> Unit = {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             icon()
-            Text(
+            if (showLabel) Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
                 maxLines = 1,
@@ -214,129 +217,157 @@ fun SwipeActionBar(
             uiState.showLockButton
         ).count { it }
 
-        Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(3.dp)
-        ) {
-            var index = 0
-            // The tapped tile grows and its neighbours give way; the weights always sum to the same total.
-            val jiggle = rememberJiggleGroup(tileCount, grow = 0.14f)
+        // Labels of the visible tiles, used to check whether they all fit.
+        val labels = listOfNotNull(
+            stringResource(R.string.swipe_undo),
+            stringResource(R.string.swipe_archive).takeIf { uiState.showArchiveButton },
+            stringResource(R.string.swipe_label_favorite).takeIf { uiState.showFavoriteButton },
+            stringResource(R.string.swipe_label_album).takeIf { uiState.showAddToAlbumButton },
+            stringResource(R.string.swipe_locked).takeIf { uiState.showLockButton },
+            stringResource(R.string.swipe_label_sort)
+        )
+        val labelStyle = MaterialTheme.typography.labelSmall
+        val textMeasurer = rememberTextMeasurer()
+        val density = LocalDensity.current
+        val widestLabel = remember(labels, labelStyle, density) {
+            with(density) { labels.maxOf { textMeasurer.measure(it, labelStyle).size.width }.toDp() }
+        }
 
-            val undoIndex = index++
-            ActionTile(
-                onClick = { jiggle.tap(undoIndex); viewModel.undo() },
-                label = stringResource(R.string.swipe_undo),
-                enabled = uiState.history.isNotEmpty(),
-                shape = connectedTileShape(undoIndex, tileCount, outer = 24.dp),
-                modifier = Modifier.weight(jiggle.factor(undoIndex))
+        BoxWithConstraints(modifier = Modifier.weight(1f)) {
+            // Show labels only when the widest one fits its tile with some room to spare (label padding + margin).
+            val tileWidth = (maxWidth - 3.dp * (tileCount - 1)) / tileCount
+            val showLabels = widestLabel + 16.dp <= tileWidth
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Undo,
-                    contentDescription = stringResource(R.string.swipe_undo),
-                    modifier = Modifier.size(iconSize)
-                )
-            }
+                var index = 0
+                // The tapped tile grows and its neighbours give way; the weights always sum to the same total.
+                val jiggle = rememberJiggleGroup(tileCount, grow = 0.14f)
 
-            if (uiState.showArchiveButton) {
-                val archiveIndex = index++
+                val undoIndex = index++
                 ActionTile(
-                    onClick = { jiggle.tap(archiveIndex); viewModel.toggleArchive() },
-                    label = stringResource(R.string.swipe_archive),
-                    shape = connectedTileShape(archiveIndex, tileCount, outer = 24.dp),
-                    modifier = Modifier.weight(jiggle.factor(archiveIndex))
+                    onClick = { jiggle.tap(undoIndex); viewModel.undo() },
+                    label = stringResource(R.string.swipe_undo),
+                    showLabel = showLabels,
+                    enabled = uiState.history.isNotEmpty(),
+                    shape = connectedTileShape(undoIndex, tileCount, outer = 24.dp),
+                    modifier = Modifier.weight(jiggle.factor(undoIndex))
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Archive,
-                        contentDescription = stringResource(R.string.swipe_archive),
+                        imageVector = Icons.AutoMirrored.Filled.Undo,
+                        contentDescription = stringResource(R.string.swipe_undo),
                         modifier = Modifier.size(iconSize)
                     )
                 }
-            }
 
-            if (uiState.showFavoriteButton) {
-                val isFav = uiState.currentAsset?.let { uiState.isFavorite(it.id) } ?: false
-                val favoriteIndex = index++
-                ActionTile(
-                    onClick = { jiggle.tap(favoriteIndex); viewModel.toggleFavorite() },
-                    label = stringResource(R.string.swipe_label_favorite),
-                    shape = connectedTileShape(favoriteIndex, tileCount, outer = 24.dp),
-                    checked = isFav,
-                    modifier = Modifier.weight(jiggle.factor(favoriteIndex))
-                ) {
-                    Icon(
-                        imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = stringResource(R.string.swipe_favorite),
-                        tint = if (isFav) Color.Red else LocalContentColor.current,
-                        modifier = Modifier.size(iconSize)
-                    )
+                if (uiState.showArchiveButton) {
+                    val archiveIndex = index++
+                    ActionTile(
+                        onClick = { jiggle.tap(archiveIndex); viewModel.toggleArchive() },
+                        label = stringResource(R.string.swipe_archive),
+                        showLabel = showLabels,
+                        shape = connectedTileShape(archiveIndex, tileCount, outer = 24.dp),
+                        modifier = Modifier.weight(jiggle.factor(archiveIndex))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Archive,
+                            contentDescription = stringResource(R.string.swipe_archive),
+                            modifier = Modifier.size(iconSize)
+                        )
+                    }
                 }
-            }
 
-            if (uiState.showAddToAlbumButton) {
-                val albumIndex = index++
-                ActionTile(
-                    onClick = { jiggle.tap(albumIndex); viewModel.openAddToAlbumDialog() },
-                    label = stringResource(R.string.swipe_label_album),
-                    shape = connectedTileShape(albumIndex, tileCount, outer = 24.dp),
-                    checked = uiState.showAddToAlbumDialog,
-                    modifier = Modifier.weight(jiggle.factor(albumIndex))
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.LibraryAdd,
-                        contentDescription = stringResource(R.string.add_to_album_title),
-                        modifier = Modifier.size(iconSize)
-                    )
+                if (uiState.showFavoriteButton) {
+                    val isFav = uiState.currentAsset?.let { uiState.isFavorite(it.id) } ?: false
+                    val favoriteIndex = index++
+                    ActionTile(
+                        onClick = { jiggle.tap(favoriteIndex); viewModel.toggleFavorite() },
+                        label = stringResource(R.string.swipe_label_favorite),
+                        showLabel = showLabels,
+                        shape = connectedTileShape(favoriteIndex, tileCount, outer = 24.dp),
+                        checked = isFav,
+                        modifier = Modifier.weight(jiggle.factor(favoriteIndex))
+                    ) {
+                        Icon(
+                            imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = stringResource(R.string.swipe_favorite),
+                            tint = if (isFav) Color.Red else LocalContentColor.current,
+                            modifier = Modifier.size(iconSize)
+                        )
+                    }
                 }
-            }
 
-            if (uiState.showLockButton) {
-                val lockIndex = index++
-                ActionTile(
-                    onClick = { jiggle.tap(lockIndex); viewModel.toggleLock() },
-                    label = stringResource(R.string.swipe_locked),
-                    shape = connectedTileShape(lockIndex, tileCount, outer = 24.dp),
-                    modifier = Modifier.weight(jiggle.factor(lockIndex))
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = stringResource(R.string.swipe_locked),
-                        modifier = Modifier.size(iconSize)
-                    )
+                if (uiState.showAddToAlbumButton) {
+                    val albumIndex = index++
+                    ActionTile(
+                        onClick = { jiggle.tap(albumIndex); viewModel.openAddToAlbumDialog() },
+                        label = stringResource(R.string.swipe_label_album),
+                        showLabel = showLabels,
+                        shape = connectedTileShape(albumIndex, tileCount, outer = 24.dp),
+                        checked = uiState.showAddToAlbumDialog,
+                        modifier = Modifier.weight(jiggle.factor(albumIndex))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LibraryAdd,
+                            contentDescription = stringResource(R.string.add_to_album_title),
+                            modifier = Modifier.size(iconSize)
+                        )
+                    }
                 }
-            }
 
-            val sortIndex = index
-            Box(modifier = Modifier.weight(jiggle.factor(sortIndex))) {
-                ActionTile(
-                    onClick = { jiggle.tap(sortIndex); onSortMenuToggle(true) },
-                    label = stringResource(R.string.swipe_label_sort),
-                    shape = connectedTileShape(sortIndex, tileCount, outer = 24.dp),
-                    checked = showSortMenu,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    val icon = when (uiState.sortOrder) {
-                        SortOrder.SHUFFLED -> Icons.Default.Shuffle
-                        SortOrder.CHRONOLOGICAL_ASC -> Icons.Default.ArrowUpward
-                        SortOrder.CHRONOLOGICAL_DESC -> Icons.Default.ArrowDownward
-                        SortOrder.SIZE_DESC -> Icons.Default.ExpandMore
-                        SortOrder.SIZE_ASC -> Icons.Default.ExpandLess
-                        SortOrder.TYPE_VIDEO_FIRST, SortOrder.TYPE_VIDEO_FIRST_ASC, SortOrder.TYPE_VIDEO_FIRST_SHUFFLED -> Icons.Default.Videocam
-                        SortOrder.TYPE_PHOTO_FIRST, SortOrder.TYPE_PHOTO_FIRST_ASC, SortOrder.TYPE_PHOTO_FIRST_SHUFFLED -> Icons.Default.Image
+                if (uiState.showLockButton) {
+                    val lockIndex = index++
+                    ActionTile(
+                        onClick = { jiggle.tap(lockIndex); viewModel.toggleLock() },
+                        label = stringResource(R.string.swipe_locked),
+                        showLabel = showLabels,
+                        shape = connectedTileShape(lockIndex, tileCount, outer = 24.dp),
+                        modifier = Modifier.weight(jiggle.factor(lockIndex))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = stringResource(R.string.swipe_locked),
+                            modifier = Modifier.size(iconSize)
+                        )
+                    }
+                }
+
+                val sortIndex = index
+                Box(modifier = Modifier.weight(jiggle.factor(sortIndex))) {
+                    ActionTile(
+                        onClick = { jiggle.tap(sortIndex); onSortMenuToggle(true) },
+                        label = stringResource(R.string.swipe_label_sort),
+                        showLabel = showLabels,
+                        shape = connectedTileShape(sortIndex, tileCount, outer = 24.dp),
+                        checked = showSortMenu,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val icon = when (uiState.sortOrder) {
+                            SortOrder.SHUFFLED -> Icons.Default.Shuffle
+                            SortOrder.CHRONOLOGICAL_ASC -> Icons.Default.ArrowUpward
+                            SortOrder.CHRONOLOGICAL_DESC -> Icons.Default.ArrowDownward
+                            SortOrder.SIZE_DESC -> Icons.Default.ExpandMore
+                            SortOrder.SIZE_ASC -> Icons.Default.ExpandLess
+                            SortOrder.TYPE_VIDEO_FIRST, SortOrder.TYPE_VIDEO_FIRST_ASC, SortOrder.TYPE_VIDEO_FIRST_SHUFFLED -> Icons.Default.Videocam
+                            SortOrder.TYPE_PHOTO_FIRST, SortOrder.TYPE_PHOTO_FIRST_ASC, SortOrder.TYPE_PHOTO_FIRST_SHUFFLED -> Icons.Default.Image
+                        }
+
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = stringResource(R.string.settings_sort_order_label),
+                            modifier = Modifier.size(iconSize)
+                        )
                     }
 
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = stringResource(R.string.settings_sort_order_label),
-                        modifier = Modifier.size(iconSize)
-                    )
-                }
-
-                if (showSortMenu) {
-                    SortOrderPopupMenu(
-                        uiState = uiState,
-                        viewModel = viewModel,
-                        onDismiss = { onSortMenuToggle(false) }
-                    )
+                    if (showSortMenu) {
+                        SortOrderPopupMenu(
+                            uiState = uiState,
+                            viewModel = viewModel,
+                            onDismiss = { onSortMenuToggle(false) }
+                        )
+                    }
                 }
             }
         }
