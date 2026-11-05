@@ -258,6 +258,7 @@ class SessionRepository @Inject constructor(
 
     suspend fun saveShowFavorite(show: Boolean) { dataStore.saveShowFavorite(show) }
     suspend fun saveAutoNextOnFav(autoNextOnFav: Boolean) { dataStore.saveAutoNextOnFav(autoNextOnFav) }
+    suspend fun saveIncludeArchived(include: Boolean) { dataStore.saveIncludeArchived(include) }
     suspend fun saveShowSwipeButtons(show: Boolean) { dataStore.saveShowSwipeButtons(show) }
     suspend fun saveShowArchiveButton(show: Boolean) { dataStore.saveShowArchiveButton(show) }
     suspend fun saveShowLockButton(show: Boolean) { dataStore.saveShowLockButton(show) }

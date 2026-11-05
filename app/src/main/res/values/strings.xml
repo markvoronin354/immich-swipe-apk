@@ -152,6 +152,8 @@
     <string name="settings_show_lock_label">Dedicated lock button</string>
     <string name="settings_sync_local_deletion_label">Sync deletion with device</string>
     <string name="settings_sync_local_deletion_desc">When you delete a photo from Immich, also attempt to delete the local file from your device storage to prevent re-uploading.</string>
+    <string name="settings_include_archived_label">Include external archives</string>
+    <string name="settings_include_archived_desc">View and sort photos that have been archived in Immich (outside of Immich Swipe)</string>
     <string name="swipe_rotate_asset">Rotate asset 90° clockwise</string>
 
     <!-- Swipe Screen -->

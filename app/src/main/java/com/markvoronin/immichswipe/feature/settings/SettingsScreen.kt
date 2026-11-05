@@ -51,6 +51,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhonelinkErase
@@ -321,6 +322,16 @@ fun SettingsScreen(
                         viewModel.setSyncLocalDeletion(checked)
                     },
                     icon = Icons.Default.PhonelinkErase
+                )
+
+                SettingsItemGap()
+
+                SettingsToggleItem(
+                    title = stringResource(R.string.settings_include_archived_label),
+                    subtitle = stringResource(R.string.settings_include_archived_desc),
+                    checked = uiState.includeArchived,
+                    onCheckedChange = { viewModel.setIncludeArchived(it) },
+                    icon = Icons.Default.Archive
                 )
 
                 SettingsItemGap()

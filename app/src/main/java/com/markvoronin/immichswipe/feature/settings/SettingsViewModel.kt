@@ -408,6 +408,10 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setIncludeArchived(include: Boolean) {
+        viewModelScope.launch { sessionRepository.saveIncludeArchived(include) }
+    }
+
     fun setSyncLocalDeletion(sync: Boolean) {
         viewModelScope.launch {
             sessionRepository.saveSyncLocalDeletion(sync)
