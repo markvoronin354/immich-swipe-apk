@@ -143,7 +143,8 @@ fun HomeScreen(
     }
 
     LaunchedEffect(isHome) {
-        if (isHome) {
+        // The ViewModel already loads albums on creation; only retry on entry if that left the list empty.
+        if (isHome && uiState.albums.isEmpty()) {
             viewModel.refreshAlbums()
         }
     }
