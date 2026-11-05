@@ -2,6 +2,7 @@ package com.markvoronin.immichswipe.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -12,6 +13,12 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import com.markvoronin.immichswipe.core.AppPalette
+import com.materialkolor.hct.Hct
+import com.materialkolor.scheme.DynamicScheme
+import com.materialkolor.scheme.SchemeMonochrome
+import com.materialkolor.scheme.SchemeTonalSpot
+import com.materialkolor.scheme.SchemeVibrant
 
 private val DarkColorScheme = darkColorScheme(
     primary = Blue80,
@@ -79,21 +86,71 @@ private val LightColorScheme = lightColorScheme(
     surfaceTint = Color.Transparent,
 )
 
+private fun AppPalette.dynamicScheme(dark: Boolean): DynamicScheme {
+    val hct = Hct.fromInt(seed.toInt())
+    return when (this) {
+        AppPalette.EMBER -> SchemeVibrant(hct, dark, 0.0)
+        AppPalette.GRAPHITE -> SchemeMonochrome(hct, dark, 0.0)
+        else -> SchemeTonalSpot(hct, dark, 0.0)
+    }
+}
+
+fun AppPalette.colorScheme(dark: Boolean): ColorScheme {
+    val s = dynamicScheme(dark)
+    val base = if (dark) DarkColorScheme else LightColorScheme
+    return base.copy(
+        primary = Color(s.primary),
+        onPrimary = Color(s.onPrimary),
+        primaryContainer = Color(s.primaryContainer),
+        onPrimaryContainer = Color(s.onPrimaryContainer),
+        inversePrimary = Color(s.inversePrimary),
+        secondary = Color(s.secondary),
+        onSecondary = Color(s.onSecondary),
+        secondaryContainer = Color(s.secondaryContainer),
+        onSecondaryContainer = Color(s.onSecondaryContainer),
+        tertiary = Color(s.tertiary),
+        onTertiary = Color(s.onTertiary),
+        tertiaryContainer = Color(s.tertiaryContainer),
+        onTertiaryContainer = Color(s.onTertiaryContainer),
+        background = Color(s.background),
+        onBackground = Color(s.onBackground),
+        surface = Color(s.surface),
+        onSurface = Color(s.onSurface),
+        surfaceVariant = Color(s.surfaceVariant),
+        onSurfaceVariant = Color(s.onSurfaceVariant),
+        inverseSurface = Color(s.inverseSurface),
+        inverseOnSurface = Color(s.inverseOnSurface),
+        error = Color(s.error),
+        onError = Color(s.onError),
+        errorContainer = Color(s.errorContainer),
+        onErrorContainer = Color(s.onErrorContainer),
+        outline = Color(s.outline),
+        outlineVariant = Color(s.outlineVariant),
+        scrim = Color(s.scrim),
+        surfaceBright = Color(s.surfaceBright),
+        surfaceContainer = Color(s.surfaceContainer),
+        surfaceContainerHigh = Color(s.surfaceContainerHigh),
+        surfaceContainerHighest = Color(s.surfaceContainerHighest),
+        surfaceContainerLow = Color(s.surfaceContainerLow),
+        surfaceContainerLowest = Color(s.surfaceContainerLowest),
+        surfaceDim = Color(s.surfaceDim)
+    )
+}
+
 @Composable
 fun ImmichSwipeTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    palette: AppPalette = AppPalette.WALLPAPER,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        palette == AppPalette.WALLPAPER && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        palette == AppPalette.WALLPAPER -> if (darkTheme) DarkColorScheme else LightColorScheme
+        else -> palette.colorScheme(darkTheme)
     }
 
     val view = LocalView.current

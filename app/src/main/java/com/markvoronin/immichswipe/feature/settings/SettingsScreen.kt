@@ -40,7 +40,6 @@ import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarViewWeek
 import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.DeleteSweep
@@ -99,11 +98,11 @@ import com.markvoronin.immichswipe.feature.settings.components.DatabaseActionDia
 import com.markvoronin.immichswipe.feature.settings.components.InteractionsScreen
 import com.markvoronin.immichswipe.feature.settings.components.JiggleRow
 import com.markvoronin.immichswipe.feature.settings.components.LogsDialog
+import com.markvoronin.immichswipe.feature.settings.components.PaletteSelector
 import com.markvoronin.immichswipe.feature.settings.components.SettingsClickableItem
 import com.markvoronin.immichswipe.feature.settings.components.SettingsItemGap
 import com.markvoronin.immichswipe.feature.settings.components.SettingsSection
 import com.markvoronin.immichswipe.feature.settings.components.SettingsToggleItem
-import com.markvoronin.immichswipe.feature.settings.components.SettingsToggleItemSmall
 import com.markvoronin.immichswipe.feature.settings.components.ThemeButton
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
 
@@ -264,23 +263,12 @@ fun SettingsScreen(
                 }
             }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                SettingsItemGap()
-                Column(modifier = Modifier.padding(16.dp)) {
-                    SettingsToggleItemSmall(
-                        title = stringResource(R.string.settings_dynamic_color_label),
-                        checked = uiState.dynamicColor,
-                        onCheckedChange = { viewModel.setDynamicColor(it) },
-                        icon = Icons.Default.ColorLens
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_dynamic_color_desc),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.padding(start = 40.dp, end = 16.dp)
-                    )
-                }
-            }
+            SettingsItemGap()
+            PaletteSelector(
+                selected = uiState.palette,
+                themeMode = uiState.themeMode,
+                onSelect = { viewModel.setPalette(it) }
+            )
             }
         }
 

@@ -23,6 +23,7 @@ class SessionDataStore(private val context: Context) {
         private val KEY_AUDIO_FOCUS = stringPreferencesKey("audio_focus")
         private val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         private val KEY_DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
+        private val KEY_APP_PALETTE = stringPreferencesKey("app_palette")
         private val KEY_FULLSCREEN_ICON_POS = stringPreferencesKey("fullscreen_icon_pos")
         private val KEY_IMMICH_ICON_POS = stringPreferencesKey("immich_icon_pos")
         private val KEY_IMMICH_OPEN_MODE = stringPreferencesKey("immich_open_mode")
@@ -134,10 +135,13 @@ class SessionDataStore(private val context: Context) {
         context.dataStore.edit { it[KEY_THEME_MODE] = mode }
     }
 
-    fun isDynamicColor(): Flow<Boolean> = context.dataStore.data.map { it[KEY_DYNAMIC_COLOR] ?: true }
+    // Falls back to the legacy dynamic-color toggle so existing users keep their current look.
+    fun getAppPalette(): Flow<String> = context.dataStore.data.map {
+        it[KEY_APP_PALETTE] ?: if (it[KEY_DYNAMIC_COLOR] == false) "AURORA" else "WALLPAPER"
+    }
 
-    suspend fun saveDynamicColor(enabled: Boolean) {
-        context.dataStore.edit { it[KEY_DYNAMIC_COLOR] = enabled }
+    suspend fun saveAppPalette(palette: String) {
+        context.dataStore.edit { it[KEY_APP_PALETTE] = palette }
     }
 
     fun getFullscreenIconPosition(): Flow<String?> = context.dataStore.data.map { it[KEY_FULLSCREEN_ICON_POS] }

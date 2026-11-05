@@ -1,5 +1,6 @@
 package com.markvoronin.immichswipe.feature.settings
 
+import com.markvoronin.immichswipe.core.AppPalette
 import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.ButtonStackOrientation
 import com.markvoronin.immichswipe.core.CardDisplayMode
@@ -26,7 +27,7 @@ data class SettingsUiState(
     val savedAccountsCount: Int = 1,
     val playbackBehavior: PlaybackBehavior = PlaybackBehavior.PAUSE_OTHERS,
     val themeMode: AppTheme = AppTheme.SYSTEM,
-    val dynamicColor: Boolean = true,
+    val palette: AppPalette = AppPalette.WALLPAPER,
     val fullscreenButtonPosition: IconPosition = IconPosition.TOP_RIGHT,
     val immichButtonPosition: IconPosition = IconPosition.BOTTOM_LEFT,
     val immichOpenMode: ImmichOpenMode = ImmichOpenMode.APP,

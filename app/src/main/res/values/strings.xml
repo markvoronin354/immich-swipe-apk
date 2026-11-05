@@ -82,8 +82,14 @@
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
-    <string name="settings_dynamic_color_label">System colors</string>
-    <string name="settings_dynamic_color_desc">Use colors from your wallpaper and system theme. If disabled, the default app colors will be used.</string>
+    <string name="settings_palette_label">Color palette</string>
+    <string name="settings_palette_desc">Pick the app\'s accent. Wallpaper follows your system colors.</string>
+    <string name="settings_palette_aurora">Aurora</string>
+    <string name="settings_palette_ocean">Ocean</string>
+    <string name="settings_palette_ember">Ember</string>
+    <string name="settings_palette_meadow">Meadow</string>
+    <string name="settings_palette_graphite">Graphite</string>
+    <string name="settings_palette_wallpaper">Wallpaper</string>
     <string name="settings_layout_list">List</string>
     <string name="settings_layout_grid">Grid</string>
     <string name="settings_sort_order_label">Sort order</string>

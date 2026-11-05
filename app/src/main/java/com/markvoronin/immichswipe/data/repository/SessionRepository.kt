@@ -1,6 +1,7 @@
 package com.markvoronin.immichswipe.data.repository
 
 import android.content.Context
+import com.markvoronin.immichswipe.core.AppPalette
 import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.ButtonPositions
 import com.markvoronin.immichswipe.core.ButtonStackOrientation
@@ -77,7 +78,9 @@ class SessionRepository @Inject constructor(
     }
 
 
-    val dynamicColor: Flow<Boolean> = dataStore.isDynamicColor()
+    val appPalette: Flow<AppPalette> = dataStore.getAppPalette().map {
+        try { AppPalette.valueOf(it) } catch (_: Exception) { AppPalette.AURORA }
+    }
 
 
     val fullscreenButtonPosition: Flow<IconPosition> = dataStore.getFullscreenIconPosition().map {
@@ -190,8 +193,8 @@ class SessionRepository @Inject constructor(
     }
 
 
-    suspend fun saveDynamicColor(enabled: Boolean) {
-        dataStore.saveDynamicColor(enabled)
+    suspend fun saveAppPalette(palette: AppPalette) {
+        dataStore.saveAppPalette(palette.name)
     }
 
 

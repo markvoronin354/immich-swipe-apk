@@ -26,7 +26,7 @@ class AppViewModel @Inject constructor(
         initializeTutorialState()
         observeSession()
         observeTheme()
-        observeDynamicColor()
+        observePalette()
     }
 
     private fun migrateLegacySecrets() {
@@ -73,10 +73,10 @@ class AppViewModel @Inject constructor(
         }
     }
 
-    private fun observeDynamicColor() {
+    private fun observePalette() {
         viewModelScope.launch {
-            sessionRepository.dynamicColor.collect { enabled ->
-                _uiState.value = _uiState.value.copy(dynamicColor = enabled)
+            sessionRepository.appPalette.collect { palette ->
+                _uiState.value = _uiState.value.copy(palette = palette)
             }
         }
     }

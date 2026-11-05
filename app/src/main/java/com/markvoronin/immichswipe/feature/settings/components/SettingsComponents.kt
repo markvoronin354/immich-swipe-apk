@@ -1,12 +1,17 @@
 package com.markvoronin.immichswipe.feature.settings.components
 
+import android.os.Build
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,9 +22,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -34,6 +41,8 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -43,6 +52,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.BlendMode
@@ -51,9 +61,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.markvoronin.immichswipe.R
+import com.markvoronin.immichswipe.core.AppPalette
+import com.markvoronin.immichswipe.core.AppTheme
+import com.markvoronin.immichswipe.ui.theme.colorScheme
 import kotlinx.coroutines.delay
 
 // How much the tapped button grows (as a fraction of its size); neighbours shrink to compensate.
@@ -515,6 +532,111 @@ fun SettingsToggleButton(
         contentPadding = PaddingValues(horizontal = 8.dp),
         content = content
     )
+}
+
+@Composable
+fun PaletteSelector(
+    selected: AppPalette,
+    themeMode: AppTheme,
+    onSelect: (AppPalette) -> Unit
+) {
+    val context = LocalContext.current
+    val dark = when (themeMode) {
+        AppTheme.SYSTEM -> isSystemInDarkTheme()
+        AppTheme.LIGHT -> false
+        AppTheme.DARK -> true
+    }
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text(
+            text = stringResource(R.string.settings_palette_label),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.SemiBold
+        )
+        Text(
+            text = stringResource(R.string.settings_palette_desc),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.outline
+        )
+        Spacer(Modifier.height(12.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            AppPalette.entries.filter { it.isAvailable }.forEach { palette ->
+                val scheme = remember(palette, dark) {
+                    if (palette == AppPalette.WALLPAPER && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+                    } else {
+                        palette.colorScheme(dark)
+                    }
+                }
+                PaletteSwatch(
+                    primary = scheme.primary,
+                    secondary = scheme.secondaryContainer,
+                    tertiary = scheme.tertiary,
+                    label = stringResource(palette.labelRes),
+                    selected = selected == palette,
+                    onClick = { onSelect(palette) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PaletteSwatch(
+    primary: Color,
+    secondary: Color,
+    tertiary: Color,
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.clickable(role = Role.RadioButton, onClick = onClick)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .border(
+                    2.5.dp,
+                    if (selected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                    CircleShape
+                )
+                .padding(5.dp)
+                .clip(CircleShape)
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Box(Modifier.weight(1f).fillMaxWidth().background(primary))
+                Row(Modifier.weight(1f).fillMaxWidth()) {
+                    Box(Modifier.weight(1f).fillMaxSize().background(secondary))
+                    Box(Modifier.weight(1f).fillMaxSize().background(tertiary))
+                }
+            }
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(26.dp)
+                        .clip(CircleShape)
+                        .background(primary)
+                        .padding(4.dp)
+                )
+            }
+        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)

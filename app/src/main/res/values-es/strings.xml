@@ -83,8 +83,14 @@
     <string name="settings_theme_system">Sistema</string>
     <string name="settings_theme_light">Claro</string>
     <string name="settings_theme_dark">Oscuro</string>
-    <string name="settings_dynamic_color_label">Colores del sistema</string>
-    <string name="settings_dynamic_color_desc">Utiliza los colores de tu fondo de pantalla y del sistema. Si está desactivado, se utilizarán los colores por defecto de la aplicación.</string>
+    <string name="settings_palette_label">Paleta de colores</string>
+    <string name="settings_palette_desc">Elige el color de acento de la app. Fondo de pantalla sigue los colores de tu sistema.</string>
+    <string name="settings_palette_aurora">Aurora</string>
+    <string name="settings_palette_ocean">Océano</string>
+    <string name="settings_palette_ember">Brasa</string>
+    <string name="settings_palette_meadow">Prado</string>
+    <string name="settings_palette_graphite">Grafito</string>
+    <string name="settings_palette_wallpaper">Fondo de pantalla</string>
     <string name="settings_layout_list">Lista</string>
     <string name="settings_layout_grid">Cuadrícula</string>
     <string name="settings_sort_order_label">Orden de clasificación</string>

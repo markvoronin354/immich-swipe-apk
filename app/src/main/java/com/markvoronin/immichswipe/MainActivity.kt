@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
                 onDispose {}
             }
 
-            ImmichSwipeTheme(darkTheme = useDarkTheme, dynamicColor = state.dynamicColor) {
+            ImmichSwipeTheme(darkTheme = useDarkTheme, palette = state.palette) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

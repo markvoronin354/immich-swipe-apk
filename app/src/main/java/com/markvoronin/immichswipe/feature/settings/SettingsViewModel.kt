@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
+import com.markvoronin.immichswipe.core.AppPalette
 import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichOpenMode
@@ -79,8 +80,8 @@ class SettingsViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            sessionRepository.dynamicColor.collect { enabled ->
-                _uiState.value = _uiState.value.copy(dynamicColor = enabled)
+            sessionRepository.appPalette.collect { palette ->
+                _uiState.value = _uiState.value.copy(palette = palette)
             }
         }
         viewModelScope.launch {
@@ -277,9 +278,9 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setDynamicColor(enabled: Boolean) {
+    fun setPalette(palette: AppPalette) {
         viewModelScope.launch {
-            sessionRepository.saveDynamicColor(enabled)
+            sessionRepository.saveAppPalette(palette)
         }
     }
 
