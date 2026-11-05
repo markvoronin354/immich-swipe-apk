@@ -4,8 +4,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,11 +25,12 @@ import androidx.compose.ui.unit.dp
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.SortCategory
 import com.markvoronin.immichswipe.feature.settings.components.JiggleRow
-import com.markvoronin.immichswipe.feature.settings.components.SettingsToggleButton
 
-private val CategoryButtonWidth = 90.dp
-
-/** Expressive Date / Size / Type selector: the selected button morphs its shape and the group jiggles on tap. */
+/**
+ * Date / Size / Type selector as a connected button group, like the swipe action bar: separate tonal tiles with a
+ * gap between them, fully rounded only at the outer ends. The tapped tile grows and its neighbours give way.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CategorySegmentedRow(
     selectedCategory: SortCategory,
@@ -42,14 +48,24 @@ fun CategorySegmentedRow(
     JiggleRow(
         count = categories.size,
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp, androidx.compose.ui.Alignment.CenterHorizontally)
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        grow = 0.14f
     ) { jiggle ->
+        val pressedShape = RoundedCornerShape(10.dp)
         categories.forEachIndexed { index, (category, stringRes) ->
             val selected = category == selectedCategory
-            SettingsToggleButton(
-                selected = selected,
-                onClick = { jiggle.tap(index); onCategorySelected(category) },
-                modifier = Modifier.width(CategoryButtonWidth * jiggle.factor(index))
+            val shape = connectedTileShape(index, categories.size, outer = 24.dp)
+            ToggleButton(
+                checked = selected,
+                onCheckedChange = { jiggle.tap(index); onCategorySelected(category) },
+                shapes = ToggleButtonShapes(shape = shape, pressedShape = pressedShape, checkedShape = shape),
+                colors = ToggleButtonDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    checkedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
+                modifier = Modifier.weight(jiggle.factor(index)).height(48.dp)
             ) {
                 Text(
                     text = stringResource(stringRes),

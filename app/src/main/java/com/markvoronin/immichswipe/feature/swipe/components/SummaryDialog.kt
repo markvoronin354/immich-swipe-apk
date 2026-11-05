@@ -59,6 +59,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -69,6 +70,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -131,57 +133,65 @@ fun SummaryDialog(
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    StatSummaryBox(
-                        label = stringResource(R.string.swipe_keep),
-                        count = uiState.keptCount,
-                        size = uiState.keptSize,
-                        color = MaterialGreen,
-                        icon = Icons.Default.Check,
-                        modifier = Modifier.weight(1f),
-                        isEstimated = uiState.isRemainingEstimated
-                    )
-                    StatSummaryBox(
-                        label = stringResource(R.string.swipe_delete),
-                        count = uiState.deletedCount,
-                        size = uiState.deletedSize,
-                        color = MaterialRed,
-                        icon = Icons.Default.Delete,
-                        modifier = Modifier.weight(1f),
-                        isEstimated = uiState.isRemainingEstimated
-                    )
-                }
-
-                if (uiState.showArchiveButton || uiState.showLockButton) {
-                    Spacer(Modifier.height(8.dp))
+                // Connected group: tiles sit close with a small gap; a corner is fully rounded only when nothing touches it.
+                val hasSecondRow = uiState.showArchiveButton || uiState.showLockButton
+                val secondRowCount = listOf(uiState.showArchiveButton, uiState.showLockButton).count { it }
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        if (uiState.showArchiveButton) {
-                            StatSummaryBox(
-                                label = stringResource(R.string.swipe_archive),
-                                count = uiState.archiveCount,
-                                size = uiState.archiveSize,
-                                color = Color(0xFF1565C0),
-                                icon = Icons.Default.Archive,
-                                modifier = Modifier.weight(1f),
-                                isEstimated = uiState.isRemainingEstimated
-                            )
-                        }
-                        if (uiState.showLockButton) {
-                            StatSummaryBox(
-                                label = stringResource(R.string.swipe_locked),
-                                count = uiState.lockedCount,
-                                size = uiState.lockedSize,
-                                color = Color(0xFF7B1FA2),
-                                icon = Icons.Default.Lock,
-                                modifier = Modifier.weight(1f),
-                                isEstimated = uiState.isRemainingEstimated
-                            )
+                        StatSummaryBox(
+                            label = stringResource(R.string.swipe_keep),
+                            count = uiState.keptCount,
+                            size = uiState.keptSize,
+                            color = MaterialGreen,
+                            icon = Icons.Default.Check,
+                            shape = summaryTileShape(column = 0, columns = 2, isFirstRow = true, isLastRow = !hasSecondRow),
+                            modifier = Modifier.weight(1f),
+                            isEstimated = uiState.isRemainingEstimated
+                        )
+                        StatSummaryBox(
+                            label = stringResource(R.string.swipe_delete),
+                            count = uiState.deletedCount,
+                            size = uiState.deletedSize,
+                            color = MaterialRed,
+                            icon = Icons.Default.Delete,
+                            shape = summaryTileShape(column = 1, columns = 2, isFirstRow = true, isLastRow = !hasSecondRow),
+                            modifier = Modifier.weight(1f),
+                            isEstimated = uiState.isRemainingEstimated
+                        )
+                    }
+
+                    if (hasSecondRow) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            if (uiState.showArchiveButton) {
+                                StatSummaryBox(
+                                    label = stringResource(R.string.swipe_archive),
+                                    count = uiState.archiveCount,
+                                    size = uiState.archiveSize,
+                                    color = Color(0xFF1565C0),
+                                    icon = Icons.Default.Archive,
+                                    shape = summaryTileShape(column = 0, columns = secondRowCount, isFirstRow = false, isLastRow = true),
+                                    modifier = Modifier.weight(1f),
+                                    isEstimated = uiState.isRemainingEstimated
+                                )
+                            }
+                            if (uiState.showLockButton) {
+                                StatSummaryBox(
+                                    label = stringResource(R.string.swipe_locked),
+                                    count = uiState.lockedCount,
+                                    size = uiState.lockedSize,
+                                    color = Color(0xFF7B1FA2),
+                                    icon = Icons.Default.Lock,
+                                    shape = summaryTileShape(column = secondRowCount - 1, columns = secondRowCount, isFirstRow = false, isLastRow = true),
+                                    modifier = Modifier.weight(1f),
+                                    isEstimated = uiState.isRemainingEstimated
+                                )
+                            }
                         }
                     }
                 }
@@ -327,6 +337,28 @@ fun SummaryDialog(
     }
 }
 
+/**
+ * Shape of a tile in a group of up to two rows. Only corners on the group's outside edge are fully rounded;
+ * a tile spanning the whole row ([columns] == 1) is rounded on both sides.
+ */
+private fun summaryTileShape(
+    column: Int,
+    columns: Int,
+    isFirstRow: Boolean,
+    isLastRow: Boolean,
+    outer: Dp = 20.dp,
+    inner: Dp = 6.dp
+): RoundedCornerShape {
+    val isFirstColumn = column == 0
+    val isLastColumn = column == columns - 1
+    return RoundedCornerShape(
+        topStart = if (isFirstRow && isFirstColumn) outer else inner,
+        topEnd = if (isFirstRow && isLastColumn) outer else inner,
+        bottomStart = if (isLastRow && isFirstColumn) outer else inner,
+        bottomEnd = if (isLastRow && isLastColumn) outer else inner
+    )
+}
+
 @Composable
 fun StatSummaryBox(
     label: String,
@@ -336,10 +368,11 @@ fun StatSummaryBox(
     icon: ImageVector,
     modifier: Modifier = Modifier,
     isEstimated: Boolean = false,
+    shape: Shape = RoundedCornerShape(16.dp),
 ) {
     Surface(
         modifier = modifier.height(72.dp),
-        shape = RoundedCornerShape(16.dp),
+        shape = shape,
         color = color.copy(alpha = 0.12f),
         border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {

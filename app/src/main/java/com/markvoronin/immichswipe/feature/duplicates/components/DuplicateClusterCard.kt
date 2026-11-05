@@ -1,6 +1,11 @@
 package com.markvoronin.immichswipe.feature.duplicates.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollableDefaults
@@ -12,8 +17,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -36,6 +44,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -56,6 +65,7 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateClusterUiModel
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
+import com.markvoronin.immichswipe.feature.swipe.components.connectedTileShape
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -247,15 +257,19 @@ fun DuplicateClusterCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
-                    // Pill when off, morphs to a rounded rectangle when on.
+                    // A connected group like the settings screen: outer ends fully rounded, inner corners nearly square.
+                    val keepShape = connectedTileShape(0, 2, outer = 24.dp)
+                    val deleteShape = connectedTileShape(1, 2, outer = 24.dp)
+                    val pressedShape = RoundedCornerShape(10.dp)
                     ToggleButton(
                         checked = isAllKeep,
                         onCheckedChange = {
                             keepClicked = true
                             onKeepAll()
                         },
+                        shapes = ToggleButtonShapes(shape = keepShape, pressedShape = pressedShape, checkedShape = keepShape),
                         colors = ToggleButtonDefaults.colors(
                             containerColor = Color(0xFF4CAF50).copy(alpha = 0.15f),
                             contentColor = Color(0xFF4CAF50),
@@ -263,17 +277,23 @@ fun DuplicateClusterCard(
                             checkedContentColor = Color.White
                         ),
                         interactionSource = keepInteraction,
-                        modifier = Modifier.weight(keepWeight.coerceAtLeast(0.1f)),
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null
-                            )
-                        }
+                        modifier = Modifier.weight(keepWeight.coerceAtLeast(0.1f)).height(40.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp)
                     ) {
+                        AnimatedVisibility(
+                            visible = isAllKeep,
+                            enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
+                            exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                            }
+                        }
                         Text(
                             text = stringResource(R.string.duplicates_keep_all),
-                            fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = if (isAllKeep) FontWeight.Bold else FontWeight.Medium
                         )
                     }
 
@@ -283,6 +303,7 @@ fun DuplicateClusterCard(
                             deleteClicked = true
                             onDeleteAll()
                         },
+                        shapes = ToggleButtonShapes(shape = deleteShape, pressedShape = pressedShape, checkedShape = deleteShape),
                         colors = ToggleButtonDefaults.colors(
                             containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
                             contentColor = MaterialTheme.colorScheme.error,
@@ -290,17 +311,23 @@ fun DuplicateClusterCard(
                             checkedContentColor = MaterialTheme.colorScheme.onError
                         ),
                         interactionSource = deleteInteraction,
-                        modifier = Modifier.weight(deleteWeight.coerceAtLeast(0.1f)),
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = null
-                            )
-                        }
+                        modifier = Modifier.weight(deleteWeight.coerceAtLeast(0.1f)).height(40.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp)
                     ) {
+                        AnimatedVisibility(
+                            visible = isAllDelete,
+                            enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
+                            exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                            }
+                        }
                         Text(
                             text = stringResource(R.string.duplicates_delete_all),
-                            fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = if (isAllDelete) FontWeight.Bold else FontWeight.Medium
                         )
                     }
                 }

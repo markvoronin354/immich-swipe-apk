@@ -28,21 +28,23 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.feature.home.StatsUiData
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
+import com.markvoronin.immichswipe.feature.swipe.components.connectedTileShape
 
 @Composable
 fun StatsPopup(
@@ -65,32 +67,35 @@ fun StatsPopup(
         ) {
             val scrollState = rememberScrollState()
 
+            Column(modifier = Modifier.fillMaxSize()) {
+            // Header: sits outside the scrolling content so it stays pinned
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 24.dp, end = 24.dp, top = 18.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onClose) {
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
+                }
+                Text(
+                    text = stringResource(R.string.stats_popup_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.width(48.dp))
+            }
+
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .weight(1f)
+                    .fillMaxWidth()
                     .verticalFadingEdges(scrollState, length = 32.dp)
                     .padding(horizontal = 24.dp)
                     .verticalScroll(scrollState),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(Modifier.height(24.dp))
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onClose) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
-                    }
-                    Text(
-                        text = stringResource(R.string.stats_popup_title),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(Modifier.width(48.dp))
-                }
-
                 Spacer(Modifier.height(24.dp))
 
                 Text(
@@ -101,42 +106,54 @@ fun StatsPopup(
                 )
                 Spacer(Modifier.height(12.dp))
 
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    StatCard(
-                        label = stringResource(R.string.stats_deleted_count),
-                        value = stats.totalDeleted.toString(),
-                        icon = Icons.Default.Delete,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    StatCard(
-                        label = stringResource(R.string.stats_bytes_saved),
-                        value = formatSize(stats.totalBytesSaved),
-                        icon = Icons.Default.CloudDone,
-                        color = Color(0xFF388E3C),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                // Connected 2x2 group: tiles sit close with a small gap; only the group's outer corners are fully rounded.
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        StatCard(
+                            label = stringResource(R.string.stats_deleted_count),
+                            value = stats.totalDeleted.toString(),
+                            icon = Icons.Default.Delete,
+                            color = MaterialTheme.colorScheme.error,
+                            shape = gridTileShape(row = 0, column = 0),
+                            modifier = Modifier.weight(1f)
+                        )
+                        StatCard(
+                            label = stringResource(R.string.stats_bytes_saved),
+                            value = formatSize(stats.totalBytesSaved),
+                            icon = Icons.Default.CloudDone,
+                            color = Color(0xFF388E3C),
+                            shape = gridTileShape(row = 0, column = 1),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
 
-                Spacer(Modifier.height(12.dp))
-
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    StatCard(
-                        label = stringResource(R.string.stats_swiped_count),
-                        value = stats.totalSwiped.toString(),
-                        icon = Icons.Default.Swipe,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    StatCard(
-                        label = stringResource(R.string.stats_albums_completed),
-                        value = "${stats.completedAlbums} / ${stats.totalAlbums}",
-                        icon = Icons.Default.LibraryAddCheck,
-                        color = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.weight(1f)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        StatCard(
+                            label = stringResource(R.string.stats_swiped_count),
+                            value = stats.totalSwiped.toString(),
+                            icon = Icons.Default.Swipe,
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = gridTileShape(row = 1, column = 0),
+                            modifier = Modifier.weight(1f)
+                        )
+                        StatCard(
+                            label = stringResource(R.string.stats_albums_completed),
+                            value = "${stats.completedAlbums} / ${stats.totalAlbums}",
+                            icon = Icons.Default.LibraryAddCheck,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            shape = gridTileShape(row = 1, column = 1),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
 
                 Spacer(Modifier.height(24.dp))
@@ -149,22 +166,22 @@ fun StatsPopup(
                 )
                 Spacer(Modifier.height(12.dp))
                 
-                Surface(
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    horizontalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
-                    Row(modifier = Modifier.padding(16.dp), horizontalArrangement = Arrangement.SpaceAround) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = stats.weeklyDeleted.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                            Text(text = stringResource(R.string.stats_deleted_count), style = MaterialTheme.typography.labelSmall)
-                        }
-                        VerticalDivider(modifier = Modifier.height(40.dp), thickness = 1.dp)
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = formatSize(stats.weeklyBytesSaved), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                            Text(text = stringResource(R.string.stats_bytes_saved), style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
+                    WeeklyStatTile(
+                        label = stringResource(R.string.stats_deleted_count),
+                        value = stats.weeklyDeleted.toString(),
+                        shape = connectedTileShape(index = 0, count = 2, outer = 24.dp),
+                        modifier = Modifier.weight(1f)
+                    )
+                    WeeklyStatTile(
+                        label = stringResource(R.string.stats_bytes_saved),
+                        value = formatSize(stats.weeklyBytesSaved),
+                        shape = connectedTileShape(index = 1, count = 2, outer = 24.dp),
+                        modifier = Modifier.weight(1f)
+                    )
                 }
 
                 Spacer(Modifier.height(32.dp))
@@ -195,6 +212,40 @@ fun StatsPopup(
                 
                 Spacer(Modifier.height(24.dp))
             }
+            }
+        }
+    }
+}
+
+/** Shape of a tile in a 2x2 group: a corner is fully rounded only when no other tile touches it. */
+private fun gridTileShape(row: Int, column: Int, outer: Dp = 24.dp, inner: Dp = 6.dp) = RoundedCornerShape(
+    topStart = if (row == 0 && column == 0) outer else inner,
+    topEnd = if (row == 0 && column == 1) outer else inner,
+    bottomStart = if (row == 1 && column == 0) outer else inner,
+    bottomEnd = if (row == 1 && column == 1) outer else inner
+)
+
+@Composable
+private fun WeeklyStatTile(
+    label: String,
+    value: String,
+    shape: Shape,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 14.dp, horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -205,11 +256,12 @@ fun StatCard(
     value: String,
     icon: ImageVector,
     color: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(16.dp)
 ) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        shape = shape,
         color = color.copy(alpha = 0.1f),
         border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
