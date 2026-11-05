@@ -3,12 +3,14 @@ package com.markvoronin.immichswipe
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
@@ -35,8 +37,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         AppLogger.i("MainActivity", "Application started")
 
-        enableEdgeToEdge()
-
         setContent {
             val appViewModel: AppViewModel = hiltViewModel()
             val state by appViewModel.uiState.collectAsStateWithLifecycle()
@@ -46,6 +46,21 @@ class MainActivity : ComponentActivity() {
                 AppTheme.LIGHT -> false
                 AppTheme.DARK -> true
                 AppTheme.SYSTEM -> isSystemInDarkTheme()
+            }
+
+            // Follow the in-app theme (not the phone's) for status/navigation bar icon colors.
+            DisposableEffect(useDarkTheme) {
+                enableEdgeToEdge(
+                    statusBarStyle = SystemBarStyle.auto(
+                        android.graphics.Color.TRANSPARENT,
+                        android.graphics.Color.TRANSPARENT,
+                    ) { useDarkTheme },
+                    navigationBarStyle = SystemBarStyle.auto(
+                        android.graphics.Color.TRANSPARENT,
+                        android.graphics.Color.TRANSPARENT,
+                    ) { useDarkTheme },
+                )
+                onDispose {}
             }
 
             ImmichSwipeTheme(darkTheme = useDarkTheme, dynamicColor = state.dynamicColor) {
