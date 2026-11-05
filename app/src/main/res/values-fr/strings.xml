@@ -126,10 +126,10 @@
     <string name="settings_immich_open_mode_web">Web</string>
     <string name="settings_immich_long_press_web">Appui long pour ouvrir dans le navigateur</string>
     <string name="settings_immich_long_press_app">Appui long pour ouvrir dans l\'application</string>
-    <string name="settings_video_behavior_label">Comportement vidéo</string>
+    <string name="settings_video_behavior_label">Comportement du son</string>
     <string name="settings_video_behavior_desc">Gérer l\'interaction avec les autres sons de l\'appareil lors de la lecture d\'une vidéo</string>
-    <string name="settings_video_pause">Couper tous les autres sons</string>
-    <string name="settings_video_ignore">Jouer par dessus les autres sons</string>
+    <string name="settings_video_pause">Couper les autres</string>
+    <string name="settings_video_ignore">Jouer par-dessus</string>
     <string name="settings_tri_favorite">Bouton Favori</string>
     <string name="settings_auto_next_label">Avancer automatiquement</string>
     <string name="settings_auto_next_desc">Passer à la photo suivante et marquer automatiquement comme KEEP après avoir marqué en favori</string>

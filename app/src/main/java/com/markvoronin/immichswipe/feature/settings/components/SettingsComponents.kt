@@ -1,9 +1,12 @@
 package com.markvoronin.immichswipe.feature.settings.components
 
 import android.os.Build
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -41,6 +44,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
@@ -60,6 +64,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -70,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppPalette
 import com.markvoronin.immichswipe.core.AppTheme
+import com.markvoronin.immichswipe.feature.swipe.components.connectedTileShape
 import com.markvoronin.immichswipe.ui.theme.colorScheme
 import kotlinx.coroutines.delay
 
@@ -270,15 +276,14 @@ fun SettingsSection(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
         ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.primary
+            Spacer(
+                Modifier
+                    .size(8.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
             )
             Spacer(Modifier.width(8.dp))
             Text(
-                text = title,
+                text = title.uppercase(),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -399,6 +404,8 @@ fun SettingsSwitch(
         checked = checked,
         onCheckedChange = onCheckedChange,
         modifier = modifier,
+        // The track is `primary`, so it always contrasts with the `onPrimary` thumb (unlike the default icon colour).
+        colors = SwitchDefaults.colors(checkedIconColor = MaterialTheme.colorScheme.primary),
         thumbContent = if (checked) {
             {
                 Icon(
@@ -497,14 +504,60 @@ fun rememberJiggleGroup(count: Int, grow: Float = JiggleGrow): JiggleGroup {
 fun JiggleRow(
     count: Int,
     modifier: Modifier = Modifier,
-    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp),
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(3.dp),
+    grow: Float = JiggleGrow,
     content: @Composable RowScope.(JiggleGroup) -> Unit
 ) {
-    val group = rememberJiggleGroup(count)
+    val group = rememberJiggleGroup(count, grow)
     Row(modifier = modifier, horizontalArrangement = horizontalArrangement) {
         content(group)
     }
 }
+
+/** Flat group button whose icon slides in beside the label only while the button is selected. */
+@Composable
+fun ThemeModeButton(
+    text: String,
+    icon: ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    index: Int = 0,
+    count: Int = 1,
+) {
+    SettingsToggleButton(
+        selected = selected,
+        onClick = onClick,
+        modifier = modifier,
+        index = index,
+        count = count
+    ) {
+        AnimatedVisibility(
+            visible = selected,
+            enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
+            exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+            }
+        }
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+        )
+    }
+}
+
+/** Unselected tile colour: must contrast with the settings card (surfaceContainerHigh) in both light and dark. */
+@Composable
+private fun unselectedTileColor(): Color =
+    if (MaterialTheme.colorScheme.surface.luminance() < 0.5f) {
+        MaterialTheme.colorScheme.surfaceContainerHighest
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerLowest
+    }
 
 /** Expressive selector button: morphs shape when selected and keeps the settings colours and outline. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -513,21 +566,22 @@ fun SettingsToggleButton(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    index: Int = 0,
+    count: Int = 1,
+    tileShape: RoundedCornerShape? = null,
     content: @Composable RowScope.() -> Unit
 ) {
+    val shape = tileShape ?: connectedTileShape(index, count, outer = 24.dp)
     ToggleButton(
         checked = selected,
         onCheckedChange = { onClick() },
+        shapes = ToggleButtonShapes(shape = shape, pressedShape = RoundedCornerShape(10.dp), checkedShape = shape),
         modifier = modifier.height(40.dp),
         colors = ToggleButtonDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            containerColor = unselectedTileColor(),
             contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
             checkedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-        ),
-        border = BorderStroke(
-            width = if (selected) 1.5.dp else 1.dp,
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         ),
         contentPadding = PaddingValues(horizontal = 8.dp),
         content = content
@@ -647,22 +701,14 @@ fun ThemeButton(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    index: Int = 0,
+    count: Int = 1,
 ) {
-    // Corners tighten when selected, with the expressive spring.
-    val corner by animateDpAsState(
-        targetValue = if (selected) 14.dp else 22.dp,
-        animationSpec = remember { MotionScheme.expressive().fastSpatialSpec() },
-        label = "themeButtonCorner"
-    )
     Surface(
         onClick = onClick,
         modifier = modifier.height(72.dp),
-        shape = RoundedCornerShape(corner),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLowest,
-        border = BorderStroke(
-            width = if (selected) 1.5.dp else 1.dp,
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-        )
+        shape = connectedTileShape(index, count, outer = 24.dp),
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else unselectedTileColor()
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
