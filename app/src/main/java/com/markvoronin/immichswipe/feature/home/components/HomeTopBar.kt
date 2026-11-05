@@ -21,7 +21,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,18 +30,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ViewList
-import androidx.compose.material.icons.filled.AdsClick
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -166,39 +163,17 @@ fun HomeTopBar(
                     ) {
                         when (state) {
                             is TopBarTitleState.Settings -> {
-                                val (icon, titleRes) = when (state.subMenu) {
-                                    SettingsSubMenu.INTERACTIONS -> Icons.Default.TouchApp to R.string.settings_interactions_dialog_title
-                                    SettingsSubMenu.ACTION_BUTTONS -> Icons.Default.AdsClick to R.string.settings_action_buttons_dialog_title
-                                    else -> Icons.Default.Settings to R.string.settings_title
+                                val titleRes = when (state.subMenu) {
+                                    SettingsSubMenu.INTERACTIONS -> R.string.settings_interactions_dialog_title
+                                    SettingsSubMenu.ACTION_BUTTONS -> R.string.settings_action_buttons_dialog_title
+                                    else -> R.string.settings_title
                                 }
 
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = MaterialTheme.colorScheme.primaryContainer,
-                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.size(38.dp)
-                                    ) {
-                                        Box(
-                                            contentAlignment = Alignment.Center,
-                                            modifier = Modifier.fillMaxSize()
-                                        ) {
-                                            Icon(
-                                                imageVector = icon,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-                                    Spacer(Modifier.width(12.dp))
-                                    Text(
-                                        text = stringResource(titleRes),
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
+                                Text(
+                                    text = stringResource(titleRes),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                             TopBarTitleState.Duplicates -> {
                                 Text(
@@ -228,9 +203,12 @@ fun HomeTopBar(
                                     painter = painterResource(id = logoRes),
                                     contentDescription = stringResource(R.string.app_name),
                                     modifier = Modifier
-                                        .height(32.dp)
-                                        .padding(vertical = 2.dp),
-                                    contentScale = ContentScale.Fit,
+                                        .height(38.dp)
+                                        .padding(vertical = 2.dp)
+                                        // Logo PNG is 1254x242; the icon occupies the left ~250px, so crop it away.
+                                        .aspectRatio((1254f - 250f) / 242f),
+                                    contentScale = ContentScale.Crop,
+                                    alignment = Alignment.CenterEnd,
                                 )
                             }
                         }

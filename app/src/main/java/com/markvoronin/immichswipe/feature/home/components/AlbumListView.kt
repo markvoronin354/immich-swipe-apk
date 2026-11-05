@@ -396,7 +396,7 @@ fun AlbumItem(
                                 .padding(top = 6.dp)
                                 .fillMaxWidth(),
                             color = MaterialTheme.colorScheme.primary,
-                            trackColor = MaterialTheme.colorScheme.primaryContainer,
+                            trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f),
                             drawStopIndicator = {}
                         )
                     }
