@@ -1,5 +1,6 @@
 package com.markvoronin.immichswipe.feature.settings.components
 
+import android.graphics.Matrix
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Surface
@@ -62,7 +64,11 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -70,8 +76,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.graphics.shapes.Morph
+import androidx.graphics.shapes.toPath
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppPalette
 import com.markvoronin.immichswipe.core.AppTheme
@@ -638,6 +648,15 @@ fun PaletteSelector(
     }
 }
 
+private class MorphShape(private val morph: Morph, private val progress: Float) : Shape {
+    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
+        val path = morph.toPath(progress)
+        path.transform(Matrix().apply { setScale(size.width, size.height) })
+        return Outline.Generic(path.asComposePath())
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun PaletteSwatch(
     primary: Color,
@@ -647,6 +666,14 @@ private fun PaletteSwatch(
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    // The selected swatch morphs from a circle into a cookie shape.
+    val morphProgress by animateFloatAsState(
+        targetValue = if (selected) 1f else 0f,
+        animationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),
+        label = "paletteMorph"
+    )
+    val morph = remember { Morph(MaterialShapes.Circle, MaterialShapes.Cookie9Sided) }
+    val swatchShape = MorphShape(morph, morphProgress)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -658,10 +685,10 @@ private fun PaletteSwatch(
                 .border(
                     2.5.dp,
                     if (selected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
-                    CircleShape
+                    swatchShape
                 )
                 .padding(5.dp)
-                .clip(CircleShape)
+                .clip(swatchShape)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Box(Modifier.weight(1f).fillMaxWidth().background(primary))
@@ -669,19 +696,6 @@ private fun PaletteSwatch(
                     Box(Modifier.weight(1f).fillMaxSize().background(secondary))
                     Box(Modifier.weight(1f).fillMaxSize().background(tertiary))
                 }
-            }
-            if (selected) {
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .size(26.dp)
-                        .clip(CircleShape)
-                        .background(primary)
-                        .padding(4.dp)
-                )
             }
         }
         Text(
