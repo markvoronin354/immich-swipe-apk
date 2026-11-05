@@ -173,5 +173,4 @@ dependencies {
 
     // Liquid glass backdrop effect for the swipe metadata panel
     implementation(libs.backdrop)
-    implementation(libs.material.color.utilities)
 }
