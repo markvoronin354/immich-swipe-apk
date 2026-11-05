@@ -177,6 +177,9 @@
     <string name="swipe_locked">Bloquear</string>
     <string name="swipe_undo">Deshacer</string>
     <string name="swipe_undo_upper">DESHACER</string>
+    <string name="swipe_label_favorite">Favorito</string>
+    <string name="swipe_label_album">Álbum</string>
+    <string name="swipe_label_sort">Ordenar</string>
     <string name="swipe_summary_title">Resumen de ordenación</string>
     <string name="swipe_sync_success">¡Sincronizado!</string>
     <string name="swipe_sync_success_desc">Tus cambios están en Immich</string>

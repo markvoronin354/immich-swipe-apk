@@ -3,6 +3,7 @@ package com.markvoronin.immichswipe.feature.swipe.components
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,6 +37,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -52,6 +54,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.SortOrder
@@ -65,18 +68,32 @@ import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 /**
  * One tile of the connected action group, styled like the fullscreen toolbar. When [checked] is non-null it is a
  * toggle whose tile inverts while on; it is also used to mark a button whose menu or dialog is open.
+ * [label] is shown as small text under the icon.
  */
 @Composable
 private fun ActionTile(
     onClick: () -> Unit,
     shape: Shape,
+    label: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     checked: Boolean? = null,
-    content: @Composable () -> Unit
+    icon: @Composable () -> Unit
 ) {
     val pressedShape = RoundedCornerShape(10.dp)
-    val tileModifier = modifier.height(48.dp)
+    val tileModifier = modifier.height(56.dp)
+    val content: @Composable () -> Unit = {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            icon()
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 4.dp, top = 4.dp, end = 4.dp)
+            )
+        }
+    }
     if (checked == null) {
         FilledTonalIconButton(
             onClick = onClick,
@@ -208,6 +225,7 @@ fun SwipeActionBar(
             val undoIndex = index++
             ActionTile(
                 onClick = { jiggle.tap(undoIndex); viewModel.undo() },
+                label = stringResource(R.string.swipe_undo),
                 enabled = uiState.history.isNotEmpty(),
                 shape = connectedTileShape(undoIndex, tileCount, outer = 24.dp),
                 modifier = Modifier.weight(jiggle.factor(undoIndex))
@@ -223,6 +241,7 @@ fun SwipeActionBar(
                 val archiveIndex = index++
                 ActionTile(
                     onClick = { jiggle.tap(archiveIndex); viewModel.toggleArchive() },
+                    label = stringResource(R.string.swipe_archive),
                     shape = connectedTileShape(archiveIndex, tileCount, outer = 24.dp),
                     modifier = Modifier.weight(jiggle.factor(archiveIndex))
                 ) {
@@ -239,6 +258,7 @@ fun SwipeActionBar(
                 val favoriteIndex = index++
                 ActionTile(
                     onClick = { jiggle.tap(favoriteIndex); viewModel.toggleFavorite() },
+                    label = stringResource(R.string.swipe_label_favorite),
                     shape = connectedTileShape(favoriteIndex, tileCount, outer = 24.dp),
                     checked = isFav,
                     modifier = Modifier.weight(jiggle.factor(favoriteIndex))
@@ -256,6 +276,7 @@ fun SwipeActionBar(
                 val albumIndex = index++
                 ActionTile(
                     onClick = { jiggle.tap(albumIndex); viewModel.openAddToAlbumDialog() },
+                    label = stringResource(R.string.swipe_label_album),
                     shape = connectedTileShape(albumIndex, tileCount, outer = 24.dp),
                     checked = uiState.showAddToAlbumDialog,
                     modifier = Modifier.weight(jiggle.factor(albumIndex))
@@ -272,6 +293,7 @@ fun SwipeActionBar(
                 val lockIndex = index++
                 ActionTile(
                     onClick = { jiggle.tap(lockIndex); viewModel.toggleLock() },
+                    label = stringResource(R.string.swipe_locked),
                     shape = connectedTileShape(lockIndex, tileCount, outer = 24.dp),
                     modifier = Modifier.weight(jiggle.factor(lockIndex))
                 ) {
@@ -287,6 +309,7 @@ fun SwipeActionBar(
             Box(modifier = Modifier.weight(jiggle.factor(sortIndex))) {
                 ActionTile(
                     onClick = { jiggle.tap(sortIndex); onSortMenuToggle(true) },
+                    label = stringResource(R.string.swipe_label_sort),
                     shape = connectedTileShape(sortIndex, tileCount, outer = 24.dp),
                     checked = showSortMenu,
                     modifier = Modifier.fillMaxWidth()
