@@ -65,8 +65,7 @@ fun InteractionsScreen(
 
         // Section 1: Button visibility
         SettingsSection(
-            title = stringResource(R.string.settings_section_button_visibility),
-            icon = Icons.Default.Visibility
+            title = stringResource(R.string.settings_section_button_visibility)
         ) {
             Column {
                 // 0. Add to album
@@ -156,8 +155,7 @@ fun InteractionsScreen(
 
         // Section 2: Actions
         SettingsSection(
-            title = stringResource(R.string.settings_section_actions),
-            icon = Icons.Default.TouchApp
+            title = stringResource(R.string.settings_section_actions)
         ) {
             Column {
                 // 5. Tap to swipe

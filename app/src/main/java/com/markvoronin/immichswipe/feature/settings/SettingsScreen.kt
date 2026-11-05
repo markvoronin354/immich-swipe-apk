@@ -36,7 +36,6 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AdsClick
-import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarViewWeek
 import androidx.compose.material.icons.filled.Code
@@ -226,7 +225,7 @@ fun SettingsScreen(
                         .verticalScroll(settingsScrollState)
                 ) {
                     Spacer(Modifier.height(16.dp))
-                    SettingsSection(title = stringResource(R.string.settings_section_appearance), icon = Icons.Default.Palette) {
+                    SettingsSection(title = stringResource(R.string.settings_section_appearance)) {
             Column {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
@@ -279,7 +278,7 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        SettingsSection(title = stringResource(R.string.settings_section_interaction), icon = Icons.Default.TouchApp) {
+        SettingsSection(title = stringResource(R.string.settings_section_interaction)) {
             Column {
                 SettingsClickableItem(
                     title = stringResource(R.string.settings_interactions_label),
@@ -389,7 +388,7 @@ fun SettingsScreen(
         Spacer(Modifier.height(16.dp))
 
         // SECTION RAPPEL
-        SettingsSection(title = stringResource(R.string.settings_section_reminder), icon = Icons.Default.Notifications) {
+        SettingsSection(title = stringResource(R.string.settings_section_reminder)) {
             Column {
                 SettingsToggleItem(
                     title = stringResource(R.string.settings_reminder_label),
@@ -494,7 +493,7 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        SettingsSection(title = stringResource(R.string.settings_section_database), icon = Icons.Default.Storage) {
+        SettingsSection(title = stringResource(R.string.settings_section_database)) {
             Column {
                 SettingsClickableItem(
                     title = stringResource(R.string.settings_db_delete_label),
@@ -522,7 +521,7 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        SettingsSection(title = stringResource(R.string.settings_section_debug), icon = Icons.Default.BugReport) {
+        SettingsSection(title = stringResource(R.string.settings_section_debug)) {
             Column {
                 SettingsClickableItem(
                     title = stringResource(R.string.settings_view_logs_label),
@@ -545,7 +544,7 @@ fun SettingsScreen(
 
         val replayToastText = stringResource(R.string.tutorial_replay_toast)
 
-        SettingsSection(title = stringResource(R.string.settings_section_about), icon = Icons.Default.Info) {
+        SettingsSection(title = stringResource(R.string.settings_section_about)) {
             Column {
                 SettingsClickableItem(
                     title = stringResource(R.string.tutorial_replay_title),
@@ -607,7 +606,7 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        SettingsSection(title = stringResource(R.string.settings_section_account), icon = Icons.Default.Person) {
+        SettingsSection(title = stringResource(R.string.settings_section_account)) {
             var showLogoutConfirmation by remember { mutableStateOf(false) }
             var showRemoveAllConfirmation by remember { mutableStateOf(false) }
 

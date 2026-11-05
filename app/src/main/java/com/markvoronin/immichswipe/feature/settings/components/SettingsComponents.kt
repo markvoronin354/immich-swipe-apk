@@ -268,7 +268,6 @@ fun Modifier.horizontalFadingEdges(
 @Composable
 fun SettingsSection(
     title: String,
-    icon: ImageVector,
     content: @Composable () -> Unit
 ) {
     Column {
