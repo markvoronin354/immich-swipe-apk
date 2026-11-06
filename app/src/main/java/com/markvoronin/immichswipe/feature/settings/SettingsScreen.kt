@@ -96,7 +96,6 @@ import com.markvoronin.immichswipe.feature.settings.components.ClearCacheDialog
 import com.markvoronin.immichswipe.feature.settings.components.CustomReminderDialog
 import com.markvoronin.immichswipe.feature.settings.components.DatabaseActionDialog
 import com.markvoronin.immichswipe.feature.settings.components.InteractionsScreen
-import com.markvoronin.immichswipe.feature.settings.components.JiggleRow
 import com.markvoronin.immichswipe.feature.settings.components.LogsDialog
 import com.markvoronin.immichswipe.feature.settings.components.PaletteSelector
 import com.markvoronin.immichswipe.feature.settings.components.SettingsClickableItem
@@ -234,32 +233,32 @@ fun SettingsScreen(
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(Modifier.height(12.dp))
-                JiggleRow(
-                    count = 3,
-                    modifier = Modifier.fillMaxWidth()
-                ) { jiggle ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
                     ThemeModeButton(
                         text = stringResource(R.string.settings_theme_system),
                         icon = Icons.Default.SettingsSuggest,
                         selected = uiState.themeMode == AppTheme.SYSTEM,
-                        onClick = { jiggle.tap(0); viewModel.setThemeMode(AppTheme.SYSTEM) },
-                        modifier = Modifier.weight(jiggle.factor(0)),
+                        onClick = { viewModel.setThemeMode(AppTheme.SYSTEM) },
+                        modifier = Modifier.weight(1f),
                         index = 0, count = 3
                     )
                     ThemeModeButton(
                         text = stringResource(R.string.settings_theme_light),
                         icon = Icons.Default.LightMode,
                         selected = uiState.themeMode == AppTheme.LIGHT,
-                        onClick = { jiggle.tap(1); viewModel.setThemeMode(AppTheme.LIGHT) },
-                        modifier = Modifier.weight(jiggle.factor(1)),
+                        onClick = { viewModel.setThemeMode(AppTheme.LIGHT) },
+                        modifier = Modifier.weight(1f),
                         index = 1, count = 3
                     )
                     ThemeModeButton(
                         text = stringResource(R.string.settings_theme_dark),
                         icon = Icons.Default.DarkMode,
                         selected = uiState.themeMode == AppTheme.DARK,
-                        onClick = { jiggle.tap(2); viewModel.setThemeMode(AppTheme.DARK) },
-                        modifier = Modifier.weight(jiggle.factor(2)),
+                        onClick = { viewModel.setThemeMode(AppTheme.DARK) },
+                        modifier = Modifier.weight(1f),
                         index = 2, count = 3
                     )
                 }
@@ -360,24 +359,24 @@ fun SettingsScreen(
                         }
                     }
                     Spacer(Modifier.height(12.dp))
-                    JiggleRow(
-                        count = 2,
-                        modifier = Modifier.fillMaxWidth()
-                    ) { jiggle ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
                         ThemeModeButton(
                             text = stringResource(R.string.settings_video_pause),
                             icon = Icons.AutoMirrored.Filled.VolumeOff,
                             selected = uiState.playbackBehavior == PlaybackBehavior.PAUSE_OTHERS,
-                            onClick = { jiggle.tap(0); viewModel.setPlaybackBehavior(PlaybackBehavior.PAUSE_OTHERS) },
-                            modifier = Modifier.weight(jiggle.factor(0)),
+                            onClick = { viewModel.setPlaybackBehavior(PlaybackBehavior.PAUSE_OTHERS) },
+                            modifier = Modifier.weight(1f),
                             index = 0, count = 2
                         )
                         ThemeModeButton(
                             text = stringResource(R.string.settings_video_ignore),
                             icon = Icons.AutoMirrored.Filled.VolumeUp,
                             selected = uiState.playbackBehavior == PlaybackBehavior.IGNORE,
-                            onClick = { jiggle.tap(1); viewModel.setPlaybackBehavior(PlaybackBehavior.IGNORE) },
-                            modifier = Modifier.weight(jiggle.factor(1)),
+                            onClick = { viewModel.setPlaybackBehavior(PlaybackBehavior.IGNORE) },
+                            modifier = Modifier.weight(1f),
                             index = 1, count = 2
                         )
                     }
@@ -420,24 +419,24 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.titleSmall
                         )
                         Spacer(Modifier.height(12.dp))
-                        JiggleRow(
-                            count = 3,
-                            modifier = Modifier.fillMaxWidth()
-                        ) { jiggle ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
                             ThemeModeButton(
                                 text = stringResource(R.string.settings_reminder_often),
                                 icon = Icons.Default.CalendarViewWeek,
                                 selected = uiState.reminderInterval == ReminderInterval.OFTEN,
-                                onClick = { jiggle.tap(0); viewModel.setReminderInterval(ReminderInterval.OFTEN) },
-                                modifier = Modifier.weight(jiggle.factor(0)),
+                                onClick = { viewModel.setReminderInterval(ReminderInterval.OFTEN) },
+                                modifier = Modifier.weight(1f),
                                 index = 0, count = 3
                             )
                             ThemeModeButton(
                                 text = stringResource(R.string.settings_reminder_rarely),
                                 icon = Icons.Default.CalendarMonth,
                                 selected = uiState.reminderInterval == ReminderInterval.RARELY,
-                                onClick = { jiggle.tap(1); viewModel.setReminderInterval(ReminderInterval.RARELY) },
-                                modifier = Modifier.weight(jiggle.factor(1)),
+                                onClick = { viewModel.setReminderInterval(ReminderInterval.RARELY) },
+                                modifier = Modifier.weight(1f),
                                 index = 1, count = 3
                             )
                             ThemeModeButton(
@@ -445,11 +444,10 @@ fun SettingsScreen(
                                 icon = Icons.Default.EditCalendar,
                                 selected = uiState.reminderInterval == ReminderInterval.CUSTOM,
                                 onClick = {
-                                    jiggle.tap(2)
                                     viewModel.setReminderInterval(ReminderInterval.CUSTOM)
                                     viewModel.setShowCustomReminderDialog(true)
                                 },
-                                modifier = Modifier.weight(jiggle.factor(2)),
+                                modifier = Modifier.weight(1f),
                                 index = 2, count = 3
                             )
                         }

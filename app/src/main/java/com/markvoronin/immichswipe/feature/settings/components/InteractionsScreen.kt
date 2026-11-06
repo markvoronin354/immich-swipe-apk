@@ -4,7 +4,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
@@ -190,26 +192,26 @@ fun InteractionsScreen(
                         enter = expandVertically(),
                         exit = shrinkVertically()
                     ) {
-                        JiggleRow(
-                            count = 2,
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 8.dp, bottom = 8.dp)
-                        ) { jiggle ->
+                                .padding(top = 8.dp, bottom = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
                             ThemeModeButton(
                                 text = stringResource(R.string.settings_double_tap_fullscreen),
                                 icon = Icons.Default.Fullscreen,
                                 selected = uiState.doubleTapAction == DoubleTapAction.FULLSCREEN,
-                                onClick = { jiggle.tap(0); viewModel.setDoubleTapAction(DoubleTapAction.FULLSCREEN) },
-                                modifier = Modifier.weight(jiggle.factor(0)),
+                                onClick = { viewModel.setDoubleTapAction(DoubleTapAction.FULLSCREEN) },
+                                modifier = Modifier.weight(1f),
                                 index = 0, count = 2
                             )
                             ThemeModeButton(
                                 text = stringResource(R.string.settings_double_tap_favorite),
                                 icon = Icons.Default.Favorite,
                                 selected = uiState.doubleTapAction == DoubleTapAction.FAVORITE,
-                                onClick = { jiggle.tap(1); viewModel.setDoubleTapAction(DoubleTapAction.FAVORITE) },
-                                modifier = Modifier.weight(jiggle.factor(1)),
+                                onClick = { viewModel.setDoubleTapAction(DoubleTapAction.FAVORITE) },
+                                modifier = Modifier.weight(1f),
                                 index = 1, count = 2
                             )
                         }

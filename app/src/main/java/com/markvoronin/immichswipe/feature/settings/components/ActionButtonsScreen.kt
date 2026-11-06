@@ -33,6 +33,10 @@ import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Hd
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.NorthEast
+import androidx.compose.material.icons.filled.NorthWest
+import androidx.compose.material.icons.filled.SouthEast
+import androidx.compose.material.icons.filled.SouthWest
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.PushPin
@@ -52,6 +56,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.ButtonStackOrientation
@@ -278,32 +283,28 @@ fun IconPositionPickerCard(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        JiggleRow(count = 2) { jiggle ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                             CornerButton(
                                 position = IconPosition.TOP_LEFT,
                                 selected = selectedPosition == IconPosition.TOP_LEFT,
-                                onClick = { jiggle.tap(0); onPositionSelected(IconPosition.TOP_LEFT) },
-                                widthFactor = jiggle.factor(0)
+                                onClick = { onPositionSelected(IconPosition.TOP_LEFT) }
                             )
                             CornerButton(
                                 position = IconPosition.TOP_RIGHT,
                                 selected = selectedPosition == IconPosition.TOP_RIGHT,
-                                onClick = { jiggle.tap(1); onPositionSelected(IconPosition.TOP_RIGHT) },
-                                widthFactor = jiggle.factor(1)
+                                onClick = { onPositionSelected(IconPosition.TOP_RIGHT) }
                             )
                         }
-                        JiggleRow(count = 2) { jiggle ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                             CornerButton(
                                 position = IconPosition.BOTTOM_LEFT,
                                 selected = selectedPosition == IconPosition.BOTTOM_LEFT,
-                                onClick = { jiggle.tap(0); onPositionSelected(IconPosition.BOTTOM_LEFT) },
-                                widthFactor = jiggle.factor(0)
+                                onClick = { onPositionSelected(IconPosition.BOTTOM_LEFT) }
                             )
                             CornerButton(
                                 position = IconPosition.BOTTOM_RIGHT,
                                 selected = selectedPosition == IconPosition.BOTTOM_RIGHT,
-                                onClick = { jiggle.tap(1); onPositionSelected(IconPosition.BOTTOM_RIGHT) },
-                                widthFactor = jiggle.factor(1)
+                                onClick = { onPositionSelected(IconPosition.BOTTOM_RIGHT) }
                             )
                         }
                     }
@@ -336,15 +337,14 @@ fun CornerButton(
     position: IconPosition,
     selected: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    widthFactor: Float = 1f
+    modifier: Modifier = Modifier
 ) {
     // The four corner buttons form one 2x2 group: only the outer corner of each tile is fully rounded.
     val outer = 24.dp
     val inner = 6.dp
     val top = position == IconPosition.TOP_LEFT || position == IconPosition.TOP_RIGHT
     val left = position == IconPosition.TOP_LEFT || position == IconPosition.BOTTOM_LEFT
-    val tileShape = RoundedCornerShape(
+    fun cornerShape(inner: Dp) = RoundedCornerShape(
         topStart = if (top && left) outer else inner,
         topEnd = if (top && !left) outer else inner,
         bottomStart = if (!top && left) outer else inner,
@@ -353,14 +353,42 @@ fun CornerButton(
     SettingsToggleButton(
         selected = selected,
         onClick = onClick,
-        modifier = modifier.width(125.dp * widthFactor),
-        tileShape = tileShape
+        modifier = modifier.width(125.dp),
+        tileShape = cornerShape(inner),
+        // Selected tile softens its inner corners but keeps the outer corner that marks its position.
+        checkedTileShape = cornerShape(14.dp)
     ) {
+        // The arrow sits on the tile's outer edge, next to the corner it points at.
+        val edge = if (left) Alignment.Start else Alignment.End
+        val arrow: @Composable () -> Unit = {
+            AnimatedVisibility(
+                visible = selected,
+                enter = fadeIn() + expandHorizontally(expandFrom = edge),
+                exit = fadeOut() + shrinkHorizontally(shrinkTowards = edge)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (!left) Spacer(Modifier.width(6.dp))
+                    Icon(
+                        imageVector = when (position) {
+                            IconPosition.TOP_LEFT -> Icons.Default.NorthWest
+                            IconPosition.TOP_RIGHT -> Icons.Default.NorthEast
+                            IconPosition.BOTTOM_LEFT -> Icons.Default.SouthWest
+                            IconPosition.BOTTOM_RIGHT -> Icons.Default.SouthEast
+                        },
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    if (left) Spacer(Modifier.width(6.dp))
+                }
+            }
+        }
+        if (left) arrow()
         Text(
             text = stringResource(position.labelRes),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
         )
+        if (!left) arrow()
     }
 }
 
@@ -440,32 +468,28 @@ fun ImmichCardAction(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        JiggleRow(count = 2) { jiggle ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                             CornerButton(
                                 position = IconPosition.TOP_LEFT,
                                 selected = selectedPosition == IconPosition.TOP_LEFT,
-                                onClick = { jiggle.tap(0); onPositionSelected(IconPosition.TOP_LEFT) },
-                                widthFactor = jiggle.factor(0)
+                                onClick = { onPositionSelected(IconPosition.TOP_LEFT) }
                             )
                             CornerButton(
                                 position = IconPosition.TOP_RIGHT,
                                 selected = selectedPosition == IconPosition.TOP_RIGHT,
-                                onClick = { jiggle.tap(1); onPositionSelected(IconPosition.TOP_RIGHT) },
-                                widthFactor = jiggle.factor(1)
+                                onClick = { onPositionSelected(IconPosition.TOP_RIGHT) }
                             )
                         }
-                        JiggleRow(count = 2) { jiggle ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                             CornerButton(
                                 position = IconPosition.BOTTOM_LEFT,
                                 selected = selectedPosition == IconPosition.BOTTOM_LEFT,
-                                onClick = { jiggle.tap(0); onPositionSelected(IconPosition.BOTTOM_LEFT) },
-                                widthFactor = jiggle.factor(0)
+                                onClick = { onPositionSelected(IconPosition.BOTTOM_LEFT) }
                             )
                             CornerButton(
                                 position = IconPosition.BOTTOM_RIGHT,
                                 selected = selectedPosition == IconPosition.BOTTOM_RIGHT,
-                                onClick = { jiggle.tap(1); onPositionSelected(IconPosition.BOTTOM_RIGHT) },
-                                widthFactor = jiggle.factor(1)
+                                onClick = { onPositionSelected(IconPosition.BOTTOM_RIGHT) }
                             )
                         }
                     }
@@ -480,25 +504,22 @@ fun ImmichCardAction(
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
-                    JiggleRow(
-                        count = 2,
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterHorizontally)
-                    ) { jiggle ->
+                    ) {
                         OpenModeButton(
                             text = stringResource(R.string.settings_immich_open_mode_app),
                             icon = Icons.Default.PhoneAndroid,
                             selected = openMode == ImmichOpenMode.APP,
-                            onClick = { jiggle.tap(0); onOpenModeSelected(ImmichOpenMode.APP) },
-                            widthFactor = jiggle.factor(0),
+                            onClick = { onOpenModeSelected(ImmichOpenMode.APP) },
                             index = 0, count = 2
                         )
                         OpenModeButton(
                             text = stringResource(R.string.settings_immich_open_mode_web),
                             icon = Icons.Default.Language,
                             selected = openMode == ImmichOpenMode.WEB,
-                            onClick = { jiggle.tap(1); onOpenModeSelected(ImmichOpenMode.WEB) },
-                            widthFactor = jiggle.factor(1),
+                            onClick = { onOpenModeSelected(ImmichOpenMode.WEB) },
                             index = 1, count = 2
                         )
                     }
@@ -538,14 +559,13 @@ fun OpenModeButton(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    widthFactor: Float = 1f,
     index: Int = 0,
     count: Int = 1
 ) {
     SettingsToggleButton(
         selected = selected,
         onClick = onClick,
-        modifier = modifier.width(125.dp * widthFactor),
+        modifier = modifier.width(125.dp),
         index = index,
         count = count
     ) {
@@ -641,25 +661,24 @@ fun StackOrientationPickerCard(
             )
             Spacer(Modifier.height(12.dp))
 
-            JiggleRow(
-                count = 2,
+            Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterHorizontally)
-            ) { jiggle ->
+            ) {
                 StackOrientationButton(
                     text = stringResource(R.string.settings_button_stacking_horizontal),
                     selected = orientation == ButtonStackOrientation.HORIZONTAL,
                     isHorizontal = true,
-                    onClick = { jiggle.tap(0); onOrientationSelected(ButtonStackOrientation.HORIZONTAL) },
-                    modifier = Modifier.weight(jiggle.factor(0)),
+                    onClick = { onOrientationSelected(ButtonStackOrientation.HORIZONTAL) },
+                    modifier = Modifier.weight(1f),
                     index = 0, count = 2
                 )
                 StackOrientationButton(
                     text = stringResource(R.string.settings_button_stacking_vertical),
                     selected = orientation == ButtonStackOrientation.VERTICAL,
                     isHorizontal = false,
-                    onClick = { jiggle.tap(1); onOrientationSelected(ButtonStackOrientation.VERTICAL) },
-                    modifier = Modifier.weight(jiggle.factor(1)),
+                    onClick = { onOrientationSelected(ButtonStackOrientation.VERTICAL) },
+                    modifier = Modifier.weight(1f),
                     index = 1, count = 2
                 )
             }

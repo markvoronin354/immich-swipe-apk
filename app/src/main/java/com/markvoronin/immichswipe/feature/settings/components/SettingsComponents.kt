@@ -508,21 +508,6 @@ fun rememberJiggleGroup(count: Int, grow: Float = JiggleGrow): JiggleGroup {
     return group
 }
 
-/** A [Row] whose buttons jiggle together; call [JiggleGroup.tap] on click and size items with [JiggleGroup.factor]. */
-@Composable
-fun JiggleRow(
-    count: Int,
-    modifier: Modifier = Modifier,
-    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(3.dp),
-    grow: Float = JiggleGrow,
-    content: @Composable RowScope.(JiggleGroup) -> Unit
-) {
-    val group = rememberJiggleGroup(count, grow)
-    Row(modifier = modifier, horizontalArrangement = horizontalArrangement) {
-        content(group)
-    }
-}
-
 /** Flat group button whose icon slides in beside the label only while the button is selected. */
 @Composable
 fun ThemeModeButton(
@@ -578,13 +563,16 @@ fun SettingsToggleButton(
     index: Int = 0,
     count: Int = 1,
     tileShape: RoundedCornerShape? = null,
+    checkedTileShape: RoundedCornerShape? = null,
     content: @Composable RowScope.() -> Unit
 ) {
     val shape = tileShape ?: connectedTileShape(index, count, outer = 24.dp)
+    // Connected groups morph the selected button into a pill; custom tiles use their own checked shape.
+    val checkedShape = checkedTileShape ?: if (tileShape == null) CircleShape else shape
     ToggleButton(
         checked = selected,
         onCheckedChange = { onClick() },
-        shapes = ToggleButtonShapes(shape = shape, pressedShape = RoundedCornerShape(10.dp), checkedShape = shape),
+        shapes = ToggleButtonShapes(shape = shape, pressedShape = RoundedCornerShape(10.dp), checkedShape = checkedShape),
         modifier = modifier.height(40.dp),
         colors = ToggleButtonDefaults.colors(
             containerColor = unselectedTileColor(),
