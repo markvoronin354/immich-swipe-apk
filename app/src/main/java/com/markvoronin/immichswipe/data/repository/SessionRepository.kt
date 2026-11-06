@@ -16,6 +16,7 @@ import com.markvoronin.immichswipe.core.SessionConfig
 import com.markvoronin.immichswipe.core.SortOrder
 import com.markvoronin.immichswipe.core.SwipeBehavior
 import com.markvoronin.immichswipe.core.SwipeSettings
+import com.markvoronin.immichswipe.core.ToolbarButton
 import com.markvoronin.immichswipe.core.util.combine7
 import com.markvoronin.immichswipe.data.datastore.SessionDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -158,6 +159,10 @@ class SessionRepository @Inject constructor(
     val showLockButton: Flow<Boolean> = dataStore.isShowLockButton()
     val showAddToAlbumButton: Flow<Boolean> = dataStore.isShowAddToAlbumButton()
     val showToolbarLabels: Flow<Boolean> = dataStore.isShowToolbarLabels()
+    val toolbarButtonOrder: Flow<List<ToolbarButton>> = dataStore.getToolbarButtonOrder().map { saved ->
+        val parsed = saved.orEmpty().split(",").mapNotNull { name -> ToolbarButton.entries.find { it.name == name } }
+        (parsed + ToolbarButton.entries).distinct()
+    }
     val backupWarningShown: Flow<Boolean> = dataStore.isBackupWarningShown()
     val syncLocalDeletion: Flow<Boolean> = dataStore.isSyncLocalDeletion()
     val trashLocalDeletion: Flow<Boolean> = dataStore.isTrashLocalDeletion()
@@ -264,6 +269,7 @@ class SessionRepository @Inject constructor(
     suspend fun saveShowLockButton(show: Boolean) { dataStore.saveShowLockButton(show) }
     suspend fun saveShowAddToAlbumButton(show: Boolean) { dataStore.saveShowAddToAlbumButton(show) }
     suspend fun saveShowToolbarLabels(show: Boolean) { dataStore.saveShowToolbarLabels(show) }
+    suspend fun saveToolbarButtonOrder(order: List<ToolbarButton>) { dataStore.saveToolbarButtonOrder(order.joinToString(",") { it.name }) }
     suspend fun saveBackupWarningShown(shown: Boolean) { dataStore.saveBackupWarningShown(shown) }
     suspend fun saveSyncLocalDeletion(sync: Boolean) { dataStore.saveSyncLocalDeletion(sync) }
     suspend fun saveTapToSwipeEnabled(enabled: Boolean) { dataStore.saveTapToSwipeEnabled(enabled) }

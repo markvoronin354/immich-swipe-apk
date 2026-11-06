@@ -108,6 +108,7 @@
     <string name="settings_interactions_desc">Sorting bar actions, auto-advance, and tap gestures</string>
     <string name="settings_interactions_dialog_title">Interactions</string>
     <string name="settings_toolbar_preview">Toolbar preview</string>
+    <string name="settings_toolbar_reorder_hint">Long-press and drag to rearrange buttons</string>
     <string name="settings_section_toolbar">Toolbar</string>
     <string name="settings_show_toolbar_labels_label">Button labels</string>
     <string name="settings_section_actions">Actions</string>

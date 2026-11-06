@@ -1,6 +1,7 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandHorizontally
@@ -50,9 +51,15 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -68,14 +75,18 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.core.ToolbarButton
 import com.markvoronin.immichswipe.feature.settings.components.rememberJiggleGroup
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.swipe.SwipeUiState
 import com.markvoronin.immichswipe.feature.swipe.SwipeViewModel
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
 
 /**
  * One tile of the connected action group, styled like the fullscreen toolbar. When [checked] is non-null it is a
@@ -160,6 +171,7 @@ private fun animatedTileShape(index: Int, count: Int): Shape {
 private fun RowScope.AnimatedTileSlot(
     visible: Boolean,
     weight: Float,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
     val progress by animateFloatAsState(
@@ -172,6 +184,7 @@ private fun RowScope.AnimatedTileSlot(
         Box(
             modifier = Modifier
                 .weight(weight * progress)
+                .then(modifier)
                 .graphicsLayer {
                     alpha = progress.coerceIn(0f, 1f)
                     clip = true
@@ -191,6 +204,9 @@ fun SwipeActionBarLayout(
     showLockButton: Boolean,
     sortOrder: SortOrder,
     modifier: Modifier = Modifier,
+    buttonOrder: List<ToolbarButton> = ToolbarButton.entries,
+    // When set, the bar is a preview: taps are blocked and the middle buttons can be long-press dragged to reorder.
+    onReorder: ((List<ToolbarButton>) -> Unit)? = null,
     showButtonLabels: Boolean = true,
     undoEnabled: Boolean = true,
     isFavorite: Boolean = false,
@@ -241,6 +257,7 @@ fun SwipeActionBarLayout(
                         contentDescription = stringResource(R.string.swipe_delete)
                     )
                 }
+                if (onReorder != null) Box(Modifier.matchParentSize().blockTouches())
             }
         }
 
@@ -271,6 +288,46 @@ fun SwipeActionBarLayout(
             val tileWidth = (maxWidth - 3.dp * (tileCount - 1)) / tileCount
             val showLabels = showButtonLabels && widestLabel + 16.dp <= tileWidth
 
+            // Reorder state. localOrder holds the order while dragging and until the saved order catches up.
+            val haptic = LocalHapticFeedback.current
+            val scope = rememberCoroutineScope()
+            val spatialSpec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
+            val gapPx = with(density) { 3.dp.toPx() }
+            var localOrder by remember { mutableStateOf<List<ToolbarButton>?>(null) }
+            var dragged by remember { mutableStateOf<ToolbarButton?>(null) }
+            var dragOffset by remember { mutableFloatStateOf(0f) }
+            // Extra horizontal offset per tile, animated to 0 so tiles glide into their new slot after a swap or drop.
+            val shifts = remember { ToolbarButton.entries.associateWith { Animatable(0f) } }
+            LaunchedEffect(buttonOrder) { if (dragged == null) localOrder = null }
+            val order = localOrder ?: buttonOrder
+            val shown = buildSet {
+                if (showArchiveButton) add(ToolbarButton.ARCHIVE)
+                if (showFavoriteButton) add(ToolbarButton.FAVORITE)
+                if (showAddToAlbumButton) add(ToolbarButton.ALBUM)
+                if (showLockButton) add(ToolbarButton.LOCK)
+            }
+            val currentShown by rememberUpdatedState(shown)
+            val currentOrder by rememberUpdatedState(order)
+            val currentButtonOrder by rememberUpdatedState(buttonOrder)
+            val currentTileCount by rememberUpdatedState(tileCount)
+            val currentOnReorder by rememberUpdatedState(onReorder)
+
+            fun glide(button: ToolbarButton, from: Float) {
+                scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                    shifts.getValue(button).snapTo(from)
+                    shifts.getValue(button).animateTo(0f, spatialSpec)
+                }
+            }
+
+            fun drop() {
+                val button = dragged ?: return
+                glide(button, dragOffset)
+                dragged = null
+                dragOffset = 0f
+                val final = localOrder
+                if (final != null && final != currentButtonOrder) currentOnReorder?.invoke(final) else localOrder = null
+            }
+
             Row(modifier = Modifier.fillMaxWidth()) {
                 var index = 0
                 val jiggle = rememberJiggleGroup(tileCount, grow = 0.14f)
@@ -291,86 +348,86 @@ fun SwipeActionBarLayout(
                     )
                 }
 
-                val archiveIndex = if (showArchiveButton) index++ else -1
-                AnimatedTileSlot(
-                    visible = showArchiveButton,
-                    weight = if (archiveIndex >= 0) jiggle.factor(archiveIndex) else 1f
-                ) {
-                    ActionTile(
-                        onClick = { jiggle.tap(archiveIndex); onArchive() },
-                        label = stringResource(R.string.swipe_archive),
-                        showLabel = showLabels,
-                        shape = animatedTileShape(archiveIndex, tileCount),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Archive,
-                            contentDescription = stringResource(R.string.swipe_archive),
-                            modifier = Modifier.size(iconSize)
+                order.forEach { button ->
+                    key(button) {
+                        val tileIndex = if (button in shown) index++ else -1
+                        val scale by animateFloatAsState(
+                            targetValue = if (dragged == button) 1.08f else 1f,
+                            animationSpec = spatialSpec,
+                            label = "dragScale"
                         )
-                    }
-                }
+                        AnimatedTileSlot(
+                            visible = button in shown,
+                            weight = if (tileIndex >= 0) jiggle.factor(tileIndex) else 1f,
+                            modifier = Modifier
+                                .zIndex(if (dragged == button) 1f else 0f)
+                                .graphicsLayer {
+                                    translationX = shifts.getValue(button).value + if (dragged == button) dragOffset else 0f
+                                    scaleX = scale
+                                    scaleY = scale
+                                }
+                        ) {
+                            when (button) {
+                                ToolbarButton.ARCHIVE -> ActionTile(
+                                    onClick = { jiggle.tap(tileIndex); onArchive() },
+                                    label = stringResource(R.string.swipe_archive),
+                                    showLabel = showLabels,
+                                    shape = animatedTileShape(tileIndex, tileCount),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Archive,
+                                        contentDescription = stringResource(R.string.swipe_archive),
+                                        modifier = Modifier.size(iconSize)
+                                    )
+                                }
 
-                val favoriteIndex = if (showFavoriteButton) index++ else -1
-                AnimatedTileSlot(
-                    visible = showFavoriteButton,
-                    weight = if (favoriteIndex >= 0) jiggle.factor(favoriteIndex) else 1f
-                ) {
-                    ActionTile(
-                        onClick = { jiggle.tap(favoriteIndex); onFavorite() },
-                        label = stringResource(R.string.swipe_label_favorite),
-                        showLabel = showLabels,
-                        shape = animatedTileShape(favoriteIndex, tileCount),
-                        checked = isFavorite,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = stringResource(R.string.swipe_favorite),
-                            tint = if (isFavorite) Color.Red else LocalContentColor.current,
-                            modifier = Modifier.size(iconSize)
-                        )
-                    }
-                }
+                                ToolbarButton.FAVORITE -> ActionTile(
+                                    onClick = { jiggle.tap(tileIndex); onFavorite() },
+                                    label = stringResource(R.string.swipe_label_favorite),
+                                    showLabel = showLabels,
+                                    shape = animatedTileShape(tileIndex, tileCount),
+                                    checked = isFavorite,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(
+                                        imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                        contentDescription = stringResource(R.string.swipe_favorite),
+                                        tint = if (isFavorite) Color.Red else LocalContentColor.current,
+                                        modifier = Modifier.size(iconSize)
+                                    )
+                                }
 
-                val albumIndex = if (showAddToAlbumButton) index++ else -1
-                AnimatedTileSlot(
-                    visible = showAddToAlbumButton,
-                    weight = if (albumIndex >= 0) jiggle.factor(albumIndex) else 1f
-                ) {
-                    ActionTile(
-                        onClick = { jiggle.tap(albumIndex); onAddToAlbum() },
-                        label = stringResource(R.string.swipe_label_album),
-                        showLabel = showLabels,
-                        shape = animatedTileShape(albumIndex, tileCount),
-                        checked = isAlbumDialogOpen,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.LibraryAdd,
-                            contentDescription = stringResource(R.string.add_to_album_title),
-                            modifier = Modifier.size(iconSize)
-                        )
-                    }
-                }
+                                ToolbarButton.ALBUM -> ActionTile(
+                                    onClick = { jiggle.tap(tileIndex); onAddToAlbum() },
+                                    label = stringResource(R.string.swipe_label_album),
+                                    showLabel = showLabels,
+                                    shape = animatedTileShape(tileIndex, tileCount),
+                                    checked = isAlbumDialogOpen,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.LibraryAdd,
+                                        contentDescription = stringResource(R.string.add_to_album_title),
+                                        modifier = Modifier.size(iconSize)
+                                    )
+                                }
 
-                val lockIndex = if (showLockButton) index++ else -1
-                AnimatedTileSlot(
-                    visible = showLockButton,
-                    weight = if (lockIndex >= 0) jiggle.factor(lockIndex) else 1f
-                ) {
-                    ActionTile(
-                        onClick = { jiggle.tap(lockIndex); onLock() },
-                        label = stringResource(R.string.swipe_locked),
-                        showLabel = showLabels,
-                        shape = animatedTileShape(lockIndex, tileCount),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = stringResource(R.string.swipe_locked),
-                            modifier = Modifier.size(iconSize)
-                        )
+                                ToolbarButton.LOCK -> ActionTile(
+                                    onClick = { jiggle.tap(tileIndex); onLock() },
+                                    label = stringResource(R.string.swipe_locked),
+                                    showLabel = showLabels,
+                                    shape = animatedTileShape(tileIndex, tileCount),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Lock,
+                                        contentDescription = stringResource(R.string.swipe_locked),
+                                        modifier = Modifier.size(iconSize)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -405,6 +462,53 @@ fun SwipeActionBarLayout(
                     sortMenu()
                 }
             }
+
+            if (onReorder != null) {
+                // Sits on top of the tiles: blocks taps, and a long-press on a middle tile starts dragging it.
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .pointerInput(Unit) {
+                            detectDragGesturesAfterLongPress(
+                                onDragStart = { offset ->
+                                    val step = (size.width + gapPx) / currentTileCount
+                                    val visible = currentOrder.filter { it in currentShown }
+                                    // Slot 0 is Undo, so the middle tiles start at slot 1.
+                                    val hit = visible.getOrNull((offset.x / step).toInt() - 1)
+                                    if (hit != null) {
+                                        localOrder = currentOrder
+                                        dragged = hit
+                                        dragOffset = 0f
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    }
+                                },
+                                onDrag = { change, amount ->
+                                    val button = dragged
+                                    val current = localOrder
+                                    if (button != null && current != null) {
+                                        change.consume()
+                                        val step = (size.width + gapPx) / currentTileCount
+                                        val visible = current.filter { it in currentShown }
+                                        val pos = visible.indexOf(button)
+                                        dragOffset = (dragOffset + amount.x).coerceIn(-pos * step, (visible.size - 1 - pos) * step)
+                                        val dir = if (dragOffset > step / 2) 1 else if (dragOffset < -step / 2) -1 else 0
+                                        val neighbor = if (dir != 0) visible.getOrNull(pos + dir) else null
+                                        if (neighbor != null) {
+                                            val i = current.indexOf(button)
+                                            val j = current.indexOf(neighbor)
+                                            localOrder = current.toMutableList().apply { this[i] = neighbor; this[j] = button }
+                                            dragOffset -= dir * step
+                                            glide(neighbor, dir * step)
+                                            haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                                        }
+                                    }
+                                },
+                                onDragEnd = { drop() },
+                                onDragCancel = { drop() }
+                            )
+                        }
+                )
+            }
         }
 
         AnimatedVisibility(
@@ -427,10 +531,14 @@ fun SwipeActionBarLayout(
                         contentDescription = stringResource(R.string.swipe_keep)
                     )
                 }
+                if (onReorder != null) Box(Modifier.matchParentSize().blockTouches())
             }
         }
     }
 }
+
+private fun Modifier.blockTouches(): Modifier =
+    pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }
 
 private fun Modifier.bulkDragSelect(
     haptic: HapticFeedback,
@@ -502,6 +610,7 @@ fun SwipeActionBar(
         showLockButton = uiState.showLockButton,
         sortOrder = uiState.sortOrder,
         showButtonLabels = uiState.showToolbarLabels,
+        buttonOrder = uiState.toolbarButtonOrder,
         undoEnabled = uiState.history.isNotEmpty(),
         isFavorite = uiState.currentAsset?.let { uiState.isFavorite(it.id) } ?: false,
         isAlbumDialogOpen = uiState.showAddToAlbumDialog,

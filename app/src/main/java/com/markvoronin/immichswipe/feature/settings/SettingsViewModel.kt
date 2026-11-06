@@ -12,6 +12,7 @@ import com.markvoronin.immichswipe.core.ImmichOpenMode
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.ReminderInterval
 import com.markvoronin.immichswipe.core.SessionManager
+import com.markvoronin.immichswipe.core.ToolbarButton
 import com.markvoronin.immichswipe.core.cache.CacheManager
 import com.markvoronin.immichswipe.core.reminder.ReminderScheduler
 import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
@@ -225,6 +226,11 @@ class SettingsViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            sessionRepository.toolbarButtonOrder.collect { order ->
+                _uiState.update { it.copy(toolbarButtonOrder = order) }
+            }
+        }
+        viewModelScope.launch {
             sessionRepository.syncLocalDeletion.collect { sync ->
                 _uiState.update { it.copy(syncLocalDeletion = sync) }
             }
@@ -410,6 +416,13 @@ class SettingsViewModel @Inject constructor(
     fun setShowToolbarLabels(show: Boolean) {
         viewModelScope.launch {
             sessionRepository.saveShowToolbarLabels(show)
+        }
+    }
+
+    fun setToolbarButtonOrder(order: List<ToolbarButton>) {
+        _uiState.update { it.copy(toolbarButtonOrder = order) }
+        viewModelScope.launch {
+            sessionRepository.saveToolbarButtonOrder(order)
         }
     }
 

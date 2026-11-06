@@ -109,6 +109,7 @@
     <string name="settings_interactions_desc">Acciones de la barra de clasificación, avance automático y gestos táctiles</string>
     <string name="settings_interactions_dialog_title">Interacciones</string>
     <string name="settings_toolbar_preview">Vista previa de la barra</string>
+    <string name="settings_toolbar_reorder_hint">Mantén pulsado y arrastra para reordenar los botones</string>
     <string name="settings_section_toolbar">Barra de herramientas</string>
     <string name="settings_show_toolbar_labels_label">Etiquetas de botones</string>
     <string name="settings_section_actions">Acciones</string>

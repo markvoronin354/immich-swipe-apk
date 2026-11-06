@@ -7,6 +7,7 @@ import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichOpenMode
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.core.ToolbarButton
 import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.domain.model.Asset
 
@@ -67,6 +68,7 @@ data class SwipeUiState(
     val showLockButton: Boolean = false,
     val showAddToAlbumButton: Boolean = true,
     val showToolbarLabels: Boolean = true,
+    val toolbarButtonOrder: List<ToolbarButton> = ToolbarButton.entries,
     val showAddToAlbumDialog: Boolean = false,
     val albumsForAddToAlbum: List<Album> = emptyList(),
     val isFetchingAlbumsForDialog: Boolean = false,

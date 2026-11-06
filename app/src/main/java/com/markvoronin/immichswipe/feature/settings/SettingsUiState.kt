@@ -10,6 +10,7 @@ import com.markvoronin.immichswipe.core.ImmichOpenMode
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.ReminderInterval
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.core.ToolbarButton
 
 enum class DatabaseScope {
     ALL, USER
@@ -57,6 +58,7 @@ data class SettingsUiState(
     val showLockButton: Boolean = false,
     val showAddToAlbumButton: Boolean = true,
     val showToolbarLabels: Boolean = true,
+    val toolbarButtonOrder: List<ToolbarButton> = ToolbarButton.entries,
     val syncLocalDeletion: Boolean = false,
     val trashLocalDeletion: Boolean = true,
     val tapToSwipeEnabled: Boolean = false,

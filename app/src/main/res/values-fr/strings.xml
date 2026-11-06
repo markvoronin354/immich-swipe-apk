@@ -110,6 +110,7 @@
     <string name="settings_interactions_desc">Actions de la barre de tri, défilement auto et gestes tactiles</string>
     <string name="settings_interactions_dialog_title">Interactions</string>
     <string name="settings_toolbar_preview">Aperçu de la barre</string>
+    <string name="settings_toolbar_reorder_hint">Appuyez longuement et faites glisser pour réorganiser les boutons</string>
     <string name="settings_section_toolbar">Barre d\'outils</string>
     <string name="settings_show_toolbar_labels_label">Libellés des boutons</string>
     <string name="settings_section_actions">Actions</string>

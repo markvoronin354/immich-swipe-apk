@@ -31,11 +31,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.DoubleTapAction
@@ -79,7 +79,7 @@ fun InteractionsScreen(
                             val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
                             layout(constraints.maxWidth, placeable.height) { placeable.place(-extra / 2, 0) }
                         }
-                        .padding(top = 4.dp, bottom = 16.dp)
+                        .padding(top = 4.dp, bottom = 8.dp)
                         .clearAndSetSemantics { contentDescription = previewLabel }
                 ) {
                     SwipeActionBarLayout(
@@ -89,14 +89,20 @@ fun InteractionsScreen(
                         showAddToAlbumButton = uiState.showAddToAlbumButton,
                         showLockButton = uiState.showLockButton,
                         sortOrder = uiState.sortOrder,
-                        showButtonLabels = uiState.showToolbarLabels
-                    )
-                    Box(
-                        Modifier
-                            .matchParentSize()
-                            .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }
+                        showButtonLabels = uiState.showToolbarLabels,
+                        buttonOrder = uiState.toolbarButtonOrder,
+                        onReorder = viewModel::setToolbarButtonOrder
                     )
                 }
+                Text(
+                    text = stringResource(R.string.settings_toolbar_reorder_hint),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                )
             }
         ) {
             Column {

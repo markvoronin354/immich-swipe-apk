@@ -31,6 +31,14 @@ enum class DoubleTapAction {
     FAVORITE
 }
 
+/** The reorderable middle buttons of the swipe toolbar, in their default order. */
+enum class ToolbarButton {
+    ARCHIVE,
+    FAVORITE,
+    ALBUM,
+    LOCK
+}
+
 enum class CardDisplayMode {
     FILL,
     FIT

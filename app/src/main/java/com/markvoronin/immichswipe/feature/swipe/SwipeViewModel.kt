@@ -133,6 +133,11 @@ class SwipeViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            sessionRepository.toolbarButtonOrder.collect { order ->
+                _uiState.update { it.copy(toolbarButtonOrder = order) }
+            }
+        }
+        viewModelScope.launch {
             sessionRepository.buttonStackOrientation.collect { orientation ->
                 _uiState.update { it.copy(buttonStackOrientation = orientation) }
             }
