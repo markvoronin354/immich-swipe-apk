@@ -109,7 +109,9 @@
     <string name="settings_interactions_label">Interactions</string>
     <string name="settings_interactions_desc">Actions de la barre de tri, défilement auto et gestes tactiles</string>
     <string name="settings_interactions_dialog_title">Interactions</string>
-    <string name="settings_section_button_visibility">Visibilité des boutons</string>
+    <string name="settings_toolbar_preview">Aperçu de la barre</string>
+    <string name="settings_section_toolbar">Barre d\'outils</string>
+    <string name="settings_show_toolbar_labels_label">Libellés des boutons</string>
     <string name="settings_section_actions">Actions</string>
     <string name="settings_action_buttons_label">Boutons d\'action à l\'écran</string>
     <string name="settings_action_buttons_desc">Personnaliser la visibilité et la position des boutons superposés</string>
@@ -216,6 +218,9 @@
     <!-- Commun -->
     <string name="common_confirm">Confirmer</string>
     <string name="common_cancel">Annuler</string>
+    <string name="common_delete">Supprimer</string>
+    <string name="common_export">Exporter</string>
+    <string name="common_import">Importer</string>
     <string name="common_close">Fermer</string>
     <string name="common_back">Retour</string>
     <string name="common_loading">Chargement…</string>
@@ -283,11 +288,11 @@
     <string name="settings_db_export_desc">Sauvegarder vos données dans un fichier JSON.</string>
     <string name="settings_db_import_label">Importer une base</string>
     <string name="settings_db_import_desc">Restaurer des données depuis un fichier JSON.</string>
-    <string name="settings_db_scope_label">Portée de l\'opération :</string>
+    <string name="settings_db_scope_label">Appliquer à</string>
     <string name="settings_db_scope_user">Uniquement mon compte (%1$s)</string>
-    <string name="settings_db_scope_all">Tous les comptes (Total)</string>
-    <string name="settings_db_confirm_delete_title">⚠️ SUPPRESSION DÉFINITIVE</string>
-    <string name="settings_db_confirm_delete_msg">Êtes-vous ABSOLUTELY sûr de vouloir supprimer les données ?\n\nCette action est irréversible et effacera toutes vos décisions de tri locales ainsi que vos statistiques de synchronisation.</string>
+    <string name="settings_db_scope_all">Tous les comptes</string>
+    <string name="settings_db_confirm_delete_title">Supprimer les données ?</string>
+    <string name="settings_db_confirm_delete_msg">Vos décisions de tri locales et vos statistiques de synchronisation seront définitivement effacées. Cette action est irréversible.</string>
     <string name="settings_db_confirm_export_title">Exporter les données</string>
     <string name="settings_db_confirm_import_title">Importer les données</string>
     <string name="settings_db_confirm_import_msg">L\'importation va ajouter les données du fichier à votre base actuelle. Les décisions déjà existantes seront mises à jour.\n\nVoulez-vous continuer ?</string>
@@ -369,19 +374,14 @@
     <string name="settings_reminder_desc">Recevez une notification pour vous rappeler de trier vos photos. Désactivé par défaut.</string>
     <string name="settings_reminder_interval_label">Fréquence</string>
     <string name="settings_reminder_often">Souvent</string>
-    <string name="settings_reminder_often_hint">Environ toutes les 1 à 2 semaines, à intervalles aléatoires</string>
+    <string name="settings_reminder_often_hint">Toutes les 1 à 2 semaines, à intervalles aléatoires</string>
     <string name="settings_reminder_rarely">Rarement</string>
-    <string name="settings_reminder_rarely_hint">Environ toutes les 3 à 5 semaines, à intervalles aléatoires</string>
+    <string name="settings_reminder_rarely_hint">Toutes les 3 à 5 semaines, à intervalles aléatoires</string>
     <string name="settings_reminder_custom">Personnalisé</string>
     <plurals name="settings_reminder_custom_hint">
-        <item quantity="one">Environ tous les %1$d à %2$d jour, à intervalles aléatoires</item>
-        <item quantity="many">Environ tous les %1$d à %2$d jours, à intervalles aléatoires</item>
-        <item quantity="other">Environ tous les %1$d à %2$d jours, à intervalles aléatoires</item>
-    </plurals>
-    <plurals name="settings_reminder_custom_configure">
-        <item quantity="one">Configurer la plage (%1$d–%2$d jour)</item>
-        <item quantity="many">Configurer la plage (%1$d–%2$d jours)</item>
-        <item quantity="other">Configurer la plage (%1$d–%2$d jours)</item>
+        <item quantity="one">Tous les %1$d à %2$d jour, à intervalles aléatoires</item>
+        <item quantity="many">Tous les %1$d à %2$d jours, à intervalles aléatoires</item>
+        <item quantity="other">Tous les %1$d à %2$d jours, à intervalles aléatoires</item>
     </plurals>
     <plurals name="swipe_bulk_delete_title">
         <item quantity="one">Suppression groupée : %1$d sélectionné</item>

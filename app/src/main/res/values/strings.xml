@@ -107,7 +107,9 @@
     <string name="settings_interactions_label">Interactions</string>
     <string name="settings_interactions_desc">Sorting bar actions, auto-advance, and tap gestures</string>
     <string name="settings_interactions_dialog_title">Interactions</string>
-    <string name="settings_section_button_visibility">Button visibility</string>
+    <string name="settings_toolbar_preview">Toolbar preview</string>
+    <string name="settings_section_toolbar">Toolbar</string>
+    <string name="settings_show_toolbar_labels_label">Button labels</string>
     <string name="settings_section_actions">Actions</string>
     <string name="settings_action_buttons_label">Swipe card action buttons</string>
     <string name="settings_action_buttons_desc">Customize visibility and position of overlay buttons</string>
@@ -216,6 +218,9 @@
     <!-- Common -->
     <string name="common_confirm">Confirm</string>
     <string name="common_cancel">Cancel</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_export">Export</string>
+    <string name="common_import">Import</string>
     <string name="common_close">Close</string>
     <string name="common_back">Back</string>
     <string name="common_loading">Loading…</string>
@@ -281,11 +286,11 @@
     <string name="settings_db_export_desc">Save your data to a JSON file.</string>
     <string name="settings_db_import_label">Import database</string>
     <string name="settings_db_import_desc">Restore data from a JSON file.</string>
-    <string name="settings_db_scope_label">Operation scope:</string>
+    <string name="settings_db_scope_label">Apply to</string>
     <string name="settings_db_scope_user">Only my account (%1$s)</string>
-    <string name="settings_db_scope_all">All accounts (Total)</string>
-    <string name="settings_db_confirm_delete_title">⚠️ PERMANENT DELETION</string>
-    <string name="settings_db_confirm_delete_msg">Are you ABSOLUTELY sure you want to delete the data?\n\nThis action is irreversible and will erase all your local swipe decisions and sync statistics.</string>
+    <string name="settings_db_scope_all">All accounts</string>
+    <string name="settings_db_confirm_delete_title">Delete data?</string>
+    <string name="settings_db_confirm_delete_msg">This permanently erases your local swipe decisions and sync statistics. It can\'t be undone.</string>
     <string name="settings_db_confirm_export_title">Export data</string>
     <string name="settings_db_confirm_import_title">Import data</string>
     <string name="settings_db_confirm_import_msg">Importing will add the file data to your current database. Existing decisions will be updated.\n\nDo you want to continue?</string>
@@ -365,17 +370,13 @@
     <string name="settings_reminder_desc">Get a notification to remind you to sort your photos. Disabled by default.</string>
     <string name="settings_reminder_interval_label">Frequency</string>
     <string name="settings_reminder_often">Often</string>
-    <string name="settings_reminder_often_hint">About every 1–2 weeks, at random intervals</string>
+    <string name="settings_reminder_often_hint">Every 1–2 weeks, at random intervals</string>
     <string name="settings_reminder_rarely">Rarely</string>
-    <string name="settings_reminder_rarely_hint">About every 3–5 weeks, at random intervals</string>
+    <string name="settings_reminder_rarely_hint">Every 3–5 weeks, at random intervals</string>
     <string name="settings_reminder_custom">Custom</string>
     <plurals name="settings_reminder_custom_hint">
-        <item quantity="one">About every %1$d–%2$d day, at random intervals</item>
-        <item quantity="other">About every %1$d–%2$d days, at random intervals</item>
-    </plurals>
-    <plurals name="settings_reminder_custom_configure">
-        <item quantity="one">Configure custom range (%1$d–%2$d day)</item>
-        <item quantity="other">Configure custom range (%1$d–%2$d days)</item>
+        <item quantity="one">Every %1$d–%2$d day, at random intervals</item>
+        <item quantity="other">Every %1$d–%2$d days, at random intervals</item>
     </plurals>
     <plurals name="swipe_bulk_delete_title">
         <item quantity="one">Bulk Delete: %1$d selected</item>
@@ -385,7 +386,7 @@
         <item quantity="one">Bulk Keep: %1$d selected</item>
         <item quantity="other">Bulk Keep: %1$d selected</item>
     </plurals>
-    <string name="settings_reminder_custom_dialog_title">Custom Reminder Frequency</string>
+    <string name="settings_reminder_custom_dialog_title">Custom frequency</string>
     <string name="settings_reminder_custom_min_label">Minimum days</string>
     <string name="settings_reminder_custom_max_label">Maximum days</string>
     <string name="settings_reminder_permission_denied">Notification permission denied. The reminder stays disabled.</string>

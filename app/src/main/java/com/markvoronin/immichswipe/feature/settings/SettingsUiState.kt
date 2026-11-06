@@ -56,6 +56,7 @@ data class SettingsUiState(
     val showArchiveButton: Boolean = true,
     val showLockButton: Boolean = false,
     val showAddToAlbumButton: Boolean = true,
+    val showToolbarLabels: Boolean = true,
     val syncLocalDeletion: Boolean = false,
     val trashLocalDeletion: Boolean = true,
     val tapToSwipeEnabled: Boolean = false,

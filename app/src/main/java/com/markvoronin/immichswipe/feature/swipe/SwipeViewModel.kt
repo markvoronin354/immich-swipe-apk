@@ -84,7 +84,6 @@ class SwipeViewModel @Inject constructor(
     private val _shareRequestChannel = Channel<Asset>(Channel.BUFFERED)
     val shareRequestSignal = _shareRequestChannel.receiveAsFlow()
 
-    // Emitted when some server steps of "apply changes" failed; failed items stay pending.
     private val _syncIssueChannel = Channel<Unit>(Channel.BUFFERED)
     val syncIssueSignal = _syncIssueChannel.receiveAsFlow()
 
@@ -126,6 +125,11 @@ class SwipeViewModel @Inject constructor(
         viewModelScope.launch {
             sessionRepository.showAddToAlbumButton.collect { show ->
                 _uiState.update { it.copy(showAddToAlbumButton = show) }
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.showToolbarLabels.collect { show ->
+                _uiState.update { it.copy(showToolbarLabels = show) }
             }
         }
         viewModelScope.launch {
@@ -250,8 +254,6 @@ class SwipeViewModel @Inject constructor(
                 }
                 isFetchingAssetsFlow.value = batch.isSyncing
 
-                // The tutorial starts once assets exist; holding the collector here keeps the repository from
-                // fetching the next page (which would lag the tutorial animations) until the tutorial is done.
                 if (batch.assets.isNotEmpty()) _uiState.first { it.hasCompletedSwipeTutorial }
             }
         } finally {
@@ -276,13 +278,10 @@ class SwipeViewModel @Inject constructor(
                 }
             val sizeMap = localDecisions.associate { it.assetId to (it.fileSize ?: 0L) }
             
-            // Decisions the DB held on the previous emission but no longer does were removed elsewhere (e.g. duplicates screen reset)
             val dbDecisionIds = localDecisions.mapTo(HashSet()) { it.assetId }
             val removedExternally = knownDbDecisionIds - dbDecisionIds
             knownDbDecisionIds = dbDecisionIds
 
-            // While a sync is still paging, the batch is partial: an asset missing from it is not gone yet,
-            // so its decision and undo entry are kept instead of being pruned (which dropped its badge).
             fun isStillValid(assetId: String) = isFetching || assetId in validAssetIds
             val liveDecisions = _uiState.value.decisions.filterKeys { isStillValid(it) }
             val currentDecisions = liveDecisions.filterKeys { it !in removedExternally }
@@ -375,7 +374,6 @@ class SwipeViewModel @Inject constructor(
                 )
             }
             
-            // Preload details for new current index
             val state = _uiState.value
             if (state.currentIndex < state.assets.size) {
                 loadAssetDetail(state.assets[state.currentIndex].id, state.currentIndex)
@@ -388,7 +386,6 @@ class SwipeViewModel @Inject constructor(
             try {
                 val detail = assetRepository.getAssetDetail(assetId)
                 
-                // Skip emission if asset detail is identical to current asset in state
                 val currentAssets = _uiState.value.assets
                 val existingAsset = currentAssets.getOrNull(index)?.takeIf { it.id == assetId }
                 if (existingAsset != null && existingAsset == detail) {
@@ -410,7 +407,6 @@ class SwipeViewModel @Inject constructor(
                 detail.exifInfo?.fileSizeInBytes?.let { newSizes[assetId] = it }
                 _uiState.update { it.copy(assets = updatedAssets, masterWorkPile = masterWorkPile, assetSizes = newSizes) }
 
-                // Call preloader logic for the next items in queue
                 preloadNextAssets()
             } catch (_: Exception) {}
         }
@@ -418,9 +414,6 @@ class SwipeViewModel @Inject constructor(
 
     private fun preloadNextAssets() {
 
-        // Context needs to be provided somehow for VideoPreloader and Coil.
-        // Usually ViewModels shouldn't have Android context. 
-        // We will emit an event or state to handle it in Compose instead.
     }
 
     fun onSwipe(decision: SwipeDecision) {
@@ -430,13 +423,11 @@ class SwipeViewModel @Inject constructor(
         
         AppLogger.d("SwipeViewModel", "Swiped asset ${currentAsset.id}: $decision")
 
-        // Optimistic UI update for immediate response
         val newDecisions = currentState.decisions.toMutableMap()
         newDecisions[currentAsset.id] = decision
         val newHistory = currentState.history.toMutableList()
         newHistory.add(currentAsset.id)
         
-        // Find next unprocessed
         val nextIndex = currentState.assets.indices.firstOrNull { i ->
             i > currentState.currentIndex && !newDecisions[currentState.assets[i].id].isFinalProcessed()
         } ?: currentState.assets.size
@@ -462,7 +453,6 @@ class SwipeViewModel @Inject constructor(
         val currentState = _uiState.value
         val lastAssetId = currentState.history.lastOrNull() ?: return
         
-        // Optimistic UI update
         val newHistory = currentState.history.toMutableList()
         newHistory.removeAt(newHistory.size - 1)
         val newDecisions = currentState.decisions.toMutableMap()
@@ -504,7 +494,6 @@ class SwipeViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, sortOrder = order) }
             viewModelScope.launch { sessionRepository.saveSortOrder(order) }
         } else {
-            // Same order re-selected: the saved value won't re-emit, so re-sort the current pile directly
             refreshSortedWorkPile(jumpToFirstUnprocessed = true)
         }
     }
@@ -532,7 +521,6 @@ class SwipeViewModel @Inject constructor(
     fun toggleFullResolution() { _uiState.update { it.copy(isFullResolution = !it.isFullResolution) } }
     fun toggleMute() { _uiState.update { it.copy(isMuted = !_uiState.value.isMuted) } }
 
-    /** Names of the real albums containing [assetId]; empty when the lookup fails. */
     suspend fun loadAlbumNames(assetId: String): List<String> = try {
         albumRepository.getAlbumsForAsset(assetId).filter { !it.isVirtual }.map { it.albumName }
     } catch (e: Exception) {
@@ -621,10 +609,8 @@ class SwipeViewModel @Inject constructor(
             try {
                 val config = sessionRepository.sessionConfig.first() ?: return@launch
                 
-                // 1. Delete ALL decisions for this album from SQLite Room DB
                 swipeDecisionRepository.deleteDecisionsForAlbum(_uiState.value.albumId, config.userId)
                 
-                // 2. Also delete decisions for any assets currently in masterWorkPile
                 val currentIds = masterWorkPile.map { it.id }
                 if (currentIds.isNotEmpty()) {
                     swipeDecisionRepository.removeDecisions(currentIds, config.userId)
@@ -656,7 +642,6 @@ class SwipeViewModel @Inject constructor(
 
         val decision = if (isDelete) SwipeDecision.DELETE else SwipeDecision.KEEP
 
-        // 1. Optimistic memory update
         val newDecisions = s.decisions.toMutableMap()
         val newHistory = s.history.toMutableList()
         selection.forEach { id ->
@@ -666,7 +651,6 @@ class SwipeViewModel @Inject constructor(
             }
         }
 
-        // Calculate next unprocessed index after the bulk selection
         val targetIndex = (lastIdx + 1).coerceAtMost(s.assets.size)
         val nextUnprocessedIndex = s.assets.indices.firstOrNull { i ->
             i >= targetIndex && !newDecisions.containsKey(s.assets[i].id)
@@ -686,7 +670,6 @@ class SwipeViewModel @Inject constructor(
             loadAssetDetail(s.assets[nextUnprocessedIndex].id, nextUnprocessedIndex)
         }
 
-        // 2. Persist decisions to DB asynchronously
         viewModelScope.launch {
             val config = sessionRepository.sessionConfig.first() ?: return@launch
             selection.forEach { id ->
@@ -716,7 +699,6 @@ class SwipeViewModel @Inject constructor(
                     lockedCount = currentState.lockedCount
                 )
 
-                // Update memory work pile with favorite changes
                 if (currentState.localFavorites.isNotEmpty()) {
                     masterWorkPile = masterWorkPile.map { asset ->
                         val newFav = currentState.localFavorites[asset.id]
@@ -729,7 +711,6 @@ class SwipeViewModel @Inject constructor(
                     allAssetsFoundFlow.value = updatedWorkPile
                 }
                 
-                // 4. Update local work pile to remove deleted and locked assets (and non-SKIP decided assets if in SKIP album)
                 val toRemoveFromWorkPile = if (isSkipAlbum) {
                     (result.toDelete + result.toLock + result.nonSkipDecidedIds).toSet()
                 } else {
@@ -741,11 +722,9 @@ class SwipeViewModel @Inject constructor(
                     val updatedWorkPile = allAssetsFoundFlow.value.filter { it.id !in toRemoveFromWorkPile }
                     allAssetsFoundFlow.value = updatedWorkPile
                     
-                    // Update the total count to reflect removals
                     _uiState.update { it.copy(remoteTotalCount = (it.remoteTotalCount - toRemoveFromWorkPile.size).coerceAtLeast(0)) }
                 }
 
-                // 4b. Local device deletion sync if enabled
                 var pendingDeleteIntent: android.app.PendingIntent? = null
                 if (currentState.syncLocalDeletion && result.deletedAssets.isNotEmpty()) {
                     try {
@@ -762,17 +741,13 @@ class SwipeViewModel @Inject constructor(
                     }
                 }
 
-                // 5. Success state
                 val remainingDecisions = currentState.decisions.filterKeys { id -> id !in toRemoveFromWorkPile }
                 _uiState.update { it.copy(
-                    // Remove deleted & locked assets from current UI decisions too
                     decisions = remainingDecisions,
-                    history = emptyList(), // Reset history for undo after sync
-                    // Keep favorites that failed to sync so they are retried on the next apply
+                    history = emptyList(),
                     localFavorites = currentState.localFavorites.filterKeys { it in result.failedFavoriteIds }
                 ) }
 
-                // Force refresh sorted work pile so `_uiState.value.assets` and `currentIndex` are updated immediately
                 pendingJumpToFirstUnprocessed = true
                 refreshSortedWorkPile(
                     jumpToFirstUnprocessed = true,
@@ -780,8 +755,6 @@ class SwipeViewModel @Inject constructor(
                     overrideHistory = emptyList()
                 )
 
-                // The server changes are done, but an album sync that is still paging keeps changing the list.
-                // Stay in the syncing state until it settles, so "done" matches what is on screen.
                 isFetchingAssetsFlow.first { !it }
                 _uiState.update { it.copy(
                     isSyncing = false,

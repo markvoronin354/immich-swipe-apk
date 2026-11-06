@@ -5,10 +5,10 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Forward
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.AdsClick
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Favorite
@@ -25,22 +26,23 @@ import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.TouchApp
-import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.DoubleTapAction
 import com.markvoronin.immichswipe.feature.settings.SettingsUiState
 import com.markvoronin.immichswipe.feature.settings.SettingsViewModel
+import com.markvoronin.immichswipe.feature.swipe.components.SwipeActionBarLayout
 
-// Inner padding of each tile inside a section.
 private val TilePadding = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
 
 @Composable
@@ -65,12 +67,50 @@ fun InteractionsScreen(
     ) {
         Spacer(Modifier.height(16.dp))
 
-        // Section 1: Button visibility
+        val previewLabel = stringResource(R.string.settings_toolbar_preview)
         SettingsSection(
-            title = stringResource(R.string.settings_section_button_visibility)
+            title = stringResource(R.string.settings_section_toolbar),
+            topContent = {
+                Box(
+                    modifier = Modifier
+                        .layout { measurable, constraints ->
+                            val extra = 32.dp.roundToPx()
+                            val width = constraints.maxWidth + extra
+                            val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
+                            layout(constraints.maxWidth, placeable.height) { placeable.place(-extra / 2, 0) }
+                        }
+                        .padding(top = 4.dp, bottom = 16.dp)
+                        .clearAndSetSemantics { contentDescription = previewLabel }
+                ) {
+                    SwipeActionBarLayout(
+                        showSwipeButtons = uiState.showSwipeButtons,
+                        showArchiveButton = uiState.showArchiveButton,
+                        showFavoriteButton = uiState.showFavoriteButton,
+                        showAddToAlbumButton = uiState.showAddToAlbumButton,
+                        showLockButton = uiState.showLockButton,
+                        sortOrder = uiState.sortOrder,
+                        showButtonLabels = uiState.showToolbarLabels
+                    )
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }
+                    )
+                }
+            }
         ) {
             Column {
-                // 0. Add to album
+                Column(modifier = TilePadding) {
+                    SettingsToggleItemSmall(
+                        title = stringResource(R.string.settings_show_toolbar_labels_label),
+                        checked = uiState.showToolbarLabels,
+                        onCheckedChange = { viewModel.setShowToolbarLabels(it) },
+                        icon = Icons.AutoMirrored.Filled.Label
+                    )
+                }
+
+                SettingsItemGap()
+
                 Column(modifier = TilePadding) {
                     SettingsToggleItemSmall(
                         title = stringResource(R.string.settings_show_add_to_album_label),
@@ -82,7 +122,6 @@ fun InteractionsScreen(
 
                 SettingsItemGap()
 
-                // 1. Keep/Delete
                 Column(modifier = TilePadding) {
                     SettingsToggleItemSmall(
                         title = stringResource(R.string.settings_show_swipe_buttons_label),
@@ -94,7 +133,6 @@ fun InteractionsScreen(
 
                 SettingsItemGap()
 
-                // 2. Archive
                 Column(modifier = TilePadding) {
                     SettingsToggleItemSmall(
                         title = stringResource(R.string.settings_show_archive_label),
@@ -106,7 +144,6 @@ fun InteractionsScreen(
 
                 SettingsItemGap()
 
-                // 3. Lock
                 Column(modifier = TilePadding) {
                     SettingsToggleItemSmall(
                         title = stringResource(R.string.settings_show_lock_label),
@@ -118,7 +155,6 @@ fun InteractionsScreen(
 
                 SettingsItemGap()
 
-                // 4. Favorite (its Auto-advance sub-option stays in the same tile)
                 Column(modifier = TilePadding) {
                     SettingsToggleItemSmall(
                         title = stringResource(R.string.settings_tri_favorite),
@@ -145,7 +181,7 @@ fun InteractionsScreen(
                                 text = stringResource(R.string.settings_auto_next_desc),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.outline,
-                                modifier = Modifier.padding(start = 40.dp, end = 16.dp, bottom = 8.dp)
+                                modifier = Modifier.padding(start = 58.dp, end = 16.dp, bottom = 8.dp)
                             )
                         }
                     }
@@ -155,12 +191,10 @@ fun InteractionsScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // Section 2: Actions
         SettingsSection(
             title = stringResource(R.string.settings_section_actions)
         ) {
             Column {
-                // 5. Tap to swipe
                 Column(modifier = TilePadding) {
                     SettingsToggleItemSmall(
                         title = stringResource(R.string.settings_tap_to_swipe_label),
@@ -172,13 +206,12 @@ fun InteractionsScreen(
                         text = stringResource(R.string.settings_tap_to_swipe_desc),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.padding(start = 40.dp, end = 16.dp, bottom = 8.dp)
+                        modifier = Modifier.padding(start = 58.dp, end = 16.dp, bottom = 8.dp)
                     )
                 }
 
                 SettingsItemGap()
 
-                // 6. Double tap
                 Column(modifier = TilePadding) {
                     SettingsToggleItemSmall(
                         title = stringResource(R.string.settings_double_tap_label),

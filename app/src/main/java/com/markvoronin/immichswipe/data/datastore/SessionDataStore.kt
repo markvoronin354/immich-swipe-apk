@@ -52,6 +52,7 @@ class SessionDataStore(private val context: Context) {
         private val KEY_SHOW_ARCHIVE = booleanPreferencesKey("show_archive")
         private val KEY_SHOW_LOCK = booleanPreferencesKey("show_lock")
         private val KEY_SHOW_ADD_TO_ALBUM = booleanPreferencesKey("show_add_to_album")
+        private val KEY_SHOW_TOOLBAR_LABELS = booleanPreferencesKey("show_toolbar_labels")
         private val KEY_BACKUP_WARNING_SHOWN = booleanPreferencesKey("backup_warning_shown")
         private val KEY_SYNC_LOCAL_DELETION = booleanPreferencesKey("sync_local_deletion")
         private val KEY_TRASH_LOCAL_DELETION = booleanPreferencesKey("trash_local_deletion")
@@ -81,7 +82,6 @@ class SessionDataStore(private val context: Context) {
     }
 
     fun getApiKey(): Flow<String?> {
-        // A stored key that can no longer be decrypted is treated as "no session".
         return context.dataStore.data.map { prefs -> prefs[KEY_API_KEY]?.let { SecretStore.default.decrypt(it) } }
     }
 
@@ -89,7 +89,6 @@ class SessionDataStore(private val context: Context) {
         return context.dataStore.data.map { it[KEY_USER_ID] }
     }
 
-    /** Re-saves a legacy plaintext API key in encrypted form. */
     suspend fun encryptStoredApiKeyIfNeeded() {
         context.dataStore.edit { prefs ->
             val stored = prefs[KEY_API_KEY] ?: return@edit
@@ -135,7 +134,6 @@ class SessionDataStore(private val context: Context) {
         context.dataStore.edit { it[KEY_THEME_MODE] = mode }
     }
 
-    // Falls back to the legacy dynamic-color toggle so existing users keep their current look.
     fun getAppPalette(): Flow<String> = context.dataStore.data.map {
         it[KEY_APP_PALETTE] ?: if (it[KEY_DYNAMIC_COLOR] == false) "OCEAN" else "WALLPAPER"
     }
@@ -259,6 +257,9 @@ class SessionDataStore(private val context: Context) {
 
     fun isShowAddToAlbumButton(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_ADD_TO_ALBUM] ?: true }
     suspend fun saveShowAddToAlbumButton(show: Boolean) { context.dataStore.edit { it[KEY_SHOW_ADD_TO_ALBUM] = show } }
+
+    fun isShowToolbarLabels(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_TOOLBAR_LABELS] ?: true }
+    suspend fun saveShowToolbarLabels(show: Boolean) { context.dataStore.edit { it[KEY_SHOW_TOOLBAR_LABELS] = show } }
 
     fun isBackupWarningShown(): Flow<Boolean> = context.dataStore.data.map { it[KEY_BACKUP_WARNING_SHOWN] ?: false }
     suspend fun saveBackupWarningShown(shown: Boolean) { context.dataStore.edit { it[KEY_BACKUP_WARNING_SHOWN] = shown } }

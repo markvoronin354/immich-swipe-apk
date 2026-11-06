@@ -36,27 +36,24 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AdsClick
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarViewWeek
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.EditCalendar
+import androidx.compose.material.icons.filled.EventRepeat
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.Archive
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhonelinkErase
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.SettingsSuggest
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material3.AlertDialog
@@ -99,7 +96,9 @@ import com.markvoronin.immichswipe.feature.settings.components.InteractionsScree
 import com.markvoronin.immichswipe.feature.settings.components.LogsDialog
 import com.markvoronin.immichswipe.feature.settings.components.PaletteSelector
 import com.markvoronin.immichswipe.feature.settings.components.SettingsClickableItem
+import com.markvoronin.immichswipe.feature.settings.components.SettingsExpandableItem
 import com.markvoronin.immichswipe.feature.settings.components.SettingsItemGap
+import com.markvoronin.immichswipe.feature.settings.components.SettingsItemIcon
 import com.markvoronin.immichswipe.feature.settings.components.SettingsSection
 import com.markvoronin.immichswipe.feature.settings.components.SettingsToggleItem
 import com.markvoronin.immichswipe.feature.settings.components.ThemeModeButton
@@ -227,11 +226,15 @@ fun SettingsScreen(
                     SettingsSection(title = stringResource(R.string.settings_section_appearance)) {
             Column {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = stringResource(R.string.settings_theme_label),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    SettingsItemIcon(Icons.Default.Contrast)
+                    Spacer(Modifier.width(16.dp))
+                    Text(
+                        text = stringResource(R.string.settings_theme_label),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
                 Spacer(Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -336,31 +339,15 @@ fun SettingsScreen(
 
                 SettingsItemGap()
 
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.VolumeUp,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.outline,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Spacer(Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.settings_video_behavior_label),
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_video_behavior_desc),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.outline
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(12.dp))
+                SettingsExpandableItem(
+                    title = stringResource(R.string.settings_video_behavior_label),
+                    subtitle = stringResource(R.string.settings_video_behavior_desc),
+                    icon = Icons.AutoMirrored.Filled.VolumeUp
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         ThemeModeButton(
@@ -413,47 +400,11 @@ fun SettingsScreen(
                     enter = fadeIn() + expandVertically(),
                     exit = fadeOut() + shrinkVertically()
                 ) {
-                    Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
-                        Text(
-                            text = stringResource(R.string.settings_reminder_interval_label),
-                            style = MaterialTheme.typography.titleSmall
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(3.dp)
-                        ) {
-                            ThemeModeButton(
-                                text = stringResource(R.string.settings_reminder_often),
-                                icon = Icons.Default.CalendarViewWeek,
-                                selected = uiState.reminderInterval == ReminderInterval.OFTEN,
-                                onClick = { viewModel.setReminderInterval(ReminderInterval.OFTEN) },
-                                modifier = Modifier.weight(1f),
-                                index = 0, count = 3
-                            )
-                            ThemeModeButton(
-                                text = stringResource(R.string.settings_reminder_rarely),
-                                icon = Icons.Default.CalendarMonth,
-                                selected = uiState.reminderInterval == ReminderInterval.RARELY,
-                                onClick = { viewModel.setReminderInterval(ReminderInterval.RARELY) },
-                                modifier = Modifier.weight(1f),
-                                index = 1, count = 3
-                            )
-                            ThemeModeButton(
-                                text = stringResource(R.string.settings_reminder_custom),
-                                icon = Icons.Default.EditCalendar,
-                                selected = uiState.reminderInterval == ReminderInterval.CUSTOM,
-                                onClick = {
-                                    viewModel.setReminderInterval(ReminderInterval.CUSTOM)
-                                    viewModel.setShowCustomReminderDialog(true)
-                                },
-                                modifier = Modifier.weight(1f),
-                                index = 2, count = 3
-                            )
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = when (uiState.reminderInterval) {
+                    Column {
+                        SettingsItemGap()
+                        SettingsExpandableItem(
+                            title = stringResource(R.string.settings_reminder_interval_label),
+                            subtitle = when (uiState.reminderInterval) {
                                 ReminderInterval.OFTEN -> stringResource(R.string.settings_reminder_often_hint)
                                 ReminderInterval.RARELY -> stringResource(R.string.settings_reminder_rarely_hint)
                                 ReminderInterval.CUSTOM -> pluralStringResource(
@@ -463,24 +414,41 @@ fun SettingsScreen(
                                     uiState.reminderCustomMaxDays
                                 )
                             },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                        if (uiState.reminderInterval == ReminderInterval.CUSTOM) {
-                            Spacer(Modifier.height(4.dp))
-                            TextButton(
-                                onClick = { viewModel.setShowCustomReminderDialog(true) }
+                            icon = Icons.Default.EventRepeat
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
                             ) {
-                                Icon(Icons.Default.EditCalendar, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    text = pluralStringResource(
-                                        R.plurals.settings_reminder_custom_configure,
-                                        uiState.reminderCustomMaxDays.toInt(),
-                                        uiState.reminderCustomMinDays,
-                                        uiState.reminderCustomMaxDays
-                                    ),
-                                    style = MaterialTheme.typography.labelMedium
+                                ThemeModeButton(
+                                    text = stringResource(R.string.settings_reminder_often),
+                                    icon = Icons.Default.CalendarViewWeek,
+                                    selected = uiState.reminderInterval == ReminderInterval.OFTEN,
+                                    onClick = { viewModel.setReminderInterval(ReminderInterval.OFTEN) },
+                                    modifier = Modifier.weight(1f),
+                                    index = 0, count = 3
+                                )
+                                ThemeModeButton(
+                                    text = stringResource(R.string.settings_reminder_rarely),
+                                    icon = Icons.Default.CalendarMonth,
+                                    selected = uiState.reminderInterval == ReminderInterval.RARELY,
+                                    onClick = { viewModel.setReminderInterval(ReminderInterval.RARELY) },
+                                    modifier = Modifier.weight(1f),
+                                    index = 1, count = 3
+                                )
+                                // Tapping Custom (even when already selected) opens the range dialog.
+                                ThemeModeButton(
+                                    text = stringResource(R.string.settings_reminder_custom),
+                                    icon = Icons.Default.EditCalendar,
+                                    selected = uiState.reminderInterval == ReminderInterval.CUSTOM,
+                                    onClick = {
+                                        viewModel.setReminderInterval(ReminderInterval.CUSTOM)
+                                        viewModel.setShowCustomReminderDialog(true)
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    index = 2, count = 3
                                 )
                             }
                         }

@@ -220,6 +220,11 @@ class SettingsViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            sessionRepository.showToolbarLabels.collect { show ->
+                _uiState.update { it.copy(showToolbarLabels = show) }
+            }
+        }
+        viewModelScope.launch {
             sessionRepository.syncLocalDeletion.collect { sync ->
                 _uiState.update { it.copy(syncLocalDeletion = sync) }
             }
@@ -305,12 +310,6 @@ class SettingsViewModel @Inject constructor(
     fun setImmichOpenMode(mode: ImmichOpenMode) {
         viewModelScope.launch {
             sessionRepository.saveImmichOpenMode(mode)
-        }
-    }
-
-    fun setImmichLongPressWeb(enabled: Boolean) {
-        viewModelScope.launch {
-            sessionRepository.saveImmichLongPressWeb(enabled)
         }
     }
 
@@ -405,6 +404,12 @@ class SettingsViewModel @Inject constructor(
     fun setShowAddToAlbumButton(show: Boolean) {
         viewModelScope.launch {
             sessionRepository.saveShowAddToAlbumButton(show)
+        }
+    }
+
+    fun setShowToolbarLabels(show: Boolean) {
+        viewModelScope.launch {
+            sessionRepository.saveShowToolbarLabels(show)
         }
     }
 

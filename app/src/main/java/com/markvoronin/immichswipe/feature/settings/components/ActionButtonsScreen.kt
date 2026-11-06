@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -42,11 +41,14 @@ import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,7 +89,6 @@ fun ActionButtonsScreen(
     ) {
         Spacer(Modifier.height(16.dp))
 
-        // Options List
         Column(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -227,7 +228,7 @@ fun IconPositionPickerCard(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Surface(
-                        shape = CircleShape,
+                        shape = animatedCookieShape(showIcon, MaterialTheme.motionScheme.fastSpatialSpec()),
                         color = if (showIcon) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                         contentColor = if (showIcon) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.outline,
                         modifier = Modifier.size(38.dp)
@@ -339,7 +340,6 @@ fun CornerButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // The four corner buttons form one 2x2 group: only the outer corner of each tile is fully rounded.
     val outer = 24.dp
     val inner = 6.dp
     val top = position == IconPosition.TOP_LEFT || position == IconPosition.TOP_RIGHT
@@ -355,10 +355,8 @@ fun CornerButton(
         onClick = onClick,
         modifier = modifier.width(125.dp),
         tileShape = cornerShape(inner),
-        // Selected tile softens its inner corners but keeps the outer corner that marks its position.
         checkedTileShape = cornerShape(14.dp)
     ) {
-        // The arrow sits on the tile's outer edge, next to the corner it points at.
         val edge = if (left) Alignment.Start else Alignment.End
         val arrow: @Composable () -> Unit = {
             AnimatedVisibility(
@@ -421,7 +419,7 @@ fun ImmichCardAction(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Surface(
-                        shape = CircleShape,
+                        shape = animatedCookieShape(showIcon, MaterialTheme.motionScheme.fastSpatialSpec()),
                         color = if (showIcon) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                         contentColor = if (showIcon) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.outline,
                         modifier = Modifier.size(38.dp)
@@ -602,6 +600,7 @@ fun BetaBadge(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StackOrientationPickerCard(
     orientation: ButtonStackOrientation,
@@ -622,9 +621,9 @@ fun StackOrientationPickerCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    shape = MaterialShapes.Cookie6Sided.toShape(),
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier.size(38.dp)
                 ) {
                     Box(

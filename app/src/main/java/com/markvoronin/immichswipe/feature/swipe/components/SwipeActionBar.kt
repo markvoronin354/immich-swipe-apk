@@ -1,15 +1,26 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,7 +41,6 @@ import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.FloatingActionButton
@@ -41,15 +51,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -57,6 +66,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.SortOrder
@@ -84,17 +94,28 @@ private fun ActionTile(
     icon: @Composable () -> Unit
 ) {
     val pressedShape = RoundedCornerShape(10.dp)
-    val tileModifier = modifier.height(if (showLabel) 56.dp else 48.dp)
+    val height by animateDpAsState(
+        targetValue = if (showLabel) 56.dp else 48.dp,
+        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+        label = "tileHeight"
+    )
+    val tileModifier = modifier.height(height)
     val content: @Composable () -> Unit = {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             icon()
-            if (showLabel) Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(start = 4.dp, top = 4.dp, end = 4.dp)
-            )
+            AnimatedVisibility(
+                visible = showLabel,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(start = 4.dp, top = 4.dp, end = 4.dp)
+                )
+            }
         }
     }
     if (checked == null) {
@@ -127,103 +148,116 @@ private fun ActionTile(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun SwipeActionBar(
-    uiState: SwipeUiState,
-    viewModel: SwipeViewModel,
-    showSortMenu: Boolean,
-    onSortMenuToggle: (Boolean) -> Unit
+private fun animatedTileShape(index: Int, count: Int): Shape {
+    val spec = MaterialTheme.motionScheme.defaultSpatialSpec<Dp>()
+    val start by animateDpAsState(if (index == 0) 24.dp else 6.dp, spec, label = "tileStart")
+    val end by animateDpAsState(if (index == count - 1) 24.dp else 6.dp, spec, label = "tileEnd")
+    return RoundedCornerShape(topStart = start, bottomStart = start, topEnd = end, bottomEnd = end)
+}
+
+@Composable
+private fun RowScope.AnimatedTileSlot(
+    visible: Boolean,
+    weight: Float,
+    content: @Composable () -> Unit
 ) {
+    val progress by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+        label = "tileVisibility"
+    )
+    if (progress > 0f) {
+        Spacer(Modifier.width(3.dp * progress))
+        Box(
+            modifier = Modifier
+                .weight(weight * progress)
+                .graphicsLayer {
+                    alpha = progress.coerceIn(0f, 1f)
+                    clip = true
+                }
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
+fun SwipeActionBarLayout(
+    showSwipeButtons: Boolean,
+    showArchiveButton: Boolean,
+    showFavoriteButton: Boolean,
+    showAddToAlbumButton: Boolean,
+    showLockButton: Boolean,
+    sortOrder: SortOrder,
+    modifier: Modifier = Modifier,
+    showButtonLabels: Boolean = true,
+    undoEnabled: Boolean = true,
+    isFavorite: Boolean = false,
+    isAlbumDialogOpen: Boolean = false,
+    isSortMenuOpen: Boolean = false,
+    isBulkDeleteMode: Boolean = false,
+    isBulkKeepMode: Boolean = false,
+    onDelete: () -> Unit = {},
+    onKeep: () -> Unit = {},
+    onUndo: () -> Unit = {},
+    onArchive: () -> Unit = {},
+    onFavorite: () -> Unit = {},
+    onAddToAlbum: () -> Unit = {},
+    onLock: () -> Unit = {},
+    onSort: () -> Unit = {},
+    deleteButtonModifier: Modifier = Modifier,
+    keepButtonModifier: Modifier = Modifier,
+    sortMenu: @Composable () -> Unit = {}
+) {
+    val horizontalPadding by animateDpAsState(
+        targetValue = if (showSwipeButtons) 16.dp else 24.dp,
+        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+        label = "barPadding"
+    )
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = if (uiState.showSwipeButtons) 16.dp else 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(horizontal = horizontalPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (uiState.showSwipeButtons) {
-            val haptic = LocalHapticFeedback.current
-            var isLongPressActive by remember { mutableStateOf(false) }
-            var dragStartedX by remember { mutableFloatStateOf(0f) }
-            val currentUiStateDelete by rememberUpdatedState(uiState)
-            val densityDelete = LocalDensity.current
-            val stepPxDelete = with(densityDelete) { 36.dp.toPx() }
-
-            FloatingActionButton(
-                onClick = { if (!uiState.isBulkDeleteMode && !uiState.isBulkKeepMode) viewModel.onSwipe(SwipeDecision.DELETE) },
-                containerColor = if (uiState.isBulkDeleteMode) MaterialRed else MaterialTheme.colorScheme.errorContainer,
-                contentColor = if (uiState.isBulkDeleteMode) Color.White else MaterialTheme.colorScheme.onErrorContainer,
-                shape = CircleShape,
-                modifier = Modifier
-                    .size(48.dp)
-                    .pointerInput(Unit) {
-                        detectDragGesturesAfterLongPress(
-                            onDragStart = { offset ->
-                                isLongPressActive = true
-                                dragStartedX = offset.x
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                viewModel.enterBulkMode(isDelete = true)
-                            },
-                            onDragEnd = {
-                                isLongPressActive = false
-                                viewModel.executeBulkAction()
-                            },
-                            onDragCancel = {
-                                isLongPressActive = false
-                                viewModel.exitBulkMode()
-                            },
-                            onDrag = { change, _ ->
-                                change.consume()
-                                if (isLongPressActive) {
-                                    val state = currentUiStateDelete
-                                    val totalDrag = change.position.x - dragStartedX
-                                    if (totalDrag > 0) {
-                                        val itemsToSelect = (totalDrag / stepPxDelete).toInt()
-                                        val selection = mutableSetOf<String>()
-                                        var lastIdx = state.currentIndex
-                                        for (i in 0..itemsToSelect) {
-                                            val idx = state.currentIndex + i
-                                            if (idx < state.assets.size) {
-                                                selection.add(state.assets[idx].id)
-                                                lastIdx = idx
-                                            }
-                                        }
-                                        viewModel.setBulkSelection(selection, lastIdx)
-                                    } else {
-                                        viewModel.setBulkSelection(
-                                            setOfNotNull(state.assets.getOrNull(state.currentIndex)?.id),
-                                            state.currentIndex
-                                        )
-                                    }
-                                }
-                            }
-                        )
-                    }
-            ) {
-                Icon(
-                    imageVector = if (uiState.isBulkDeleteMode) Icons.Default.DeleteSweep else Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.swipe_delete)
-                )
+        AnimatedVisibility(
+            visible = showSwipeButtons,
+            enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
+            exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start)
+        ) {
+            Box(Modifier.padding(end = 12.dp)) {
+                FloatingActionButton(
+                    onClick = onDelete,
+                    containerColor = if (isBulkDeleteMode) MaterialRed else MaterialTheme.colorScheme.errorContainer,
+                    contentColor = if (isBulkDeleteMode) Color.White else MaterialTheme.colorScheme.onErrorContainer,
+                    shape = CircleShape,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .then(deleteButtonModifier)
+                ) {
+                    Icon(
+                        imageVector = if (isBulkDeleteMode) Icons.Default.DeleteSweep else Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.swipe_delete)
+                    )
+                }
             }
         }
 
-        // A connected group: separate tiles with a gap between them, fully rounded only at the outer ends.
         val iconSize = 24.dp
         val tileCount = 2 + listOf(
-            uiState.showArchiveButton,
-            uiState.showFavoriteButton,
-            uiState.showAddToAlbumButton,
-            uiState.showLockButton
+            showArchiveButton,
+            showFavoriteButton,
+            showAddToAlbumButton,
+            showLockButton
         ).count { it }
 
-        // Labels of the visible tiles, used to check whether they all fit.
         val labels = listOfNotNull(
             stringResource(R.string.swipe_undo),
-            stringResource(R.string.swipe_archive).takeIf { uiState.showArchiveButton },
-            stringResource(R.string.swipe_label_favorite).takeIf { uiState.showFavoriteButton },
-            stringResource(R.string.swipe_label_album).takeIf { uiState.showAddToAlbumButton },
-            stringResource(R.string.swipe_locked).takeIf { uiState.showLockButton },
+            stringResource(R.string.swipe_archive).takeIf { showArchiveButton },
+            stringResource(R.string.swipe_label_favorite).takeIf { showFavoriteButton },
+            stringResource(R.string.swipe_label_album).takeIf { showAddToAlbumButton },
+            stringResource(R.string.swipe_locked).takeIf { showLockButton },
             stringResource(R.string.swipe_label_sort)
         )
         val labelStyle = MaterialTheme.typography.labelSmall
@@ -234,25 +268,20 @@ fun SwipeActionBar(
         }
 
         BoxWithConstraints(modifier = Modifier.weight(1f)) {
-            // Show labels only when the widest one fits its tile with some room to spare (label padding + margin).
             val tileWidth = (maxWidth - 3.dp * (tileCount - 1)) / tileCount
-            val showLabels = widestLabel + 16.dp <= tileWidth
+            val showLabels = showButtonLabels && widestLabel + 16.dp <= tileWidth
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
                 var index = 0
-                // The tapped tile grows and its neighbours give way; the weights always sum to the same total.
                 val jiggle = rememberJiggleGroup(tileCount, grow = 0.14f)
 
                 val undoIndex = index++
                 ActionTile(
-                    onClick = { jiggle.tap(undoIndex); viewModel.undo() },
+                    onClick = { jiggle.tap(undoIndex); onUndo() },
                     label = stringResource(R.string.swipe_undo),
                     showLabel = showLabels,
-                    enabled = uiState.history.isNotEmpty(),
-                    shape = connectedTileShape(undoIndex, tileCount, outer = 24.dp),
+                    enabled = undoEnabled,
+                    shape = animatedTileShape(undoIndex, tileCount),
                     modifier = Modifier.weight(jiggle.factor(undoIndex))
                 ) {
                     Icon(
@@ -262,14 +291,17 @@ fun SwipeActionBar(
                     )
                 }
 
-                if (uiState.showArchiveButton) {
-                    val archiveIndex = index++
+                val archiveIndex = if (showArchiveButton) index++ else -1
+                AnimatedTileSlot(
+                    visible = showArchiveButton,
+                    weight = if (archiveIndex >= 0) jiggle.factor(archiveIndex) else 1f
+                ) {
                     ActionTile(
-                        onClick = { jiggle.tap(archiveIndex); viewModel.toggleArchive() },
+                        onClick = { jiggle.tap(archiveIndex); onArchive() },
                         label = stringResource(R.string.swipe_archive),
                         showLabel = showLabels,
-                        shape = connectedTileShape(archiveIndex, tileCount, outer = 24.dp),
-                        modifier = Modifier.weight(jiggle.factor(archiveIndex))
+                        shape = animatedTileShape(archiveIndex, tileCount),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(
                             imageVector = Icons.Default.Archive,
@@ -279,35 +311,40 @@ fun SwipeActionBar(
                     }
                 }
 
-                if (uiState.showFavoriteButton) {
-                    val isFav = uiState.currentAsset?.let { uiState.isFavorite(it.id) } ?: false
-                    val favoriteIndex = index++
+                val favoriteIndex = if (showFavoriteButton) index++ else -1
+                AnimatedTileSlot(
+                    visible = showFavoriteButton,
+                    weight = if (favoriteIndex >= 0) jiggle.factor(favoriteIndex) else 1f
+                ) {
                     ActionTile(
-                        onClick = { jiggle.tap(favoriteIndex); viewModel.toggleFavorite() },
+                        onClick = { jiggle.tap(favoriteIndex); onFavorite() },
                         label = stringResource(R.string.swipe_label_favorite),
                         showLabel = showLabels,
-                        shape = connectedTileShape(favoriteIndex, tileCount, outer = 24.dp),
-                        checked = isFav,
-                        modifier = Modifier.weight(jiggle.factor(favoriteIndex))
+                        shape = animatedTileShape(favoriteIndex, tileCount),
+                        checked = isFavorite,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(
-                            imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = stringResource(R.string.swipe_favorite),
-                            tint = if (isFav) Color.Red else LocalContentColor.current,
+                            tint = if (isFavorite) Color.Red else LocalContentColor.current,
                             modifier = Modifier.size(iconSize)
                         )
                     }
                 }
 
-                if (uiState.showAddToAlbumButton) {
-                    val albumIndex = index++
+                val albumIndex = if (showAddToAlbumButton) index++ else -1
+                AnimatedTileSlot(
+                    visible = showAddToAlbumButton,
+                    weight = if (albumIndex >= 0) jiggle.factor(albumIndex) else 1f
+                ) {
                     ActionTile(
-                        onClick = { jiggle.tap(albumIndex); viewModel.openAddToAlbumDialog() },
+                        onClick = { jiggle.tap(albumIndex); onAddToAlbum() },
                         label = stringResource(R.string.swipe_label_album),
                         showLabel = showLabels,
-                        shape = connectedTileShape(albumIndex, tileCount, outer = 24.dp),
-                        checked = uiState.showAddToAlbumDialog,
-                        modifier = Modifier.weight(jiggle.factor(albumIndex))
+                        shape = animatedTileShape(albumIndex, tileCount),
+                        checked = isAlbumDialogOpen,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(
                             imageVector = Icons.Default.LibraryAdd,
@@ -317,14 +354,17 @@ fun SwipeActionBar(
                     }
                 }
 
-                if (uiState.showLockButton) {
-                    val lockIndex = index++
+                val lockIndex = if (showLockButton) index++ else -1
+                AnimatedTileSlot(
+                    visible = showLockButton,
+                    weight = if (lockIndex >= 0) jiggle.factor(lockIndex) else 1f
+                ) {
                     ActionTile(
-                        onClick = { jiggle.tap(lockIndex); viewModel.toggleLock() },
+                        onClick = { jiggle.tap(lockIndex); onLock() },
                         label = stringResource(R.string.swipe_locked),
                         showLabel = showLabels,
-                        shape = connectedTileShape(lockIndex, tileCount, outer = 24.dp),
-                        modifier = Modifier.weight(jiggle.factor(lockIndex))
+                        shape = animatedTileShape(lockIndex, tileCount),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(
                             imageVector = Icons.Default.Lock,
@@ -335,16 +375,17 @@ fun SwipeActionBar(
                 }
 
                 val sortIndex = index
+                Spacer(Modifier.width(3.dp))
                 Box(modifier = Modifier.weight(jiggle.factor(sortIndex))) {
                     ActionTile(
-                        onClick = { jiggle.tap(sortIndex); onSortMenuToggle(true) },
+                        onClick = { jiggle.tap(sortIndex); onSort() },
                         label = stringResource(R.string.swipe_label_sort),
                         showLabel = showLabels,
-                        shape = connectedTileShape(sortIndex, tileCount, outer = 24.dp),
-                        checked = showSortMenu,
+                        shape = animatedTileShape(sortIndex, tileCount),
+                        checked = isSortMenuOpen,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        val icon = when (uiState.sortOrder) {
+                        val icon = when (sortOrder) {
                             SortOrder.SHUFFLED -> Icons.Default.Shuffle
                             SortOrder.CHRONOLOGICAL_ASC -> Icons.Default.ArrowUpward
                             SortOrder.CHRONOLOGICAL_DESC -> Icons.Default.ArrowDownward
@@ -361,81 +402,130 @@ fun SwipeActionBar(
                         )
                     }
 
-                    if (showSortMenu) {
-                        SortOrderPopupMenu(
-                            uiState = uiState,
-                            viewModel = viewModel,
-                            onDismiss = { onSortMenuToggle(false) }
-                        )
-                    }
+                    sortMenu()
                 }
             }
         }
 
-        if (uiState.showSwipeButtons) {
-            val haptic = LocalHapticFeedback.current
-            var isLongPressActive by remember { mutableStateOf(false) }
-            var dragStartedX by remember { mutableFloatStateOf(0f) }
-            val currentUiStateKeep by rememberUpdatedState(uiState)
-            val densityKeep = LocalDensity.current
-            val stepPxKeep = with(densityKeep) { 36.dp.toPx() }
-
-            FloatingActionButton(
-                onClick = { if (!uiState.isBulkKeepMode && !uiState.isBulkDeleteMode) viewModel.onSwipe(SwipeDecision.KEEP) },
-                containerColor = if (uiState.isBulkKeepMode) MaterialGreen else MaterialGreen,
-                contentColor = Color.White,
-                shape = CircleShape,
-                modifier = Modifier
-                    .size(48.dp)
-                    .pointerInput(Unit) {
-                        detectDragGesturesAfterLongPress(
-                            onDragStart = { offset ->
-                                isLongPressActive = true
-                                dragStartedX = offset.x
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                viewModel.enterBulkMode(isDelete = false)
-                            },
-                            onDragEnd = {
-                                isLongPressActive = false
-                                viewModel.executeBulkAction()
-                            },
-                            onDragCancel = {
-                                isLongPressActive = false
-                                viewModel.exitBulkMode()
-                            },
-                            onDrag = { change, _ ->
-                                change.consume()
-                                if (isLongPressActive) {
-                                    val state = currentUiStateKeep
-                                    val totalDrag = dragStartedX - change.position.x
-                                    if (totalDrag > 0) {
-                                        val itemsToSelect = (totalDrag / stepPxKeep).toInt()
-                                        val selection = mutableSetOf<String>()
-                                        var lastIdx = state.currentIndex
-                                        for (i in 0..itemsToSelect) {
-                                            val idx = state.currentIndex + i
-                                            if (idx < state.assets.size) {
-                                                selection.add(state.assets[idx].id)
-                                                lastIdx = idx
-                                            }
-                                        }
-                                        viewModel.setBulkSelection(selection, lastIdx)
-                                    } else {
-                                        viewModel.setBulkSelection(
-                                            setOfNotNull(state.assets.getOrNull(state.currentIndex)?.id),
-                                            state.currentIndex
-                                        )
-                                    }
-                                }
-                            }
-                        )
-                    }
-            ) {
-                Icon(
-                    imageVector = if (uiState.isBulkKeepMode) Icons.Default.DoneAll else Icons.Default.Check,
-                    contentDescription = stringResource(R.string.swipe_keep)
-                )
+        AnimatedVisibility(
+            visible = showSwipeButtons,
+            enter = fadeIn() + expandHorizontally(expandFrom = Alignment.End),
+            exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.End)
+        ) {
+            Box(Modifier.padding(start = 12.dp)) {
+                FloatingActionButton(
+                    onClick = onKeep,
+                    containerColor = if (isBulkKeepMode) MaterialGreen else MaterialGreen,
+                    contentColor = Color.White,
+                    shape = CircleShape,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .then(keepButtonModifier)
+                ) {
+                    Icon(
+                        imageVector = if (isBulkKeepMode) Icons.Default.DoneAll else Icons.Default.Check,
+                        contentDescription = stringResource(R.string.swipe_keep)
+                    )
+                }
             }
         }
     }
+}
+
+private fun Modifier.bulkDragSelect(
+    haptic: HapticFeedback,
+    uiState: () -> SwipeUiState,
+    viewModel: SwipeViewModel,
+    isDelete: Boolean
+): Modifier = pointerInput(Unit) {
+    var isLongPressActive = false
+    var dragStartedX = 0f
+    val stepPx = 36.dp.toPx()
+    detectDragGesturesAfterLongPress(
+        onDragStart = { offset ->
+            isLongPressActive = true
+            dragStartedX = offset.x
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            viewModel.enterBulkMode(isDelete = isDelete)
+        },
+        onDragEnd = {
+            isLongPressActive = false
+            viewModel.executeBulkAction()
+        },
+        onDragCancel = {
+            isLongPressActive = false
+            viewModel.exitBulkMode()
+        },
+        onDrag = { change, _ ->
+            change.consume()
+            if (isLongPressActive) {
+                val state = uiState()
+                val totalDrag = if (isDelete) change.position.x - dragStartedX else dragStartedX - change.position.x
+                if (totalDrag > 0) {
+                    val itemsToSelect = (totalDrag / stepPx).toInt()
+                    val selection = mutableSetOf<String>()
+                    var lastIdx = state.currentIndex
+                    for (i in 0..itemsToSelect) {
+                        val idx = state.currentIndex + i
+                        if (idx < state.assets.size) {
+                            selection.add(state.assets[idx].id)
+                            lastIdx = idx
+                        }
+                    }
+                    viewModel.setBulkSelection(selection, lastIdx)
+                } else {
+                    viewModel.setBulkSelection(
+                        setOfNotNull(state.assets.getOrNull(state.currentIndex)?.id),
+                        state.currentIndex
+                    )
+                }
+            }
+        }
+    )
+}
+
+@Composable
+fun SwipeActionBar(
+    uiState: SwipeUiState,
+    viewModel: SwipeViewModel,
+    showSortMenu: Boolean,
+    onSortMenuToggle: (Boolean) -> Unit
+) {
+    val notBulk = !uiState.isBulkDeleteMode && !uiState.isBulkKeepMode
+    val haptic = LocalHapticFeedback.current
+    val currentUiState by rememberUpdatedState(uiState)
+    SwipeActionBarLayout(
+        showSwipeButtons = uiState.showSwipeButtons,
+        showArchiveButton = uiState.showArchiveButton,
+        showFavoriteButton = uiState.showFavoriteButton,
+        showAddToAlbumButton = uiState.showAddToAlbumButton,
+        showLockButton = uiState.showLockButton,
+        sortOrder = uiState.sortOrder,
+        showButtonLabels = uiState.showToolbarLabels,
+        undoEnabled = uiState.history.isNotEmpty(),
+        isFavorite = uiState.currentAsset?.let { uiState.isFavorite(it.id) } ?: false,
+        isAlbumDialogOpen = uiState.showAddToAlbumDialog,
+        isSortMenuOpen = showSortMenu,
+        isBulkDeleteMode = uiState.isBulkDeleteMode,
+        isBulkKeepMode = uiState.isBulkKeepMode,
+        onDelete = { if (notBulk) viewModel.onSwipe(SwipeDecision.DELETE) },
+        onKeep = { if (notBulk) viewModel.onSwipe(SwipeDecision.KEEP) },
+        onUndo = viewModel::undo,
+        onArchive = viewModel::toggleArchive,
+        onFavorite = viewModel::toggleFavorite,
+        onAddToAlbum = viewModel::openAddToAlbumDialog,
+        onLock = viewModel::toggleLock,
+        onSort = { onSortMenuToggle(true) },
+        deleteButtonModifier = Modifier.bulkDragSelect(haptic, { currentUiState }, viewModel, isDelete = true),
+        keepButtonModifier = Modifier.bulkDragSelect(haptic, { currentUiState }, viewModel, isDelete = false),
+        sortMenu = {
+            if (showSortMenu) {
+                SortOrderPopupMenu(
+                    uiState = uiState,
+                    viewModel = viewModel,
+                    onDismiss = { onSortMenuToggle(false) }
+                )
+            }
+        }
+    )
 }

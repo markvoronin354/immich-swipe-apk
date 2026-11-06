@@ -16,7 +16,6 @@ import com.markvoronin.immichswipe.core.SessionConfig
 import com.markvoronin.immichswipe.core.SortOrder
 import com.markvoronin.immichswipe.core.SwipeBehavior
 import com.markvoronin.immichswipe.core.SwipeSettings
-import com.markvoronin.immichswipe.core.util.combine6
 import com.markvoronin.immichswipe.core.util.combine7
 import com.markvoronin.immichswipe.data.datastore.SessionDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -158,6 +157,7 @@ class SessionRepository @Inject constructor(
     val showArchiveButton: Flow<Boolean> = dataStore.isShowArchiveButton()
     val showLockButton: Flow<Boolean> = dataStore.isShowLockButton()
     val showAddToAlbumButton: Flow<Boolean> = dataStore.isShowAddToAlbumButton()
+    val showToolbarLabels: Flow<Boolean> = dataStore.isShowToolbarLabels()
     val backupWarningShown: Flow<Boolean> = dataStore.isBackupWarningShown()
     val syncLocalDeletion: Flow<Boolean> = dataStore.isSyncLocalDeletion()
     val trashLocalDeletion: Flow<Boolean> = dataStore.isTrashLocalDeletion()
@@ -263,6 +263,7 @@ class SessionRepository @Inject constructor(
     suspend fun saveShowArchiveButton(show: Boolean) { dataStore.saveShowArchiveButton(show) }
     suspend fun saveShowLockButton(show: Boolean) { dataStore.saveShowLockButton(show) }
     suspend fun saveShowAddToAlbumButton(show: Boolean) { dataStore.saveShowAddToAlbumButton(show) }
+    suspend fun saveShowToolbarLabels(show: Boolean) { dataStore.saveShowToolbarLabels(show) }
     suspend fun saveBackupWarningShown(shown: Boolean) { dataStore.saveBackupWarningShown(shown) }
     suspend fun saveSyncLocalDeletion(sync: Boolean) { dataStore.saveSyncLocalDeletion(sync) }
     suspend fun saveTapToSwipeEnabled(enabled: Boolean) { dataStore.saveTapToSwipeEnabled(enabled) }
@@ -291,7 +292,6 @@ class SessionRepository @Inject constructor(
         dataStore.removeSavedServerUrl(url)
     }
 
-    /** Encrypts API keys saved as plaintext by older versions (idempotent). */
     suspend fun migrateLegacySecrets() {
         dataStore.encryptStoredApiKeyIfNeeded()
         accountRepository.encryptLegacyApiKeys()
@@ -301,10 +301,6 @@ class SessionRepository @Inject constructor(
         dataStore.initializeTutorialStateForInstallOrUpgrade()
     }
 
-    /**
-     * Every setting the swipe screen reacts to, combined into one typed, de-duplicated flow. Built from
-     * small typed groups so nothing needs unchecked casts.
-     */
     val swipeSettings: Flow<SwipeSettings> = combine(
         combine7(
             fullscreenButtonPosition, immichButtonPosition, cardDisplayButtonPosition,

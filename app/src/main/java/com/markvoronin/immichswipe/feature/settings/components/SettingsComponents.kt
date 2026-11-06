@@ -3,11 +3,14 @@ package com.markvoronin.immichswipe.feature.settings.components
 import android.graphics.Matrix
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -35,6 +38,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
@@ -49,17 +54,21 @@ import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -88,8 +97,8 @@ import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.feature.swipe.components.connectedTileShape
 import com.markvoronin.immichswipe.ui.theme.colorScheme
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
-// How much the tapped button grows (as a fraction of its size); neighbours shrink to compensate.
 private const val JiggleGrow = 0.07f
 
 fun Modifier.verticalFadingEdges(
@@ -278,6 +287,7 @@ fun Modifier.horizontalFadingEdges(
 @Composable
 fun SettingsSection(
     title: String,
+    topContent: @Composable () -> Unit = {},
     content: @Composable () -> Unit
 ) {
     Column {
@@ -298,6 +308,7 @@ fun SettingsSection(
                 color = MaterialTheme.colorScheme.primary
             )
         }
+        topContent()
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(28.dp),
@@ -309,10 +320,6 @@ fun SettingsSection(
     }
 }
 
-/**
- * Separates rows inside a [SettingsSection] with a thin gap of page background, splitting it into tiles.
- * Pass [color] when the tiles sit on something other than the page (e.g. a popup).
- */
 @Composable
 fun SettingsItemGap(color: Color = MaterialTheme.colorScheme.background) {
     Spacer(
@@ -321,6 +328,42 @@ fun SettingsItemGap(color: Color = MaterialTheme.colorScheme.background) {
             .height(3.dp)
             .background(color)
     )
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+internal fun SettingsItemIcon(
+    icon: ImageVector,
+    isDestructive: Boolean = false,
+    checked: Boolean? = null,
+    shapeRotation: Float = 0f
+) {
+    val background = when {
+        isDestructive -> MaterialTheme.colorScheme.error
+        checked == null -> MaterialTheme.colorScheme.secondaryContainer
+        checked -> MaterialTheme.colorScheme.primaryContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+    val tint = when {
+        isDestructive -> MaterialTheme.colorScheme.onError
+        checked == null -> MaterialTheme.colorScheme.onSecondaryContainer
+        checked -> MaterialTheme.colorScheme.onPrimaryContainer
+        else -> MaterialTheme.colorScheme.outline
+    }
+    val shape = when {
+        isDestructive -> MaterialShapes.Gem.toShape()
+        checked == null -> MaterialShapes.Cookie6Sided.toShape()
+        else -> animatedCookieShape(checked, MaterialTheme.motionScheme.fastSpatialSpec())
+    }
+    Box(modifier = Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier
+                .matchParentSize()
+                .graphicsLayer { rotationZ = shapeRotation }
+                .background(background, shape)
+        )
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+    }
 }
 
 @Composable
@@ -332,7 +375,6 @@ fun SettingsClickableItem(
     onClick: () -> Unit
 ) {
     val effectiveTitleColor = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-    val effectiveIconColor = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline
 
     Row(
         modifier = Modifier
@@ -341,7 +383,7 @@ fun SettingsClickableItem(
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = effectiveIconColor, modifier = Modifier.size(22.dp))
+        SettingsItemIcon(icon, isDestructive)
         Spacer(Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -378,7 +420,7 @@ fun SettingsToggleItem(
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(22.dp))
+        SettingsItemIcon(icon, checked = checked)
         Spacer(Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -402,7 +444,6 @@ fun SettingsToggleItem(
     }
 }
 
-/** Settings switch with a check icon in the thumb when on (the expressive switch look). */
 @Composable
 fun SettingsSwitch(
     checked: Boolean,
@@ -413,7 +454,6 @@ fun SettingsSwitch(
         checked = checked,
         onCheckedChange = onCheckedChange,
         modifier = modifier,
-        // The track is `primary`, so it always contrasts with the `onPrimary` thumb (unlike the default icon colour).
         colors = SwitchDefaults.colors(checkedIconColor = MaterialTheme.colorScheme.primary),
         thumbContent = if (checked) {
             {
@@ -442,7 +482,22 @@ fun SettingsToggleItemSmall(
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(20.dp))
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .background(
+                    if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                    animatedCookieShape(checked, MaterialTheme.motionScheme.fastSpatialSpec())
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.outline,
+                modifier = Modifier.size(20.dp)
+            )
+        }
         Spacer(Modifier.width(12.dp))
         Text(
             text = title,
@@ -458,10 +513,6 @@ fun SettingsToggleItemSmall(
     }
 }
 
-/**
- * Tracks which button in a group was just tapped so the group can jiggle: the tapped button grows
- * slightly and its neighbours give way, keeping the group's total width constant.
- */
 @Stable
 class JiggleGroup(private val count: Int, private val grow: Float = JiggleGrow) {
     var tappedIndex by mutableIntStateOf(-1)
@@ -478,8 +529,6 @@ class JiggleGroup(private val count: Int, private val grow: Float = JiggleGrow) 
         tappedIndex = -1
     }
 
-    /** Animated size multiplier for the button at [index], ~1 at rest. */
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Composable
     fun factor(index: Int): Float {
         val target = when {
@@ -492,23 +541,18 @@ class JiggleGroup(private val count: Int, private val grow: Float = JiggleGrow) 
     }
 }
 
-/**
- * The jiggle is triggered by the tap itself, not the pressed state: inside a scrolling screen a quick tap
- * reports press and release together, so the pressed state is never observed.
- */
 @Composable
 fun rememberJiggleGroup(count: Int, grow: Float = JiggleGrow): JiggleGroup {
     val group = remember(count, grow) { JiggleGroup(count, grow) }
     LaunchedEffect(group.tapToken) {
         if (group.tappedIndex >= 0) {
-            delay(120)
+            delay(120.milliseconds)
             group.clear()
         }
     }
     return group
 }
 
-/** Flat group button whose icon slides in beside the label only while the button is selected. */
 @Composable
 fun ThemeModeButton(
     text: String,
@@ -544,7 +588,6 @@ fun ThemeModeButton(
     }
 }
 
-/** Unselected tile colour: must contrast with the settings card (surfaceContainerHigh) in both light and dark. */
 @Composable
 private fun unselectedTileColor(): Color =
     if (MaterialTheme.colorScheme.surface.luminance() < 0.5f) {
@@ -553,8 +596,6 @@ private fun unselectedTileColor(): Color =
         MaterialTheme.colorScheme.surfaceContainerLowest
     }
 
-/** Expressive selector button: morphs shape when selected and keeps the settings colours and outline. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsToggleButton(
     selected: Boolean,
@@ -567,7 +608,6 @@ fun SettingsToggleButton(
     content: @Composable RowScope.() -> Unit
 ) {
     val shape = tileShape ?: connectedTileShape(index, count, outer = 24.dp)
-    // Connected groups morph the selected button into a pill; custom tiles use their own checked shape.
     val checkedShape = checkedTileShape ?: if (tileShape == null) CircleShape else shape
     ToggleButton(
         checked = selected,
@@ -597,32 +637,26 @@ fun PaletteSelector(
         AppTheme.LIGHT -> false
         AppTheme.DARK -> true
     }
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(
-            text = stringResource(R.string.settings_palette_label),
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.SemiBold
-        )
-        Text(
-            text = stringResource(R.string.settings_palette_desc),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline
-        )
-        Spacer(Modifier.height(12.dp))
+    fun schemeFor(palette: AppPalette) =
+        if (palette == AppPalette.WALLPAPER && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        } else {
+            palette.colorScheme(dark)
+        }
+    SettingsExpandableItem(
+        title = stringResource(R.string.settings_palette_label),
+        subtitle = stringResource(R.string.settings_palette_desc),
+        icon = Icons.Default.Palette
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
+                .horizontalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             AppPalette.entries.filter { it.isAvailable }.forEach { palette ->
-                val scheme = remember(palette, dark) {
-                    if (palette == AppPalette.WALLPAPER && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-                    } else {
-                        palette.colorScheme(dark)
-                    }
-                }
+                val scheme = remember(palette, dark) { schemeFor(palette) }
                 PaletteSwatch(
                     primary = scheme.primary,
                     secondary = scheme.secondaryContainer,
@@ -646,6 +680,17 @@ private class MorphShape(private val morph: Morph, private val progress: Float) 
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
+internal fun animatedCookieShape(cookie: Boolean, animationSpec: FiniteAnimationSpec<Float>): Shape {
+    val progress by animateFloatAsState(
+        targetValue = if (cookie) 1f else 0f,
+        animationSpec = animationSpec,
+        label = "cookieMorph"
+    )
+    val morph = remember { Morph(MaterialShapes.Circle, MaterialShapes.Cookie9Sided) }
+    return MorphShape(morph, progress)
+}
+
+@Composable
 private fun PaletteSwatch(
     primary: Color,
     secondary: Color,
@@ -654,14 +699,7 @@ private fun PaletteSwatch(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    // The selected swatch morphs from a circle into a cookie shape.
-    val morphProgress by animateFloatAsState(
-        targetValue = if (selected) 1f else 0f,
-        animationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),
-        label = "paletteMorph"
-    )
-    val morph = remember { Morph(MaterialShapes.Circle, MaterialShapes.Cookie9Sided) }
-    val swatchShape = MorphShape(morph, morphProgress)
+    val swatchShape = animatedCookieShape(selected, MaterialTheme.motionScheme.slowSpatialSpec())
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -679,13 +717,7 @@ private fun PaletteSwatch(
                 .padding(5.dp)
                 .clip(swatchShape)
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                Box(Modifier.weight(1f).fillMaxWidth().background(primary))
-                Row(Modifier.weight(1f).fillMaxWidth()) {
-                    Box(Modifier.weight(1f).fillMaxSize().background(secondary))
-                    Box(Modifier.weight(1f).fillMaxSize().background(tertiary))
-                }
-            }
+            SwatchFill(primary, secondary, tertiary)
         }
         Text(
             text = label,
@@ -695,41 +727,61 @@ private fun PaletteSwatch(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun ThemeButton(
-    text: String,
+fun SettingsExpandableItem(
+    title: String,
+    subtitle: String,
     icon: ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    index: Int = 0,
-    count: Int = 1,
+    content: @Composable () -> Unit
 ) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier.height(72.dp),
-        shape = connectedTileShape(index, count, outer = 24.dp),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else unselectedTileColor()
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val chevronRotation by animateFloatAsState(if (expanded) 180f else 0f, label = "expandChevron")
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            SettingsItemIcon(icon, shapeRotation = chevronRotation)
+            Spacer(Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
             Icon(
-                icon,
+                Icons.Default.ExpandMore,
                 contentDescription = null,
-                tint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.outline,
-                modifier = Modifier.size(22.dp)
+                tint = MaterialTheme.colorScheme.outlineVariant,
+                modifier = Modifier.rotate(chevronRotation)
             )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        }
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun SwatchFill(primary: Color, secondary: Color, tertiary: Color) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f).fillMaxWidth().background(primary))
+        Row(Modifier.weight(1f).fillMaxWidth()) {
+            Box(Modifier.weight(1f).fillMaxSize().background(secondary))
+            Box(Modifier.weight(1f).fillMaxSize().background(tertiary))
         }
     }
 }

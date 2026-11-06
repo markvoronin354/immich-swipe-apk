@@ -66,6 +66,7 @@ data class SwipeUiState(
     val showArchiveButton: Boolean = true,
     val showLockButton: Boolean = false,
     val showAddToAlbumButton: Boolean = true,
+    val showToolbarLabels: Boolean = true,
     val showAddToAlbumDialog: Boolean = false,
     val albumsForAddToAlbum: List<Album> = emptyList(),
     val isFetchingAlbumsForDialog: Boolean = false,

@@ -1,13 +1,18 @@
 package com.markvoronin.immichswipe.feature.settings.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -17,17 +22,21 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,7 +48,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.markvoronin.immichswipe.R
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CustomReminderDialog(
     initialMinDays: Long,
@@ -52,16 +64,26 @@ fun CustomReminderDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        icon = {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer, MaterialShapes.Cookie9Sided.toShape()),
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
                     imageVector = Icons.Default.EditCalendar,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-                Spacer(Modifier.width(12.dp))
-                Text(stringResource(R.string.settings_reminder_custom_dialog_title))
             }
+        },
+        title = {
+            Text(
+                text = stringResource(R.string.settings_reminder_custom_dialog_title),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
         },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -96,7 +118,7 @@ fun CustomReminderDialog(
             }
         },
         confirmButton = {
-            Button(onClick = {
+            TextButton(onClick = {
                 onConfirm(minDays, maxDays)
             }) {
                 Text(stringResource(R.string.common_confirm))
@@ -106,8 +128,7 @@ fun CustomReminderDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.common_cancel))
             }
-        },
-        shape = RoundedCornerShape(24.dp)
+        }
     )
 }
 
@@ -131,8 +152,8 @@ private fun DayCounterRow(
             modifier = Modifier.weight(1f)
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(
-                onClick = {
+            RepeatingIconButton(
+                onStep = {
                     val newCount = (count - 1).coerceAtLeast(1L)
                     textValue = newCount.toString()
                     onCountChange(newCount)
@@ -164,24 +185,25 @@ private fun DayCounterRow(
                 ),
                 modifier = Modifier
                     .width(56.dp)
+                    .height(40.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        shape = RoundedCornerShape(8.dp)
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        shape = RoundedCornerShape(12.dp)
                     )
-                    .padding(vertical = 6.dp, horizontal = 4.dp),
+                    .padding(horizontal = 4.dp),
                 decorationBox = { innerTextField ->
                     Row(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         innerTextField()
                     }
                 }
             )
 
-            IconButton(
-                onClick = {
+            RepeatingIconButton(
+                onStep = {
                     val newCount = count + 1
                     textValue = newCount.toString()
                     onCountChange(newCount)
@@ -190,5 +212,42 @@ private fun DayCounterRow(
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_increase))
             }
         }
+    }
+}
+
+@Composable
+private fun RepeatingIconButton(
+    onStep: () -> Unit,
+    enabled: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val currentOnStep by rememberUpdatedState(onStep)
+    var repeated by remember { mutableStateOf(false) }
+
+    LaunchedEffect(pressed) {
+        if (pressed) {
+            repeated = false
+            delay(400.milliseconds)
+            repeated = true
+            var interval = 150L
+            while (true) {
+                currentOnStep()
+                delay(interval.milliseconds)
+                interval = (interval * 0.85).toLong().coerceAtLeast(40L)
+            }
+        }
+    }
+
+    FilledTonalIconButton(
+        onClick = {
+            if (!repeated) currentOnStep()
+            repeated = false
+        },
+        enabled = enabled,
+        interactionSource = interactionSource
+    ) {
+        content()
     }
 }
