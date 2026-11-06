@@ -202,7 +202,7 @@ fun SortOrderPopupMenu(
                                     Icons.Default.Shuffle,
                                     selectedSortOrder == SortOrder.TYPE_VIDEO_FIRST_SHUFFLED || selectedSortOrder == SortOrder.TYPE_PHOTO_FIRST_SHUFFLED
                                 ) {
-                                    selectedSortOrder = if (currentIsPhoto) SortOrder.TYPE_PHOTO_FIRST_SHUFFLED else SortOrder.TYPE_PHOTO_FIRST_SHUFFLED
+                                    selectedSortOrder = if (currentIsPhoto) SortOrder.TYPE_PHOTO_FIRST_SHUFFLED else SortOrder.TYPE_VIDEO_FIRST_SHUFFLED
                                 }
                                 }
                             }
