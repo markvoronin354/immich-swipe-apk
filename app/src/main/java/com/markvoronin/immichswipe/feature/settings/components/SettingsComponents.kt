@@ -664,14 +664,13 @@ private fun PaletteSwatch(
     val swatchShape = MorphShape(morph, morphProgress)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(role = Role.RadioButton, onClick = onClick)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Box(
             modifier = Modifier
                 .size(56.dp)
+                .clip(swatchShape)
+                .clickable(role = Role.RadioButton, onClick = onClick)
                 .border(
                     2.5.dp,
                     if (selected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
