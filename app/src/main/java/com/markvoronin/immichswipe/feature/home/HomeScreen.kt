@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,12 +23,15 @@ import androidx.compose.material.icons.filled.SyncLock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -40,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -92,6 +97,7 @@ private val navKeySaver = Saver<SnapshotStateList<NavKey>, List<String>>(
     }
 )
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
@@ -346,16 +352,31 @@ fun HomeScreen(
     if (uiState.showBackupWarning) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissBackupWarning() },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.SyncLock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.backup_warning_title))
+            icon = {
+                // Same 6-sided cookie and colors as the non-destructive settings dialogs.
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(MaterialTheme.colorScheme.secondaryContainer, MaterialShapes.Cookie6Sided.toShape()),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SyncLock,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
                 }
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.backup_warning_title),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
             },
             text = { Text(stringResource(R.string.backup_warning_msg)) },
             confirmButton = {
-                Button(onClick = { viewModel.dismissBackupWarning() }) {
+                TextButton(onClick = { viewModel.dismissBackupWarning() }) {
                     Text(stringResource(R.string.common_confirm))
                 }
             },
@@ -368,8 +389,7 @@ fun HomeScreen(
                 }) {
                     Text(stringResource(R.string.backup_warning_settings))
                 }
-            },
-            shape = RoundedCornerShape(24.dp)
+            }
         )
     }
 
