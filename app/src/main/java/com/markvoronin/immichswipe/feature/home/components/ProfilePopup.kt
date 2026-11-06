@@ -95,9 +95,9 @@ fun ProfilePopup(
     ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
+                .fillMaxWidth(0.92f)
                 .fillMaxHeight(0.85f)
-                .padding(16.dp),
+                .padding(vertical = 16.dp),
             shape = RoundedCornerShape(28.dp),
             color = popupColor
         ) {
