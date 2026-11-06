@@ -46,9 +46,6 @@ class HomeViewModel @Inject constructor(
     private val sessionManager: SessionManager
 ) : ViewModel() {
 
-    private val activeUserId: String
-        get() = sessionManager.getUserId() ?: ""
-    
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -402,18 +399,6 @@ class HomeViewModel @Inject constructor(
 
     fun requestReset() {
         _resetRequestChannel.trySend(Unit)
-    }
-
-    fun toggleGlobalResetConfirmation(visible: Boolean) {
-        _uiState.update { it.copy(showGlobalResetConfirmation = visible) }
-    }
-
-    fun resetAllDecisions() {
-        viewModelScope.launch {
-            swipeDecisionRepository.clearUserData(activeUserId)
-            toggleGlobalResetConfirmation(false)
-             refreshAlbums()
-        }
     }
 
     fun getSessionRepository() = sessionRepository

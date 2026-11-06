@@ -7,7 +7,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -448,38 +447,6 @@ fun HomeScreen(
         StatsPopup(
             stats = uiState.stats,
             onClose = { viewModel.toggleStatsPopup(visible = false) }
-        )
-    }
-
-    if (uiState.showGlobalResetConfirmation) {
-        AlertDialog(
-            onDismissRequest = { viewModel.toggleGlobalResetConfirmation(false) },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.RestartAlt,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.home_global_reset_confirm_title))
-                }
-            },
-            text = { Text(stringResource(R.string.home_global_reset_confirm_msg)) },
-            confirmButton = {
-                Button(
-                    onClick = { viewModel.resetAllDecisions() },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text(stringResource(R.string.common_confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.toggleGlobalResetConfirmation(false) }) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            },
-            shape = RoundedCornerShape(24.dp)
         )
     }
 

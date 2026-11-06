@@ -29,8 +29,6 @@
     <!-- Home Screen -->
     <string name="home_search_placeholder">Search an album…</string>
     <string name="home_no_results">No albums match your search</string>
-    <string name="home_global_reset_confirm_title">Reset All Progress?</string>
-    <string name="home_global_reset_confirm_msg">This will permanently delete ALL local sorting decisions for ALL albums and collections for this account.\n\nDecisions already synced to Immich (deleted or archived) will NOT be affected.\n\nDo you want to continue?</string>
     <string name="home_error_title">Oops! An error occurred</string>
     <string name="home_retry_button">Retry</string>
     <string name="home_status_in_progress">In progress</string>

@@ -280,9 +280,8 @@ class HomeViewModelTest {
         vm.toggleProfilePopup(true)
         vm.toggleStatsPopup(true)
         vm.onSearchQueryChanged("trip")
-        vm.toggleGlobalResetConfirmation(true)
         val open = vm.uiState.value
-        assertTrue(open.showProfilePopup && open.showStatsPopup && open.showGlobalResetConfirmation)
+        assertTrue(open.showProfilePopup && open.showStatsPopup)
         assertEquals("trip", open.searchQuery)
 
         vm.toggleCategory(AlbumStatus.COMPLETED)
@@ -371,18 +370,6 @@ class HomeViewModelTest {
 
         coVerify(exactly = 0) { sessionRepository.saveSession(any(), any(), any()) }
         coVerify(exactly = 0) { accountRepository.updateLastActive(any()) }
-    }
-
-    @Test
-    fun `a full reset clears the active user's decisions and refreshes`() {
-        val vm = createViewModel()
-        vm.toggleGlobalResetConfirmation(true)
-        vm.resetAllDecisions()
-        dispatcher.scheduler.advanceUntilIdle()
-
-        coVerify { swipeDecisionRepository.clearUserData("u1") }
-        assertFalse(vm.uiState.value.showGlobalResetConfirmation)
-        coVerify(atLeast = 2) { albumRepository.getAlbumsRaw() }
     }
 
     @Test

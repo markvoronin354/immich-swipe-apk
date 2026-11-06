@@ -48,8 +48,7 @@ data class HomeUiState(
     ),
     val savedAccounts: List<AccountSummary> = emptyList(),
     val isLoggingInToAnotherAccount: Boolean = false,
-    val showBackupWarning: Boolean = false,
-    val showGlobalResetConfirmation: Boolean = false
+    val showBackupWarning: Boolean = false
 ) {
 
     val filteredAlbums: List<Album>

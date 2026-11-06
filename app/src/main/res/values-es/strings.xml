@@ -29,8 +29,6 @@
     <!-- Pantalla de inicio -->
     <string name="home_search_placeholder">Buscar un álbum…</string>
     <string name="home_no_results">Ningún álbum coincide con tu búsqueda</string>
-    <string name="home_global_reset_confirm_title">¿Restablecer todo el progreso?</string>
-    <string name="home_global_reset_confirm_msg">Esto eliminará de forma permanente TODAS las decisiones de clasificación locales para TODOS los álbumes y colecciones de esta cuenta.\n\nLas decisiones ya sincronizadas con Immich (eliminadas o archivadas) NO se verán afectadas.\n\n¿Desea continuar?</string>
     <string name="home_error_title">¡Vaya! Se ha producido un error</string>
     <string name="home_retry_button">Reintentar</string>
     <string name="home_status_in_progress">En curso</string>
