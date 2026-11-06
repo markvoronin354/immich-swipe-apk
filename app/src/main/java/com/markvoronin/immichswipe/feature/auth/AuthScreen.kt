@@ -1,11 +1,7 @@
 package com.markvoronin.immichswipe.feature.auth
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -36,14 +32,12 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -76,7 +70,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
@@ -98,6 +91,28 @@ fun AuthScreen(
     var apiKeyVisible by remember { mutableStateOf(false) }
     var urlDropdownExpanded by remember { mutableStateOf(false) }
     var showLogsDialog by remember { mutableStateOf(false) }
+
+    val errorMessage = state.error?.let { error ->
+        when (error) {
+            AuthError.EmptyFields -> stringResource(R.string.login_error_empty)
+            AuthError.Dns -> stringResource(R.string.login_error_dns)
+            AuthError.Timeout -> stringResource(R.string.login_error_timeout)
+            AuthError.Refused -> stringResource(R.string.login_error_refused)
+            AuthError.Auth -> stringResource(R.string.login_error_auth)
+            AuthError.Forbidden -> stringResource(R.string.login_error_forbidden)
+            AuthError.NotFound -> stringResource(R.string.login_error_not_found)
+            AuthError.Ssl -> stringResource(R.string.login_error_ssl)
+            is AuthError.Server -> stringResource(R.string.login_error_server, error.code)
+            is AuthError.Unknown -> error.message ?: stringResource(R.string.login_error_unknown)
+        }
+    }
+    // Key errors go under the API Key field; everything else is about reaching the server.
+    val apiKeyHasError = when (state.error) {
+        AuthError.Auth, AuthError.Forbidden -> true
+        AuthError.EmptyFields -> state.baseUrl.isNotBlank()
+        else -> false
+    }
+    val urlHasError = state.error != null && !apiKeyHasError
 
     val versionName = remember {
         try {
@@ -210,6 +225,10 @@ fun AuthScreen(
                                 }
                             }
                         } else null,
+                        isError = urlHasError,
+                        supportingText = if (urlHasError) {
+                            { Text(errorMessage.orEmpty()) }
+                        } else null,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Uri,
                             imeAction = ImeAction.Next
@@ -226,11 +245,7 @@ fun AuthScreen(
                                 contentType = ContentType.Username
                             },
                         singleLine = true,
-                        shape = fieldShape,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                        )
+                        shape = fieldShape
                     )
 
                     DropdownMenu(
@@ -291,6 +306,10 @@ fun AuthScreen(
                             )
                         }
                     },
+                    isError = apiKeyHasError,
+                    supportingText = if (apiKeyHasError) {
+                        { Text(errorMessage.orEmpty()) }
+                    } else null,
                     visualTransformation = if (apiKeyVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
@@ -303,26 +322,19 @@ fun AuthScreen(
                             contentType = ContentType.Password
                         },
                     singleLine = true,
-                    shape = fieldShape,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                    )
+                    shape = fieldShape
                 )
 
                 Spacer(Modifier.height(4.dp))
 
                 var showApiKeyTutorial by remember { mutableStateOf(false) }
 
-                Text(
-                    text = stringResource(R.string.login_api_key_tutorial_link),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 4.dp)
-                        .clickable { showApiKeyTutorial = true }
-                )
+                TextButton(
+                    onClick = { showApiKeyTutorial = true },
+                    modifier = Modifier.align(Alignment.Start)
+                ) {
+                    Text(stringResource(R.string.login_api_key_tutorial_link))
+                }
 
                 if (showApiKeyTutorial) {
                     androidx.compose.material3.AlertDialog(
@@ -371,16 +383,12 @@ fun AuthScreen(
                         .fillMaxWidth()
                         .height(52.dp),
                     enabled = !state.isLoading,
-                    shape = CircleShape,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+                    shape = CircleShape
                 ) {
                     if (state.isLoading) {
                         WavyLoadingIndicator(
                             size = 24.dp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             strokeWidth = 2.dp
                         )
                     } else {
@@ -454,32 +462,6 @@ fun AuthScreen(
                     }
                 }
 
-                AnimatedVisibility(
-                    visible = state.error != null,
-                    enter = fadeIn() + expandVertically()
-                ) {
-                    state.error?.let { error ->
-                        val errorMessage = when (error) {
-                            AuthError.EmptyFields -> stringResource(R.string.login_error_empty)
-                            AuthError.Dns -> stringResource(R.string.login_error_dns)
-                            AuthError.Timeout -> stringResource(R.string.login_error_timeout)
-                            AuthError.Refused -> stringResource(R.string.login_error_refused)
-                            AuthError.Auth -> stringResource(R.string.login_error_auth)
-                            AuthError.Forbidden -> stringResource(R.string.login_error_forbidden)
-                            AuthError.NotFound -> stringResource(R.string.login_error_not_found)
-                            AuthError.Ssl -> stringResource(R.string.login_error_ssl)
-                            is AuthError.Server -> stringResource(R.string.login_error_server, error.code)
-                            is AuthError.Unknown -> error.message ?: stringResource(R.string.login_error_unknown)
-                        }
-                        Text(
-                            text = errorMessage,
-                            color = MaterialTheme.colorScheme.error,
-                            fontSize = 13.sp,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
-                }
-
                 if (state.success) {
                     Text(
                         text = stringResource(R.string.login_success),
@@ -499,16 +481,13 @@ fun AuthScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline
                 )
-                Text(
-                    text = stringResource(R.string.login_logs_button),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .clickable { showLogsDialog = true }
-                        .padding(horizontal = 4.dp, vertical = 2.dp)
-                )
+                TextButton(onClick = { showLogsDialog = true }) {
+                    Text(
+                        text = stringResource(R.string.login_logs_button),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
 
