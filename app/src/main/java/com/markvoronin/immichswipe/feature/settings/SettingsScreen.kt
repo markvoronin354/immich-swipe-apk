@@ -18,6 +18,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -59,11 +60,14 @@ import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -81,6 +85,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.markvoronin.immichswipe.R
@@ -108,6 +113,7 @@ enum class SettingsSubMenu {
     NONE, INTERACTIONS, ACTION_BUTTONS
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
@@ -665,28 +671,39 @@ fun SettingsScreen(
             if (showRemoveAllConfirmation) {
                 AlertDialog(
                     onDismissRequest = { showRemoveAllConfirmation = false },
-                    title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                    icon = {
+                        // Same gem shape and error color as the destructive settings rows.
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(MaterialTheme.colorScheme.error, MaterialShapes.Gem.toShape()),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.DeleteSweep,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error
+                                tint = MaterialTheme.colorScheme.onError
                             )
-                            Spacer(Modifier.width(12.dp))
-                            Text(stringResource(R.string.profile_remove_all_accounts_confirm_title))
                         }
+                    },
+                    title = {
+                        Text(
+                            text = stringResource(R.string.profile_remove_all_accounts_confirm_title),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     },
                     text = {
                         Text(stringResource(R.string.profile_remove_all_accounts_confirm_msg))
                     },
                     confirmButton = {
-                        Button(
+                        TextButton(
                             onClick = {
                                 showRemoveAllConfirmation = false
                                 viewModel.removeAllAccounts()
                             },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
                             )
                         ) {
                             Text(stringResource(R.string.profile_remove_all_accounts_button))
