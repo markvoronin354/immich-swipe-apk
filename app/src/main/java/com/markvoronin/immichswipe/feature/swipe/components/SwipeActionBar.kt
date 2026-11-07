@@ -148,7 +148,7 @@ private fun ActionTile(
         FilledTonalIconToggleButton(
             checked = checked,
             onCheckedChange = { onClick() },
-            shapes = IconButtonDefaults.toggleableShapes(shape = shape, pressedShape = pressedShape, checkedShape = shape),
+            shapes = IconButtonDefaults.toggleableShapes(shape = shape, pressedShape = pressedShape, checkedShape = CircleShape),
             colors = IconButtonDefaults.filledTonalIconToggleButtonColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 contentColor = MaterialTheme.colorScheme.onSurface,
@@ -168,6 +168,17 @@ private fun animatedTileShape(index: Int, count: Int): Shape {
     val start by animateDpAsState(if (index == 0) 24.dp else 6.dp, spec, label = "tileStart")
     val end by animateDpAsState(if (index == count - 1) 24.dp else 6.dp, spec, label = "tileEnd")
     return RoundedCornerShape(topStart = start, bottomStart = start, topEnd = end, bottomEnd = end)
+}
+
+/** Weight multiplier that widens a tile while it is checked, as in an M3 Expressive button group. */
+@Composable
+internal fun checkedWidthFactor(checked: Boolean): Float {
+    val factor by animateFloatAsState(
+        targetValue = if (checked) 1.2f else 1f,
+        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+        label = "checkedWidth"
+    )
+    return factor
 }
 
 @Composable
@@ -363,9 +374,12 @@ fun SwipeActionBarLayout(
                             animationSpec = spatialSpec,
                             label = "dragScale"
                         )
+                        val widthFactor = checkedWidthFactor(
+                            (button == ToolbarButton.FAVORITE && isFavorite) || (button == ToolbarButton.ALBUM && isAlbumDialogOpen)
+                        )
                         AnimatedTileSlot(
                             visible = button in shown,
-                            weight = if (tileIndex >= 0) jiggle.factor(tileIndex) else 1f,
+                            weight = if (tileIndex >= 0) jiggle.factor(tileIndex) * widthFactor else 1f,
                             modifier = Modifier
                                 .zIndex(if (dragged == button) 1f else 0f)
                                 .graphicsLayer {
@@ -440,7 +454,7 @@ fun SwipeActionBarLayout(
 
                 val sortIndex = index
                 Spacer(Modifier.width(3.dp))
-                Box(modifier = Modifier.weight(jiggle.factor(sortIndex))) {
+                Box(modifier = Modifier.weight(jiggle.factor(sortIndex) * checkedWidthFactor(isSortMenuOpen))) {
                     ActionTile(
                         onClick = { jiggle.tap(sortIndex); onSort() },
                         label = stringResource(R.string.swipe_label_sort),

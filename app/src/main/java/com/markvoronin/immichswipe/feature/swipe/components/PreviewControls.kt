@@ -128,6 +128,14 @@ fun PreviewControls(
             // The tapped tile grows and its neighbours give way; the widths always sum to the same total.
             val jiggle = rememberJiggleGroup(buttonCount, grow = 0.14f)
             val pressedShape = RoundedCornerShape(10.dp)
+            val undoIndex = if (onUndo != null) 0 else -1
+            val favoriteIndex = undoIndex + 1
+            val muteIndex = favoriteIndex + 1
+            // A checked tile widens and the others narrow; the toolbar keeps its total width.
+            val undoWeight = if (onUndo != null) jiggle.factor(undoIndex) else 0f
+            val favoriteWeight = jiggle.factor(favoriteIndex) * checkedWidthFactor(isFavorite)
+            val muteWeight = if (showMute) jiggle.factor(muteIndex) * checkedWidthFactor(isMuted) else 0f
+            val unitWidth = 56.dp * buttonCount / (undoWeight + favoriteWeight + muteWeight)
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(3.dp),
@@ -135,16 +143,13 @@ fun PreviewControls(
                     .align(Alignment.BottomCenter)
                     .padding(bottom = previewToolbarBottom(isLandscape))
             ) {
-                var index = 0
-
                 if (onUndo != null) {
-                    val i = index++
-                    val shape = connectedTileShape(i, buttonCount)
+                    val shape = connectedTileShape(undoIndex, buttonCount)
                     FilledTonalIconButton(
-                        onClick = { jiggle.tap(i); onUndo() },
+                        onClick = { jiggle.tap(undoIndex); onUndo() },
                         shapes = IconButtonDefaults.shapes(shape = shape, pressedShape = pressedShape),
                         colors = buttonColors,
-                        modifier = Modifier.size(width = 56.dp * jiggle.factor(i), height = PreviewToolbarHeight)
+                        modifier = Modifier.size(width = unitWidth * undoWeight, height = PreviewToolbarHeight)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Undo,
@@ -153,7 +158,6 @@ fun PreviewControls(
                     }
                 }
 
-                val favoriteIndex = index++
                 val favoriteShape = connectedTileShape(favoriteIndex, buttonCount)
                 FilledTonalIconToggleButton(
                     checked = isFavorite,
@@ -161,10 +165,10 @@ fun PreviewControls(
                     shapes = IconButtonDefaults.toggleableShapes(
                         shape = favoriteShape,
                         pressedShape = pressedShape,
-                        checkedShape = favoriteShape
+                        checkedShape = CircleShape
                     ),
                     colors = toggleColors,
-                    modifier = Modifier.size(width = 56.dp * jiggle.factor(favoriteIndex), height = PreviewToolbarHeight)
+                    modifier = Modifier.size(width = unitWidth * favoriteWeight, height = PreviewToolbarHeight)
                 ) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -173,7 +177,6 @@ fun PreviewControls(
                 }
 
                 if (showMute) {
-                    val muteIndex = index
                     val muteShape = connectedTileShape(muteIndex, buttonCount)
                     FilledTonalIconToggleButton(
                         checked = isMuted,
@@ -181,10 +184,10 @@ fun PreviewControls(
                         shapes = IconButtonDefaults.toggleableShapes(
                             shape = muteShape,
                             pressedShape = pressedShape,
-                            checkedShape = muteShape
+                            checkedShape = CircleShape
                         ),
                         colors = toggleColors,
-                        modifier = Modifier.size(width = 56.dp * jiggle.factor(muteIndex), height = PreviewToolbarHeight)
+                        modifier = Modifier.size(width = unitWidth * muteWeight, height = PreviewToolbarHeight)
                     ) {
                         Icon(
                             imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
