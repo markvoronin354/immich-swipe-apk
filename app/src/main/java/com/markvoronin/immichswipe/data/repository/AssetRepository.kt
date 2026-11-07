@@ -33,7 +33,10 @@ data class AssetBatch(
     val assets: List<Asset>,
     val total: Int,
     val isLocalCache: Boolean = false,
-    val isSyncing: Boolean = false
+    val isSyncing: Boolean = false,
+    // Sync progress only: carries no assets, and the deck keeps what it already shows.
+    val isProgressOnly: Boolean = false,
+    val loadedCount: Int = assets.size
 )
 
 // Provided by RepositoryModule (the constructor has optional parameters Dagger cannot satisfy).
@@ -281,7 +284,8 @@ class AssetRepository(
         val allFetchedAssets = mappedLocal.toMutableList()
         val fetchedIds = cachedEntities.map { it.assetId }.toMutableSet()
         val allServerFetchedIds = mutableSetOf<String>()
-        
+        val emitsProgressively = sortOrder == SortOrder.CHRONOLOGICAL_DESC || sortOrder == SortOrder.CHRONOLOGICAL_ASC
+
         var nextPage: String? = "1"
         while (nextPage != null) {
             if (sessionManager.getUserId() != userId) {
@@ -321,7 +325,12 @@ class AssetRepository(
                     
                     // Progressive emission. The list was seeded from the cache snapshot, so drop what was removed since.
                     if (removedDuringSync.isNotEmpty()) allFetchedAssets.removeAll { it.id in removedDuringSync }
-                    send(AssetBatch(allFetchedAssets.toList(), effectiveTotal, isLocalCache = false, isSyncing = resp.assets.nextPage != null))
+                    if (emitsProgressively) {
+                        send(AssetBatch(allFetchedAssets.toList(), effectiveTotal, isLocalCache = false, isSyncing = resp.assets.nextPage != null))
+                    } else {
+                        // Pages arrive in date order, so partial lists would keep reshuffling the deck. Report progress only.
+                        send(AssetBatch(emptyList(), effectiveTotal, isSyncing = true, isProgressOnly = true, loadedCount = allFetchedAssets.size))
+                    }
                 }
                 nextPage = resp.assets.nextPage
                 if (allFetchedAssets.size > 500000) break

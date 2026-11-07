@@ -35,8 +35,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.DoubleTapAction
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.feature.common.SolidShapeLoadingIndicator
 import com.markvoronin.immichswipe.feature.common.WavyLoadingBar
-import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.home.components.ErrorView
 import com.markvoronin.immichswipe.feature.swipe.SwipeUiState
 import com.markvoronin.immichswipe.feature.swipe.SwipeViewModel
@@ -61,7 +61,7 @@ fun SwipeCardDeck(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                WavyLoadingIndicator()
+                SolidShapeLoadingIndicator(size = 48.dp)
                 if (uiState.syncTotalCount > 0) {
                     Text(
                         text = stringResource(R.string.swipe_loading_metadata, uiState.syncLoadedCount, uiState.syncTotalCount),

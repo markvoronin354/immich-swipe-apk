@@ -1,6 +1,7 @@
 package com.markvoronin.immichswipe.data.repository
 
 import com.markvoronin.immichswipe.core.SessionManager
+import com.markvoronin.immichswipe.core.SortOrder
 import com.markvoronin.immichswipe.data.api.ImmichApi
 import com.markvoronin.immichswipe.data.api.SearchAssetResult
 import com.markvoronin.immichswipe.data.api.SearchAssetsRequest
@@ -16,6 +17,8 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AssetRepositorySyncTest {
@@ -62,5 +65,41 @@ class AssetRepositorySyncTest {
             batches.map { batch -> batch.assets.map { it.id } }
         )
         assertEquals(listOf("a2"), db.keys.toList())
+    }
+
+    @Test
+    fun `a non-chronological first sync reports progress only and sends the assets once at the end`() = runBlocking {
+        // Empty cache; the server has a1 on page 1 and a2 on page 2.
+        val db = linkedMapOf<String, AlbumAssetEntity>()
+        @Suppress("UNCHECKED_CAST")
+        val dao = fake<AlbumAssetDao> { name, args ->
+            when (name) {
+                "getAssetsShuffled" -> db.values.toList()
+                "getAssetCountForAlbum" -> db.size
+                "insertAlbumAssets" -> (args[0] as List<AlbumAssetEntity>).forEach { db[it.assetId] = it }
+                else -> Unit
+            }
+        }
+        val sessionManager = mockk<SessionManager> { every { getUserId() } returns "u" }
+        val api = fake<ImmichApi> { name, args ->
+            when (name) {
+                "getSearchStatistics" -> SearchStatisticsResponse(2)
+                "searchAssets" -> if ((args[0] as SearchAssetsRequest).page == 1) {
+                    SearchResponse(SearchAssetResult(listOf(asset("a1")), 2, nextPage = "2"))
+                } else {
+                    SearchResponse(SearchAssetResult(listOf(asset("a2")), 2))
+                }
+                else -> Unit
+            }
+        }
+        val repo = AssetRepository(sessionManager, api, dao)
+
+        val batches = repo.getAssetsByAlbum(Album.VIRTUAL_ALL_ID, userId = "u", sortOrder = SortOrder.SHUFFLED).toList()
+
+        val progress = batches.dropLast(1)
+        assertTrue(progress.all { it.isProgressOnly && it.assets.isEmpty() })
+        assertEquals(listOf(1, 2), progress.map { it.loadedCount })
+        assertEquals(setOf("a1", "a2"), batches.last().assets.map { it.id }.toSet())
+        assertFalse(batches.last().isProgressOnly)
     }
 }

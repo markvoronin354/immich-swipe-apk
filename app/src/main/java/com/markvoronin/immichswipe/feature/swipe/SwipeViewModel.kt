@@ -245,6 +245,10 @@ class SwipeViewModel @Inject constructor(
                     shuffleSeed = sessionManager.globalShuffleSeed
                 )
             }.buffer(Channel.RENDEZVOUS).collect { batch ->
+                if (batch.isProgressOnly) {
+                    _uiState.update { it.copy(syncLoadedCount = batch.loadedCount, syncTotalCount = batch.total) }
+                    return@collect
+                }
                 _uiState.update { it.copy(
                     remoteTotalCount = if (!batch.isLocalCache || batch.total > it.remoteTotalCount) batch.total else it.remoteTotalCount,
                     syncLoadedCount = batch.assets.size,
