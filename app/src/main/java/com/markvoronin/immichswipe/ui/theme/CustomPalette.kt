@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName")
+
 package com.markvoronin.immichswipe.ui.theme
 
 import androidx.compose.material3.ColorScheme
