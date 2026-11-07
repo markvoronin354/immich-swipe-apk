@@ -471,44 +471,59 @@ fun SettingsToggleItemSmall(
     title: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    icon: ImageVector
+    icon: ImageVector,
+    description: String? = null
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp)
             .clickable { onCheckedChange(!checked) }
-            .padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        Box(
+        Row(
             modifier = Modifier
-                .size(38.dp)
-                .background(
-                    if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                    animatedCookieShape(checked, MaterialTheme.motionScheme.fastSpatialSpec())
-                ),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .height(48.dp)
+                .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.outline,
-                modifier = Modifier.size(20.dp)
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .background(
+                        if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        animatedCookieShape(checked, MaterialTheme.motionScheme.fastSpatialSpec())
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f)
+            )
+            SettingsSwitch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                modifier = Modifier.scale(0.8f)
             )
         }
-        Spacer(Modifier.width(12.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.weight(1f)
-        )
-        SettingsSwitch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            modifier = Modifier.scale(0.8f)
-        )
+        if (description != null) {
+            Text(
+                text = description,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(start = 58.dp, end = 16.dp, bottom = 8.dp)
+            )
+        }
     }
 }
 

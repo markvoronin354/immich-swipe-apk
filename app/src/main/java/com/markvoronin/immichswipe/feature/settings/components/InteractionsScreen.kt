@@ -43,8 +43,6 @@ import com.markvoronin.immichswipe.feature.settings.SettingsUiState
 import com.markvoronin.immichswipe.feature.settings.SettingsViewModel
 import com.markvoronin.immichswipe.feature.swipe.components.SwipeActionBarLayout
 
-private val TilePadding = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-
 @Composable
 fun InteractionsScreen(
     uiState: SettingsUiState,
@@ -106,62 +104,52 @@ fun InteractionsScreen(
             }
         ) {
             Column {
-                Column(modifier = TilePadding) {
-                    SettingsToggleItemSmall(
-                        title = stringResource(R.string.settings_show_toolbar_labels_label),
-                        checked = uiState.showToolbarLabels,
-                        onCheckedChange = { viewModel.setShowToolbarLabels(it) },
-                        icon = Icons.AutoMirrored.Filled.Label
-                    )
-                }
+                SettingsToggleItemSmall(
+                    title = stringResource(R.string.settings_show_toolbar_labels_label),
+                    checked = uiState.showToolbarLabels,
+                    onCheckedChange = { viewModel.setShowToolbarLabels(it) },
+                    icon = Icons.AutoMirrored.Filled.Label
+                )
 
                 SettingsItemGap()
 
-                Column(modifier = TilePadding) {
-                    SettingsToggleItemSmall(
-                        title = stringResource(R.string.settings_show_add_to_album_label),
-                        checked = uiState.showAddToAlbumButton,
-                        onCheckedChange = { viewModel.setShowAddToAlbumButton(it) },
-                        icon = Icons.Default.LibraryAdd
-                    )
-                }
+                SettingsToggleItemSmall(
+                    title = stringResource(R.string.settings_show_add_to_album_label),
+                    checked = uiState.showAddToAlbumButton,
+                    onCheckedChange = { viewModel.setShowAddToAlbumButton(it) },
+                    icon = Icons.Default.LibraryAdd
+                )
 
                 SettingsItemGap()
 
-                Column(modifier = TilePadding) {
-                    SettingsToggleItemSmall(
-                        title = stringResource(R.string.settings_show_swipe_buttons_label),
-                        checked = uiState.showSwipeButtons,
-                        onCheckedChange = { viewModel.setShowSwipeButtons(it) },
-                        icon = Icons.Default.AdsClick
-                    )
-                }
+                SettingsToggleItemSmall(
+                    title = stringResource(R.string.settings_show_swipe_buttons_label),
+                    checked = uiState.showSwipeButtons,
+                    onCheckedChange = { viewModel.setShowSwipeButtons(it) },
+                    icon = Icons.Default.AdsClick
+                )
 
                 SettingsItemGap()
 
-                Column(modifier = TilePadding) {
-                    SettingsToggleItemSmall(
-                        title = stringResource(R.string.settings_show_archive_label),
-                        checked = uiState.showArchiveButton,
-                        onCheckedChange = { viewModel.setShowArchiveButton(it) },
-                        icon = Icons.Default.Archive
-                    )
-                }
+                SettingsToggleItemSmall(
+                    title = stringResource(R.string.settings_show_archive_label),
+                    checked = uiState.showArchiveButton,
+                    onCheckedChange = { viewModel.setShowArchiveButton(it) },
+                    icon = Icons.Default.Archive
+                )
 
                 SettingsItemGap()
 
-                Column(modifier = TilePadding) {
-                    SettingsToggleItemSmall(
-                        title = stringResource(R.string.settings_show_lock_label),
-                        checked = uiState.showLockButton,
-                        onCheckedChange = { viewModel.setShowLockButton(it) },
-                        icon = Icons.Default.Lock
-                    )
-                }
+                SettingsToggleItemSmall(
+                    title = stringResource(R.string.settings_show_lock_label),
+                    checked = uiState.showLockButton,
+                    onCheckedChange = { viewModel.setShowLockButton(it) },
+                    icon = Icons.Default.Lock
+                )
 
                 SettingsItemGap()
 
-                Column(modifier = TilePadding) {
+                Column {
                     SettingsToggleItemSmall(
                         title = stringResource(R.string.settings_tri_favorite),
                         checked = uiState.showFavoriteButton,
@@ -175,19 +163,14 @@ fun InteractionsScreen(
                         exit = shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec())
                     ) {
                         Column(modifier = Modifier.padding(start = 16.dp)) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp)
 
                             SettingsToggleItemSmall(
                                 title = stringResource(R.string.settings_auto_next_label),
                                 checked = uiState.autoNextOnFav,
                                 onCheckedChange = { viewModel.setAutoNextOnFav(it) },
-                                icon = Icons.AutoMirrored.Filled.Forward
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_auto_next_desc),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline,
-                                modifier = Modifier.padding(start = 58.dp, end = 16.dp, bottom = 8.dp)
+                                icon = Icons.AutoMirrored.Filled.Forward,
+                                description = stringResource(R.string.settings_auto_next_desc)
                             )
                         }
                     }
@@ -201,24 +184,17 @@ fun InteractionsScreen(
             title = stringResource(R.string.settings_section_actions)
         ) {
             Column {
-                Column(modifier = TilePadding) {
-                    SettingsToggleItemSmall(
-                        title = stringResource(R.string.settings_tap_to_swipe_label),
-                        checked = uiState.tapToSwipeEnabled,
-                        onCheckedChange = { viewModel.setTapToSwipeEnabled(it) },
-                        icon = Icons.Default.TouchApp
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_tap_to_swipe_desc),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.padding(start = 58.dp, end = 16.dp, bottom = 8.dp)
-                    )
-                }
+                SettingsToggleItemSmall(
+                    title = stringResource(R.string.settings_tap_to_swipe_label),
+                    checked = uiState.tapToSwipeEnabled,
+                    onCheckedChange = { viewModel.setTapToSwipeEnabled(it) },
+                    icon = Icons.Default.TouchApp,
+                    description = stringResource(R.string.settings_tap_to_swipe_desc)
+                )
 
                 SettingsItemGap()
 
-                Column(modifier = TilePadding) {
+                Column {
                     SettingsToggleItemSmall(
                         title = stringResource(R.string.settings_double_tap_label),
                         checked = uiState.doubleTapEnabled,
@@ -234,7 +210,7 @@ fun InteractionsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 8.dp, bottom = 8.dp),
+                                .padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
                             horizontalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
                             ThemeModeButton(
