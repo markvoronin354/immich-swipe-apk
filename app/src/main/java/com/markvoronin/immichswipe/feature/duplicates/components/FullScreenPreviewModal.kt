@@ -1,10 +1,7 @@
 package com.markvoronin.immichswipe.feature.duplicates.components
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -276,9 +273,10 @@ fun FullScreenPreviewModal(
     var dismissOffsetY by remember { mutableFloatStateOf(0f) }
     var isDraggingDismiss by remember { mutableStateOf(false) }
 
+    val motionScheme = MaterialTheme.motionScheme
     val animDismissOffsetY by animateFloatAsState(
         targetValue = dismissOffsetY,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium),
+        animationSpec = motionScheme.fastSpatialSpec(),
         label = "FullScreenDismiss"
     )
 
@@ -290,7 +288,7 @@ fun FullScreenPreviewModal(
     var isDraggingBoundary by remember { mutableStateOf(false) }
     val animBoundaryDragX by animateFloatAsState(
         targetValue = boundaryDragX,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+        animationSpec = motionScheme.fastSpatialSpec(),
         label = "ClusterBoundaryDrag"
     )
 
@@ -304,7 +302,7 @@ fun FullScreenPreviewModal(
         val direction = if (currentClusterIdx > lastClusterIdx) 1f else -1f
         lastClusterIdx = currentClusterIdx
         clusterSlide.snapTo(direction)
-        clusterSlide.animateTo(0f, tween(durationMillis = 250))
+        clusterSlide.animateTo(0f, motionScheme.fastSpatialSpec())
     }
 
     Dialog(
@@ -670,6 +668,11 @@ fun FullScreenPreviewModal(
                             }
                         }
 
+                    // Lets ZoomableBox keep panning within the photo itself; null (box bounds) when EXIF has no size.
+                    val zoomAspectRatio = currentAsset.exifInfo
+                        ?.takeIf { (it.imageWidth ?: 0) > 0 && (it.imageHeight ?: 0) > 0 }
+                        ?.displayAspectRatio
+
                     if (currentAsset.type == "VIDEO") {
                         DuplicateVideoPlayer(
                             asset = currentAsset,
@@ -685,6 +688,7 @@ fun FullScreenPreviewModal(
                                 ZoomableBox(
                                     modifier = Modifier.fillMaxSize(),
                                     resetOnRelease = false,
+                                    aspectRatio = zoomAspectRatio,
                                     enableDoubleTapZoom = isZoomedIn,
                                     onIsZoomedChanged = { zoomed ->
                                         isZoomedIn = zoomed
@@ -706,6 +710,7 @@ fun FullScreenPreviewModal(
                             ZoomableBox(
                                 modifier = Modifier.fillMaxSize(),
                                 resetOnRelease = false,
+                                aspectRatio = zoomAspectRatio,
                                 enableDoubleTapZoom = isZoomedIn,
                                 onIsZoomedChanged = { zoomed ->
                                     isZoomedIn = zoomed

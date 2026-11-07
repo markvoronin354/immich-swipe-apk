@@ -44,4 +44,11 @@ data class ExifInfo(
     val imageHeight: Int? = null,
     val make: String? = null,
     val model: String? = null
-)
+) {
+    // exifImageWidth/Height are pre-orientation; EXIF orientations 5-8 (and ±90) display rotated, so swap them.
+    val displayAspectRatio: Float
+        get() {
+            val ratio = (imageWidth?.toFloat() ?: 1f) / (imageHeight?.toFloat() ?: 1f)
+            return if (orientation in setOf("5", "6", "7", "8", "90", "-90")) 1f / ratio else ratio
+        }
+}

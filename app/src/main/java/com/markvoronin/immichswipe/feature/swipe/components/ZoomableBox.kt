@@ -1,10 +1,8 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animate
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.PressGestureScope
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.calculateCentroid
@@ -13,6 +11,7 @@ import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,6 +52,7 @@ fun ZoomableBox(
     }
 
     val scope = rememberCoroutineScope()
+    val motionScheme = MaterialTheme.motionScheme
     var fillScale by remember(aspectRatio) { mutableFloatStateOf(1f) }
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -73,16 +73,31 @@ fun ZoomableBox(
         onIsZoomedChanged?.invoke(isZoomedIn)
     }
 
+    // Limits the offset so the scaled image (fitted by aspectRatio) never pans past its own edges.
+    fun clampOffset(o: Offset, s: Float): Offset {
+        val w = boxSize.width.toFloat()
+        val h = boxSize.height.toFloat()
+        if (w <= 0f || h <= 0f) return o
+        var contentW = w
+        var contentH = h
+        if (aspectRatio != null) {
+            if (aspectRatio > w / h) contentH = w / aspectRatio else contentW = h * aspectRatio
+        }
+        val maxX = ((contentW * s - w) / 2f).coerceAtLeast(0f)
+        val maxY = ((contentH * s - h) / 2f).coerceAtLeast(0f)
+        return Offset(o.x.coerceIn(-maxX, maxX), o.y.coerceIn(-maxY, maxY))
+    }
+
     fun resetZoom() {
         if (resetOnRelease) {
             scope.launch {
-                launch { animatedScale.animateTo(if (isFillMode) fillScale else 1f, spring(dampingRatio = Spring.DampingRatioLowBouncy)) }
-                launch { animatedOffset.animateTo(Offset.Zero, spring(dampingRatio = Spring.DampingRatioLowBouncy)) }
+                launch { animatedScale.animateTo(if (isFillMode) fillScale else 1f, motionScheme.fastEffectsSpec()) }
+                launch { animatedOffset.animateTo(Offset.Zero, motionScheme.fastEffectsSpec()) }
             }
         } else {
             scope.launch {
-                launch { animate(scale, 1f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)) { v, _ -> scale = v } }
-                launch { animate(typeConverter = Offset.VectorConverter, initialValue = offset, targetValue = Offset.Zero, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)) { v, _ -> offset = v } }
+                launch { animate(scale, 1f, animationSpec = motionScheme.fastEffectsSpec()) { v, _ -> scale = v } }
+                launch { animate(typeConverter = Offset.VectorConverter, initialValue = offset, targetValue = Offset.Zero, animationSpec = motionScheme.fastEffectsSpec()) { v, _ -> offset = v } }
             }
         }
     }
@@ -90,8 +105,8 @@ fun ZoomableBox(
     LaunchedEffect(isFillMode, fillScale) {
         val target = if (isFillMode) fillScale else 1f
         if (resetOnRelease) {
-            launch { animatedScale.animateTo(target, spring(dampingRatio = Spring.DampingRatioLowBouncy)) }
-            launch { animatedOffset.animateTo(Offset.Zero, spring(dampingRatio = Spring.DampingRatioLowBouncy)) }
+            launch { animatedScale.animateTo(target, motionScheme.fastSpatialSpec()) }
+            launch { animatedOffset.animateTo(Offset.Zero, motionScheme.fastSpatialSpec()) }
         } else {
             scale = target
             offset = Offset.Zero
@@ -128,7 +143,9 @@ fun ZoomableBox(
                                 val effectiveZoomChange = if (oldScale > 0.0001f) newScale / oldScale else 1f
 
                                 val oldOffset = if (resetOnRelease) animatedOffset.value else offset
-                                val newOffset = (centroid - size.toSize().center) * (1f - effectiveZoomChange) + (oldOffset * effectiveZoomChange) + panChange
+                                val rawOffset = (centroid - size.toSize().center) * (1f - effectiveZoomChange) + (oldOffset * effectiveZoomChange) + panChange
+                                // Keep the content within bounds so zooming out never leaves a large offset to snap back from.
+                                val newOffset = clampOffset(rawOffset, newScale)
 
                                 if (resetOnRelease) {
                                     scope.launch {
@@ -145,10 +162,10 @@ fun ZoomableBox(
                             if (panChange != Offset.Zero) {
                                 if (resetOnRelease) {
                                     scope.launch {
-                                        animatedOffset.snapTo(animatedOffset.value + panChange)
+                                        animatedOffset.snapTo(clampOffset(animatedOffset.value + panChange, animatedScale.value))
                                     }
                                 } else {
-                                    offset += panChange
+                                    offset = clampOffset(offset + panChange, scale)
                                 }
                                 event.changes.forEach { it.consume() }
                             }
@@ -173,10 +190,10 @@ fun ZoomableBox(
                             } else if (!resetOnRelease) {
                                 val targetScale = 3f
                                 val zoomChange = targetScale / scale
-                                val targetOffset = (tapOffset - boxSize.toSize().center) * (1f - zoomChange) + offset * zoomChange
+                                val targetOffset = clampOffset((tapOffset - boxSize.toSize().center) * (1f - zoomChange) + offset * zoomChange, targetScale)
                                 scope.launch {
-                                    launch { animate(scale, targetScale, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)) { v, _ -> scale = v } }
-                                    launch { animate(typeConverter = Offset.VectorConverter, initialValue = offset, targetValue = targetOffset, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)) { v, _ -> offset = v } }
+                                    launch { animate(scale, targetScale, animationSpec = motionScheme.fastSpatialSpec()) { v, _ -> scale = v } }
+                                    launch { animate(typeConverter = Offset.VectorConverter, initialValue = offset, targetValue = targetOffset, animationSpec = motionScheme.fastSpatialSpec()) { v, _ -> offset = v } }
                                 }
                             }
                         }

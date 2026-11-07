@@ -127,6 +127,7 @@ fun SwipeCard(
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val scope = rememberCoroutineScope()
+    val motionScheme = MaterialTheme.motionScheme
     val offsetX = remember(asset.id) { Animatable(0f) }
     // A card restored by undo starts below the screen and springs up into the stack.
     val offsetY = remember(asset.id) { Animatable(if (enterFromBelow && !isNext) 1500f else 0f) }
@@ -154,7 +155,7 @@ fun SwipeCard(
     LaunchedEffect(offsetY) {
         if (isEnteringFromBelow) {
             try {
-                offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
+                offsetY.animateTo(0f, motionScheme.fastSpatialSpec())
             } finally {
                 isEnteringFromBelow = false
             }
@@ -295,13 +296,13 @@ fun SwipeCard(
 
     val animatedScale by animateFloatAsState(
         targetValue = targetScale,
-        animationSpec = if (isTracking) tween(0) else spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+        animationSpec = if (isTracking) tween(0) else motionScheme.fastSpatialSpec(),
         label = "ScaleAnimation"
     )
 
     val animatedAlpha by animateFloatAsState(
         targetValue = targetAlpha,
-        animationSpec = if (isTracking) tween(0) else spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+        animationSpec = if (isTracking) tween(0) else motionScheme.defaultEffectsSpec(),
         label = "AlphaAnimation"
     )
 
@@ -324,11 +325,11 @@ fun SwipeCard(
                         },
                         onDragEnd = {
                             scope.launch {
-                                launch { panelStretch.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy)) }
+                                launch { panelStretch.animateTo(0f, motionScheme.fastSpatialSpec()) }
                                 if (currentIsHolding) {
-                                    offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
-                                    offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
-                                    panelProgress.animateTo(startProgress, spring(dampingRatio = Spring.DampingRatioLowBouncy))
+                                    offsetX.animateTo(0f, motionScheme.fastSpatialSpec())
+                                    offsetY.animateTo(0f, motionScheme.fastSpatialSpec())
+                                    panelProgress.animateTo(startProgress, motionScheme.fastSpatialSpec())
                                     dragDirection = 0
                                     wasHoldDetected = false
                                     pausedByHoldState = false
@@ -360,8 +361,8 @@ fun SwipeCard(
                                         offsetX.animateTo(-1500f, tween(150))
                                         actions.onSwipe(com.markvoronin.immichswipe.feature.swipe.SwipeDecision.DELETE)
                                     } else {
-                                        launch { offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy)) }
-                                        offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
+                                        launch { offsetY.animateTo(0f, motionScheme.fastSpatialSpec()) }
+                                        offsetX.animateTo(0f, motionScheme.fastSpatialSpec())
                                     }
                                 } else if (dragDirection == 2) { // Vertical metadata
                                     if (offsetX.value != 0f) {
@@ -393,24 +394,24 @@ fun SwipeCard(
                                     panelProgress.animateTo(
                                         targetValue = targetProgress,
                                         initialVelocity = progressVelocity,
-                                        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)
+                                        animationSpec = motionScheme.fastSpatialSpec()
                                     )
                                 } else {
                                     // Small movement, reset both
-                                    offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
-                                    offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
-                                    panelProgress.animateTo(startProgress, spring(dampingRatio = Spring.DampingRatioLowBouncy))
+                                    offsetX.animateTo(0f, motionScheme.fastSpatialSpec())
+                                    offsetY.animateTo(0f, motionScheme.fastSpatialSpec())
+                                    panelProgress.animateTo(startProgress, motionScheme.fastSpatialSpec())
                                 }
                                 dragDirection = 0
                             }
                         },
                         onDragCancel = {
                             scope.launch {
-                                launch { panelStretch.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy)) }
+                                launch { panelStretch.animateTo(0f, motionScheme.fastSpatialSpec()) }
                                 if (currentIsHolding) {
-                                    offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
-                                    offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
-                                    panelProgress.animateTo(startProgress, spring(dampingRatio = Spring.DampingRatioLowBouncy))
+                                    offsetX.animateTo(0f, motionScheme.fastSpatialSpec())
+                                    offsetY.animateTo(0f, motionScheme.fastSpatialSpec())
+                                    panelProgress.animateTo(startProgress, motionScheme.fastSpatialSpec())
                                     dragDirection = 0
                                     wasHoldDetected = false
                                     pausedByHoldState = false
@@ -421,8 +422,8 @@ fun SwipeCard(
                                 val velocityY = velocity.y
 
                                 if (dragDirection == 1) {
-                                    launch { offsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy)) }
-                                    offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy))
+                                    launch { offsetY.animateTo(0f, motionScheme.fastSpatialSpec()) }
+                                    offsetX.animateTo(0f, motionScheme.fastSpatialSpec())
                                 } else {
                                     if (offsetX.value != 0f) {
                                         offsetX.snapTo(0f)
@@ -438,10 +439,10 @@ fun SwipeCard(
                                     panelProgress.animateTo(
                                         targetValue = targetProgress,
                                         initialVelocity = progressVelocity,
-                                        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)
+                                        animationSpec = motionScheme.fastSpatialSpec()
                                     )
                                 } else {
-                                    panelProgress.animateTo(startProgress, spring(dampingRatio = Spring.DampingRatioLowBouncy))
+                                    panelProgress.animateTo(startProgress, motionScheme.fastSpatialSpec())
                                 }
                                 dragDirection = 0
                             }
@@ -534,7 +535,7 @@ fun SwipeCard(
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             shape = RoundedCornerShape(28.dp)
         ) {
-            val animatedRotation by animateFloatAsState(targetValue = config.rotationAngle.toFloat(), label = "rotationZ")
+            val animatedRotation by animateFloatAsState(targetValue = config.rotationAngle.toFloat(), animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(), label = "rotationZ")
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -597,10 +598,9 @@ fun SwipeCard(
                                 ZoomableBox(
                                     modifier = Modifier.fillMaxSize(),
                                     resetOnRelease = true,
-                                    aspectRatio = asset.exifInfo?.let { (imageWidth, imageHeight) ->
+                                    aspectRatio = asset.exifInfo?.let { exif ->
                                         val baseAR =
-                                            (imageWidth?.toFloat() ?: 1f) / (imageHeight?.toFloat()
-                                                ?: 1f)
+                                            exif.displayAspectRatio
                                         if (config.rotationAngle % 180 != 0) 1f / baseAR else baseAR
                                     },
                                     isFillMode = config.cardDisplayMode == CardDisplayMode.FILL,
@@ -609,7 +609,7 @@ fun SwipeCard(
                                             scope.launch {
                                                 panelProgress.animateTo(
                                                     0f,
-                                                    spring(dampingRatio = Spring.DampingRatioLowBouncy)
+                                                    motionScheme.fastSpatialSpec()
                                                 )
                                             }
                                         } else if (!ignoreNextTap) {
@@ -646,7 +646,7 @@ fun SwipeCard(
                                                 scope.launch {
                                                     panelProgress.animateTo(
                                                         0f,
-                                                        spring(dampingRatio = Spring.DampingRatioLowBouncy)
+                                                        motionScheme.fastSpatialSpec()
                                                     )
                                                 }
                                                 ignoreNextTap = true
@@ -726,9 +726,9 @@ fun SwipeCard(
                         modifier = Modifier.fillMaxSize(),
                         resetOnRelease = true,
                         enabled = !isNext,
-                        aspectRatio = asset.exifInfo?.let { (imageWidth, imageHeight) ->
+                        aspectRatio = asset.exifInfo?.let { exif ->
                             val baseAR =
-                                (imageWidth?.toFloat() ?: 1f) / (imageHeight?.toFloat() ?: 1f)
+                                exif.displayAspectRatio
                             if (config.rotationAngle % 180 != 0) 1f / baseAR else baseAR
                         },
                         isFillMode = config.cardDisplayMode == CardDisplayMode.FILL,
@@ -737,7 +737,7 @@ fun SwipeCard(
                                 scope.launch {
                                     panelProgress.animateTo(
                                         0f,
-                                        spring(dampingRatio = Spring.DampingRatioLowBouncy)
+                                        motionScheme.fastSpatialSpec()
                                     )
                                 }
                             } else if (!ignoreNextTap) {
@@ -773,7 +773,7 @@ fun SwipeCard(
                                     scope.launch {
                                         panelProgress.animateTo(
                                             0f,
-                                            spring(dampingRatio = Spring.DampingRatioLowBouncy)
+                                            motionScheme.fastSpatialSpec()
                                         )
                                     }
                                     ignoreNextTap = true
@@ -844,8 +844,8 @@ fun SwipeCard(
                     ) {
                         AnimatedVisibility(
                             visible = !isHoldingByPress && !wasHoldDetected,
-                            enter = fadeIn(),
-                            exit = fadeOut()
+                            enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
+                            exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec())
                         ) {
                             Surface(
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
@@ -914,11 +914,11 @@ fun SwipeCard(
                                     scope.launch {
                                         offsetX.animateTo(
                                             0f,
-                                            spring(dampingRatio = Spring.DampingRatioLowBouncy)
+                                            motionScheme.fastSpatialSpec()
                                         )
                                         panelProgress.animateTo(
                                             0f,
-                                            spring(dampingRatio = Spring.DampingRatioLowBouncy)
+                                            motionScheme.fastSpatialSpec()
                                         )
                                     }
                                 },
@@ -943,7 +943,7 @@ fun SwipeCard(
                                 },
                                 onDragEnd = { velocityY ->
                                     scope.launch {
-                                        launch { panelStretch.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy)) }
+                                        launch { panelStretch.animateTo(0f, motionScheme.fastSpatialSpec()) }
                                         if (offsetX.value != 0f) {
                                             offsetX.snapTo(0f)
                                         }
@@ -974,7 +974,7 @@ fun SwipeCard(
                                         panelProgress.animateTo(
                                             targetValue = targetProgress,
                                             initialVelocity = progressVelocity,
-                                            animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)
+                                            animationSpec = motionScheme.fastSpatialSpec()
                                         )
                                     }
                                 },
@@ -1015,8 +1015,8 @@ fun SwipeCard(
                 // Mute/Unmute popup indicator
                 androidx.compose.animation.AnimatedVisibility(
                     visible = showMuteIndicator,
-                    enter = fadeIn() + scaleIn(initialScale = 0.8f),
-                    exit = fadeOut() + scaleOut(targetScale = 1.2f),
+                    enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()) + scaleIn(MaterialTheme.motionScheme.defaultSpatialSpec(), initialScale = 0.8f),
+                    exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()) + scaleOut(MaterialTheme.motionScheme.defaultSpatialSpec(), targetScale = 1.2f),
                     modifier = Modifier.align(Alignment.Center)
                 ) {
                     Box(

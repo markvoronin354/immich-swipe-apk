@@ -7,10 +7,8 @@ import android.content.res.Configuration
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -115,6 +113,7 @@ fun FullscreenViewer(
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
     val scope = rememberCoroutineScope()
+    val motionScheme = MaterialTheme.motionScheme
 
     var isHoldingByPress by remember(asset.id) { mutableStateOf(false) }
     var wasHoldDetected by remember(asset.id) { mutableStateOf(false) }
@@ -167,7 +166,7 @@ fun FullscreenViewer(
     
     val controlsOffset by animateDpAsState(
         targetValue = if (controlsVisible && isLandscape) 64.dp else 0.dp,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        animationSpec = motionScheme.fastSpatialSpec(),
         label = "ControlsShift"
     )
 
@@ -325,8 +324,8 @@ fun FullscreenViewer(
                     if (showSizeIndicator && nextAsset.type != "VIDEO") {
                         AnimatedVisibility(
                             visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
-                            enter = fadeIn(),
-                            exit = fadeOut(),
+                            enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
+                            exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
                             modifier = Modifier.align(Alignment.BottomCenter)
                         ) {
                             Surface(
@@ -390,7 +389,7 @@ fun FullscreenViewer(
                                 scope.launch {
                                     if (currentIsHolding) {
                                         launch { swipeY.animateTo(0f) }
-                                        launch { swipeX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy)) }
+                                        launch { swipeX.animateTo(0f, motionScheme.fastSpatialSpec()) }
                                         wasHoldDetected = false
                                         pausedByHoldState = false
                                         return@launch
@@ -406,14 +405,14 @@ fun FullscreenViewer(
                                         performSwipe(SwipeDecision.DELETE)
                                     } else {
                                         launch { swipeY.animateTo(0f) }
-                                        launch { swipeX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy)) }
+                                        launch { swipeX.animateTo(0f, motionScheme.fastSpatialSpec()) }
                                     }
                                 }
                             },
                             onDragCancel = {
                                 scope.launch {
                                     launch { swipeY.animateTo(0f) }
-                                    launch { swipeX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy)) }
+                                    launch { swipeX.animateTo(0f, motionScheme.fastSpatialSpec()) }
                                     wasHoldDetected = false
                                     pausedByHoldState = false
                                 }
@@ -521,14 +520,13 @@ fun FullscreenViewer(
                                 },
                                 aspectRatio = asset.exifInfo?.let {
                                     val baseAR =
-                                        (it.imageWidth?.toFloat() ?: 1f) / (it.imageHeight?.toFloat()
-                                            ?: 1f)
+                                        it.displayAspectRatio
                                     if (rotation % 180 != 0) 1f / baseAR else baseAR
                                 }
                             ) {
                                 val animatedRotation by animateFloatAsState(
                                     targetValue = rotation.toFloat(),
-                                    label = "FullscreenVideoRotation"
+                                    animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(), label = "FullscreenVideoRotation"
                                 )
 
                                 Box(
@@ -608,13 +606,13 @@ fun FullscreenViewer(
                     },
                     aspectRatio = asset.exifInfo?.let {
                         val baseAR =
-                            (it.imageWidth?.toFloat() ?: 1f) / (it.imageHeight?.toFloat() ?: 1f)
+                            it.displayAspectRatio
                         if (rotation % 180 != 0) 1f / baseAR else baseAR
                     }
                 ) {
                     val animatedRotation by animateFloatAsState(
                         targetValue = rotation.toFloat(),
-                        label = "FullscreenRotation"
+                        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(), label = "FullscreenRotation"
                     )
 
                     val photoRequest = remember(asset.id, baseUrlClean, asset.isGif, isFullSize, asset.exifInfo?.orientation) {
@@ -663,8 +661,8 @@ fun FullscreenViewer(
             if (showSizeIndicator && asset.type != "VIDEO") {
                 AnimatedVisibility(
                     visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
-                    enter = fadeIn(),
-                    exit = fadeOut(),
+                    enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
+                    exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
                     modifier = Modifier.align(Alignment.BottomCenter)
                 ) {
                     Surface(
