@@ -1,9 +1,10 @@
 package com.markvoronin.immichswipe.feature.home.components
 
-import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -28,34 +29,31 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.BrokenImage
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.SubcomposeAsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
@@ -66,9 +64,6 @@ import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.feature.home.AlbumStatus
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
 import com.markvoronin.immichswipe.ui.theme.VirtualGold
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun AlbumGrid(
@@ -84,7 +79,8 @@ fun AlbumGrid(
     baseUrl: String = "",
 ) {
     val state = rememberLazyGridState()
-    var expansionTimes by remember { mutableStateOf<Map<AlbumStatus, Long>>(emptyMap()) }
+    val sectionExpansions = rememberSectionExpansions(collapsedCategories)
+    val animatedRowLimit = rememberAnimatedRowLimit(itemsPerRow = 3)
 
     Box(modifier = modifier.fillMaxSize()) {
         ExpressivePullToRefresh(
@@ -99,8 +95,7 @@ fun AlbumGrid(
                     .fillMaxSize()
                     .verticalFadingEdges(state, length = 32.dp),
                 contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 120.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 val statusOrder = listOf(
                     AlbumStatus.IN_PROGRESS,
@@ -108,6 +103,7 @@ fun AlbumGrid(
                     AlbumStatus.COMPLETED,
                     AlbumStatus.VIRTUAL
                 )
+                val firstStatus = statusOrder.firstOrNull { !groupedAlbums[it].isNullOrEmpty() }
 
                 statusOrder.forEach { status ->
                     val albumsInStatus = groupedAlbums[status]
@@ -124,57 +120,40 @@ fun AlbumGrid(
                                 AlbumStatus.COMPLETED -> stringResource(R.string.home_status_completed)
                                 AlbumStatus.VIRTUAL -> stringResource(R.string.home_status_virtual)
                             }
-                            Row(
+                            SectionHeader(
+                                label = statusLabel,
+                                count = albumsInStatus.size,
+                                isCollapsed = isCollapsed,
+                                attachedBelow = false,
+                                labelColor = if (status == AlbumStatus.VIRTUAL)
+                                    VirtualGold
+                                else
+                                    MaterialTheme.colorScheme.primary,
+                                onClick = { onToggleCategory(status) },
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        if (isCollapsed) {
-                                            expansionTimes = expansionTimes + (status to System.currentTimeMillis())
-                                        }
-                                        onToggleCategory(status)
-                                    }
-                                    .padding(top = 8.dp, bottom = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = statusLabel,
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = if (status == AlbumStatus.VIRTUAL)
-                                        VirtualGold
-                                    else
-                                        MaterialTheme.colorScheme.primary
-                                )
-                                
-                                val rotation by animateFloatAsState(
-                                    targetValue = if (isCollapsed) -90f else 0f,
-                                    animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
-                                    label = "chevronRotation"
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.ExpandMore,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.outline,
-                                    modifier = Modifier.graphicsLayer { rotationZ = rotation }
-                                )
-                            }
+                                    .animateItem(placementSpec = null)
+                                    .padding(top = if (status == firstStatus) 0.dp else 16.dp)
+                            )
                         }
 
-                        if (!isCollapsed) {
+                        // Cells are emitted only while expanded or animating. All cells of a section
+                        // shrink/grow together, so content below follows in lockstep.
+                        val expansion = sectionExpansions.getValue(status)
+                        if (expansion.rowsPresent) {
                             itemsIndexed(
-                                items = albumsInStatus,
+                                items = if (expansion.settled) albumsInStatus else albumsInStatus.take(animatedRowLimit),
                                 key = { _, album -> "album_grid_${status.name}_${album.id}" }
-                            ) { index, album ->
+                            ) { _, album ->
                                 AlbumGridItem(
                                     album = album,
                                     treatedCount = treatedCounts[album.id] ?: 0,
                                     unsyncedCount = unsyncedChanges[album.id] ?: 0,
                                     baseUrl = baseUrl,
-                                    itemIndex = index,
-                                    expansionTime = expansionTimes[status] ?: 0L,
                                     onClick = { onAlbumClick(album) },
-                                    modifier = Modifier.animateItem()
+                                    modifier = Modifier
+                                        .animateItem(placementSpec = null)
+                                        .expandFraction { expansion.progress.value }
+                                        .padding(top = 8.dp)
                                 )
                             }
                         }
@@ -232,6 +211,7 @@ fun AlbumGrid(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AlbumGridItem(
     album: Album,
@@ -240,8 +220,6 @@ fun AlbumGridItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     baseUrl: String = "",
-    itemIndex: Int = 0,
-    expansionTime: Long = 0L,
 ) {
     val context = LocalContext.current
     val baseUrlClean = baseUrl.removeSuffix("/")
@@ -250,45 +228,28 @@ fun AlbumGridItem(
     val isCompleted = album.assetCount in 1..effectiveTreatedCount
     val hasUnsyncedChanges = unsyncedCount > 0
 
-    val isRecentExpansion = remember(album.id, expansionTime) {
-        val elapsed = System.currentTimeMillis() - expansionTime
-        expansionTime > 0L && elapsed < 400L
-    }
-
-    val alphaAnim = remember(album.id, expansionTime) { Animatable(if (isRecentExpansion) 0f else 1f) }
-    val translateYAnim = remember(album.id, expansionTime) { Animatable(if (isRecentExpansion) -16f else 0f) }
-
     val motionScheme = MaterialTheme.motionScheme
-    LaunchedEffect(album.id, expansionTime) {
-        if (isRecentExpansion) {
-            val row = itemIndex / 3
-            val col = itemIndex % 3
-            val delayMs = (row * 40 + col * 15).coerceAtMost(280)
-            delay(delayMs.toLong().milliseconds)
-            launch {
-                alphaAnim.animateTo(1f, motionScheme.fastEffectsSpec())
-            }
-            launch {
-                translateYAnim.animateTo(0f, motionScheme.fastSpatialSpec())
-            }
-        }
-    }
+
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val corner by animateDpAsState(
+        targetValue = if (isPressed) 24.dp else 16.dp,
+        animationSpec = motionScheme.fastSpatialSpec(),
+        label = "cardCorner"
+    )
 
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(0.8f)
-            .graphicsLayer {
-                alpha = alphaAnim.value
-                translationY = translateYAnim.value
-            }
-            .clickable { onClick() },
+            .aspectRatio(0.8f),
+        onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         ),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(corner),
+        interactionSource = interactionSource
     ) {
-        Box(modifier = modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize()) {
             val isVirtualCollection = album.id == Album.VIRTUAL_ALL_ID ||
                     album.id == Album.VIRTUAL_ORPHANS_ID ||
                     album.id == Album.VIRTUAL_DUPLICATES_ID ||
@@ -333,12 +294,21 @@ fun AlbumGridItem(
                     modifier = Modifier.fillMaxSize().background(brush),
                     contentAlignment = Alignment.TopStart
                 ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = tint,
-                        modifier = Modifier.padding(12.dp).size(28.dp)
-                    )
+                    // Same expressive shape as in list view, sized like the Settings item icons
+                    Box(
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .size(40.dp)
+                            .background(Color.Black.copy(alpha = 0.12f), virtualCollectionPolygon(album.id).toShape()),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = tint,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 }
             }
 
@@ -348,12 +318,12 @@ fun AlbumGridItem(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                        .fillMaxHeight(0.75f)
+                        .fillMaxHeight(0.6f)
                         .background(
-                            // Ramps up early so the name stays readable even when the pill pushes it higher.
+                            // Covers only the text area so the photo stays bright; tall enough for a two-line name.
                             Brush.verticalGradient(
                                 0f to Color.Transparent,
-                                0.35f to Color.Black.copy(alpha = 0.45f),
+                                0.3f to Color.Black.copy(alpha = 0.5f),
                                 1f to Color.Black.copy(alpha = 0.85f)
                             )
                         )
@@ -391,7 +361,7 @@ fun AlbumGridItem(
                     ) {
                         Text(
                             text = stringResource(R.string.home_unsynced_badge),
-                            fontSize = 9.sp,
+                            style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Black,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
@@ -400,14 +370,15 @@ fun AlbumGridItem(
                 Text(
                     text = album.albumName,
                     color = labelColor,
-                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = stringResource(R.string.home_sorted_count, effectiveTreatedCount, album.assetCount),
+                    text = "$effectiveTreatedCount / ${album.assetCount}",
                     color = labelColor.copy(alpha = if (isVirtualCollection) 0.7f else 0.8f),
-                    fontSize = 11.sp
+                    style = MaterialTheme.typography.labelMedium
                 )
             }
 

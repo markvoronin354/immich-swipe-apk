@@ -25,7 +25,9 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -39,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.graphics.shapes.RoundedPolygon
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Album
 
@@ -171,6 +174,14 @@ fun getVirtualCollectionStyle(albumId: String, albumName: String = ""): Triple<I
     }
 }
 
+/** Expressive shape for a special collection's icon, shared by list and grid views. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+fun virtualCollectionPolygon(albumId: String): RoundedPolygon = when (albumId) {
+    Album.VIRTUAL_ALL_ID -> MaterialShapes.Cookie12Sided
+    Album.VIRTUAL_ORPHANS_ID -> MaterialShapes.Slanted
+    Album.VIRTUAL_DUPLICATES_ID -> MaterialShapes.Clover4Leaf
+    else -> MaterialShapes.Cookie9Sided
+}
 
 fun getAvatarColor(colorName: String?): Color {
     return when (colorName?.lowercase()) {

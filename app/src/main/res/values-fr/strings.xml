@@ -42,7 +42,6 @@
         <item quantity="many">%1$d changements non synchronisés</item>
         <item quantity="other">%1$d changements non synchronisés</item>
     </plurals>
-    <string name="home_sorted_count">%1$d / %2$d triés</string>
     <string name="home_unsynced_badge">NON SYNCHRONISÉ</string>
     <string name="home_virtual_all_assets">Toutes les photos</string>
     <string name="home_virtual_all_assets_desc">Collection de l\'ensemble de votre bibliothèque (dépendant de vos droits d\'accès)</string>
