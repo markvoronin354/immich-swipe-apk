@@ -97,6 +97,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -123,6 +124,7 @@ import com.markvoronin.immichswipe.ui.theme.VirtualGold
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DuplicatesScreen(
     viewModel: DuplicatesViewModel,
@@ -461,25 +463,36 @@ fun DuplicatesScreen(
             if (showResetDialog) {
                 AlertDialog(
                     onDismissRequest = { showResetDialog = false },
-                    title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                    icon = {
+                        // Same gem shape and error color as the destructive settings dialogs.
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(MaterialTheme.colorScheme.error, MaterialShapes.Gem.toShape()),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.RestartAlt,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error
+                                tint = MaterialTheme.colorScheme.onError
                             )
-                            Spacer(Modifier.width(12.dp))
-                            Text(stringResource(R.string.duplicates_reset_confirm_title))
                         }
+                    },
+                    title = {
+                        Text(
+                            text = stringResource(R.string.duplicates_reset_confirm_title),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     },
                     text = { Text(stringResource(R.string.duplicates_reset_confirm_msg)) },
                     confirmButton = {
-                        Button(
+                        TextButton(
                             onClick = {
                                 showResetDialog = false
                                 viewModel.resetDecisions()
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                         ) {
                             Text(stringResource(R.string.common_confirm))
                         }
@@ -488,8 +501,7 @@ fun DuplicatesScreen(
                         TextButton(onClick = { showResetDialog = false }) {
                             Text(stringResource(R.string.common_cancel))
                         }
-                    },
-                    shape = RoundedCornerShape(24.dp)
+                    }
                 )
             }
 

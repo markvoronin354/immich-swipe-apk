@@ -411,14 +411,8 @@ class SwipeViewModel @Inject constructor(
                 val newSizes = _uiState.value.assetSizes.toMutableMap()
                 detail.exifInfo?.fileSizeInBytes?.let { newSizes[assetId] = it }
                 _uiState.update { it.copy(assets = updatedAssets, masterWorkPile = masterWorkPile, assetSizes = newSizes) }
-
-                preloadNextAssets()
             } catch (_: Exception) {}
         }
-    }
-
-    private fun preloadNextAssets() {
-
     }
 
     fun onSwipe(decision: SwipeDecision) {

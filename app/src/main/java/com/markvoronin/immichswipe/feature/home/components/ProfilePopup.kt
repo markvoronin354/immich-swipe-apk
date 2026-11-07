@@ -33,12 +33,15 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +57,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -68,6 +72,7 @@ import com.markvoronin.immichswipe.feature.settings.components.SettingsItemGap
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ProfilePopup(
     user: User?,
@@ -466,28 +471,39 @@ fun ProfilePopup(
     if (showLogoutConfirmation) {
         AlertDialog(
             onDismissRequest = { showLogoutConfirmation = false },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            icon = {
+                // Same gem shape and error color as the destructive settings dialogs.
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(MaterialTheme.colorScheme.error, MaterialShapes.Gem.toShape()),
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Logout,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error
+                        tint = MaterialTheme.colorScheme.onError
                     )
-                    Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.profile_logout_confirm_title))
                 }
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.profile_logout_confirm_title),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
             },
             text = {
                 Text(stringResource(R.string.profile_logout_confirm_msg))
             },
             confirmButton = {
-                Button(
+                TextButton(
                     onClick = {
                         showLogoutConfirmation = false
                         onLogout()
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
                     Text(stringResource(R.string.profile_logout_button))
@@ -506,29 +522,40 @@ fun ProfilePopup(
         val targetName = targetAccount.userName?.ifBlank { null } ?: targetAccount.userEmail
         AlertDialog(
             onDismissRequest = { accountToRemove = null },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            icon = {
+                // Same gem shape and error color as the destructive settings dialogs.
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(MaterialTheme.colorScheme.error, MaterialShapes.Gem.toShape()),
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(
                         imageVector = Icons.Default.DeleteOutline,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error
+                        tint = MaterialTheme.colorScheme.onError
                     )
-                    Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.profile_remove_account_confirm_title))
                 }
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.profile_remove_account_confirm_title),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
             },
             text = {
                 Text(stringResource(R.string.profile_remove_account_confirm_msg, targetName))
             },
             confirmButton = {
-                Button(
+                TextButton(
                     onClick = {
                         val userId = targetAccount.userId
                         accountToRemove = null
                         onRemoveAccount(userId)
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
                     Text(stringResource(R.string.common_confirm))
