@@ -1,8 +1,6 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,10 +28,8 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.BrokenImage
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -182,7 +178,6 @@ fun AssetTimeline(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AssetTimelineItem(
     asset: Asset,
@@ -204,7 +199,7 @@ private fun AssetTimelineItem(
     val context = LocalContext.current
     val animatedRotation by animateFloatAsState(
         targetValue = rotation.toFloat(),
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
         label = "TimelineRotation"
     )
 
@@ -220,7 +215,7 @@ private fun AssetTimelineItem(
     // Springy follow, so focus changes that aren't driven by a swipe (taps, undo) bounce into place instead of snapping.
     val focusProgress by animateFloatAsState(
         targetValue = targetFocus,
-        animationSpec = MotionScheme.expressive().fastSpatialSpec(),
+        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
         label = "TimelineFocus"
     )
     val itemScale = UNFOCUSED_ITEM_SCALE + ((1f - UNFOCUSED_ITEM_SCALE) * focusProgress)

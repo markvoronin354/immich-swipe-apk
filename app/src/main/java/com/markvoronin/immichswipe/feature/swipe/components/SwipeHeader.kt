@@ -1,9 +1,6 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -67,7 +64,7 @@ fun SwipeHeader(
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = uiState.progress,
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        animationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),
         label = "ProgressBarAnimation"
     )
 
@@ -104,7 +101,7 @@ fun SwipeHeader(
                 } else {
                     staticInfoX
                 },
-                animationSpec = spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
+                animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
                 label = "InfoTranslation"
             )
 
@@ -114,7 +111,7 @@ fun SwipeHeader(
                 } else {
                     paddingPx
                 },
-                animationSpec = spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
+                animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
                 label = "RemainingTranslation"
             )
 
@@ -126,8 +123,8 @@ fun SwipeHeader(
                 Box(modifier = Modifier.align(Alignment.CenterStart).padding(start = 16.dp)) {
                     androidx.compose.animation.AnimatedVisibility(
                         visible = isFetching,
-                        enter = fadeIn(),
-                        exit = fadeOut()
+                        enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
+                        exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec())
                     ) {
                         FetchingAssetsIndicator(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -139,8 +136,8 @@ fun SwipeHeader(
 
                 androidx.compose.animation.AnimatedVisibility(
                     visible = !isFetching,
-                    enter = fadeIn(),
-                    exit = fadeOut(),
+                    enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
+                    exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
                     modifier = Modifier.align(Alignment.CenterStart)
                 ) {
                     RemainingInfo(
@@ -200,8 +197,8 @@ fun SwipeHeader(
                     Box(modifier = Modifier.align(Alignment.CenterStart).padding(start = 16.dp)) {
                         androidx.compose.animation.AnimatedVisibility(
                             visible = isFetching,
-                            enter = fadeIn(),
-                            exit = fadeOut()
+                            enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
+                            exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec())
                         ) {
                             FetchingAssetsIndicator(
                                 color = Color.White,
@@ -213,8 +210,8 @@ fun SwipeHeader(
 
                     androidx.compose.animation.AnimatedVisibility(
                         visible = !isFetching,
-                        enter = fadeIn(),
-                        exit = fadeOut(),
+                        enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
+                        exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
                         modifier = Modifier.align(Alignment.CenterStart)
                     ) {
                         RemainingInfo(

@@ -8,7 +8,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -189,15 +188,16 @@ fun SettingsScreen(
         else -> SettingsSubMenu.NONE
     }
 
+    val motionScheme = MaterialTheme.motionScheme
     AnimatedContent(
         targetState = activeSubMenu,
         transitionSpec = {
             if (targetState != SettingsSubMenu.NONE) {
-                (slideInHorizontally(animationSpec = tween(300)) { width -> width } + fadeIn(animationSpec = tween(300)))
-                    .togetherWith(slideOutHorizontally(animationSpec = tween(300)) { width -> -width } + fadeOut(animationSpec = tween(300)))
+                (slideInHorizontally(animationSpec = motionScheme.defaultSpatialSpec()) { width -> width } + fadeIn(animationSpec = motionScheme.defaultEffectsSpec()))
+                    .togetherWith(slideOutHorizontally(animationSpec = motionScheme.defaultSpatialSpec()) { width -> -width } + fadeOut(animationSpec = motionScheme.defaultEffectsSpec()))
             } else {
-                (slideInHorizontally(animationSpec = tween(300)) { width -> -width } + fadeIn(animationSpec = tween(300)))
-                    .togetherWith(slideOutHorizontally(animationSpec = tween(300)) { width -> width } + fadeOut(animationSpec = tween(300)))
+                (slideInHorizontally(animationSpec = motionScheme.defaultSpatialSpec()) { width -> -width } + fadeIn(animationSpec = motionScheme.defaultEffectsSpec()))
+                    .togetherWith(slideOutHorizontally(animationSpec = motionScheme.defaultSpatialSpec()) { width -> width } + fadeOut(animationSpec = motionScheme.defaultEffectsSpec()))
             }.using(SizeTransform(clip = false))
         },
         label = "settings_menu_transition"
@@ -403,8 +403,8 @@ fun SettingsScreen(
 
                 AnimatedVisibility(
                     visible = uiState.reminderEnabled,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
+                    enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()) + expandVertically(MaterialTheme.motionScheme.defaultSpatialSpec()),
+                    exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()) + shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec())
                 ) {
                     Column {
                         SettingsItemGap()

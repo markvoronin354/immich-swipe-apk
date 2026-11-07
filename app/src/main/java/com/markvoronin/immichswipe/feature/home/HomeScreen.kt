@@ -3,7 +3,6 @@ package com.markvoronin.immichswipe.feature.home
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -258,7 +257,7 @@ fun HomeScreen(
                                     } else {
                                         Crossfade(
                                             targetState = uiState.isGridView,
-                                            animationSpec = tween(durationMillis = 500),
+                                            animationSpec = MaterialTheme.motionScheme.slowEffectsSpec(),
                                             label = "LayoutSwitch"
                                         ) { isGrid ->
                                             if (isGrid) {

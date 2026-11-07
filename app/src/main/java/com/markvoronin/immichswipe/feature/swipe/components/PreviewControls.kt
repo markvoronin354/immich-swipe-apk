@@ -27,6 +27,7 @@ import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconToggleButtonColors
 import androidx.compose.material3.FilledTonalIconToggleButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -111,8 +112,8 @@ fun PreviewControls(
 ) {
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(),
-        exit = fadeOut()
+        enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
+        exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec())
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // The toolbar sits at the very bottom; the seekbar and size pill sit above it.

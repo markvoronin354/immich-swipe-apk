@@ -2,7 +2,6 @@ package com.markvoronin.immichswipe.feature.swipe.components
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -94,14 +93,15 @@ fun SortOrderPopupMenu(
                 modifier = Modifier.padding(vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                val motionScheme = MaterialTheme.motionScheme
                 AnimatedContent(
                     targetState = selectedCategory,
                     transitionSpec = {
-                        fadeIn(animationSpec = tween(220, delayMillis = 90)) togetherWith
-                            fadeOut(animationSpec = tween(90)) using
+                        fadeIn(animationSpec = motionScheme.defaultEffectsSpec()) togetherWith
+                            fadeOut(animationSpec = motionScheme.fastEffectsSpec()) using
                             SizeTransform(
                                 clip = false,
-                                sizeAnimationSpec = { _, _ -> tween(300) }
+                                sizeAnimationSpec = { _, _ -> motionScheme.defaultSpatialSpec() }
                             )
                     },
                     contentAlignment = Alignment.BottomCenter,

@@ -18,7 +18,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.toShape
@@ -46,12 +45,12 @@ fun SortPopupItem(
     val pressed by interactionSource.collectIsPressedAsState()
     val pressScale by animateFloatAsState(
         targetValue = if (pressed) 0.96f else 1f,
-        animationSpec = remember { MotionScheme.expressive().fastSpatialSpec() },
+        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
         label = "sortItemPress"
     )
     val containerColor by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface.copy(alpha = 0f),
-        label = "sortItemContainer"
+        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(), label = "sortItemContainer"
     )
 
     Surface(

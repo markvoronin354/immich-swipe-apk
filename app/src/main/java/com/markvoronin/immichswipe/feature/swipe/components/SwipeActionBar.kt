@@ -8,6 +8,8 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -64,6 +66,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -116,8 +119,8 @@ private fun ActionTile(
             icon()
             AnimatedVisibility(
                 visible = showLabel,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
+                enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()) + expandVertically(MaterialTheme.motionScheme.defaultSpatialSpec()),
+                exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()) + shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec())
             ) {
                 Text(
                     text = label,
@@ -239,8 +242,12 @@ fun SwipeActionBarLayout(
     ) {
         AnimatedVisibility(
             visible = showSwipeButtons,
-            enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
-            exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start)
+            // No fade and no clip: either one makes the FAB's shadow render as a grey square while animating.
+            // Scaling from the outer edge keeps the button inside the space the expand reserves.
+            enter = expandHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), expandFrom = Alignment.Start, clip = false) +
+                scaleIn(MaterialTheme.motionScheme.defaultSpatialSpec(), initialScale = 0f, transformOrigin = TransformOrigin(0f, 0.5f)),
+            exit = shrinkHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), shrinkTowards = Alignment.Start, clip = false) +
+                scaleOut(MaterialTheme.motionScheme.defaultSpatialSpec(), targetScale = 0f, transformOrigin = TransformOrigin(0f, 0.5f))
         ) {
             Box(Modifier.padding(end = 12.dp)) {
                 FloatingActionButton(
@@ -513,8 +520,11 @@ fun SwipeActionBarLayout(
 
         AnimatedVisibility(
             visible = showSwipeButtons,
-            enter = fadeIn() + expandHorizontally(expandFrom = Alignment.End),
-            exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.End)
+            // Same as the delete button, mirrored.
+            enter = expandHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), expandFrom = Alignment.End, clip = false) +
+                scaleIn(MaterialTheme.motionScheme.defaultSpatialSpec(), initialScale = 0f, transformOrigin = TransformOrigin(1f, 0.5f)),
+            exit = shrinkHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), shrinkTowards = Alignment.End, clip = false) +
+                scaleOut(MaterialTheme.motionScheme.defaultSpatialSpec(), targetScale = 0f, transformOrigin = TransformOrigin(1f, 0.5f))
         ) {
             Box(Modifier.padding(start = 12.dp)) {
                 FloatingActionButton(

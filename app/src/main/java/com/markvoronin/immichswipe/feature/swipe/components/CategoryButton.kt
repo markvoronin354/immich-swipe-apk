@@ -82,8 +82,8 @@ fun CategorySegmentedRow(
             ) {
                 AnimatedVisibility(
                     visible = selected,
-                    enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
-                    exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start)
+                    enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()) + expandHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), expandFrom = Alignment.Start),
+                    exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()) + shrinkHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), shrinkTowards = Alignment.Start)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))

@@ -158,9 +158,10 @@ fun TutorialOverlay(
         null
     }
 
+    val motionScheme = MaterialTheme.motionScheme
     val animatedCutoutRect by animateRectAsState(
         targetValue = localTargetRect ?: Rect.Zero,
-        animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+        animationSpec = motionScheme.defaultSpatialSpec(),
         label = "CutoutAnimation"
     )
 
@@ -238,7 +239,7 @@ fun TutorialOverlay(
 
         val animatedBottomPaddingDp by animateDpAsState(
             targetValue = targetBottomPaddingDp,
-            animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+            animationSpec = motionScheme.defaultSpatialSpec(),
             label = "TooltipBottomPaddingAnimation"
         )
 
@@ -250,7 +251,7 @@ fun TutorialOverlay(
 
         val animatedVerticalBias by animateFloatAsState(
             targetValue = targetVerticalBias,
-            animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+            animationSpec = motionScheme.defaultSpatialSpec(),
             label = "TooltipVerticalBiasAnimation"
         )
 
@@ -265,7 +266,7 @@ fun TutorialOverlay(
             AnimatedContent(
                 targetState = currentStep to stepIndex,
                 transitionSpec = {
-                    fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
+                    fadeIn(animationSpec = motionScheme.defaultEffectsSpec()) togetherWith fadeOut(animationSpec = motionScheme.defaultEffectsSpec())
                 },
                 label = "TooltipContentTransition",
                 modifier = Modifier
@@ -298,7 +299,7 @@ fun TooltipCard(
 ) {
     Card(
         modifier = modifier.animateContentSize(
-            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+            animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec()
         ),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(

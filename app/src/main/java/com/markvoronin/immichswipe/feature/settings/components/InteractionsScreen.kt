@@ -171,8 +171,8 @@ fun InteractionsScreen(
 
                     AnimatedVisibility(
                         visible = uiState.showFavoriteButton,
-                        enter = expandVertically(),
-                        exit = shrinkVertically()
+                        enter = expandVertically(MaterialTheme.motionScheme.defaultSpatialSpec()),
+                        exit = shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec())
                     ) {
                         Column(modifier = Modifier.padding(start = 16.dp)) {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
@@ -228,8 +228,8 @@ fun InteractionsScreen(
 
                     AnimatedVisibility(
                         visible = uiState.doubleTapEnabled,
-                        enter = expandVertically(),
-                        exit = shrinkVertically()
+                        enter = expandVertically(MaterialTheme.motionScheme.defaultSpatialSpec()),
+                        exit = shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec())
                     ) {
                         Row(
                             modifier = Modifier

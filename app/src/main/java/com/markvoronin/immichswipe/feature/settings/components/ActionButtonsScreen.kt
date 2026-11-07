@@ -268,8 +268,8 @@ fun IconPositionPickerCard(
 
             AnimatedVisibility(
                 visible = showIcon,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
+                enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()) + expandVertically(MaterialTheme.motionScheme.defaultSpatialSpec()),
+                exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()) + shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec())
             ) {
                 Column {
                     Spacer(Modifier.height(12.dp))
@@ -361,8 +361,8 @@ fun CornerButton(
         val arrow: @Composable () -> Unit = {
             AnimatedVisibility(
                 visible = selected,
-                enter = fadeIn() + expandHorizontally(expandFrom = edge),
-                exit = fadeOut() + shrinkHorizontally(shrinkTowards = edge)
+                enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()) + expandHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), expandFrom = edge),
+                exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()) + shrinkHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), shrinkTowards = edge)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (!left) Spacer(Modifier.width(6.dp))
@@ -445,8 +445,8 @@ fun ImmichCardAction(
 
             AnimatedVisibility(
                 visible = showIcon,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
+                enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()) + expandVertically(MaterialTheme.motionScheme.defaultSpatialSpec()),
+                exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()) + shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec())
             ) {
                 Column {
                     Spacer(Modifier.height(12.dp))
@@ -736,8 +736,8 @@ fun StackOrientationButton(
     ) {
         AnimatedVisibility(
             visible = selected,
-            enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
-            exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start)
+            enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()) + expandHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), expandFrom = Alignment.Start),
+            exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()) + shrinkHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), shrinkTowards = Alignment.Start)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (isHorizontal) {

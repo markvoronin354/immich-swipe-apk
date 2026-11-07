@@ -44,7 +44,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -536,7 +535,7 @@ class JiggleGroup(private val count: Int, private val grow: Float = JiggleGrow) 
             tappedIndex == index -> 1f + grow
             else -> 1f - grow / (count - 1).coerceAtLeast(1)
         }
-        val spec = remember { MotionScheme.expressive().fastSpatialSpec<Float>() }
+        val spec = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
         return animateFloatAsState(targetValue = target, animationSpec = spec, label = "jiggleFactor").value
     }
 }
@@ -572,8 +571,8 @@ fun ThemeModeButton(
     ) {
         AnimatedVisibility(
             visible = selected,
-            enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
-            exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start)
+            enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()) + expandHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), expandFrom = Alignment.Start),
+            exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()) + shrinkHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), shrinkTowards = Alignment.Start)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -735,7 +734,7 @@ fun SettingsExpandableItem(
     content: @Composable () -> Unit
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
-    val chevronRotation by animateFloatAsState(if (expanded) 180f else 0f, label = "expandChevron")
+    val chevronRotation by animateFloatAsState(if (expanded) 180f else 0f, animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(), label = "expandChevron")
     Column {
         Row(
             modifier = Modifier
@@ -767,8 +766,8 @@ fun SettingsExpandableItem(
         }
         AnimatedVisibility(
             visible = expanded,
-            enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut()
+            enter = expandVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) + fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
+            exit = shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) + fadeOut(MaterialTheme.motionScheme.slowEffectsSpec())
         ) {
             content()
         }

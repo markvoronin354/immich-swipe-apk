@@ -344,8 +344,8 @@ fun SharedVideoPlayer(
             AnimatedVisibility(
                 // Shown while the video is paused (e.g. by a tap); hidden during hold-to-pause along with the other controls.
                 visible = !isPlayWhenReady && isCorrectMediaBound && finalShowControls,
-                enter = fadeIn() + scaleIn(initialScale = 0.8f),
-                exit = fadeOut() + scaleOut(targetScale = 1.2f),
+                enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()) + scaleIn(MaterialTheme.motionScheme.defaultSpatialSpec(), initialScale = 0.8f),
+                exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()) + scaleOut(MaterialTheme.motionScheme.defaultSpatialSpec(), targetScale = 1.2f),
                 modifier = Modifier.align(Alignment.Center)
             ) {
                 // Fullscreen matches the translucent Material 3 Expressive toolbar; the card keeps its glass look.
@@ -398,8 +398,8 @@ internal fun VideoControls(
 ) {
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(),
-        exit = fadeOut(),
+        enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
+        exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
         modifier = modifier
     ) {
         Column(

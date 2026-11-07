@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Hd
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Hd
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,8 +52,8 @@ fun ActionButtonsOverlay(
 ) {
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(),
-        exit = fadeOut(),
+        enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
+        exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
         modifier = Modifier.fillMaxSize()
     ) {
         Box(modifier = Modifier.fillMaxSize()) {

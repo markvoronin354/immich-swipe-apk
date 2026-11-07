@@ -1,10 +1,7 @@
 package com.markvoronin.immichswipe.feature.home.components
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -152,7 +149,7 @@ fun AlbumGrid(
                                 
                                 val rotation by animateFloatAsState(
                                     targetValue = if (isCollapsed) -90f else 0f,
-                                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                                    animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
                                     label = "chevronRotation"
                                 )
                                 Icon(
@@ -207,8 +204,8 @@ fun AlbumGrid(
             }
         }
 
-        val animatedOffset by animateFloatAsState(targetValue = scrollFraction.coerceIn(0f, 1f), label = "scrollbarOffset")
-        val animatedHeight by animateFloatAsState(targetValue = visibleFraction.coerceIn(0.05f, 1.0f), label = "scrollbarHeight")
+        val animatedOffset by animateFloatAsState(targetValue = scrollFraction.coerceIn(0f, 1f), animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(), label = "scrollbarOffset")
+        val animatedHeight by animateFloatAsState(targetValue = visibleFraction.coerceIn(0.05f, 1.0f), animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(), label = "scrollbarHeight")
 
         if (visibleFraction < 1.0f) {
             Box(
@@ -261,6 +258,7 @@ fun AlbumGridItem(
     val alphaAnim = remember(album.id, expansionTime) { Animatable(if (isRecentExpansion) 0f else 1f) }
     val translateYAnim = remember(album.id, expansionTime) { Animatable(if (isRecentExpansion) -16f else 0f) }
 
+    val motionScheme = MaterialTheme.motionScheme
     LaunchedEffect(album.id, expansionTime) {
         if (isRecentExpansion) {
             val row = itemIndex / 3
@@ -268,10 +266,10 @@ fun AlbumGridItem(
             val delayMs = (row * 40 + col * 15).coerceAtMost(280)
             delay(delayMs.toLong().milliseconds)
             launch {
-                alphaAnim.animateTo(1f, tween(durationMillis = 220, easing = LinearOutSlowInEasing))
+                alphaAnim.animateTo(1f, motionScheme.fastEffectsSpec())
             }
             launch {
-                translateYAnim.animateTo(0f, tween(durationMillis = 220, easing = FastOutSlowInEasing))
+                translateYAnim.animateTo(0f, motionScheme.fastSpatialSpec())
             }
         }
     }
