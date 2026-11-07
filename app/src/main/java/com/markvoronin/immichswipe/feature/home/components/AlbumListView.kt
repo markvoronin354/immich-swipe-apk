@@ -491,11 +491,20 @@ fun SectionHeader(
             }
         }
     ) {
-        Text(
-            text = label,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = labelColor
-        )
+        // Leading dot matches the settings/stats section headers.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Spacer(
+                Modifier
+                    .size(8.dp)
+                    .background(labelColor, CircleShape)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = label,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = labelColor
+            )
+        }
     }
 }

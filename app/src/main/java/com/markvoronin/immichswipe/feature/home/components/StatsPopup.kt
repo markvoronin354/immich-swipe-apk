@@ -1,8 +1,9 @@
 package com.markvoronin.immichswipe.feature.home.components
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -22,23 +24,27 @@ import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LibraryAddCheck
 import androidx.compose.material.icons.filled.Swipe
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.markvoronin.immichswipe.R
@@ -61,9 +67,7 @@ fun StatsPopup(
                 .fillMaxHeight(0.9f)
                 .padding(vertical = 16.dp),
             shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 3.dp,
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+            color = MaterialTheme.colorScheme.surfaceContainerLow
         ) {
             val scrollState = rememberScrollState()
 
@@ -72,17 +76,17 @@ fun StatsPopup(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 24.dp, end = 24.dp, top = 18.dp),
+                    .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onClose) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close), modifier = Modifier.size(28.dp))
                 }
                 Text(
                     text = stringResource(R.string.stats_popup_title),
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
                 Spacer(Modifier.width(48.dp))
             }
@@ -96,15 +100,13 @@ fun StatsPopup(
                     .verticalScroll(scrollState),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(12.dp))
 
-                Text(
-                    text = stringResource(R.string.stats_section_global),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                StatsSectionHeader(
+                    title = stringResource(R.string.stats_section_global),
                     modifier = Modifier.align(Alignment.Start)
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(4.dp))
 
                 // Connected 2x2 group: tiles sit close with a small gap; only the group's outer corners are fully rounded.
                 Column(
@@ -119,7 +121,8 @@ fun StatsPopup(
                             label = stringResource(R.string.stats_deleted_count),
                             value = stats.totalDeleted.toString(),
                             icon = Icons.Default.Delete,
-                            color = MaterialTheme.colorScheme.error,
+                            badgeColor = MaterialTheme.colorScheme.errorContainer,
+                            badgeContentColor = MaterialTheme.colorScheme.onErrorContainer,
                             shape = gridTileShape(row = 0, column = 0),
                             modifier = Modifier.weight(1f)
                         )
@@ -127,7 +130,8 @@ fun StatsPopup(
                             label = stringResource(R.string.stats_bytes_saved),
                             value = formatSize(stats.totalBytesSaved),
                             icon = Icons.Default.CloudDone,
-                            color = Color(0xFF388E3C),
+                            badgeColor = MaterialTheme.colorScheme.secondaryContainer,
+                            badgeContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                             shape = gridTileShape(row = 0, column = 1),
                             modifier = Modifier.weight(1f)
                         )
@@ -141,7 +145,8 @@ fun StatsPopup(
                             label = stringResource(R.string.stats_swiped_count),
                             value = stats.totalSwiped.toString(),
                             icon = Icons.Default.Swipe,
-                            color = MaterialTheme.colorScheme.primary,
+                            badgeColor = MaterialTheme.colorScheme.primaryContainer,
+                            badgeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             shape = gridTileShape(row = 1, column = 0),
                             modifier = Modifier.weight(1f)
                         )
@@ -149,7 +154,8 @@ fun StatsPopup(
                             label = stringResource(R.string.stats_albums_completed),
                             value = "${stats.completedAlbums} / ${stats.totalAlbums}",
                             icon = Icons.Default.LibraryAddCheck,
-                            color = MaterialTheme.colorScheme.tertiary,
+                            badgeColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            badgeContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                             shape = gridTileShape(row = 1, column = 1),
                             modifier = Modifier.weight(1f)
                         )
@@ -158,14 +164,12 @@ fun StatsPopup(
 
                 Spacer(Modifier.height(24.dp))
 
-                Text(
-                    text = stringResource(R.string.stats_section_weekly),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                StatsSectionHeader(
+                    title = stringResource(R.string.stats_section_weekly),
                     modifier = Modifier.align(Alignment.Start)
                 )
-                Spacer(Modifier.height(12.dp))
-                
+                Spacer(Modifier.height(4.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(3.dp)
@@ -184,15 +188,13 @@ fun StatsPopup(
                     )
                 }
 
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(24.dp))
 
-                Text(
-                    text = stringResource(R.string.stats_distribution_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                StatsSectionHeader(
+                    title = stringResource(R.string.stats_distribution_title),
                     modifier = Modifier.align(Alignment.Start)
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(8.dp))
 
                 val distribution = stats.distribution
                 if (distribution.isEmpty()) {
@@ -225,6 +227,28 @@ private fun gridTileShape(row: Int, column: Int, outer: Dp = 24.dp, inner: Dp = 
     bottomEnd = if (row == 1 && column == 1) outer else inner
 )
 
+/** Section title styled like the settings section headers: primary dot + uppercase label. */
+@Composable
+private fun StatsSectionHeader(title: String, modifier: Modifier = Modifier) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.padding(horizontal = 4.dp, vertical = 8.dp)
+    ) {
+        Spacer(
+            Modifier
+                .size(8.dp)
+                .background(MaterialTheme.colorScheme.primary, CircleShape)
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = title.uppercase(),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
 @Composable
 private fun WeeklyStatTile(
     label: String,
@@ -235,44 +259,72 @@ private fun WeeklyStatTile(
     Surface(
         modifier = modifier,
         shape = shape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 14.dp, horizontal = 16.dp),
+                .padding(vertical = 16.dp, horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(text = value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StatCard(
     label: String,
     value: String,
     icon: ImageVector,
-    color: Color,
+    badgeColor: Color,
+    badgeContentColor: Color,
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(16.dp)
 ) {
     Surface(
         modifier = modifier,
         shape = shape,
-        color = color.copy(alpha = 0.1f),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
+        // Compact two-row layout (same as the sorting summary): badge + value on top, label centered below.
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
-            Spacer(Modifier.height(8.dp))
-            Text(text = value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = color)
-            Text(text = label, style = MaterialTheme.typography.labelSmall, color = color.copy(alpha = 0.8f))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Neutral tile; the expressive cookie badge carries the only accent color.
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(badgeColor, MaterialShapes.Cookie9Sided.toShape()),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(icon, contentDescription = null, tint = badgeContentColor, modifier = Modifier.size(22.dp))
+                }
+                Spacer(Modifier.width(8.dp))
+                // Shrinks long values (e.g. "147.37 MB") so they fit beside the badge.
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.headlineSmall.copy(textAlign = TextAlign.End),
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = 14.sp,
+                        maxFontSize = MaterialTheme.typography.headlineSmall.fontSize
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Text(text = label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         }
     }
 }
@@ -284,18 +336,18 @@ fun DistributionBar(label: String, percentValue: Float, color: Color) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = label, style = MaterialTheme.typography.labelMedium)
-            Text(text = "${(percentValue * 100).toInt()}%", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            Text(text = label, style = MaterialTheme.typography.labelLarge)
+            Text(text = "${(percentValue * 100).toInt()}%", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
         }
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(6.dp))
         LinearProgressIndicator(
             progress = { percentValue },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(8.dp)
-                .clip(CircleShape),
+                .height(8.dp),
             color = color,
-            trackColor = color.copy(alpha = 0.1f)
+            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            drawStopIndicator = {}
         )
     }
 }

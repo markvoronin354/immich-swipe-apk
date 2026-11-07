@@ -3,7 +3,6 @@ package com.markvoronin.immichswipe.feature.swipe.components
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -28,7 +27,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Archive
@@ -38,14 +39,16 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -69,7 +72,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -87,9 +89,8 @@ import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.common.WavyLoadingBar
 import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.components.DuplicateVideoPlayer
+import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
 import com.markvoronin.immichswipe.feature.swipe.SwipeUiState
-import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
-import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 import kotlinx.coroutines.launch
 
@@ -103,226 +104,256 @@ fun SummaryDialog(
 ) {
     var previewAsset by remember { mutableStateOf<Asset?>(null) }
 
-    AlertDialog(
+    Dialog(
         onDismissRequest = onDismiss,
-        title = {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                IconButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.align(Alignment.CenterStart)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = stringResource(R.string.common_close)
-                    )
-                }
-                Text(
-                    text = stringResource(R.string.swipe_summary_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 36.dp),
-                    textAlign = TextAlign.Center,
-                    maxLines = 1
-                )
-            }
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // Connected group: tiles sit close with a small gap; a corner is fully rounded only when nothing touches it.
-                val hasSecondRow = uiState.showArchiveButton || uiState.showLockButton
-                val secondRowCount = listOf(uiState.showArchiveButton, uiState.showLockButton).count { it }
-                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                        StatSummaryBox(
-                            label = stringResource(R.string.swipe_keep),
-                            count = uiState.keptCount,
-                            size = uiState.keptSize,
-                            color = MaterialGreen,
-                            icon = Icons.Default.Check,
-                            shape = summaryTileShape(column = 0, columns = 2, isFirstRow = true, isLastRow = !hasSecondRow),
-                            modifier = Modifier.weight(1f),
-                            isEstimated = uiState.isRemainingEstimated
-                        )
-                        StatSummaryBox(
-                            label = stringResource(R.string.swipe_delete),
-                            count = uiState.deletedCount,
-                            size = uiState.deletedSize,
-                            color = MaterialRed,
-                            icon = Icons.Default.Delete,
-                            shape = summaryTileShape(column = 1, columns = 2, isFirstRow = true, isLastRow = !hasSecondRow),
-                            modifier = Modifier.weight(1f),
-                            isEstimated = uiState.isRemainingEstimated
-                        )
-                    }
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        // Same container, header and tile treatment as the usage statistics popup.
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .padding(vertical = 16.dp),
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerLow
+        ) {
+            val scrollState = rememberScrollState()
 
-                    if (hasSecondRow) {
+            Column {
+                // Header: sits outside the scrolling content so it stays pinned
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close), modifier = Modifier.size(28.dp))
+                    }
+                    Text(
+                        text = stringResource(R.string.swipe_summary_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1
+                    )
+                    Spacer(Modifier.width(48.dp))
+                }
+
+                // Shrinks to fit short content; scrolls only when the screen is too small.
+                Column(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .fillMaxWidth()
+                        .verticalFadingEdges(scrollState, length = 32.dp)
+                        .padding(horizontal = 24.dp)
+                        .verticalScroll(scrollState)
+                ) {
+                    Spacer(Modifier.height(12.dp))
+
+                    // Connected 2x2 group: tiles sit close with a small gap; a corner is fully rounded only when nothing touches it.
+                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
-                            if (uiState.showArchiveButton) {
-                                StatSummaryBox(
-                                    label = stringResource(R.string.swipe_archive),
-                                    count = uiState.archiveCount,
-                                    size = uiState.archiveSize,
-                                    color = Color(0xFF1565C0),
-                                    icon = Icons.Default.Archive,
-                                    shape = summaryTileShape(column = 0, columns = secondRowCount, isFirstRow = false, isLastRow = true),
-                                    modifier = Modifier.weight(1f),
-                                    isEstimated = uiState.isRemainingEstimated
-                                )
-                            }
-                            if (uiState.showLockButton) {
-                                StatSummaryBox(
-                                    label = stringResource(R.string.swipe_locked),
-                                    count = uiState.lockedCount,
-                                    size = uiState.lockedSize,
-                                    color = Color(0xFF7B1FA2),
-                                    icon = Icons.Default.Lock,
-                                    shape = summaryTileShape(column = secondRowCount - 1, columns = secondRowCount, isFirstRow = false, isLastRow = true),
-                                    modifier = Modifier.weight(1f),
-                                    isEstimated = uiState.isRemainingEstimated
-                                )
-                            }
+                            StatSummaryBox(
+                                label = stringResource(R.string.swipe_keep),
+                                count = uiState.keptCount,
+                                size = uiState.keptSize,
+                                badgeColor = MaterialTheme.colorScheme.primaryContainer,
+                                badgeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                icon = Icons.Default.Check,
+                                shape = summaryTileShape(column = 0, columns = 2, isFirstRow = true, isLastRow = false),
+                                modifier = Modifier.weight(1f),
+                                isEstimated = uiState.isRemainingEstimated
+                            )
+                            StatSummaryBox(
+                                label = stringResource(R.string.swipe_delete),
+                                count = uiState.deletedCount,
+                                size = uiState.deletedSize,
+                                badgeColor = MaterialTheme.colorScheme.errorContainer,
+                                badgeContentColor = MaterialTheme.colorScheme.onErrorContainer,
+                                icon = Icons.Default.Delete,
+                                shape = summaryTileShape(column = 1, columns = 2, isFirstRow = true, isLastRow = false),
+                                modifier = Modifier.weight(1f),
+                                isEstimated = uiState.isRemainingEstimated
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            StatSummaryBox(
+                                label = stringResource(R.string.swipe_archive),
+                                count = uiState.archiveCount,
+                                size = uiState.archiveSize,
+                                badgeColor = MaterialTheme.colorScheme.secondaryContainer,
+                                badgeContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                icon = Icons.Default.Archive,
+                                shape = summaryTileShape(column = 0, columns = 2, isFirstRow = false, isLastRow = true),
+                                modifier = Modifier.weight(1f),
+                                isEstimated = uiState.isRemainingEstimated
+                            )
+                            StatSummaryBox(
+                                label = stringResource(R.string.swipe_locked),
+                                count = uiState.lockedCount,
+                                size = uiState.lockedSize,
+                                badgeColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                badgeContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                                icon = Icons.Default.Lock,
+                                shape = summaryTileShape(column = 1, columns = 2, isFirstRow = false, isLastRow = true),
+                                modifier = Modifier.weight(1f),
+                                isEstimated = uiState.isRemainingEstimated
+                            )
                         }
                     }
-                }
 
-                Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(16.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        stringResource(R.string.swipe_check_before_delete),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    val isLoadingDeletedAssets = uiState.deletedCount > uiState.deletedAssets.size
-                    if (isLoadingDeletedAssets) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            WavyLoadingIndicator(size = 12.dp, strokeWidth = 2.dp, delayed = true)
-                            Spacer(Modifier.width(6.dp))
+                            Spacer(
+                                Modifier
+                                    .size(8.dp)
+                                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+                            )
+                            Spacer(Modifier.width(8.dp))
                             Text(
-                                "${uiState.deletedAssets.size} / ${uiState.deletedCount}",
+                                stringResource(R.string.swipe_check_before_delete).uppercase(),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        val isLoadingDeletedAssets = uiState.deletedCount > uiState.deletedAssets.size
+                        if (isLoadingDeletedAssets) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                WavyLoadingIndicator(size = 12.dp, strokeWidth = 2.dp, delayed = true)
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    "${uiState.deletedAssets.size} / ${uiState.deletedCount}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else if (uiState.deletedAssets.isNotEmpty()) {
+                            Text(
+                                pluralStringResource(R.plurals.swipe_summary_photos_count, uiState.deletedAssets.size, uiState.deletedAssets.size),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    } else if (uiState.deletedAssets.isNotEmpty()) {
-                        Text(
-                            pluralStringResource(R.plurals.swipe_summary_photos_count, uiState.deletedAssets.size, uiState.deletedAssets.size),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                     }
-                }
 
-                if (uiState.deletedAssets.isNotEmpty()) {
-                    val isLoadingDeletedAssets = uiState.deletedCount > uiState.deletedAssets.size
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(3),
-                            contentPadding = PaddingValues(8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth().height(220.dp)
+                    if (uiState.deletedAssets.isNotEmpty()) {
+                        val isLoadingDeletedAssets = uiState.deletedCount > uiState.deletedAssets.size
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            items(
-                                items = uiState.deletedAssets,
-                                key = { it.id }
-                            ) { asset ->
-                                DeletedAssetThumbnail(
-                                    asset = asset,
-                                    uiState = uiState,
-                                    onClick = { previewAsset = asset },
-                                    modifier = Modifier.animateItem()
-                                )
-                            }
-                            if (isLoadingDeletedAssets) {
-                                item(key = "loading_indicator") {
-                                    Surface(
-                                        modifier = Modifier
-                                            .aspectRatio(1f)
-                                            .clip(RoundedCornerShape(12.dp)),
-                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            WavyLoadingIndicator(size = 24.dp, strokeWidth = 2.5.dp, delayed = true)
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(3),
+                                contentPadding = PaddingValues(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth().height(220.dp)
+                            ) {
+                                items(
+                                    items = uiState.deletedAssets,
+                                    key = { it.id }
+                                ) { asset ->
+                                    DeletedAssetThumbnail(
+                                        asset = asset,
+                                        uiState = uiState,
+                                        onClick = { previewAsset = asset },
+                                        modifier = Modifier.animateItem()
+                                    )
+                                }
+                                if (isLoadingDeletedAssets) {
+                                    item(key = "loading_indicator") {
+                                        Surface(
+                                            modifier = Modifier
+                                                .aspectRatio(1f)
+                                                .clip(RoundedCornerShape(12.dp)),
+                                            color = MaterialTheme.colorScheme.surfaceContainerHighest
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                WavyLoadingIndicator(size = 24.dp, strokeWidth = 2.5.dp, delayed = true)
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
-                } else if (uiState.deletedCount > 0) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth().height(100.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            WavyLoadingIndicator(size = 28.dp, strokeWidth = 3.dp, delayed = true)
+                    } else if (uiState.deletedCount > 0) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier.fillMaxWidth().height(100.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                WavyLoadingIndicator(size = 28.dp, strokeWidth = 3.dp, delayed = true)
+                            }
+                        }
+                    } else {
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier.fillMaxWidth().height(100.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    stringResource(R.string.swipe_no_deletions),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                            }
                         }
                     }
-                } else {
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth().height(100.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                stringResource(R.string.swipe_no_deletions),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.outline
-                            )
-                        }
-                    }
-                }
 
-                if (uiState.isSyncing) {
+                    if (uiState.isSyncing) {
+                        Spacer(Modifier.height(16.dp))
+                        WavyLoadingBar(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+
                     Spacer(Modifier.height(16.dp))
-                    WavyLoadingBar(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = Color(0xFFD32F2F)
-                    )
+                }
+
+                Box(modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp)) {
+                    val hasChanges = uiState.processedCount > 0 || uiState.localFavorites.isNotEmpty()
+
+                    Button(
+                        onClick = onApply,
+                        enabled = !uiState.isSyncing && hasChanges,
+                        colors = if (uiState.deletedCount > 0) {
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            )
+                        } else {
+                            ButtonDefaults.buttonColors()
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp)
+                    ) {
+                        val totalSize = formatSize(uiState.deletedSize)
+                        Text(
+                            text = if (uiState.isSyncing) stringResource(R.string.swipe_syncing) else stringResource(R.string.swipe_liberate_button, totalSize, uiState.deletedCount),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
-        },
-        confirmButton = {
-            val hasChanges = uiState.processedCount > 0 || uiState.localFavorites.isNotEmpty()
-
-            Button(
-                onClick = onApply,
-                enabled = !uiState.isSyncing && hasChanges,
-                colors = ButtonDefaults.buttonColors(containerColor = if (uiState.deletedCount > 0) Color(0xFFD32F2F) else MaterialTheme.colorScheme.primary),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
-            ) {
-                val totalSize = formatSize(uiState.deletedSize)
-                Text(
-                    text = if (uiState.isSyncing) stringResource(R.string.swipe_syncing) else stringResource(R.string.swipe_liberate_button, totalSize, uiState.deletedCount),
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        },
-        shape = RoundedCornerShape(28.dp)
-    )
+        }
+    }
 
     if (previewAsset != null) {
         SummaryFullscreenPreviewDialog(
@@ -346,7 +377,7 @@ private fun summaryTileShape(
     columns: Int,
     isFirstRow: Boolean,
     isLastRow: Boolean,
-    outer: Dp = 20.dp,
+    outer: Dp = 24.dp,
     inner: Dp = 6.dp
 ): RoundedCornerShape {
     val isFirstColumn = column == 0
@@ -359,52 +390,61 @@ private fun summaryTileShape(
     )
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StatSummaryBox(
     label: String,
     count: Int,
     size: Long,
-    color: Color,
+    badgeColor: Color,
+    badgeContentColor: Color,
     icon: ImageVector,
     modifier: Modifier = Modifier,
     isEstimated: Boolean = false,
     shape: Shape = RoundedCornerShape(16.dp),
 ) {
     Surface(
-        modifier = modifier.height(72.dp),
+        modifier = modifier,
         shape = shape,
-        color = color.copy(alpha = 0.12f),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
-        Box(modifier = Modifier.padding(10.dp)) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = color.copy(alpha = 0.35f),
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .size(24.dp)
-            )
-            Column(horizontalAlignment = Alignment.Start) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = color.copy(alpha = 1f),
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1
-                )
+        // Compact two-row layout: badge + count on top, size centered below.
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Neutral tile; the expressive cookie badge carries the only accent color.
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(badgeColor, MaterialShapes.Cookie9Sided.toShape()),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // No visible label; the badge announces it for accessibility.
+                    Icon(icon, contentDescription = label, tint = badgeContentColor, modifier = Modifier.size(22.dp))
+                }
                 Text(
                     text = count.toString(),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = if (isEstimated) "~ ${formatSize(size)}" else formatSize(size),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
                 )
             }
+            Text(
+                text = if (isEstimated) "~ ${formatSize(size)}" else formatSize(size),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
+            )
         }
     }
 }
