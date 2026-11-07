@@ -5,6 +5,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import com.markvoronin.immichswipe.core.AppPalette
+import com.markvoronin.immichswipe.core.PaletteStyle
 
 // Ocean, Forest, Sunset, Rose and Mono color schemes, taken from Orion Store (RookieEnough/Orion-Store).
 
@@ -129,10 +130,11 @@ private val MonoDark = darkColorScheme(
 )
 
 /** Scheme for every palette except [AppPalette.WALLPAPER], which the theme resolves from the system colors. */
-fun AppPalette.colorScheme(dark: Boolean): ColorScheme = when (this) {
+fun AppPalette.colorScheme(dark: Boolean, customSeed: Int, customStyle: PaletteStyle): ColorScheme = when (this) {
     AppPalette.OCEAN -> if (dark) OceanDark else OceanLight
     AppPalette.FOREST -> if (dark) ForestDark else ForestLight
     AppPalette.SUNSET -> if (dark) SunsetDark else SunsetLight
     AppPalette.ROSE -> if (dark) RoseDark else RoseLight
     AppPalette.MONO, AppPalette.WALLPAPER -> if (dark) MonoDark else MonoLight
+    AppPalette.CUSTOM -> customColorScheme(customSeed, dark, customStyle)
 }

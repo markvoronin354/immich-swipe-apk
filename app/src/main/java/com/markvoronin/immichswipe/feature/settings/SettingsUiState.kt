@@ -1,6 +1,7 @@
 package com.markvoronin.immichswipe.feature.settings
 
 import com.markvoronin.immichswipe.core.AppPalette
+import com.markvoronin.immichswipe.core.PaletteStyle
 import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.ButtonStackOrientation
 import com.markvoronin.immichswipe.core.CardDisplayMode
@@ -29,6 +30,8 @@ data class SettingsUiState(
     val playbackBehavior: PlaybackBehavior = PlaybackBehavior.PAUSE_OTHERS,
     val themeMode: AppTheme = AppTheme.SYSTEM,
     val palette: AppPalette = AppPalette.WALLPAPER,
+    val customPaletteSeed: Int = AppPalette.DEFAULT_CUSTOM_SEED,
+    val customPaletteStyle: PaletteStyle = PaletteStyle.BALANCED,
     val fullscreenButtonPosition: IconPosition = IconPosition.TOP_RIGHT,
     val immichButtonPosition: IconPosition = IconPosition.BOTTOM_LEFT,
     val immichOpenMode: ImmichOpenMode = ImmichOpenMode.APP,
@@ -66,6 +69,7 @@ data class SettingsUiState(
     val doubleTapAction: DoubleTapAction = DoubleTapAction.FULLSCREEN,
     val showActionButtonsDialog: Boolean = false,
     val showInteractionsDialog: Boolean = false,
+    val showCustomPaletteEditor: Boolean = false,
     val showClearCacheConfirmation: Boolean = false,
     val reminderEnabled: Boolean = false,
     val reminderInterval: ReminderInterval = ReminderInterval.OFTEN,

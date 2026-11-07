@@ -234,7 +234,7 @@ fun SortOrderPopupMenu(
 
 /** Tonal block grouping sort options, like a settings section. Groups are separated by gaps, not dividers. */
 @Composable
-private fun SortOptionGroup(content: @Composable ColumnScope.() -> Unit) {
+internal fun SortOptionGroup(content: @Composable ColumnScope.() -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()

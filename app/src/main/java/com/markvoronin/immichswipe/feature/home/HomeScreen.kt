@@ -174,6 +174,7 @@ fun HomeScreen(
         currentTopKey !is NavKey.Settings -> SettingsSubMenu.NONE
         settingsUiState.showInteractionsDialog -> SettingsSubMenu.INTERACTIONS
         settingsUiState.showActionButtonsDialog -> SettingsSubMenu.ACTION_BUTTONS
+        settingsUiState.showCustomPaletteEditor -> SettingsSubMenu.CUSTOM_PALETTE
         else -> SettingsSubMenu.NONE
     }
 
@@ -205,6 +206,7 @@ fun HomeScreen(
                         if (activeSubMenu != SettingsSubMenu.NONE) {
                             settingsViewModel.setShowInteractionsDialog(false)
                             settingsViewModel.setShowActionButtonsDialog(false)
+                            settingsViewModel.setShowCustomPaletteEditor(false)
                         } else if (backStack.size > 1) {
                             backStack.removeAt(backStack.lastIndex)
                         } else {

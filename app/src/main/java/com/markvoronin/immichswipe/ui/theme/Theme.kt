@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import com.markvoronin.immichswipe.core.AppPalette
+import com.markvoronin.immichswipe.core.PaletteStyle
 
 private val DarkColorScheme = darkColorScheme(
     primary = Blue80,
@@ -85,6 +86,8 @@ private val LightColorScheme = lightColorScheme(
 fun ImmichSwipeTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     palette: AppPalette = AppPalette.WALLPAPER,
+    customSeed: Int = AppPalette.DEFAULT_CUSTOM_SEED,
+    customStyle: PaletteStyle = PaletteStyle.BALANCED,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -94,7 +97,7 @@ fun ImmichSwipeTheme(
         }
 
         palette == AppPalette.WALLPAPER -> if (darkTheme) DarkColorScheme else LightColorScheme
-        else -> palette.colorScheme(darkTheme)
+        else -> palette.colorScheme(darkTheme, customSeed, customStyle)
     }
 
     val view = LocalView.current

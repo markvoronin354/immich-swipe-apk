@@ -2,6 +2,7 @@ package com.markvoronin.immichswipe.data.repository
 
 import android.content.Context
 import com.markvoronin.immichswipe.core.AppPalette
+import com.markvoronin.immichswipe.core.PaletteStyle
 import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.ButtonPositions
 import com.markvoronin.immichswipe.core.ButtonStackOrientation
@@ -80,6 +81,12 @@ class SessionRepository @Inject constructor(
 
     val appPalette: Flow<AppPalette> = dataStore.getAppPalette().map {
         try { AppPalette.valueOf(it) } catch (_: Exception) { AppPalette.OCEAN }
+    }
+
+    val customPaletteSeed: Flow<Int> = dataStore.getCustomPaletteSeed().map { it ?: AppPalette.DEFAULT_CUSTOM_SEED }
+
+    val customPaletteStyle: Flow<PaletteStyle> = dataStore.getCustomPaletteStyle().map {
+        it?.let { try { PaletteStyle.valueOf(it) } catch (_: Exception) { null } } ?: PaletteStyle.BALANCED
     }
 
 
@@ -200,6 +207,14 @@ class SessionRepository @Inject constructor(
 
     suspend fun saveAppPalette(palette: AppPalette) {
         dataStore.saveAppPalette(palette.name)
+    }
+
+    suspend fun saveCustomPaletteSeed(seed: Int) {
+        dataStore.saveCustomPaletteSeed(seed)
+    }
+
+    suspend fun saveCustomPaletteStyle(style: PaletteStyle) {
+        dataStore.saveCustomPaletteStyle(style.name)
     }
 
 

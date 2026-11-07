@@ -3,6 +3,7 @@ package com.markvoronin.immichswipe.data.datastore
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -24,6 +25,8 @@ class SessionDataStore(private val context: Context) {
         private val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         private val KEY_DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         private val KEY_APP_PALETTE = stringPreferencesKey("app_palette")
+        private val KEY_CUSTOM_PALETTE_SEED = intPreferencesKey("custom_palette_seed")
+        private val KEY_CUSTOM_PALETTE_STYLE = stringPreferencesKey("custom_palette_style")
         private val KEY_FULLSCREEN_ICON_POS = stringPreferencesKey("fullscreen_icon_pos")
         private val KEY_IMMICH_ICON_POS = stringPreferencesKey("immich_icon_pos")
         private val KEY_IMMICH_OPEN_MODE = stringPreferencesKey("immich_open_mode")
@@ -141,6 +144,18 @@ class SessionDataStore(private val context: Context) {
 
     suspend fun saveAppPalette(palette: String) {
         context.dataStore.edit { it[KEY_APP_PALETTE] = palette }
+    }
+
+    fun getCustomPaletteSeed(): Flow<Int?> = context.dataStore.data.map { it[KEY_CUSTOM_PALETTE_SEED] }
+
+    suspend fun saveCustomPaletteSeed(seed: Int) {
+        context.dataStore.edit { it[KEY_CUSTOM_PALETTE_SEED] = seed }
+    }
+
+    fun getCustomPaletteStyle(): Flow<String?> = context.dataStore.data.map { it[KEY_CUSTOM_PALETTE_STYLE] }
+
+    suspend fun saveCustomPaletteStyle(style: String) {
+        context.dataStore.edit { it[KEY_CUSTOM_PALETTE_STYLE] = style }
     }
 
     fun getFullscreenIconPosition(): Flow<String?> = context.dataStore.data.map { it[KEY_FULLSCREEN_ICON_POS] }

@@ -220,7 +220,7 @@ fun StatsPopup(
 }
 
 /** Shape of a tile in a 2x2 group: a corner is fully rounded only when no other tile touches it. */
-private fun gridTileShape(row: Int, column: Int, outer: Dp = 24.dp, inner: Dp = 6.dp) = RoundedCornerShape(
+internal fun gridTileShape(row: Int, column: Int, outer: Dp = 24.dp, inner: Dp = 6.dp) = RoundedCornerShape(
     topStart = if (row == 0 && column == 0) outer else inner,
     topEnd = if (row == 0 && column == 1) outer else inner,
     bottomStart = if (row == 1 && column == 0) outer else inner,

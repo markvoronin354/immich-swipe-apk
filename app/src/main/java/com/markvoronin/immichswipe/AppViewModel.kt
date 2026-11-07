@@ -79,5 +79,15 @@ class AppViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(palette = palette)
             }
         }
+        viewModelScope.launch {
+            sessionRepository.customPaletteSeed.collect { seed ->
+                _uiState.value = _uiState.value.copy(customPaletteSeed = seed)
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.customPaletteStyle.collect { style ->
+                _uiState.value = _uiState.value.copy(customPaletteStyle = style)
+            }
+        }
     }
 }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +39,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -92,6 +94,7 @@ import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.toPath
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppPalette
+import com.markvoronin.immichswipe.core.PaletteStyle
 import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.feature.swipe.components.connectedTileShape
 import com.markvoronin.immichswipe.ui.theme.colorScheme
@@ -643,7 +646,10 @@ fun SettingsToggleButton(
 fun PaletteSelector(
     selected: AppPalette,
     themeMode: AppTheme,
-    onSelect: (AppPalette) -> Unit
+    customSeed: Int,
+    customStyle: PaletteStyle,
+    onSelect: (AppPalette) -> Unit,
+    onEditCustom: () -> Unit
 ) {
     val context = LocalContext.current
     val dark = when (themeMode) {
@@ -655,30 +661,49 @@ fun PaletteSelector(
         if (palette == AppPalette.WALLPAPER && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         } else {
-            palette.colorScheme(dark)
+            palette.colorScheme(dark, customSeed, customStyle)
         }
     SettingsExpandableItem(
         title = stringResource(R.string.settings_palette_label),
         subtitle = stringResource(R.string.settings_palette_desc),
         icon = Icons.Default.Palette
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            AppPalette.entries.filter { it.isAvailable }.forEach { palette ->
-                val scheme = remember(palette, dark) { schemeFor(palette) }
-                PaletteSwatch(
-                    primary = scheme.primary,
-                    secondary = scheme.secondaryContainer,
-                    tertiary = scheme.tertiary,
-                    label = stringResource(palette.labelRes),
-                    selected = selected == palette,
-                    onClick = { onSelect(palette) }
-                )
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                AppPalette.entries.filter { it.isAvailable }.forEach { palette ->
+                    val scheme = remember(palette, dark, customSeed, customStyle) { schemeFor(palette) }
+                    PaletteSwatch(
+                        primary = scheme.primary,
+                        secondary = scheme.secondaryContainer,
+                        tertiary = scheme.tertiary,
+                        label = stringResource(palette.labelRes),
+                        selected = selected == palette,
+                        onClick = { onSelect(palette) },
+                        onLongClick = if (palette == AppPalette.CUSTOM) onEditCustom else null
+                    )
+                }
+            }
+            // The editor entry slides out below the swatches while the custom palette is selected.
+            AnimatedVisibility(
+                visible = selected == AppPalette.CUSTOM,
+                enter = expandVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) + fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
+                exit = shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) + fadeOut(MaterialTheme.motionScheme.slowEffectsSpec())
+            ) {
+                Column {
+                    SettingsItemGap()
+                    SettingsClickableItem(
+                        title = stringResource(R.string.settings_custom_palette_edit),
+                        subtitle = stringResource(R.string.settings_custom_palette_edit_desc),
+                        icon = Icons.Default.Edit,
+                        onClick = onEditCustom
+                    )
+                }
             }
         }
     }
@@ -711,7 +736,8 @@ private fun PaletteSwatch(
     tertiary: Color,
     label: String,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null
 ) {
     val swatchShape = animatedCookieShape(selected, MaterialTheme.motionScheme.slowSpatialSpec())
     Column(
@@ -722,7 +748,7 @@ private fun PaletteSwatch(
             modifier = Modifier
                 .size(56.dp)
                 .clip(swatchShape)
-                .clickable(role = Role.RadioButton, onClick = onClick)
+                .combinedClickable(role = Role.RadioButton, onLongClick = onLongClick, onClick = onClick)
                 .border(
                     2.5.dp,
                     if (selected) MaterialTheme.colorScheme.onSurface else Color.Transparent,

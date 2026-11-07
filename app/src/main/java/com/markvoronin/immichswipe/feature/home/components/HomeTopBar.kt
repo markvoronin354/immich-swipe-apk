@@ -166,6 +166,7 @@ fun HomeTopBar(
                                 val titleRes = when (state.subMenu) {
                                     SettingsSubMenu.INTERACTIONS -> R.string.settings_interactions_dialog_title
                                     SettingsSubMenu.ACTION_BUTTONS -> R.string.settings_action_buttons_dialog_title
+                                    SettingsSubMenu.CUSTOM_PALETTE -> R.string.settings_custom_palette_title
                                     else -> R.string.settings_title
                                 }
 

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.AppPalette
+import com.markvoronin.immichswipe.core.PaletteStyle
 import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichOpenMode
@@ -83,6 +84,16 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             sessionRepository.appPalette.collect { palette ->
                 _uiState.value = _uiState.value.copy(palette = palette)
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.customPaletteSeed.collect { seed ->
+                _uiState.value = _uiState.value.copy(customPaletteSeed = seed)
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.customPaletteStyle.collect { style ->
+                _uiState.value = _uiState.value.copy(customPaletteStyle = style)
             }
         }
         viewModelScope.launch {
@@ -292,6 +303,15 @@ class SettingsViewModel @Inject constructor(
     fun setPalette(palette: AppPalette) {
         viewModelScope.launch {
             sessionRepository.saveAppPalette(palette)
+        }
+    }
+
+    /** Saves the custom seed and style and switches to the custom palette. */
+    fun applyCustomPalette(seed: Int, style: PaletteStyle) {
+        viewModelScope.launch {
+            sessionRepository.saveCustomPaletteSeed(seed)
+            sessionRepository.saveCustomPaletteStyle(style)
+            sessionRepository.saveAppPalette(AppPalette.CUSTOM)
         }
     }
 
@@ -641,6 +661,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setShowInteractionsDialog(show: Boolean) {
         _uiState.value = _uiState.value.copy(showInteractionsDialog = show)
+    }
+
+    fun setShowCustomPaletteEditor(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showCustomPaletteEditor = show)
     }
 
     fun setShowClearCacheConfirmation(show: Boolean) {

@@ -98,6 +98,7 @@ import com.markvoronin.immichswipe.feature.settings.components.CustomReminderDia
 import com.markvoronin.immichswipe.feature.settings.components.DatabaseActionDialog
 import com.markvoronin.immichswipe.feature.settings.components.InteractionsScreen
 import com.markvoronin.immichswipe.feature.settings.components.LogsDialog
+import com.markvoronin.immichswipe.feature.settings.components.CustomPaletteScreen
 import com.markvoronin.immichswipe.feature.settings.components.PaletteSelector
 import com.markvoronin.immichswipe.feature.settings.components.SettingsClickableItem
 import com.markvoronin.immichswipe.feature.settings.components.SettingsExpandableItem
@@ -109,7 +110,7 @@ import com.markvoronin.immichswipe.feature.settings.components.ThemeModeButton
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
 
 enum class SettingsSubMenu {
-    NONE, INTERACTIONS, ACTION_BUTTONS
+    NONE, INTERACTIONS, ACTION_BUTTONS, CUSTOM_PALETTE
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -185,6 +186,7 @@ fun SettingsScreen(
     val activeSubMenu = when {
         uiState.showInteractionsDialog -> SettingsSubMenu.INTERACTIONS
         uiState.showActionButtonsDialog -> SettingsSubMenu.ACTION_BUTTONS
+        uiState.showCustomPaletteEditor -> SettingsSubMenu.CUSTOM_PALETTE
         else -> SettingsSubMenu.NONE
     }
 
@@ -216,6 +218,14 @@ fun SettingsScreen(
                     uiState = uiState,
                     viewModel = viewModel,
                     onBack = { viewModel.setShowActionButtonsDialog(false) },
+                    modifier = modifier
+                )
+            }
+            SettingsSubMenu.CUSTOM_PALETTE -> {
+                CustomPaletteScreen(
+                    uiState = uiState,
+                    viewModel = viewModel,
+                    onBack = { viewModel.setShowCustomPaletteEditor(false) },
                     modifier = modifier
                 )
             }
@@ -277,7 +287,10 @@ fun SettingsScreen(
             PaletteSelector(
                 selected = uiState.palette,
                 themeMode = uiState.themeMode,
-                onSelect = { viewModel.setPalette(it) }
+                customSeed = uiState.customPaletteSeed,
+                customStyle = uiState.customPaletteStyle,
+                onSelect = { viewModel.setPalette(it) },
+                onEditCustom = { viewModel.setShowCustomPaletteEditor(true) }
             )
             }
         }
