@@ -3,16 +3,17 @@
 package com.markvoronin.immichswipe.feature.duplicates
 
 import android.widget.Toast
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
 import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.gestures.snapping.snapFlingBehavior
@@ -85,10 +86,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
@@ -102,6 +106,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.markvoronin.immichswipe.R
+import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.components.DuplicateClusterCard
 import com.markvoronin.immichswipe.feature.duplicates.components.FullScreenPreviewData
@@ -133,6 +138,8 @@ fun DuplicatesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var activeZoomData by remember { mutableStateOf<ZoomData?>(null) }
+    // On-screen bounds of every composed grid thumbnail, keyed by asset id, for the screen-wide pinch-to-peek.
+    val thumbnailBounds = remember { mutableMapOf<String, Pair<Asset, Rect>>() }
     var fullScreenPreviewData by remember { mutableStateOf<FullScreenPreviewData?>(null) }
     var activeClusterIndex by remember { mutableIntStateOf(0) }
     var deepAnalyzeTarget by remember { mutableStateOf<DuplicateClusterUiModel?>(null) }
@@ -227,6 +234,14 @@ fun DuplicatesScreen(
                 .onGloballyPositioned { coords ->
                     rootWindowOffset = coords.positionInWindow()
                 }
+                .pinchToPeek(
+                    thumbnails = thumbnailBounds,
+                    windowOffset = { rootWindowOffset },
+                    // A pinch can't start on the bottom bar, which covers the end of the list.
+                    canStartAt = { point -> bottomBarTopPx <= 0f || point.y < bottomBarTopPx },
+                    decisionOf = { asset -> uiState.decisions[asset.id] ?: DuplicateDecision.NONE },
+                    onZoom = { zoomData -> activeZoomData = zoomData }
+                )
         ) {
             val boxScope = this
             if (uiState.isLoading) {
@@ -392,8 +407,17 @@ fun DuplicatesScreen(
                                                 clusterIndex = clusterIdx
                                             )
                                         },
-                                        onZoomStateUpdate = { zoomData ->
-                                            activeZoomData = zoomData
+                                        onThumbnailBoundsChanged = { asset, bounds ->
+                                            if (bounds == null) {
+                                                thumbnailBounds.remove(asset.id)
+                                            } else {
+                                                thumbnailBounds[asset.id] = asset to bounds
+                                                // Keep the peek anchored to its thumbnail if the list moves underneath it.
+                                                val zoom = activeZoomData
+                                                if (zoom != null && zoom.asset.id == asset.id && zoom.initialBounds != bounds) {
+                                                    activeZoomData = zoom.copy(initialBounds = bounds)
+                                                }
+                                            }
                                         }
                                     )
                                 }
@@ -672,7 +696,7 @@ private fun DuplicatesHeader(
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        animationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),
         label = "DuplicatesProgressBarAnimation"
     )
 
@@ -711,7 +735,7 @@ private fun DuplicatesHeader(
                 } else {
                     staticInfoX
                 },
-                animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
                 label = "DuplicatesInfoTranslation"
             )
 
@@ -721,7 +745,7 @@ private fun DuplicatesHeader(
                 } else {
                     paddingPx
                 },
-                animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
                 label = "DuplicatesRemainingTranslation"
             )
 
@@ -1061,3 +1085,61 @@ private fun DuplicatesBottomBar(
         Spacer(Modifier.height(16.dp))
     }
 }
+
+/**
+ * Pinch-to-peek for the duplicates grid. It runs on the whole screen instead of on each thumbnail, so every
+ * finger counts: a pinch that starts on a thumbnail keeps zooming when fingers are lifted and put back down
+ * anywhere, until all fingers are up. It listens in the Initial pass and consumes everything once active, so
+ * the list and rows don't scroll and thumbnail taps don't fire mid-pinch.
+ */
+private fun Modifier.pinchToPeek(
+    thumbnails: Map<String, Pair<Asset, Rect>>,
+    windowOffset: () -> Offset,
+    canStartAt: (Offset) -> Boolean,
+    decisionOf: (Asset) -> DuplicateDecision,
+    onZoom: (ZoomData) -> Unit,
+): Modifier = pointerInput(Unit) {
+    fun thumbnailAt(windowPoint: Offset): Asset? =
+        if (!canStartAt(windowPoint)) null
+        else thumbnails.values.firstOrNull { (_, bounds) -> bounds.contains(windowPoint) }?.first
+
+    awaitEachGesture {
+        val firstDown = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+        var target: Asset? = null
+        var lastBounds = Rect.Zero
+        var scale = 1f
+        var offset = Offset.Zero
+
+        do {
+            val event = awaitPointerEvent(PointerEventPass.Initial)
+            val pressed = event.changes.filter { it.pressed }
+
+            if (target == null && pressed.size >= 2) {
+                val centroid = pressed.fold(Offset.Zero) { acc, change -> acc + change.position } / pressed.size.toFloat()
+                target = thumbnailAt(centroid + windowOffset()) ?: thumbnailAt(firstDown.position + windowOffset())
+            }
+
+            val asset = target
+            if (asset != null) {
+                if (pressed.size >= 2) {
+                    scale = (scale * event.calculateZoom()).coerceIn(1f, 4f)
+                }
+                val pan = event.calculatePan()
+                val maxOffset = 250f * scale
+                offset = Offset(
+                    (offset.x + pan.x).coerceIn(-maxOffset, maxOffset),
+                    (offset.y + pan.y).coerceIn(-maxOffset, maxOffset)
+                )
+                lastBounds = thumbnails[asset.id]?.second ?: lastBounds
+                onZoom(ZoomData(asset, decisionOf(asset), lastBounds, scale, offset, isGestureActive = true))
+                event.changes.forEach { it.consume() }
+            }
+        } while (event.changes.any { it.pressed })
+
+        target?.let { asset ->
+            lastBounds = thumbnails[asset.id]?.second ?: lastBounds
+            onZoom(ZoomData(asset, decisionOf(asset), lastBounds, scale, offset, isGestureActive = false))
+        }
+    }
+}
+

@@ -46,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChangeIgnoreConsumed
@@ -76,7 +77,7 @@ fun DuplicateClusterCard(
     onDeleteAll: () -> Unit = {},
     onAnalyze: () -> Unit = {},
     onAssetLongPress: (Asset) -> Unit,
-    onZoomStateUpdate: (ZoomData?) -> Unit,
+    onThumbnailBoundsChanged: (Asset, Rect?) -> Unit,
     isFavorite: (Asset) -> Boolean = { it.isFavorite },
     onOpenFullScreen: () -> Unit = {
         cluster.assets.firstOrNull()?.let { onAssetLongPress(it) }
@@ -170,7 +171,7 @@ fun DuplicateClusterCard(
                                 modifier = Modifier.weight(1f),
                                 onToggle = { onDecisionToggle(asset.id) },
                                 onLongPress = { onAssetLongPress(asset) },
-                                onZoomStateUpdate = onZoomStateUpdate
+                                onBoundsChanged = { bounds -> onThumbnailBoundsChanged(asset, bounds) }
                             )
                         }
                     }
@@ -198,7 +199,7 @@ fun DuplicateClusterCard(
                                 modifier = Modifier.width(itemWidth),
                                 onToggle = { onDecisionToggle(asset.id) },
                                 onLongPress = { onAssetLongPress(asset) },
-                                onZoomStateUpdate = onZoomStateUpdate
+                                onBoundsChanged = { bounds -> onThumbnailBoundsChanged(asset, bounds) }
                             )
                         }
                     }
@@ -230,8 +231,8 @@ fun DuplicateClusterCard(
                 ) {
                     AnimatedVisibility(
                         visible = isAllKeep,
-                        enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
-                        exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start)
+                        enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()) + expandHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), expandFrom = Alignment.Start),
+                        exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()) + shrinkHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), shrinkTowards = Alignment.Start)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -260,8 +261,8 @@ fun DuplicateClusterCard(
                 ) {
                     AnimatedVisibility(
                         visible = isAllDelete,
-                        enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
-                        exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start)
+                        enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()) + expandHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), expandFrom = Alignment.Start),
+                        exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()) + shrinkHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), shrinkTowards = Alignment.Start)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
