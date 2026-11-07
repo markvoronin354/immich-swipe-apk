@@ -1,5 +1,6 @@
 package com.markvoronin.immichswipe.feature.settings.components
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.FileDownload
@@ -26,8 +28,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -102,6 +106,7 @@ fun DatabaseActionDialog(
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(Modifier.height(8.dp))
                     Column(Modifier.selectableGroup()) {
                         ScopeOption(
                             text = stringResource(R.string.settings_db_scope_user, userName),
@@ -145,16 +150,30 @@ fun DatabaseActionDialog(
     )
 }
 
+/** Rounded row like [com.markvoronin.immichswipe.feature.swipe.components.SortPopupItem]: the selected one gets a tonal container, and the ripple is clipped to the shape. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ScopeOption(text: String, selected: Boolean, onClick: () -> Unit) {
+    val containerColor by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0f),
+        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
+        label = "scopeOptionContainer"
+    )
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(vertical = 2.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(containerColor)
             .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
-            .padding(vertical = 8.dp),
+            .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         RadioButton(selected = selected, onClick = null)
-        Text(text, modifier = Modifier.padding(start = 12.dp))
+        Text(
+            text = text,
+            color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 12.dp)
+        )
     }
 }
