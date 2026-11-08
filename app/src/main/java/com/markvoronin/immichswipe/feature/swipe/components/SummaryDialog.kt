@@ -24,12 +24,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Archive
@@ -116,8 +115,6 @@ fun SummaryDialog(
             shape = RoundedCornerShape(28.dp),
             color = MaterialTheme.colorScheme.surfaceContainerLow
         ) {
-            val scrollState = rememberScrollState()
-
             Column {
                 // Header: sits outside the scrolling content so it stays pinned
                 Row(
@@ -139,14 +136,12 @@ fun SummaryDialog(
                     Spacer(Modifier.width(48.dp))
                 }
 
-                // Shrinks to fit short content; scrolls only when the screen is too small.
+                // Pinned stats and header; only the photo grid below scrolls, so there's no nested scrolling.
                 Column(
                     modifier = Modifier
                         .weight(1f, fill = false)
                         .fillMaxWidth()
-                        .verticalFadingEdges(scrollState, length = 32.dp)
                         .padding(horizontal = 24.dp)
-                        .verticalScroll(scrollState)
                 ) {
                     Spacer(Modifier.height(12.dp))
 
@@ -252,17 +247,20 @@ fun SummaryDialog(
 
                     if (uiState.deletedAssets.isNotEmpty()) {
                         val isLoadingDeletedAssets = uiState.deletedCount > uiState.deletedAssets.size
+                        val gridState = rememberLazyGridState()
+                        // Wraps short lists; otherwise fills the space left in the popup.
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             shape = RoundedCornerShape(20.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.weight(1f, fill = false).fillMaxWidth()
                         ) {
                             LazyVerticalGrid(
                                 columns = GridCells.Fixed(3),
+                                state = gridState,
                                 contentPadding = PaddingValues(8.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.fillMaxWidth().height(220.dp)
+                                modifier = Modifier.fillMaxWidth().verticalFadingEdges(gridState, length = 32.dp)
                             ) {
                                 items(
                                     items = uiState.deletedAssets,

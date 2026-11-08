@@ -94,7 +94,7 @@ fun AlbumGrid(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalFadingEdges(state, length = 32.dp),
-                contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 120.dp),
+                contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 85.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 val statusOrder = listOf(
