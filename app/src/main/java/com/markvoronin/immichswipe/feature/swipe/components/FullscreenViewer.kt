@@ -544,9 +544,7 @@ fun FullscreenViewer(
 
                             if (showLoadingIndicator) {
                                 Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color.Black.copy(alpha = 0.2f)),
+                                    modifier = Modifier.fillMaxSize(),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     MediaLoadingIndicator()
