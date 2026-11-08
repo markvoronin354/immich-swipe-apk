@@ -361,7 +361,8 @@ class SwipeViewModel @Inject constructor(
                 } else {
                     val indexInNewList = if (currentAssetId != null) sorted.indexOfFirst { it.id == currentAssetId } else -1
                     
-                    if (indexInNewList != -1 && !decisions[currentAssetId].isFinalProcessed()) {
+                    val decisionUnchanged = currentAssetId != null && decisions[currentAssetId] == state.decisions[currentAssetId]
+                    if (indexInNewList != -1 && (!decisions[currentAssetId].isFinalProcessed() || decisionUnchanged)) {
                         indexInNewList
                     } else {
                         sorted.indexOfFirst { !decisions[it.id].isFinalProcessed() }
