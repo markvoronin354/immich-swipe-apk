@@ -31,6 +31,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -432,6 +433,8 @@ fun FullscreenViewer(
                     .offset { IntOffset(swipeX.value.roundToInt(), swipeY.value.roundToInt()) }
                     .graphicsLayer {
                         rotationZ = swipeX.value / 60f
+                        shape = RoundedCornerShape(28.dp)
+                        clip = true
                     }
                     .background(Color.Black.copy(alpha = fadeAlpha)),
                 contentAlignment = Alignment.Center
@@ -632,6 +635,8 @@ fun FullscreenViewer(
                         }
                     }
 
+                    // A fresh painter per asset, so a previous asset's error state never draws over the next one.
+                    key(asset.id) {
                     SubcomposeAsyncImage(
                         model = photoRequest,
                         contentDescription = null,
@@ -645,6 +650,7 @@ fun FullscreenViewer(
                             AssetErrorView()
                         }
                     )
+                    }
                 }
             }
             }
