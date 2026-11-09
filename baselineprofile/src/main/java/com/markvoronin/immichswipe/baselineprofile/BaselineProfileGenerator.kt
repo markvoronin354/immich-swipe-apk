@@ -21,8 +21,6 @@ class BaselineProfileGenerator {
         pressHome()
         startActivityAndWait()
         waitForHome()
-        openAlbumAndBack()
-        openDuplicatesAndBack()
-        openSettingsSubmenuAndBack()
+        fullJourney()
     }
 }

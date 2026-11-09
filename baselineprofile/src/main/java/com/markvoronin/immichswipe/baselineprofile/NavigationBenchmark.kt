@@ -10,8 +10,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Frame times while opening an album, Duplicates and a Settings submenu, each from a cold start so every
- * screen is composed for the first time, as on a user's first open. Compare the two results to see what the
+ * Frame times over the main journey (see fullJourney), each run in a fresh process so every screen is composed
+ * for the first time, as on a user's first open. Compare the two results to see what the
  * baseline profile buys. Run with `./gradlew :baselineprofile:connectedBenchmarkReleaseAndroidTest`.
  */
 @RunWith(AndroidJUnit4::class)
@@ -38,8 +38,6 @@ class NavigationBenchmark {
             waitForHome()
         }
     ) {
-        openAlbumAndBack()
-        openDuplicatesAndBack()
-        openSettingsSubmenuAndBack()
+        fullJourney()
     }
 }
