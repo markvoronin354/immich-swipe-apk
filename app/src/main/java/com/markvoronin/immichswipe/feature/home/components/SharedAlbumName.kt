@@ -29,7 +29,7 @@ fun SharedTransitionHost(modifier: Modifier = Modifier, content: @Composable () 
 fun Modifier.sharedAlbumName(albumId: String): Modifier {
     val scope = LocalSharedTransitionScope.current ?: return this
     // Same expressive spring as the page slide, so the name lands with the page.
-    val boundsSpec = MaterialTheme.motionScheme.defaultSpatialSpec<Rect>()
+    val boundsSpec = MaterialTheme.motionScheme.slowSpatialSpec<Rect>()
     val boundsTransform = remember(boundsSpec) { BoundsTransform { _, _ -> boundsSpec } }
     return with(scope) {
         this@sharedAlbumName.sharedBounds(

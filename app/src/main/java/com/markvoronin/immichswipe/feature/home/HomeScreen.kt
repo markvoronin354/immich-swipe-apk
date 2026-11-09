@@ -76,6 +76,7 @@ import com.markvoronin.immichswipe.feature.home.components.ProfileButton
 import com.markvoronin.immichswipe.feature.home.components.ProfilePopup
 import com.markvoronin.immichswipe.feature.home.components.SearchBarField
 import com.markvoronin.immichswipe.feature.home.components.SharedTransitionHost
+import com.markvoronin.immichswipe.feature.home.components.sharedAlbumName
 import com.markvoronin.immichswipe.feature.home.components.StatsPopup
 import com.markvoronin.immichswipe.feature.settings.SettingsScreen
 import com.markvoronin.immichswipe.feature.settings.SettingsViewModel
@@ -189,13 +190,11 @@ fun HomeScreen(
         )
     }
 
-    // Shared-axis slide for every page on the theme's expressive springs: both screens shift a fifth of the width
-    // in the same direction while crossfading. The faster effects springs would finish the fade within the
-    // destination's first, heavier frame, so the default and slow ones keep it visible.
+    // Page transitions on the slow expressive springs: the page on top slides the full width and the page underneath
+    // shifts a third of it, both crossfading.
     val motionScheme = MaterialTheme.motionScheme
-    val pageSlideSpec = motionScheme.defaultSpatialSpec<IntOffset>()
-    val pageFadeOutSpec = motionScheme.defaultEffectsSpec<Float>()
-    val pageFadeInSpec = motionScheme.slowEffectsSpec<Float>()
+    val pageSlideSpec = motionScheme.slowSpatialSpec<IntOffset>()
+    val pageFadeSpec = motionScheme.slowEffectsSpec<Float>()
 
     val tutorialController = LocalTutorialController.current
         ?: rememberTutorialController()
@@ -212,12 +211,12 @@ fun HomeScreen(
                     onBack = navigateBack,
                     modifier = Modifier.fillMaxSize(),
                     transitionSpec = {
-                        (slideInHorizontally(pageSlideSpec) { it / 5 } + fadeIn(pageFadeInSpec)) togetherWith
-                            (slideOutHorizontally(pageSlideSpec) { -it / 5 } + fadeOut(pageFadeOutSpec))
+                        (slideInHorizontally(pageSlideSpec) { it } + fadeIn(pageFadeSpec)) togetherWith
+                            (slideOutHorizontally(pageSlideSpec) { -it / 3 } + fadeOut(pageFadeSpec))
                     },
                     popTransitionSpec = {
-                        (slideInHorizontally(pageSlideSpec) { -it / 5 } + fadeIn(pageFadeInSpec)) togetherWith
-                            (slideOutHorizontally(pageSlideSpec) { it / 5 } + fadeOut(pageFadeOutSpec))
+                        (slideInHorizontally(pageSlideSpec) { -it / 3 } + fadeIn(pageFadeSpec)) togetherWith
+                            (slideOutHorizontally(pageSlideSpec) { it } + fadeOut(pageFadeSpec))
                     },
                     entryProvider = entryProvider {
                         entry<NavKey.Home> {
@@ -338,7 +337,12 @@ fun HomeScreen(
                             )
                             Column(modifier = Modifier.fillMaxSize()) {
                                 AppTopBar(
-                                    title = { AppTopBarTitle(stringResource(R.string.home_virtual_duplicates)) },
+                                    title = {
+                                        AppTopBarTitle(
+                                            text = stringResource(R.string.home_virtual_duplicates),
+                                            modifier = Modifier.sharedAlbumName(Album.VIRTUAL_DUPLICATES_ID)
+                                        )
+                                    },
                                     onBack = navigateBack,
                                     actions = {
                                         ResetActionButton(onClick = { duplicatesViewModel.toggleResetConfirmation(true) })
