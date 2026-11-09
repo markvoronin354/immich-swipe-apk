@@ -17,7 +17,6 @@ import com.markvoronin.immichswipe.domain.model.Album
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +27,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -392,13 +390,6 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             sessionRepository.saveBackupWarningShown(true)
         }
-    }
-
-    private val _resetRequestChannel = Channel<Unit>(Channel.BUFFERED)
-    val resetRequestSignal = _resetRequestChannel.receiveAsFlow()
-
-    fun requestReset() {
-        _resetRequestChannel.trySend(Unit)
     }
 
     fun getSessionRepository() = sessionRepository

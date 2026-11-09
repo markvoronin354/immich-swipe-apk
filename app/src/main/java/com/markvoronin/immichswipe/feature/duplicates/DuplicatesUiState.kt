@@ -11,6 +11,7 @@ data class DuplicatesUiState(
     val sortOrder: DuplicatesSortOrder = DuplicatesSortOrder.CLUSTER_SIZE,
     val isSyncing: Boolean = false,
     val showDeleteConfirmation: Boolean = false,
+    val showResetConfirmation: Boolean = false,
     val baseUrl: String = "",
     val error: String? = null,
     val hasCompletedDuplicatesTutorial: Boolean = true,

@@ -3,6 +3,11 @@ package com.markvoronin.immichswipe.feature.home
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,11 +15,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ViewList
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.SyncLock
@@ -23,9 +30,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -43,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -54,18 +62,22 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.feature.auth.AuthScreen
 import com.markvoronin.immichswipe.feature.auth.AuthViewModel
+import com.markvoronin.immichswipe.feature.common.AppTopBar
+import com.markvoronin.immichswipe.feature.common.AppTopBarTitle
+import com.markvoronin.immichswipe.feature.common.ResetActionButton
 import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.DuplicatesScreen
 import com.markvoronin.immichswipe.feature.duplicates.DuplicatesViewModel
 import com.markvoronin.immichswipe.feature.home.components.AlbumGrid
 import com.markvoronin.immichswipe.feature.home.components.AlbumList
 import com.markvoronin.immichswipe.feature.home.components.ErrorView
-import com.markvoronin.immichswipe.feature.home.components.HomeTopBar
+import com.markvoronin.immichswipe.feature.home.components.HomeLogo
+import com.markvoronin.immichswipe.feature.home.components.ProfileButton
 import com.markvoronin.immichswipe.feature.home.components.ProfilePopup
 import com.markvoronin.immichswipe.feature.home.components.SearchBarField
+import com.markvoronin.immichswipe.feature.home.components.SharedTransitionHost
 import com.markvoronin.immichswipe.feature.home.components.StatsPopup
 import com.markvoronin.immichswipe.feature.settings.SettingsScreen
-import com.markvoronin.immichswipe.feature.settings.SettingsSubMenu
 import com.markvoronin.immichswipe.feature.settings.SettingsViewModel
 import com.markvoronin.immichswipe.feature.swipe.SwipeScreen
 import com.markvoronin.immichswipe.feature.tutorial.LocalTutorialController
@@ -135,13 +147,6 @@ fun HomeScreen(
     val currentTopKey = backStack.lastOrNull() ?: NavKey.Home
     val isHome = currentTopKey is NavKey.Home
 
-    val swipeAlbumName = if (currentTopKey is NavKey.Swipe) {
-        val albumId = currentTopKey.albumId
-        uiState.filteredAlbums.firstOrNull { it.id == albumId }?.albumName
-            ?: uiState.selectedAlbum?.takeIf { it.id == albumId }?.albumName
-            ?: if (albumId == Album.VIRTUAL_ALL_ID) virtualAllName else (uiState.virtualNames[albumId] ?: albumFallbackName)
-    } else null
-
     LaunchedEffect(Unit) {
         viewModel.loadUser()
     }
@@ -168,74 +173,76 @@ fun HomeScreen(
     val settingsViewModel: SettingsViewModel = hiltViewModel(
         key = "settings-$sessionKey"
     )
-    val settingsUiState by settingsViewModel.uiState.collectAsStateWithLifecycle()
 
-    val activeSubMenu = when {
-        currentTopKey !is NavKey.Settings -> SettingsSubMenu.NONE
-        settingsUiState.showInteractionsDialog -> SettingsSubMenu.INTERACTIONS
-        settingsUiState.showActionButtonsDialog -> SettingsSubMenu.ACTION_BUTTONS
-        settingsUiState.showCustomPaletteEditor -> SettingsSubMenu.CUSTOM_PALETTE
-        else -> SettingsSubMenu.NONE
+    val navigateBack: () -> Unit = {
+        if (backStack.size > 1) {
+            backStack.removeAt(backStack.lastIndex)
+        }
     }
+
+    val profileButton: @Composable () -> Unit = {
+        ProfileButton(
+            user = uiState.user,
+            baseUrl = uiState.baseUrl,
+            connectionStatus = uiState.connectionStatus,
+            onClick = { viewModel.toggleProfilePopup(visible = true) }
+        )
+    }
+
+    // Shared-axis slide for every page on the theme's expressive springs: both screens shift a fifth of the width
+    // in the same direction while crossfading. The faster effects springs would finish the fade within the
+    // destination's first, heavier frame, so the default and slow ones keep it visible.
+    val motionScheme = MaterialTheme.motionScheme
+    val pageSlideSpec = motionScheme.defaultSpatialSpec<IntOffset>()
+    val pageFadeOutSpec = motionScheme.defaultEffectsSpec<Float>()
+    val pageFadeInSpec = motionScheme.slowEffectsSpec<Float>()
 
     val tutorialController = LocalTutorialController.current
         ?: rememberTutorialController()
 
     ProvideTutorialController(tutorialController) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Scaffold(
-                modifier = modifier,
-                containerColor = Color.Transparent,
-                topBar = {
-                    HomeTopBar(
-                        isHome = isHome,
-                        isSwipeTab = currentTopKey is NavKey.Swipe,
-                        isDuplicatesTab = currentTopKey is NavKey.Duplicates,
-                        isSettingsTab = currentTopKey is NavKey.Settings,
-                        activeSubMenu = activeSubMenu,
-                        swipeAlbumName = swipeAlbumName,
-                        user = uiState.user,
-                        connectionStatus = uiState.connectionStatus,
-                        baseUrl = uiState.baseUrl,
-                        onOpenStats = { viewModel.toggleStatsPopup(visible = true) },
-                        isGridView = uiState.isGridView,
-                        onToggleLayout = { viewModel.toggleLayoutMode() },
-                        onSwipeReset = { viewModel.requestReset() },
-                        onOpenProfile = { viewModel.toggleProfilePopup(visible = true) },
-                        onBack = {
-                        if (activeSubMenu != SettingsSubMenu.NONE) {
-                            settingsViewModel.setShowInteractionsDialog(false)
-                            settingsViewModel.setShowActionButtonsDialog(false)
-                            settingsViewModel.setShowCustomPaletteEditor(false)
-                        } else if (backStack.size > 1) {
-                            backStack.removeAt(backStack.lastIndex)
-                        } else {
-                            backStack.clear()
-                            backStack.add(NavKey.Home)
-                        }
-                    }
-                )
-        },
-        bottomBar = {}
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(top = innerPadding.calculateTopPadding())
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
+        SharedTransitionHost(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
                 NavDisplay(
                     backStack = backStack,
-                    onBack = {
-                        if (backStack.size > 1) {
-                            backStack.removeAt(backStack.lastIndex)
-                        }
-                    },
+                    onBack = navigateBack,
                     modifier = Modifier.fillMaxSize(),
+                    transitionSpec = {
+                        (slideInHorizontally(pageSlideSpec) { it / 5 } + fadeIn(pageFadeInSpec)) togetherWith
+                            (slideOutHorizontally(pageSlideSpec) { -it / 5 } + fadeOut(pageFadeOutSpec))
+                    },
+                    popTransitionSpec = {
+                        (slideInHorizontally(pageSlideSpec) { -it / 5 } + fadeIn(pageFadeInSpec)) togetherWith
+                            (slideOutHorizontally(pageSlideSpec) { it / 5 } + fadeOut(pageFadeOutSpec))
+                    },
                     entryProvider = entryProvider {
                         entry<NavKey.Home> {
                             Column(modifier = Modifier.fillMaxSize()) {
+                                AppTopBar(
+                                    title = { HomeLogo() },
+                                    actions = {
+                                        IconButton(onClick = { viewModel.toggleStatsPopup(visible = true) }) {
+                                            Icon(
+                                                imageVector = Icons.Default.BarChart,
+                                                contentDescription = stringResource(R.string.stats_popup_title)
+                                            )
+                                        }
+                                        IconButton(onClick = { viewModel.toggleLayoutMode() }) {
+                                            Icon(
+                                                imageVector = if (uiState.isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
+                                                contentDescription = stringResource(
+                                                    if (uiState.isGridView) R.string.settings_layout_list else R.string.settings_layout_grid
+                                                )
+                                            )
+                                        }
+                                        profileButton()
+                                    }
+                                )
+
                                 SearchBarField(
                                     searchQuery = uiState.searchQuery,
                                     onSearchQueryChange = { viewModel.onSearchQueryChanged(it) }
@@ -320,34 +327,36 @@ fun HomeScreen(
                             SwipeScreen(
                                 album = selectedAlbum,
                                 sessionKey = sessionKey,
-                                resetSignal = viewModel.resetRequestSignal,
+                                profileButton = profileButton,
                                 userQuotaBytes = uiState.user?.quotaUsageInBytes,
-                                onBack = {
-                                    if (backStack.size > 1) {
-                                        backStack.removeAt(backStack.lastIndex)
-                                    }
-                                }
+                                onBack = navigateBack
                             )
                         }
                         entry<NavKey.Duplicates> {
                             val duplicatesViewModel: DuplicatesViewModel = hiltViewModel(
                                 key = "duplicates-$sessionKey"
                             )
-                            DuplicatesScreen(
-                                viewModel = duplicatesViewModel,
-                                resetSignal = viewModel.resetRequestSignal
-                            )
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                AppTopBar(
+                                    title = { AppTopBarTitle(stringResource(R.string.home_virtual_duplicates)) },
+                                    onBack = navigateBack,
+                                    actions = {
+                                        ResetActionButton(onClick = { duplicatesViewModel.toggleResetConfirmation(true) })
+                                        profileButton()
+                                    }
+                                )
+                                DuplicatesScreen(
+                                    viewModel = duplicatesViewModel,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
                         entry<NavKey.Settings> {
-                            SettingsScreen(
-                                viewModel = settingsViewModel
-                            )
+                            SettingsScreen(viewModel = settingsViewModel, onBack = navigateBack)
                         }
                     }
                 )
             }
-        }
-    }
 
     if (uiState.showBackupWarning) {
         AlertDialog(

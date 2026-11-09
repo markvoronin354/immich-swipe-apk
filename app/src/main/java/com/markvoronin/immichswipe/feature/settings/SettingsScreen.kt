@@ -19,6 +19,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -73,11 +74,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalUriHandler
@@ -91,13 +90,15 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.ReminderInterval
+import com.markvoronin.immichswipe.feature.common.AppTopBar
+import com.markvoronin.immichswipe.feature.common.AppTopBarTitle
 import com.markvoronin.immichswipe.feature.home.components.UserAvatar
 import com.markvoronin.immichswipe.feature.settings.components.ActionButtonsScreen
 import com.markvoronin.immichswipe.feature.settings.components.ClearCacheDialog
 import com.markvoronin.immichswipe.feature.settings.components.CustomReminderDialog
 import com.markvoronin.immichswipe.feature.settings.components.DatabaseActionDialog
 import com.markvoronin.immichswipe.feature.settings.components.InteractionsScreen
-import com.markvoronin.immichswipe.feature.settings.components.LogsDialog
+import com.markvoronin.immichswipe.feature.settings.components.LogsScreen
 import com.markvoronin.immichswipe.feature.settings.components.CustomPaletteScreen
 import com.markvoronin.immichswipe.feature.settings.components.PaletteSelector
 import com.markvoronin.immichswipe.feature.settings.components.SettingsClickableItem
@@ -110,18 +111,17 @@ import com.markvoronin.immichswipe.feature.settings.components.ThemeModeButton
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
 
 enum class SettingsSubMenu {
-    NONE, INTERACTIONS, ACTION_BUTTONS, CUSTOM_PALETTE
+    NONE, INTERACTIONS, ACTION_BUTTONS, CUSTOM_PALETTE, LOGS
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val clipboard = LocalClipboard.current
-    val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val resources = LocalResources.current
     val uriHandler = LocalUriHandler.current
@@ -187,6 +187,7 @@ fun SettingsScreen(
         uiState.showInteractionsDialog -> SettingsSubMenu.INTERACTIONS
         uiState.showActionButtonsDialog -> SettingsSubMenu.ACTION_BUTTONS
         uiState.showCustomPaletteEditor -> SettingsSubMenu.CUSTOM_PALETTE
+        uiState.showLogsDialog -> SettingsSubMenu.LOGS
         else -> SettingsSubMenu.NONE
     }
 
@@ -205,7 +206,10 @@ fun SettingsScreen(
         label = "settings_menu_transition"
     ) { subMenu ->
         when (subMenu) {
-            SettingsSubMenu.INTERACTIONS -> {
+            SettingsSubMenu.INTERACTIONS -> SettingsPage(
+                title = stringResource(R.string.settings_interactions_dialog_title),
+                onBack = { viewModel.setShowInteractionsDialog(false) }
+            ) {
                 InteractionsScreen(
                     uiState = uiState,
                     viewModel = viewModel,
@@ -213,7 +217,10 @@ fun SettingsScreen(
                     modifier = modifier
                 )
             }
-            SettingsSubMenu.ACTION_BUTTONS -> {
+            SettingsSubMenu.ACTION_BUTTONS -> SettingsPage(
+                title = stringResource(R.string.settings_action_buttons_dialog_title),
+                onBack = { viewModel.setShowActionButtonsDialog(false) }
+            ) {
                 ActionButtonsScreen(
                     uiState = uiState,
                     viewModel = viewModel,
@@ -221,7 +228,10 @@ fun SettingsScreen(
                     modifier = modifier
                 )
             }
-            SettingsSubMenu.CUSTOM_PALETTE -> {
+            SettingsSubMenu.CUSTOM_PALETTE -> SettingsPage(
+                title = stringResource(R.string.settings_custom_palette_title),
+                onBack = { viewModel.setShowCustomPaletteEditor(false) }
+            ) {
                 CustomPaletteScreen(
                     uiState = uiState,
                     viewModel = viewModel,
@@ -229,7 +239,17 @@ fun SettingsScreen(
                     modifier = modifier
                 )
             }
-            SettingsSubMenu.NONE -> {
+            SettingsSubMenu.LOGS -> SettingsPage(
+                title = stringResource(R.string.settings_logs_dialog_title),
+                onBack = { viewModel.setShowLogs(false) }
+            ) {
+                LogsScreen(
+                    viewModel = viewModel,
+                    onBack = { viewModel.setShowLogs(false) },
+                    modifier = modifier
+                )
+            }
+            SettingsSubMenu.NONE -> SettingsPage(title = stringResource(R.string.settings_title), onBack = onBack) {
                 Column(
                     modifier = modifier
                         .fillMaxSize()
@@ -735,17 +755,6 @@ fun SettingsScreen(
         }
     }
 
-    if (uiState.showLogsDialog) {
-        LogsDialog(
-            loadLogs = viewModel::getLogs,
-            context = context,
-            clipboard = clipboard,
-            scope = scope,
-            onClearLogs = { viewModel.clearLogs() },
-            onDismiss = { viewModel.setShowLogs(false) }
-        )
-    }
-
     uiState.pendingDatabaseAction?.let { action ->
         val pendingScope = uiState.pendingDatabaseScope ?: DatabaseScope.USER
         DatabaseActionDialog(
@@ -785,5 +794,14 @@ fun SettingsScreen(
             },
             onDismiss = { viewModel.setShowCustomReminderDialog(false) }
         )
+    }
+}
+
+/** One settings page with its own top bar, so the bar slides along with the page between submenus. */
+@Composable
+private fun SettingsPage(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        AppTopBar(title = { AppTopBarTitle(title) }, onBack = onBack)
+        content()
     }
 }

@@ -126,7 +126,6 @@ import com.markvoronin.immichswipe.feature.tutorial.TutorialStep
 import com.markvoronin.immichswipe.feature.tutorial.rememberTutorialController
 import com.markvoronin.immichswipe.feature.tutorial.tutorialTarget
 import com.markvoronin.immichswipe.ui.theme.VirtualGold
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -134,7 +133,6 @@ import kotlinx.coroutines.launch
 fun DuplicatesScreen(
     viewModel: DuplicatesViewModel,
     modifier: Modifier = Modifier,
-    resetSignal: Flow<Unit>? = null,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var activeZoomData by remember { mutableStateOf<ZoomData?>(null) }
@@ -150,14 +148,6 @@ fun DuplicatesScreen(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var rootWindowOffset by remember { mutableStateOf(Offset.Zero) }
-
-    var showResetDialog by remember { mutableStateOf(value = false) }
-
-    LaunchedEffect(resetSignal) {
-        resetSignal?.collect {
-            showResetDialog = true
-        }
-    }
 
     val tutorialController = LocalTutorialController.current
         ?: rememberTutorialController()
@@ -484,9 +474,9 @@ fun DuplicatesScreen(
                 }
             )
 
-            if (showResetDialog) {
+            if (uiState.showResetConfirmation) {
                 AlertDialog(
-                    onDismissRequest = { showResetDialog = false },
+                    onDismissRequest = { viewModel.toggleResetConfirmation(false) },
                     icon = {
                         // Same gem shape and error color as the destructive settings dialogs.
                         Box(
@@ -513,7 +503,7 @@ fun DuplicatesScreen(
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                showResetDialog = false
+                                viewModel.toggleResetConfirmation(false)
                                 viewModel.resetDecisions()
                             },
                             colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
@@ -522,7 +512,7 @@ fun DuplicatesScreen(
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showResetDialog = false }) {
+                        TextButton(onClick = { viewModel.toggleResetConfirmation(false) }) {
                             Text(stringResource(R.string.common_cancel))
                         }
                     }

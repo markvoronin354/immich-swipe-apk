@@ -46,7 +46,7 @@ class SwipeViewModel @Inject constructor(
     private val localMediaRepository: LocalMediaRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SwipeUiState())
+    private val _uiState = MutableStateFlow(SwipeUiState(isLoading = true))
     val uiState: StateFlow<SwipeUiState> = _uiState.asStateFlow()
 
     private var currentAlbum: Album? = null
@@ -88,7 +88,6 @@ class SwipeViewModel @Inject constructor(
     val syncIssueSignal = _syncIssueChannel.receiveAsFlow()
 
     init {
-        loadAssetsAndDecisions()
         observeSettings()
         observeSession()
     }

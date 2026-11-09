@@ -382,6 +382,10 @@ class DuplicatesViewModel @Inject constructor(
         _uiState.update { it.copy(showDeleteConfirmation = show) }
     }
 
+    fun toggleResetConfirmation(show: Boolean) {
+        _uiState.update { it.copy(showResetConfirmation = show) }
+    }
+
     fun resetDecisions() {
         clearAllDecisions()
     }

@@ -365,7 +365,14 @@ fun AlbumItem(
         }
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = album.albumName, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f, fill = false))
+            Text(
+                text = album.albumName,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .sharedAlbumName(album.id)
+            )
             if (isCompleted) {
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.home_album_completed), style = MaterialTheme.typography.labelSmall, color = Color(0xFF388E3C), fontWeight = FontWeight.Bold)

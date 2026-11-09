@@ -26,7 +26,6 @@ import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -370,12 +369,5 @@ class HomeViewModelTest {
 
         coVerify(exactly = 0) { sessionRepository.saveSession(any(), any(), any()) }
         coVerify(exactly = 0) { accountRepository.updateLastActive(any()) }
-    }
-
-    @Test
-    fun `reset requests are delivered to the collector`() = runTest(dispatcher) {
-        val vm = createViewModel()
-        vm.requestReset()
-        assertEquals(Unit, vm.resetRequestSignal.first())
     }
 }

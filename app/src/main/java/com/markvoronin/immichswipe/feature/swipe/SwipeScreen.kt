@@ -13,6 +13,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
+import androidx.compose.animation.EnterExitState
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -22,7 +25,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
@@ -42,6 +47,7 @@ import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import coil3.imageLoader
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
@@ -55,6 +61,10 @@ import com.markvoronin.immichswipe.core.net.MediaHttp
 import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
 import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
 import com.markvoronin.immichswipe.domain.model.Album
+import com.markvoronin.immichswipe.feature.common.AppTopBar
+import com.markvoronin.immichswipe.feature.common.AppTopBarTitle
+import com.markvoronin.immichswipe.feature.common.ResetActionButton
+import com.markvoronin.immichswipe.feature.home.components.sharedAlbumName
 import com.markvoronin.immichswipe.feature.swipe.components.SwipeScreenContent
 import com.markvoronin.immichswipe.feature.swipe.components.SwipeScreenDialogs
 import com.markvoronin.immichswipe.feature.tutorial.GestureAnimationType
@@ -65,7 +75,7 @@ import com.markvoronin.immichswipe.feature.tutorial.TutorialStep
 import com.markvoronin.immichswipe.feature.tutorial.rememberTutorialController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Request
@@ -79,18 +89,27 @@ import kotlin.time.Duration.Companion.milliseconds
 fun SwipeScreen(
     album: Album,
     sessionKey: String,
-    resetSignal: Flow<Unit>,
+    profileButton: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     userQuotaBytes: Long? = null,
     onBack: () -> Unit = {}
 ) {
     val viewModel: SwipeViewModel = hiltViewModel(key = "$sessionKey-${album.id}")
 
-    LaunchedEffect(album, userQuotaBytes) {
-        viewModel.initAlbum(album, userQuotaBytes)
+    // Assets load only once the slide-in has settled, so decoding and composing cards can't stutter it.
+    val navTransition = LocalNavAnimatedContentScope.current.transition
+    var hasEntered by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        snapshotFlow { navTransition.currentState == EnterExitState.Visible }.first { it }
+        hasEntered = true
     }
 
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(album, userQuotaBytes, hasEntered) {
+        if (hasEntered) viewModel.initAlbum(album, userQuotaBytes)
+    }
+
+    val viewModelState by viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState = if (hasEntered) viewModelState else viewModelState.copy(isLoading = true, assets = emptyList())
     val tutorialController = LocalTutorialController.current ?: rememberTutorialController()
 
     val swipeTutorialSteps = remember {
@@ -149,15 +168,10 @@ fun SwipeScreen(
         }
     }
     
-    LaunchedEffect(resetSignal) {
-        resetSignal.collect {
-            viewModel.toggleResetConfirmation(visible = true)
-        }
-    }
     val localCtx = LocalContext.current
     
     // Background Preloader Trigger - Deferred to prevent background IO / decoding from stealing CPU frames during animations
-    LaunchedEffect(uiState.currentIndex, uiState.baseUrl) {
+    LaunchedEffect(uiState.currentIndex, uiState.baseUrl, hasEntered) {
         val currentIndex = uiState.currentIndex
         val assets = uiState.assets
         val baseUrl = uiState.baseUrl.removeSuffix("/")
@@ -547,17 +561,28 @@ fun SwipeScreen(
 
     var topCardSwipeOffset by remember(uiState.currentIndex) { mutableFloatStateOf(0f) }
 
-    SwipeScreenContent(
-        uiState = uiState,
-        viewModel = viewModel,
-        sharedPlayer = sharedPlayer,
-        tutorialController = tutorialController,
-        showSortMenu = showSortMenu,
-        onSortMenuToggle = { showSortMenu = it },
-        topCardSwipeOffset = topCardSwipeOffset,
-        onTopCardSwipeOffsetChanged = { topCardSwipeOffset = it },
-        modifier = modifier
-    )
+    Column(modifier = modifier.fillMaxSize()) {
+        AppTopBar(
+            title = { AppTopBarTitle(album.albumName, Modifier.sharedAlbumName(album.id)) },
+            onBack = onBack,
+            actions = {
+                ResetActionButton(onClick = { viewModel.toggleResetConfirmation(visible = true) })
+                profileButton()
+            }
+        )
+
+        SwipeScreenContent(
+            uiState = uiState,
+            viewModel = viewModel,
+            sharedPlayer = sharedPlayer,
+            tutorialController = tutorialController,
+            showSortMenu = showSortMenu,
+            onSortMenuToggle = { showSortMenu = it },
+            topCardSwipeOffset = topCardSwipeOffset,
+            onTopCardSwipeOffsetChanged = { topCardSwipeOffset = it },
+            modifier = Modifier.weight(1f)
+        )
+    }
 
     SwipeScreenDialogs(
         uiState = uiState,

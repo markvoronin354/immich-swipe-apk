@@ -373,7 +373,8 @@ fun AlbumGridItem(
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.sharedAlbumName(album.id)
                 )
                 Text(
                     text = "$effectiveTreatedCount / ${album.assetCount}",
