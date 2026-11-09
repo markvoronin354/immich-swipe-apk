@@ -69,16 +69,7 @@ fun LogsDialog(
 ) {
     val logsCopiedMessage = stringResource(R.string.settings_logs_copied_toast)
     val logsClipLabel = stringResource(R.string.settings_logs_clip_label)
-    val errorColor = MaterialTheme.colorScheme.error
-    val warningColor = Color(0xFFFFA500)
-
-    // Reading up to ~2 MB of log files must not block the UI thread. null = still loading.
-    val logs by produceState<Pair<String, List<String>>?>(initialValue = null) {
-        value = withContext(Dispatchers.IO) {
-            val raw = loadLogs()
-            raw to raw.lines()
-        }
-    }
+    val logs = rememberLogs(loadLogs)
     val rawLogs = logs?.first
 
     AlertDialog(
@@ -108,142 +99,13 @@ fun LogsDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier.fillMaxSize().padding(16.dp),
         text = {
-            BoxWithConstraints(
+            LogsContent(
+                logs = logs,
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
                     .padding(8.dp)
-            ) {
-                val currentLogs = logs
-                if (currentLogs == null) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                    return@BoxWithConstraints
-                }
-                val lines = currentLogs.second
-                if (currentLogs.first.isEmpty()) {
-                    Text(
-                        text = stringResource(R.string.settings_logs_empty),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = FontFamily.Monospace
-                    )
-                    return@BoxWithConstraints
-                }
-
-                // Start at the newest entry.
-                val listState = remember(lines) { LazyListState(firstVisibleItemIndex = lines.lastIndex) }
-
-                // Only the visible lines get laid out, so opening stays fast regardless of log size.
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(end = 20.dp)
-                ) {
-                    itemsIndexed(lines) { _, line ->
-                        Text(
-                            text = line,
-                            color = when {
-                                line.contains(" E/") -> errorColor
-                                line.contains(" W/") -> warningColor
-                                else -> Color.Unspecified
-                            },
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = FontFamily.Monospace,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-
-                val isScrollable by remember {
-                    derivedStateOf { listState.canScrollForward || listState.canScrollBackward }
-                }
-                if (isScrollable) {
-                    val density = LocalDensity.current
-                    val coroutineScope = rememberCoroutineScope()
-                    var isDragging by remember { mutableStateOf(false) }
-
-                    val minThumbHeightDp = 44.dp
-                    val minThumbHeightPx = with(density) { minThumbHeightDp.toPx() }
-                    val trackWidthDp = 12.dp
-
-                    val availableHeightPx = with(density) { maxHeight.toPx() }
-                    val totalItems = lines.size
-                    val visibleItems by remember {
-                        derivedStateOf { listState.layoutInfo.visibleItemsInfo.size.coerceAtLeast(1) }
-                    }
-                    val maxFirstIndex = (totalItems - visibleItems).coerceAtLeast(1)
-
-                    val (thumbHeightPx, trackDraggableRangePx) = remember(totalItems, visibleItems, availableHeightPx) {
-                        val rawThumbHeightPx = availableHeightPx * (visibleItems.toFloat() / totalItems)
-                        val thumbHeight = rawThumbHeightPx.coerceIn(minThumbHeightPx, availableHeightPx * 0.8f)
-                        val draggableRange = (availableHeightPx - thumbHeight).coerceAtLeast(1f)
-                        thumbHeight to draggableRange
-                    }
-
-                    var scrollJob by remember { mutableStateOf<Job?>(null) }
-
-                    fun updateScrollPosition(touchYPx: Float) {
-                        val targetThumbTopPx = touchYPx - (thumbHeightPx / 2f)
-                        val targetRatio = (targetThumbTopPx / trackDraggableRangePx).coerceIn(0f, 1f)
-                        val targetIndex = (targetRatio * maxFirstIndex).roundToInt()
-                        scrollJob?.cancel()
-                        scrollJob = coroutineScope.launch {
-                            listState.scrollToItem(targetIndex)
-                        }
-                    }
-                    // The visible item count changes while scrolling, so the gesture must not be keyed on it
-                    // (a restart cancels the drag). Read the latest scroll logic instead.
-                    val currentUpdateScrollPosition by rememberUpdatedState(::updateScrollPosition)
-
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .fillMaxHeight()
-                            .width(trackWidthDp + 6.dp)
-                            .background(
-                                color = if (isDragging) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
-                                shape = RoundedCornerShape(6.dp)
-                            )
-                            .pointerInput(Unit) {
-                                awaitEachGesture {
-                                    val down = awaitFirstDown(requireUnconsumed = false)
-                                    isDragging = true
-                                    currentUpdateScrollPosition(down.position.y)
-
-                                    val dragPointerId = down.id
-                                    while (true) {
-                                        val event = awaitPointerEvent()
-                                        val dragChange = event.changes.firstOrNull { it.id == dragPointerId }
-                                        if (dragChange == null || !dragChange.pressed) {
-                                            break
-                                        }
-                                        dragChange.consume()
-                                        currentUpdateScrollPosition(dragChange.position.y)
-                                    }
-                                    isDragging = false
-                                }
-                            }
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .width(trackWidthDp)
-                                .height(with(density) { thumbHeightPx.toDp() })
-                                .offset {
-                                    val currentScrollRatio = (listState.firstVisibleItemIndex.toFloat() / maxFirstIndex).coerceIn(0f, 1f)
-                                    val thumbOffsetPx = trackDraggableRangePx * currentScrollRatio
-                                    IntOffset(x = 0, y = thumbOffsetPx.roundToInt())
-                                }
-                                .background(
-                                    color = if (isDragging) MaterialTheme.colorScheme.primary
-                                            else MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
-                                    shape = RoundedCornerShape(6.dp)
-                                )
-                        )
-                    }
-                }
-            }
+            )
         },
         confirmButton = {
             TextButton(
@@ -269,4 +131,155 @@ fun LogsDialog(
             }
         }
     )
+}
+
+/** Reads the logs off the UI thread (up to ~2 MB); null while loading. Changing [key] reloads them. */
+@Composable
+fun rememberLogs(loadLogs: () -> String, key: Any? = Unit): Pair<String, List<String>>? {
+    val logs by produceState<Pair<String, List<String>>?>(initialValue = null, key) {
+        value = withContext(Dispatchers.IO) {
+            val raw = loadLogs()
+            raw to raw.lines()
+        }
+    }
+    return logs
+}
+
+/** Colored log lines with a draggable scrollbar, starting at the newest entry. */
+@Composable
+fun LogsContent(logs: Pair<String, List<String>>?, modifier: Modifier = Modifier) {
+    val errorColor = MaterialTheme.colorScheme.error
+    val warningColor = Color(0xFFFFA500)
+
+    BoxWithConstraints(modifier = modifier) {
+        val currentLogs = logs
+        if (currentLogs == null) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            return@BoxWithConstraints
+        }
+        val lines = currentLogs.second
+        if (currentLogs.first.isEmpty()) {
+            Text(
+                text = stringResource(R.string.settings_logs_empty),
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = FontFamily.Monospace
+            )
+            return@BoxWithConstraints
+        }
+
+        // Start at the newest entry.
+        val listState = remember(lines) { LazyListState(firstVisibleItemIndex = lines.lastIndex) }
+
+        // Only the visible lines get laid out, so opening stays fast regardless of log size.
+        LazyColumn(
+            state = listState,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(end = 20.dp)
+        ) {
+            itemsIndexed(lines) { _, line ->
+                Text(
+                    text = line,
+                    color = when {
+                        line.contains(" E/") -> errorColor
+                        line.contains(" W/") -> warningColor
+                        else -> Color.Unspecified
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
+        val isScrollable by remember {
+            derivedStateOf { listState.canScrollForward || listState.canScrollBackward }
+        }
+        if (isScrollable) {
+            val density = LocalDensity.current
+            val coroutineScope = rememberCoroutineScope()
+            var isDragging by remember { mutableStateOf(false) }
+
+            val minThumbHeightDp = 44.dp
+            val minThumbHeightPx = with(density) { minThumbHeightDp.toPx() }
+            val trackWidthDp = 12.dp
+
+            val availableHeightPx = with(density) { maxHeight.toPx() }
+            val totalItems = lines.size
+            val visibleItems by remember {
+                derivedStateOf { listState.layoutInfo.visibleItemsInfo.size.coerceAtLeast(1) }
+            }
+            val maxFirstIndex = (totalItems - visibleItems).coerceAtLeast(1)
+
+            val (thumbHeightPx, trackDraggableRangePx) = remember(totalItems, visibleItems, availableHeightPx) {
+                val rawThumbHeightPx = availableHeightPx * (visibleItems.toFloat() / totalItems)
+                val thumbHeight = rawThumbHeightPx.coerceIn(minThumbHeightPx, availableHeightPx * 0.8f)
+                val draggableRange = (availableHeightPx - thumbHeight).coerceAtLeast(1f)
+                thumbHeight to draggableRange
+            }
+
+            var scrollJob by remember { mutableStateOf<Job?>(null) }
+
+            fun updateScrollPosition(touchYPx: Float) {
+                val targetThumbTopPx = touchYPx - (thumbHeightPx / 2f)
+                val targetRatio = (targetThumbTopPx / trackDraggableRangePx).coerceIn(0f, 1f)
+                val targetIndex = (targetRatio * maxFirstIndex).roundToInt()
+                scrollJob?.cancel()
+                scrollJob = coroutineScope.launch {
+                    listState.scrollToItem(targetIndex)
+                }
+            }
+            // The visible item count changes while scrolling, so the gesture must not be keyed on it
+            // (a restart cancels the drag). Read the latest scroll logic instead.
+            val currentUpdateScrollPosition by rememberUpdatedState(::updateScrollPosition)
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .width(trackWidthDp + 6.dp)
+                    .background(
+                        color = if (isDragging) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                        shape = RoundedCornerShape(6.dp)
+                    )
+                    .pointerInput(Unit) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            isDragging = true
+                            currentUpdateScrollPosition(down.position.y)
+
+                            val dragPointerId = down.id
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val dragChange = event.changes.firstOrNull { it.id == dragPointerId }
+                                if (dragChange == null || !dragChange.pressed) {
+                                    break
+                                }
+                                dragChange.consume()
+                                currentUpdateScrollPosition(dragChange.position.y)
+                            }
+                            isDragging = false
+                        }
+                    }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .width(trackWidthDp)
+                        .height(with(density) { thumbHeightPx.toDp() })
+                        .offset {
+                            val currentScrollRatio = (listState.firstVisibleItemIndex.toFloat() / maxFirstIndex).coerceIn(0f, 1f)
+                            val thumbOffsetPx = trackDraggableRangePx * currentScrollRatio
+                            IntOffset(x = 0, y = thumbOffsetPx.roundToInt())
+                        }
+                        .background(
+                            color = if (isDragging) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
+                            shape = RoundedCornerShape(6.dp)
+                        )
+                )
+            }
+        }
+    }
 }
