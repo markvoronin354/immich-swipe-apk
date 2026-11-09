@@ -21,6 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -57,6 +59,8 @@ fun UserAvatar(
         .padding(borderWidth)
         .clip(CircleShape)
         .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+        // On the avatar itself, so it also covers the letter placeholder shown while the image loads or is missing.
+        .let { if (contentDescription != null) it.semantics { this.contentDescription = contentDescription } else it }
 
     if (imageUrl != null) {
         SubcomposeAsyncImage(
@@ -65,7 +69,7 @@ fun UserAvatar(
                 .let { builder -> if (loadAsAccountId != null) builder.asAccount(loadAsAccountId) else builder }
                 .crossfade(enable = true)
                 .build(),
-            contentDescription = contentDescription,
+            contentDescription = null,
             modifier = baseModifier,
             contentScale = ContentScale.Crop,
             loading = {
