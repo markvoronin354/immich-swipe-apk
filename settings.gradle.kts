@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Immich Swipe"
 include(":app")
+include(":baselineprofile")
