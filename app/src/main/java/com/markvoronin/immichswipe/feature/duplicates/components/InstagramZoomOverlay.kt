@@ -4,20 +4,15 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -120,12 +115,6 @@ fun InstagramZoomOverlay(
         val leftDp = with(density) { leftPx.toDp() }
         val topDp = with(density) { topPx.toDp() }
 
-        val borderColor = when (decision) {
-            DuplicateDecision.DELETE -> MaterialTheme.colorScheme.error
-            DuplicateDecision.KEEP -> Color(0xFF4CAF50)
-            DuplicateDecision.NONE -> MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-        }
-
         Box(
             modifier = Modifier
                 .offset(x = leftDp, y = topDp)
@@ -136,8 +125,7 @@ fun InstagramZoomOverlay(
                     translationX = offsetXAnim.value
                     translationY = offsetYAnim.value
                 }
-                .clip(RoundedCornerShape(14.dp))
-                .border(2.dp, borderColor, RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(16.dp))
         ) {
             val imageRequest = remember(zoomData.asset.id, baseUrlClean, zoomData.asset.isGif) {
                 ImageRequest.Builder(context)
@@ -174,28 +162,18 @@ fun InstagramZoomOverlay(
                 )
             }
 
-            if (decision != DuplicateDecision.NONE) {
-                Box(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Icon(
-                        imageVector = if (decision == DuplicateDecision.DELETE) Icons.Default.Delete else Icons.Default.CheckCircle,
-                        contentDescription = null,
-                        tint = if (decision == DuplicateDecision.DELETE) MaterialTheme.colorScheme.error else Color(0xFF4CAF50),
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp)
-                            .graphicsLayer {
-                                scaleX = inverseScale
-                                scaleY = inverseScale
-                                transformOrigin = TransformOrigin(1f, 0f)
-                                alpha = badgeAlpha
-                            }
-                            .size(32.dp)
-                            .background(Color.White, shape = CircleShape)
-                    )
-                }
-            }
+            DecisionBadge(
+                decision = decision,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .graphicsLayer {
+                        scaleX = inverseScale
+                        scaleY = inverseScale
+                        transformOrigin = TransformOrigin(1f, 0f)
+                        alpha = badgeAlpha
+                    }
+            )
         }
     }
 }

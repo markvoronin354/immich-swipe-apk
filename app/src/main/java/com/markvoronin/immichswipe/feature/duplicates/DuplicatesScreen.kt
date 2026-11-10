@@ -3,11 +3,15 @@
 package com.markvoronin.immichswipe.feature.duplicates
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.rememberSplineBasedDecay
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,15 +44,16 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Image
@@ -59,9 +64,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -71,6 +73,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -112,6 +117,9 @@ import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.common.SolidShapeLoadingIndicator
+import com.markvoronin.immichswipe.feature.duplicates.components.ClusterCardChromeHeight
+import com.markvoronin.immichswipe.feature.duplicates.components.ClusterCardPadding
+import com.markvoronin.immichswipe.feature.duplicates.components.ClusterPhotoGap
 import com.markvoronin.immichswipe.feature.duplicates.components.DuplicateClusterCard
 import com.markvoronin.immichswipe.feature.duplicates.components.FullScreenPreviewData
 import com.markvoronin.immichswipe.feature.duplicates.components.FullScreenPreviewModal
@@ -119,7 +127,10 @@ import com.markvoronin.immichswipe.feature.duplicates.components.InstagramZoomOv
 import com.markvoronin.immichswipe.feature.duplicates.components.ZoomData
 import com.markvoronin.immichswipe.feature.duplicates.components.formatSizeStr
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
+import com.markvoronin.immichswipe.feature.swipe.components.SortOptionGroup
 import com.markvoronin.immichswipe.feature.swipe.components.SortPopupItem
+import com.markvoronin.immichswipe.feature.swipe.components.checkedWidthFactor
+import com.markvoronin.immichswipe.feature.swipe.components.connectedTileShape
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import com.markvoronin.immichswipe.feature.tutorial.LocalTutorialController
@@ -129,7 +140,6 @@ import com.markvoronin.immichswipe.feature.tutorial.TutorialPhase
 import com.markvoronin.immichswipe.feature.tutorial.TutorialStep
 import com.markvoronin.immichswipe.feature.tutorial.rememberTutorialController
 import com.markvoronin.immichswipe.feature.tutorial.tutorialTarget
-import com.markvoronin.immichswipe.ui.theme.VirtualGold
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -245,21 +255,34 @@ fun DuplicatesScreen(
             if (uiState.isLoading) {
                 SolidShapeLoadingIndicator(modifier = Modifier.align(Alignment.Center), size = 48.dp)
             } else if (uiState.clusters.isEmpty()) {
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                val motionScheme = MaterialTheme.motionScheme
+                AnimatedVisibility(
+                    visibleState = remember { MutableTransitionState(initialState = false).apply { targetState = true } },
+                    enter = scaleIn(motionScheme.slowSpatialSpec(), initialScale = 0.6f) + fadeIn(motionScheme.defaultEffectsSpec()),
+                    modifier = Modifier.align(Alignment.Center)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = VirtualGold
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = stringResource(R.string.duplicates_none_found),
-                        style = MaterialTheme.typography.titleLarge
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        // The duplicates collection's shape from the home list.
+                        Box(
+                            modifier = Modifier
+                                .size(96.dp)
+                                .background(MaterialTheme.colorScheme.primaryContainer, MaterialShapes.Clover4Leaf.toShape()),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DoneAll,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(44.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = stringResource(R.string.duplicates_none_found),
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             } else {
                 val context = LocalContext.current
@@ -291,10 +314,10 @@ fun DuplicatesScreen(
                         val density = LocalDensity.current
                         val bottomBarHeightDp = with(density) { bottomBarHeightPx.toDp() }
 
-                        val cardContentWidthDp = (maxWidth - 64.dp).coerceAtLeast(100.dp)
-                        val imageWidthDp = (cardContentWidthDp - 8.dp) / 2f
+                        val cardContentWidthDp = (maxWidth - 32.dp - ClusterCardPadding * 2).coerceAtLeast(100.dp)
+                        val imageWidthDp = (cardContentWidthDp - ClusterPhotoGap) / 2f
                         val imageHeightDp = imageWidthDp / 0.75f
-                        val computedCardHeightDp = (120.dp + imageHeightDp).coerceAtMost(maxHeight * 0.7f)
+                        val computedCardHeightDp = (ClusterCardChromeHeight + imageHeightDp).coerceAtMost(maxHeight * 0.7f)
 
                         val clearHeightDp = (maxHeight - bottomBarHeightDp).coerceAtLeast(1.dp)
                         val verticalPadding = ((clearHeightDp - computedCardHeightDp) / 2f).coerceAtLeast(32.dp)
@@ -373,7 +396,7 @@ fun DuplicatesScreen(
                                         isFavorite = { uiState.isFavorite(it) },
                                         activeZoomAssetId = activeZoomData?.asset?.id,
                                         baseUrl = uiState.baseUrl,
-                                        modifier = if (index == 0) Modifier.tutorialTarget("dup_photos", tutorialController) else Modifier,
+                                        photosModifier = if (index == 0) Modifier.tutorialTarget("dup_photos", tutorialController) else Modifier,
                                         onDecisionToggle = { assetId -> viewModel.toggleDecision(assetId) },
                                         onKeepAll = { viewModel.setClusterDecisions(cluster, DuplicateDecision.KEEP) },
                                         onDeleteAll = { viewModel.setClusterDecisions(cluster, DuplicateDecision.DELETE) },
@@ -629,9 +652,8 @@ fun DuplicatesScreen(
             if (uiState.isSyncing) {
                 Dialog(onDismissRequest = {}) {
                     Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        tonalElevation = 6.dp
+                        shape = MaterialTheme.shapes.extraLarge,
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh
                     ) {
                         Row(
                             modifier = Modifier.padding(24.dp),
@@ -651,9 +673,8 @@ fun DuplicatesScreen(
             if (uiState.isAnalyzingAi) {
                 Dialog(onDismissRequest = { viewModel.cancelBestShotAnalysis() }) {
                     Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        tonalElevation = 6.dp
+                        shape = MaterialTheme.shapes.extraLarge,
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh
                     ) {
                         Column(
                             modifier = Modifier.padding(24.dp),
@@ -910,7 +931,6 @@ private fun StatBadge(text: String, color: Color, shape: Shape) {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DuplicatesBottomBar(
     uiState: DuplicatesUiState,
@@ -927,11 +947,17 @@ private fun DuplicatesBottomBar(
     ) {
         Spacer(Modifier.height(12.dp))
 
+        // A connected group like the swipe toolbar: a tile inverts and morphs into a pill while its menu is open.
+        val tileColors = ToggleButtonDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            checkedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+            checkedContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+        val tileHeight = ButtonDefaults.MediumContainerHeight
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            modifier = Modifier.padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             var sortMenuExpanded by remember { mutableStateOf(false) }
@@ -943,10 +969,21 @@ private fun DuplicatesBottomBar(
             }
 
             Box {
-                FilledTonalIconButton(
-                    onClick = { sortMenuExpanded = true },
-                    modifier = Modifier.size(IconButtonDefaults.mediumContainerSize()),
-                    shapes = IconButtonDefaults.shapes()
+                ToggleButton(
+                    checked = sortMenuExpanded,
+                    onCheckedChange = { sortMenuExpanded = true },
+                    shapes = ToggleButtonShapes(
+                        shape = connectedTileShape(0, 2, outer = tileHeight / 2),
+                        pressedShape = RoundedCornerShape(10.dp),
+                        checkedShape = CircleShape
+                    ),
+                    colors = tileColors,
+                    modifier = Modifier.size(
+                        width = IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide).width *
+                            checkedWidthFactor(sortMenuExpanded),
+                        height = tileHeight
+                    ),
+                    contentPadding = PaddingValues(0.dp)
                 ) {
                     Icon(
                         imageVector = sortIcon,
@@ -958,12 +995,15 @@ private fun DuplicatesBottomBar(
                 DropdownMenu(
                     expanded = sortMenuExpanded,
                     onDismissRequest = { sortMenuExpanded = false },
-                    shape = RoundedCornerShape(20.dp),
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 3.dp,
+                    // With the menu's own 8dp, the groups sit 16dp from every edge.
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    tonalElevation = 0.dp,
                     shadowElevation = 0.dp, // The menu's alpha fade clips a shadow to its rectangular bounds, flashing grey corners.
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
+                    SortOptionGroup {
                     SortPopupItem(
                         R.string.duplicates_sort_cluster_size,
                         Icons.AutoMirrored.Filled.Sort,
@@ -988,6 +1028,7 @@ private fun DuplicatesBottomBar(
                         sortMenuExpanded = false
                         onSortOrderSelected(DuplicatesSortOrder.VIDEOS_FIRST)
                     }
+                    }
                 }
             }
 
@@ -1011,39 +1052,56 @@ private fun DuplicatesBottomBar(
             }
 
             Box {
-                FilledTonalButton(
-                    onClick = { selectMenuExpanded = true },
+                val arrowRotation by animateFloatAsState(
+                    targetValue = if (selectMenuExpanded) 180f else 0f,
+                    animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+                    label = "selectArrow"
+                )
+                ToggleButton(
+                    checked = selectMenuExpanded,
+                    onCheckedChange = { selectMenuExpanded = true },
+                    shapes = ToggleButtonShapes(
+                        shape = connectedTileShape(1, 2, outer = tileHeight / 2),
+                        pressedShape = RoundedCornerShape(10.dp),
+                        checkedShape = CircleShape
+                    ),
+                    colors = tileColors,
                     // Wide enough for the longest label so the button and its popup don't shift between modes.
-                    modifier = Modifier.defaultMinSize(minWidth = 176.dp, minHeight = ButtonDefaults.MediumContainerHeight),
-                    shapes = ButtonDefaults.shapes(),
-                    contentPadding = ButtonDefaults.contentPaddingFor(ButtonDefaults.MediumContainerHeight)
+                    modifier = Modifier
+                        .defaultMinSize(minWidth = 176.dp)
+                        .height(tileHeight),
+                    contentPadding = ButtonDefaults.contentPaddingFor(tileHeight)
                 ) {
                     Icon(
                         imageVector = selectButtonIcon,
                         contentDescription = null,
-                        modifier = Modifier.size(ButtonDefaults.iconSizeFor(ButtonDefaults.MediumContainerHeight))
+                        modifier = Modifier.size(ButtonDefaults.iconSizeFor(tileHeight))
                     )
-                    Spacer(Modifier.width(ButtonDefaults.iconSpacingFor(ButtonDefaults.MediumContainerHeight)))
+                    Spacer(Modifier.width(ButtonDefaults.iconSpacingFor(tileHeight)))
                     Text(
                         text = selectButtonText,
                         fontWeight = FontWeight.Bold,
-                        style = ButtonDefaults.textStyleFor(ButtonDefaults.MediumContainerHeight)
+                        style = ButtonDefaults.textStyleFor(tileHeight)
                     )
                     Icon(
                         imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = null
+                        contentDescription = null,
+                        modifier = Modifier.graphicsLayer { rotationZ = arrowRotation }
                     )
                 }
 
                 DropdownMenu(
                     expanded = selectMenuExpanded,
                     onDismissRequest = { selectMenuExpanded = false },
-                    shape = RoundedCornerShape(20.dp),
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 3.dp,
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    tonalElevation = 0.dp,
                     shadowElevation = 0.dp, // The menu's alpha fade clips a shadow to its rectangular bounds, flashing grey corners.
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
+                    // Size-based and best-shot modes as separate groups, as in the swipe sort menu.
+                    SortOptionGroup {
                     SortPopupItem(
                         R.string.duplicates_keep_largest,
                         Icons.Default.ExpandMore,
@@ -1060,7 +1118,9 @@ private fun DuplicatesBottomBar(
                         selectMenuExpanded = false
                         viewModel.autoSelect(keepLargest = false)
                     }
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    SortOptionGroup {
                     SortPopupItem(
                         R.string.duplicates_best_shot_auto,
                         Icons.Default.AutoAwesome,
@@ -1092,6 +1152,7 @@ private fun DuplicatesBottomBar(
                     ) {
                         selectMenuExpanded = false
                         viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.TOP_3)
+                    }
                     }
                 }
             }

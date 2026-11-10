@@ -606,7 +606,7 @@ fun ThemeModeButton(
 }
 
 @Composable
-private fun unselectedTileColor(): Color =
+internal fun unselectedTileColor(): Color =
     if (MaterialTheme.colorScheme.surface.luminance() < 0.5f) {
         MaterialTheme.colorScheme.surfaceContainerHighest
     } else {

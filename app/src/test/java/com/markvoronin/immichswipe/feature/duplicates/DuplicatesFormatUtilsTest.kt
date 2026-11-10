@@ -1,6 +1,7 @@
 package com.markvoronin.immichswipe.feature.duplicates
 
 import com.markvoronin.immichswipe.feature.duplicates.components.formatMediaTime
+import com.markvoronin.immichswipe.feature.duplicates.components.formatMegapixels
 import com.markvoronin.immichswipe.feature.duplicates.components.formatMiddleEllipsisFileName
 import com.markvoronin.immichswipe.feature.duplicates.components.formatSizeStr
 import org.junit.After
@@ -62,6 +63,13 @@ class DuplicatesFormatUtilsTest {
         assertEquals("1023 KB", formatSizeStr(1023 * 1024L))
         assertEquals("1.00 MB", formatSizeStr(1024L * 1024))
         assertEquals("1.50 GB", formatSizeStr(1_610_612_736L))
+    }
+
+    @Test
+    fun `megapixels are rounded to one decimal`() {
+        assertEquals("12.2 MP", formatMegapixels(4032, 3024))
+        assertEquals("0.3 MP", formatMegapixels(640, 480))
+        assertEquals("10000.0 MP", formatMegapixels(100_000, 100_000))
     }
 
     @Test

@@ -377,6 +377,7 @@
 
     <string name="duplicates_keep_all">Conservar todo</string>
     <string name="duplicates_delete_all">Eliminar todo</string>
+    <string name="duplicates_cluster_progress">%1$d de %2$d ordenadas</string>
 
     <!-- Reminder -->
     <string name="settings_section_reminder">Recordatorio</string>
@@ -466,6 +467,5 @@
     <string name="duplicates_unknown_size">Tamaño desconocido</string>
     <string name="duplicates_unknown">Desconocido</string>
     <string name="duplicates_photo_fallback">Foto</string>
-    <string name="duplicates_swipe_down_dismiss">Desliza hacia abajo para cerrar</string>
     <string name="duplicates_decision_none">NINGUNO</string>
 </resources>

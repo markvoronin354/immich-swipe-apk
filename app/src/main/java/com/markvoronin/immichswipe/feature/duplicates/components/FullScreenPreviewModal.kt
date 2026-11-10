@@ -1,7 +1,13 @@
 package com.markvoronin.immichswipe.feature.duplicates.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +32,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -39,19 +46,22 @@ import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SdStorage
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FilledTonalIconToggleButton
+import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -101,9 +111,19 @@ import com.markvoronin.immichswipe.feature.common.MediaLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
 import com.markvoronin.immichswipe.feature.settings.components.horizontalFadingEdges
 import com.markvoronin.immichswipe.feature.swipe.components.ZoomableBox
+import com.markvoronin.immichswipe.feature.swipe.components.checkedWidthFactor
+import com.markvoronin.immichswipe.feature.swipe.components.connectedTileShape
+import com.markvoronin.immichswipe.feature.swipe.components.previewButtonColors
+import com.markvoronin.immichswipe.feature.swipe.components.previewTileColor
+import com.markvoronin.immichswipe.feature.swipe.components.previewToggleColors
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
+
+// Small tiles keep the chrome quiet around the photo; the buttons still get a 48dp touch target.
+private val ControlTileWidth = 48.dp
+private val ControlTileHeight = 40.dp
+private val ThumbShape = RoundedCornerShape(12.dp)
 
 @Composable
 fun FullScreenPreviewModal(
@@ -281,7 +301,7 @@ fun FullScreenPreviewModal(
     )
 
     val currentDismissOffsetY = if (isDraggingDismiss) dismissOffsetY else animDismissOffsetY
-    val backdropAlpha = (1f - (currentDismissOffsetY / 800f)).coerceIn(0f, 0.95f)
+    val backdropAlpha = (1f - (currentDismissOffsetY / 800f)).coerceIn(0f, 1f)
 
     // Live horizontal drag (px) while pulling past the first/last asset towards a neighbouring cluster.
     var boundaryDragX by remember { mutableFloatStateOf(0f) }
@@ -341,12 +361,14 @@ fun FullScreenPreviewModal(
                 var isFileNameExpanded by remember(currentAsset.id) { mutableStateOf(false) }
                 var showMetadataDialog by remember { mutableStateOf(false) }
 
+                val buttonColors = previewButtonColors()
+                val pressedShape = RoundedCornerShape(10.dp)
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                        .padding(start = 16.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(
@@ -385,54 +407,63 @@ fun FullScreenPreviewModal(
                         }
                     }
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(
-                            onClick = { currentOnFavoriteToggle(currentAsset) },
-                            modifier = Modifier
-                                .padding(end = 8.dp)
-                                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                    Spacer(Modifier.width(8.dp))
+
+                    // Same tiles as the swipe fullscreen toolbar: a connected pair, and a separate close button.
+                    Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                        FilledTonalIconToggleButton(
+                            checked = currentIsFav,
+                            onCheckedChange = { currentOnFavoriteToggle(currentAsset) },
+                            shapes = IconButtonDefaults.toggleableShapes(
+                                shape = connectedTileShape(0, 2, outer = ControlTileHeight / 2),
+                                pressedShape = pressedShape,
+                                checkedShape = CircleShape
+                            ),
+                            colors = previewToggleColors(),
+                            modifier = Modifier.size(width = ControlTileWidth * checkedWidthFactor(currentIsFav), height = ControlTileHeight)
                         ) {
                             Icon(
                                 imageVector = if (currentIsFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = stringResource(R.string.cd_favorite),
-                                tint = if (currentIsFav) Color.Red else Color.White
+                                contentDescription = stringResource(R.string.cd_favorite)
                             )
                         }
 
-                        IconButton(
-                            onClick = {
-                                showMetadataDialog = true
-                            },
-                            modifier = Modifier
-                                .padding(end = 8.dp)
-                                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                        FilledTonalIconButton(
+                            onClick = { showMetadataDialog = true },
+                            shapes = IconButtonDefaults.shapes(
+                                shape = connectedTileShape(1, 2, outer = ControlTileHeight / 2),
+                                pressedShape = pressedShape
+                            ),
+                            colors = buttonColors,
+                            modifier = Modifier.size(width = ControlTileWidth, height = ControlTileHeight)
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Info,
-                                contentDescription = stringResource(R.string.cd_asset_info),
-                                tint = Color.White
+                                contentDescription = stringResource(R.string.cd_asset_info)
                             )
                         }
+                    }
 
-                        IconButton(
-                            onClick = onDismiss,
-                            modifier = Modifier.background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = stringResource(R.string.common_close),
-                                tint = Color.White
-                            )
-                        }
+                    Spacer(Modifier.width(12.dp))
+
+                    FilledTonalIconButton(
+                        onClick = onDismiss,
+                        shapes = IconButtonDefaults.shapes(),
+                        colors = buttonColors,
+                        modifier = Modifier.size(ControlTileHeight)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = stringResource(R.string.common_close)
+                        )
                     }
                 }
 
                 if (showMetadataDialog) {
                     Dialog(onDismissRequest = { showMetadataDialog = false }) {
                         Surface(
-                            shape = RoundedCornerShape(24.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 6.dp,
+                            shape = MaterialTheme.shapes.extraLarge,
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp)
@@ -511,12 +542,12 @@ fun FullScreenPreviewModal(
                                 Spacer(Modifier.height(20.dp))
 
                                 Surface(
-                                    shape = RoundedCornerShape(12.dp),
+                                    shape = CircleShape,
                                     color = MaterialTheme.colorScheme.primary,
                                     contentColor = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clip(RoundedCornerShape(12.dp))
+                                        .clip(CircleShape)
                                         .combinedClickable(
                                             onClick = {
                                                 ImmichLauncher.openAssetInImmich(context, baseUrlClean, currentAsset.id)
@@ -761,39 +792,59 @@ fun FullScreenPreviewModal(
                         .padding(top = 8.dp, bottom = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    val badgeColor = when (currentDecision) {
-                        DuplicateDecision.DELETE -> MaterialTheme.colorScheme.error
-                        DuplicateDecision.KEEP -> Color(0xFF4CAF50)
-                        DuplicateDecision.NONE -> Color.White.copy(alpha = 0.7f)
-                    }
-                    val badgeText = when (currentDecision) {
-                        DuplicateDecision.DELETE -> stringResource(R.string.swipe_delete_upper)
-                        DuplicateDecision.KEEP -> stringResource(R.string.swipe_keep_upper)
-                        DuplicateDecision.NONE -> stringResource(R.string.duplicates_decision_none)
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .padding(bottom = 6.dp)
-                            .clickable { currentOnDecisionToggle(currentAsset.id) }
-                            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
-                            .border(1.dp, badgeColor.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                            .padding(horizontal = 12.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
+                    // The current photo's decision; tapping it cycles like tapping the photo. Same green and red as the cluster card.
+                    val toolbarContentColor = FloatingToolbarDefaults.vibrantFloatingToolbarColors().toolbarContentColor
+                    val decisionContainer by animateColorAsState(
+                        targetValue = if (currentDecision == DuplicateDecision.NONE) previewTileColor() else decisionColor(currentDecision),
+                        animationSpec = motionScheme.defaultEffectsSpec(),
+                        label = "decisionContainer"
+                    )
+                    val decisionContent by animateColorAsState(
+                        targetValue = if (currentDecision == DuplicateDecision.NONE) toolbarContentColor else Color.White,
+                        animationSpec = motionScheme.defaultEffectsSpec(),
+                        label = "decisionContent"
+                    )
+                    Surface(
+                        onClick = { currentOnDecisionToggle(currentAsset.id) },
+                        shape = CircleShape,
+                        color = decisionContainer,
+                        contentColor = decisionContent,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .background(badgeColor, CircleShape)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = badgeText,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = badgeColor
-                        )
+                        AnimatedContent(
+                            targetState = currentDecision,
+                            transitionSpec = {
+                                fadeIn(motionScheme.defaultEffectsSpec()) togetherWith fadeOut(motionScheme.fastEffectsSpec()) using
+                                    SizeTransform(clip = false) { _, _ -> motionScheme.defaultSpatialSpec() }
+                            },
+                            contentAlignment = Alignment.Center,
+                            label = "decisionPill"
+                        ) { decision ->
+                            Row(
+                                modifier = Modifier
+                                    .height(40.dp)
+                                    .padding(horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (decision != DuplicateDecision.NONE) {
+                                    Icon(
+                                        imageVector = if (decision == DuplicateDecision.DELETE) Icons.Default.Delete else Icons.Default.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                }
+                                Text(
+                                    text = when (decision) {
+                                        DuplicateDecision.DELETE -> stringResource(R.string.swipe_delete_upper)
+                                        DuplicateDecision.KEEP -> stringResource(R.string.swipe_keep_upper)
+                                        DuplicateDecision.NONE -> stringResource(R.string.duplicates_decision_none)
+                                    },
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
 
                     LazyRow(
@@ -813,23 +864,28 @@ fun FullScreenPreviewModal(
                             val isSelected = index == selectedIndex
                             val assetDecision = decisions[asset.id] ?: DuplicateDecision.NONE
                             val assetFav = isFavorite(asset)
-
-                            val borderColor = when {
-                                isSelected -> Color.White
-                                assetDecision == DuplicateDecision.KEEP -> Color(0xFF4CAF50)
-                                assetDecision == DuplicateDecision.DELETE -> MaterialTheme.colorScheme.error
-                                else -> Color.White.copy(alpha = 0.3f)
-                            }
+                            // The current photo sits centered at full size; the others shrink and dim.
+                            val selectedProgress by animateFloatAsState(
+                                targetValue = if (isSelected) 1f else 0f,
+                                animationSpec = motionScheme.defaultSpatialSpec(),
+                                label = "thumbSelected"
+                            )
 
                             Box(
                                 modifier = Modifier
                                     .size(width = itemWidthDp, height = 68.dp)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(Color.DarkGray)
-                                    .border(
-                                        width = if (isSelected) 2.5.dp else 1.dp,
-                                        color = borderColor,
-                                        shape = RoundedCornerShape(6.dp)
+                                    .graphicsLayer {
+                                        val scale = 0.86f + 0.14f * selectedProgress
+                                        scaleX = scale
+                                        scaleY = scale
+                                        shape = ThumbShape
+                                        clip = true
+                                    }
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                                    .then(
+                                        if (assetDecision != DuplicateDecision.NONE) {
+                                            Modifier.border(2.dp, decisionColor(assetDecision), ThumbShape)
+                                        } else Modifier
                                     )
                                     .clickable {
                                         selectedIndex = index
@@ -852,30 +908,17 @@ fun FullScreenPreviewModal(
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .graphicsLayer {
-                                            alpha = if (isSelected) 1f else 0.6f
+                                            alpha = 0.6f + 0.4f * selectedProgress
                                         }
                                 )
 
-                                if (assetDecision != DuplicateDecision.NONE) {
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.TopEnd)
-                                            .padding(2.dp)
-                                            .size(16.dp)
-                                            .background(
-                                                if (assetDecision == DuplicateDecision.DELETE) MaterialTheme.colorScheme.error else Color(0xFF4CAF50),
-                                                CircleShape
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = if (assetDecision == DuplicateDecision.DELETE) Icons.Default.Delete else Icons.Default.CheckCircle,
-                                            contentDescription = null,
-                                            tint = Color.White,
-                                            modifier = Modifier.size(10.dp)
-                                        )
-                                    }
-                                }
+                                DecisionBadge(
+                                    decision = assetDecision,
+                                    size = 16.dp,
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(3.dp)
+                                )
 
                                 if (assetFav || asset.type == "VIDEO") {
                                     Row(
@@ -925,77 +968,70 @@ fun FullScreenPreviewModal(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
+                    // Previous group, position, next group as one connected group, like the swipe fullscreen toolbar.
+                    val navColors = buttonColors.copy(
+                        disabledContainerColor = previewTileColor().copy(alpha = 0.3f),
+                        disabledContentColor = toolbarContentColor.copy(alpha = 0.38f)
+                    )
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 2.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         val hasPreviousGroup = currentClusterIdx > 0
-                        IconButton(
+                        FilledTonalIconButton(
                             onClick = { if (hasPreviousGroup) currentClusterIdx-- },
                             enabled = hasPreviousGroup,
-                            modifier = Modifier
-                                .size(36.dp)
-                                .background(
-                                    if (hasPreviousGroup) Color.White.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.05f),
-                                    CircleShape
-                                )
+                            shapes = IconButtonDefaults.shapes(
+                                shape = connectedTileShape(0, 3, outer = ControlTileHeight / 2),
+                                pressedShape = pressedShape
+                            ),
+                            colors = navColors,
+                            modifier = Modifier.size(width = ControlTileWidth, height = ControlTileHeight)
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
-                                contentDescription = stringResource(R.string.cd_previous_group),
-                                tint = if (hasPreviousGroup) Color.White else Color.White.copy(alpha = 0.2f),
-                                modifier = Modifier.size(24.dp)
+                                contentDescription = stringResource(R.string.cd_previous_group)
                             )
                         }
 
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Surface(
+                            shape = connectedTileShape(1, 3),
+                            color = previewTileColor(),
+                            contentColor = toolbarContentColor,
+                            modifier = Modifier
+                                .height(ControlTileHeight)
+                                .widthIn(min = 136.dp)
                         ) {
-                            Text(
-                                text = if (clusters.size > 1) {
-                                    stringResource(R.string.duplicates_ai_cluster_progress, currentClusterIdx + 1, clusters.size)
-                                } else {
-                                    "${selectedIndex + 1} / ${assets.size}"
-                                },
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.KeyboardArrowDown,
-                                    contentDescription = null,
-                                    tint = Color.White.copy(alpha = 0.5f),
-                                    modifier = Modifier.size(12.dp)
-                                )
-                                Spacer(modifier = Modifier.width(2.dp))
+                            Box(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 Text(
-                                    text = stringResource(R.string.duplicates_swipe_down_dismiss),
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                    color = Color.White.copy(alpha = 0.5f)
+                                    text = if (clusters.size > 1) {
+                                        stringResource(R.string.duplicates_ai_cluster_progress, currentClusterIdx + 1, clusters.size)
+                                    } else {
+                                        "${selectedIndex + 1} / ${assets.size}"
+                                    },
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         }
 
                         val hasNextGroup = currentClusterIdx < clusters.size - 1
-                        IconButton(
+                        FilledTonalIconButton(
                             onClick = { if (hasNextGroup) currentClusterIdx++ },
                             enabled = hasNextGroup,
-                            modifier = Modifier
-                                .size(36.dp)
-                                .background(
-                                    if (hasNextGroup) Color.White.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.05f),
-                                    CircleShape
-                                )
+                            shapes = IconButtonDefaults.shapes(
+                                shape = connectedTileShape(2, 3, outer = ControlTileHeight / 2),
+                                pressedShape = pressedShape
+                            ),
+                            colors = navColors,
+                            modifier = Modifier.size(width = ControlTileWidth, height = ControlTileHeight)
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                                contentDescription = stringResource(R.string.cd_next_group),
-                                tint = if (hasNextGroup) Color.White else Color.White.copy(alpha = 0.2f),
-                                modifier = Modifier.size(24.dp)
+                                contentDescription = stringResource(R.string.cd_next_group)
                             )
                         }
                     }

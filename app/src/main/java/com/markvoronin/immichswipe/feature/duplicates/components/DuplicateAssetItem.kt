@@ -1,7 +1,16 @@
 package com.markvoronin.immichswipe.feature.duplicates.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,14 +23,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.BrokenImage
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -29,9 +41,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -40,13 +57,27 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
+import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
+import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
+
+private val ThumbnailOuterCorner = 16.dp
+private val ThumbnailInnerCorner = 6.dp
+private val ThumbnailDecidedCorner = 24.dp
+private val ThumbnailFrameInset = 6.dp
+
+/** Keep and delete use the same green and red as the header's legend. */
+internal fun decisionColor(decision: DuplicateDecision): Color =
+    if (decision == DuplicateDecision.DELETE) MaterialRed else MaterialGreen
 
 @Composable
 fun DuplicateAssetItem(
@@ -58,6 +89,9 @@ fun DuplicateAssetItem(
     // Reports this thumbnail's on-screen bounds (null once it leaves composition); the screen runs the pinch-to-peek gesture.
     onBoundsChanged: (Rect?) -> Unit,
     modifier: Modifier = Modifier,
+    // The ends of the cluster's connected group get the large outer corners.
+    isFirst: Boolean = true,
+    isLast: Boolean = true,
     baseUrl: String = "",
     isFavorite: Boolean = false,
 ) {
@@ -68,15 +102,37 @@ fun DuplicateAssetItem(
     val currentOnLongPress by rememberUpdatedState(onLongPress)
     val currentOnBoundsChanged by rememberUpdatedState(onBoundsChanged)
 
-    val borderColor = when (decision) {
-        DuplicateDecision.DELETE -> MaterialTheme.colorScheme.error
-        DuplicateDecision.KEEP -> Color(0xFF4CAF50)
-        DuplicateDecision.NONE -> MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-    }
-
     DisposableEffect(asset.id) {
         onDispose { currentOnBoundsChanged(null) }
     }
+
+    val motionScheme = MaterialTheme.motionScheme
+    val transition = updateTransition(decision, label = "decision")
+    // A decided photo rounds off and a frame of its decision's color grows in from the edges, like a checked button.
+    val decided by transition.animateFloat({ motionScheme.defaultSpatialSpec() }, label = "decided") {
+        if (it == DuplicateDecision.NONE) 0f else 1f
+    }
+    val deleted by transition.animateFloat({ motionScheme.defaultEffectsSpec() }, label = "deleted") {
+        if (it == DuplicateDecision.DELETE) 1f else 0f
+    }
+    // Undecided has no frame, so it keeps the color of the decision it comes from or goes to.
+    val frameColor by transition.animateColor({ motionScheme.defaultEffectsSpec() }, label = "frame") { state ->
+        val shown = when {
+            state != DuplicateDecision.NONE -> state
+            transition.targetState != DuplicateDecision.NONE -> transition.targetState
+            else -> transition.currentState
+        }
+        decisionColor(shown)
+    }
+    val restingStart = if (isFirst) ThumbnailOuterCorner else ThumbnailInnerCorner
+    val restingEnd = if (isLast) ThumbnailOuterCorner else ThumbnailInnerCorner
+    fun cellShape(progress: Float): RoundedCornerShape {
+        val start = lerp(restingStart, ThumbnailDecidedCorner, progress)
+        val end = lerp(restingEnd, ThumbnailDecidedCorner, progress)
+        return RoundedCornerShape(topStart = start, bottomStart = start, topEnd = end, bottomEnd = end)
+    }
+    val placeholderColor = MaterialTheme.colorScheme.surfaceContainerHighest
+    val scrimColor = MaterialTheme.colorScheme.scrim
 
     Column(
         modifier = modifier,
@@ -88,9 +144,9 @@ fun DuplicateAssetItem(
                 .onGloballyPositioned { coords -> currentOnBoundsChanged(coords.boundsInWindow()) }
                 .graphicsLayer {
                     alpha = if (isBeingZoomed) 0f else 1f
+                    shape = cellShape(decided.coerceAtLeast(0f))
+                    clip = true
                 }
-                .clip(RoundedCornerShape(14.dp))
-                .border(2.dp, borderColor, RoundedCornerShape(14.dp))
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = { currentOnToggle() },
@@ -98,115 +154,188 @@ fun DuplicateAssetItem(
                     )
                 }
         ) {
-            val imageRequest = remember(asset.id, baseUrlClean, asset.isGif) {
-                ImageRequest.Builder(context)
-                    .data(
-                        if (asset.isGif) "$baseUrlClean/api/assets/${asset.id}/original"
-                        else "$baseUrlClean/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview"
-                    )
-                    .crossfade(true)
-                    .build()
-            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        val fade = deleted.coerceIn(0f, 1f)
+                        colorFilter = if (fade > 0f) {
+                            ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(1f - fade) })
+                        } else null
+                    }
+                    .background(placeholderColor)
+                    .drawWithContent {
+                        drawContent()
+                        val fade = deleted.coerceIn(0f, 1f)
+                        if (fade > 0f) drawRect(scrimColor, alpha = 0.32f * fade)
+                    }
+            ) {
+                val imageRequest = remember(asset.id, baseUrlClean, asset.isGif) {
+                    ImageRequest.Builder(context)
+                        .data(
+                            if (asset.isGif) "$baseUrlClean/api/assets/${asset.id}/original"
+                            else "$baseUrlClean/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview"
+                        )
+                        .crossfade(true)
+                        .build()
+                }
 
-            SubcomposeAsyncImage(
-                model = imageRequest,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-                error = {
+                SubcomposeAsyncImage(
+                    model = imageRequest,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                    error = {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.BrokenImage,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                )
+
+                if (isFavorite) {
+                    Icon(
+                        imageVector = Icons.Default.Favorite,
+                        contentDescription = stringResource(R.string.cd_favorite),
+                        tint = Color.Red,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(8.dp)
+                            .size(20.dp)
+                    )
+                }
+
+                if (asset.type == "VIDEO") {
                     Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(8.dp)
+                            .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
+                            .padding(4.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.BrokenImage,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
-                            modifier = Modifier.size(24.dp)
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = stringResource(R.string.cd_video),
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                } else if (asset.isGif) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(8.dp)
+                            .background(Color.Black.copy(alpha = 0.6f), shape = RoundedCornerShape(4.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "GIF",
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
+            }
+
+            // A stroke twice the frame width on the clipped outline leaves an even frame with concentric inner corners.
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .drawBehind {
+                        val progress = decided.coerceAtLeast(0f)
+                        if (progress > 0.01f) {
+                            drawOutline(
+                                outline = cellShape(progress).createOutline(size, layoutDirection, this),
+                                color = frameColor,
+                                style = Stroke(width = 2 * ThumbnailFrameInset.toPx() * progress)
+                            )
+                        }
+                    }
             )
 
-            if (isFavorite) {
-                Icon(
-                    imageVector = Icons.Default.Favorite,
-                    contentDescription = stringResource(R.string.cd_favorite),
-                    tint = Color.Red,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(8.dp)
-                        .size(20.dp)
-                )
-            }
-
-            if (asset.type == "VIDEO") {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(6.dp)
-                        .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
-                        .padding(4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = stringResource(R.string.cd_video),
-                        tint = Color.White,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            } else if (asset.isGif) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(6.dp)
-                        .background(Color.Black.copy(alpha = 0.6f), shape = RoundedCornerShape(4.dp))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = "GIF",
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            if (decision != DuplicateDecision.NONE) {
-                Box(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Icon(
-                        imageVector = if (decision == DuplicateDecision.DELETE) Icons.Default.Delete else Icons.Default.CheckCircle,
-                        contentDescription = null,
-                        tint = if (decision == DuplicateDecision.DELETE) MaterialTheme.colorScheme.error else Color(0xFF4CAF50),
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp)
-                            .size(32.dp)
-                            .background(Color.White, shape = CircleShape)
-                    )
-                }
-            }
+            DecisionBadge(
+                decision = decision,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+            )
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         val sizeStr = asset.exifInfo?.fileSizeInBytes?.let { formatSizeStr(it) } ?: stringResource(R.string.duplicates_unknown_size)
-        Text(text = sizeStr, style = MaterialTheme.typography.bodySmall)
-
-        val decisionText = when (decision) {
-            DuplicateDecision.DELETE -> stringResource(R.string.swipe_delete_upper)
-            DuplicateDecision.KEEP -> stringResource(R.string.swipe_keep_upper)
-            DuplicateDecision.NONE -> "-"
-        }
-
         Text(
-            text = decisionText,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = if (decision == DuplicateDecision.NONE) MaterialTheme.colorScheme.outline else borderColor,
-            modifier = Modifier.padding(top = 4.dp)
+            text = sizeStr,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1
         )
+        Text(
+            text = assetDetails(asset),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+/** Megapixels (photos only) and file type, the details that tell duplicates apart. */
+private fun assetDetails(asset: Asset): String {
+    val width = asset.exifInfo?.imageWidth ?: 0
+    val height = asset.exifInfo?.imageHeight ?: 0
+    val megapixels = if (!asset.isVideo && width > 0 && height > 0) formatMegapixels(width, height) else null
+    val extension = (asset.fileExtension ?: asset.originalFileName?.substringAfterLast('.', ""))
+        ?.removePrefix(".")
+        ?.takeIf { it.isNotBlank() }
+        ?.uppercase()
+    return listOfNotNull(megapixels, extension).joinToString(" · ")
+}
+
+/** Keep is the header's green cookie, delete its red gem; the badge pops in and swaps on each tap. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+internal fun DecisionBadge(decision: DuplicateDecision, modifier: Modifier = Modifier, size: Dp = 32.dp) {
+    val motionScheme = MaterialTheme.motionScheme
+    AnimatedContent(
+        targetState = decision,
+        modifier = modifier,
+        transitionSpec = {
+            (scaleIn(motionScheme.fastSpatialSpec()) + fadeIn(motionScheme.fastEffectsSpec())) togetherWith
+                (scaleOut(motionScheme.fastSpatialSpec()) + fadeOut(motionScheme.fastEffectsSpec())) using
+                SizeTransform(clip = false)
+        },
+        contentAlignment = Alignment.Center,
+        label = "decisionBadge"
+    ) { state ->
+        if (state == DuplicateDecision.NONE) {
+            Spacer(Modifier.size(size))
+        } else {
+            val isDelete = state == DuplicateDecision.DELETE
+            Box(
+                modifier = Modifier
+                    .size(size)
+                    .background(
+                        color = decisionColor(state),
+                        shape = if (isDelete) MaterialShapes.Gem.toShape() else MaterialShapes.Cookie6Sided.toShape()
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (isDelete) Icons.Default.Delete else Icons.Default.Check,
+                    contentDescription = stringResource(if (isDelete) R.string.swipe_delete else R.string.swipe_keep),
+                    tint = Color.White,
+                    modifier = Modifier.size(size * 0.56f)
+                )
+            }
+        }
     }
 }

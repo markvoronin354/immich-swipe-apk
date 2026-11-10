@@ -22,8 +22,11 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FilledTonalIconToggleButton
+import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -68,7 +71,9 @@ import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
 import com.markvoronin.immichswipe.data.datastore.SessionDataStore
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.common.MediaLoadingIndicator
-import com.markvoronin.immichswipe.feature.swipe.components.glassSurface
+import com.markvoronin.immichswipe.feature.swipe.components.previewButtonColors
+import com.markvoronin.immichswipe.feature.swipe.components.previewTileColor
+import com.markvoronin.immichswipe.feature.swipe.components.previewToggleColors
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -252,12 +257,14 @@ fun DuplicateVideoPlayer(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Same translucent tiles as the fullscreen toolbars.
+            val tileColor = previewTileColor()
             if (duration > 0) {
                 val timeToDisplay = if (isScrubbing) scrubValue else currentTime
-                Box(modifier = Modifier.glassSurface(CircleShape)) {
+                Box(modifier = Modifier.background(tileColor, CircleShape)) {
                     Text(
                         text = "${formatMediaTime(timeToDisplay)} / ${formatMediaTime(duration)}",
-                        color = Color.White,
+                        color = FloatingToolbarDefaults.vibrantFloatingToolbarColors().toolbarContentColor,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
@@ -270,23 +277,22 @@ fun DuplicateVideoPlayer(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                IconButton(
+                FilledTonalIconButton(
                     onClick = {
-                        val player = exoPlayer ?: return@IconButton
+                        val player = exoPlayer ?: return@FilledTonalIconButton
                         if (player.isPlaying) {
                             player.pause()
                         } else {
                             player.play()
                         }
                     },
-                    modifier = Modifier
-                        .glassSurface(CircleShape)
-                        .size(36.dp)
+                    shapes = IconButtonDefaults.shapes(),
+                    colors = previewButtonColors(),
+                    modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = if (isPlaying) stringResource(R.string.cd_pause) else stringResource(R.string.cd_play),
-                        tint = Color.White,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -294,11 +300,7 @@ fun DuplicateVideoPlayer(
                 Spacer(modifier = Modifier.width(8.dp))
 
                 // SliderState works in 0..1 fractions of the duration.
-                val seekBarColors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                    inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                )
+                val seekBarColors = SliderDefaults.colors(inactiveTrackColor = tileColor)
                 val durationMs = duration.toFloat().coerceAtLeast(1f)
                 val sliderState = remember { SliderState() }
                 SideEffect {
@@ -323,19 +325,19 @@ fun DuplicateVideoPlayer(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                IconButton(
-                    onClick = {
-                        isMuted = !isMuted
+                FilledTonalIconToggleButton(
+                    checked = isMuted,
+                    onCheckedChange = {
+                        isMuted = it
                         exoPlayer?.volume = if (isMuted) 0f else 1f
                     },
-                    modifier = Modifier
-                        .glassSurface(CircleShape)
-                        .size(36.dp)
+                    shapes = IconButtonDefaults.toggleableShapes(),
+                    colors = previewToggleColors(),
+                    modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
                         imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                         contentDescription = if (isMuted) stringResource(R.string.cd_unmute) else stringResource(R.string.cd_mute),
-                        tint = Color.White,
                         modifier = Modifier.size(20.dp)
                     )
                 }
