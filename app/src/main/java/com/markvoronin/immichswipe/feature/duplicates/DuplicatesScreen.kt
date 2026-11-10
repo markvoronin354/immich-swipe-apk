@@ -3,6 +3,7 @@
 package com.markvoronin.immichswipe.feature.duplicates
 
 import android.widget.Toast
+import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -81,6 +82,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -105,6 +107,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
@@ -126,6 +129,7 @@ import com.markvoronin.immichswipe.feature.tutorial.TutorialStep
 import com.markvoronin.immichswipe.feature.tutorial.rememberTutorialController
 import com.markvoronin.immichswipe.feature.tutorial.tutorialTarget
 import com.markvoronin.immichswipe.ui.theme.VirtualGold
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -178,8 +182,11 @@ fun DuplicatesScreen(
         )
     }
 
+    val navTransition = LocalNavAnimatedContentScope.current.transition
     LaunchedEffect(uiState.hasCompletedDuplicatesTutorial, uiState.isLoading) {
         if (!uiState.hasCompletedDuplicatesTutorial && !uiState.isLoading) {
+            // The flying album name draws above everything, the tutorial included, until the slide-in settles.
+            snapshotFlow { navTransition.currentState == EnterExitState.Visible }.first { it }
             tutorialController.startTutorial(
                 phase = TutorialPhase.DUPLICATES,
                 steps = duplicatesTutorialSteps,
