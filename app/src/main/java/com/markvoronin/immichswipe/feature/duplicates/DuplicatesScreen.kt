@@ -65,6 +65,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -110,7 +111,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Asset
-import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
+import com.markvoronin.immichswipe.feature.common.SolidShapeLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.components.DuplicateClusterCard
 import com.markvoronin.immichswipe.feature.duplicates.components.FullScreenPreviewData
 import com.markvoronin.immichswipe.feature.duplicates.components.FullScreenPreviewModal
@@ -242,7 +243,7 @@ fun DuplicatesScreen(
         ) {
             val boxScope = this
             if (uiState.isLoading) {
-                WavyLoadingIndicator(modifier = Modifier.align(Alignment.Center), delayed = true)
+                SolidShapeLoadingIndicator(modifier = Modifier.align(Alignment.Center), size = 48.dp)
             } else if (uiState.clusters.isEmpty()) {
                 Column(
                     modifier = Modifier.align(Alignment.Center),
@@ -637,7 +638,7 @@ fun DuplicatesScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            WavyLoadingIndicator()
+                            LoadingIndicator()
                             Text(
                                 text = stringResource(R.string.swipe_syncing),
                                 style = MaterialTheme.typography.bodyLarge
@@ -659,7 +660,7 @@ fun DuplicatesScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            WavyLoadingIndicator()
+                            LoadingIndicator()
                             Text(
                                 text = stringResource(R.string.duplicates_ai_analyzing),
                                 style = MaterialTheme.typography.titleMedium

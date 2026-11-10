@@ -61,7 +61,7 @@ import coil3.request.crossfade
 import coil3.size.Precision
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Album
-import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
+import com.markvoronin.immichswipe.feature.common.SolidShapeLoadingIndicator
 import com.markvoronin.immichswipe.feature.home.components.getVirtualCollectionStyle
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
 import java.text.Normalizer
@@ -239,7 +239,7 @@ fun AddToAlbumDialog(
                 ) {
                     when {
                         isLoading -> {
-                            WavyLoadingIndicator(size = 36.dp, delayed = true)
+                            SolidShapeLoadingIndicator(size = 48.dp)
                         }
                         filteredAlbums.isEmpty() && !showLockInDialog -> {
                             Column(

@@ -22,7 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +50,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.markvoronin.immichswipe.R
+import com.markvoronin.immichswipe.feature.common.SolidShapeLoadingIndicator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -154,7 +154,7 @@ fun LogsContent(logs: Pair<String, List<String>>?, modifier: Modifier = Modifier
     BoxWithConstraints(modifier = modifier) {
         val currentLogs = logs
         if (currentLogs == null) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            SolidShapeLoadingIndicator(modifier = Modifier.align(Alignment.Center), size = 48.dp)
             return@BoxWithConstraints
         }
         val lines = currentLogs.second

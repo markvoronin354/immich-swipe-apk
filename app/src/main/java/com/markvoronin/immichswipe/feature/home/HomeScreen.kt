@@ -31,6 +31,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -65,7 +66,6 @@ import com.markvoronin.immichswipe.feature.auth.AuthViewModel
 import com.markvoronin.immichswipe.feature.common.AppTopBar
 import com.markvoronin.immichswipe.feature.common.AppTopBarTitle
 import com.markvoronin.immichswipe.feature.common.ResetActionButton
-import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.DuplicatesScreen
 import com.markvoronin.immichswipe.feature.duplicates.DuplicatesViewModel
 import com.markvoronin.immichswipe.feature.home.components.AlbumGrid
@@ -250,7 +250,7 @@ fun HomeScreen(
                                 Box(modifier = Modifier.weight(1f)) {
                                     if (uiState.isLoading && uiState.albums.isEmpty()) {
                                         Box(Modifier.fillMaxSize()) {
-                                            WavyLoadingIndicator(modifier = Modifier.align(Alignment.Center))
+                                            LoadingIndicator(modifier = Modifier.align(Alignment.Center))
                                         }
                                     } else if (uiState.error != null) {
                                         ErrorView(error = uiState.error!!) { viewModel.loadUser() }

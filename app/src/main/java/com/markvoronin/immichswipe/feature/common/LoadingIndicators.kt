@@ -99,7 +99,7 @@ fun WavyLoadingBar(
     }
 }
 
-/** Small solid morphing-shape spinner for inline status rows; appears after a short delay. */
+/** Solid morphing-shape spinner for loads on plain surfaces; appears after a short delay. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SolidShapeLoadingIndicator(

@@ -85,6 +85,7 @@ import coil3.request.crossfade
 import coil3.size.Precision
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.domain.model.Asset
+import com.markvoronin.immichswipe.feature.common.SolidShapeLoadingIndicator
 import com.markvoronin.immichswipe.feature.common.WavyLoadingBar
 import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.components.DuplicateVideoPlayer
@@ -282,7 +283,7 @@ fun SummaryDialog(
                                             color = MaterialTheme.colorScheme.surfaceContainerHighest
                                         ) {
                                             Box(contentAlignment = Alignment.Center) {
-                                                WavyLoadingIndicator(size = 24.dp, strokeWidth = 2.5.dp, delayed = true)
+                                                SolidShapeLoadingIndicator(size = 32.dp)
                                             }
                                         }
                                     }
@@ -296,7 +297,7 @@ fun SummaryDialog(
                             modifier = Modifier.fillMaxWidth().height(100.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                WavyLoadingIndicator(size = 28.dp, strokeWidth = 3.dp, delayed = true)
+                                SolidShapeLoadingIndicator(size = 40.dp)
                             }
                         }
                     } else {

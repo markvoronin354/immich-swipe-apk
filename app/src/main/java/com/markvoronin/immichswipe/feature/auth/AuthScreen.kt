@@ -32,10 +32,13 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -73,9 +76,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
-import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.settings.components.LogsDialog
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AuthScreen(
     viewModel: AuthViewModel,
@@ -383,13 +386,17 @@ fun AuthScreen(
                         .fillMaxWidth()
                         .height(52.dp),
                     enabled = !state.isLoading,
-                    shape = CircleShape
+                    shape = CircleShape,
+                    // Disabled only while logging in, so keep the primary colors behind the indicator.
+                    colors = ButtonDefaults.buttonColors(
+                        disabledContainerColor = MaterialTheme.colorScheme.primary,
+                        disabledContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
                     if (state.isLoading) {
-                        WavyLoadingIndicator(
-                            size = 24.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp
+                        LoadingIndicator(
+                            modifier = Modifier.size(30.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
                         Row(
