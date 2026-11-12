@@ -717,7 +717,10 @@ private class MorphShape(private val morph: Morph, private val progress: Float) 
     }
 }
 
+// Morph is immutable and costly to build, so every cookie shape (one per duplicates card) shares this one.
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private val CircleToCookieMorph by lazy { Morph(MaterialShapes.Circle, MaterialShapes.Cookie9Sided) }
+
 @Composable
 internal fun animatedCookieShape(cookie: Boolean, animationSpec: FiniteAnimationSpec<Float>): Shape {
     val progress by animateFloatAsState(
@@ -725,8 +728,7 @@ internal fun animatedCookieShape(cookie: Boolean, animationSpec: FiniteAnimation
         animationSpec = animationSpec,
         label = "cookieMorph"
     )
-    val morph = remember { Morph(MaterialShapes.Circle, MaterialShapes.Cookie9Sided) }
-    return MorphShape(morph, progress)
+    return MorphShape(CircleToCookieMorph, progress)
 }
 
 @Composable
