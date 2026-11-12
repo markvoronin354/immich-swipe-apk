@@ -7,7 +7,6 @@ import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.ButtonPositions
 import com.markvoronin.immichswipe.core.ButtonStackOrientation
 import com.markvoronin.immichswipe.core.ButtonVisibility
-import com.markvoronin.immichswipe.core.CardDisplayMode
 import com.markvoronin.immichswipe.core.DoubleTapAction
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichOpenMode
@@ -182,11 +181,6 @@ class SessionRepository @Inject constructor(
     
     val sortOrder: Flow<SortOrder> = dataStore.getSortOrder().map {
         it?.let { try { SortOrder.valueOf(it) } catch(_: Exception) { SortOrder.CHRONOLOGICAL_DESC } } ?: SortOrder.CHRONOLOGICAL_DESC
-    }
-
-
-    val defaultCardDisplayMode: Flow<CardDisplayMode> = dataStore.getDefaultCardDisplayMode().map {
-        it?.let { try { CardDisplayMode.valueOf(it) } catch(_: Exception) { CardDisplayMode.FIT } } ?: CardDisplayMode.FIT
     }
 
 

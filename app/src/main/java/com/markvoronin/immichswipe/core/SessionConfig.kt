@@ -39,12 +39,6 @@ enum class ToolbarButton {
     LOCK
 }
 
-enum class CardDisplayMode {
-    FILL,
-    FIT
-}
-
-
 enum class SortOrder {
     CHRONOLOGICAL_DESC,
     CHRONOLOGICAL_ASC,

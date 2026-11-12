@@ -50,7 +50,6 @@ class SessionDataStore(private val context: Context) {
         private val KEY_AUTO_NEXT_ON_FAV = booleanPreferencesKey("auto_next_on_fav")
         private val KEY_INCLUDE_ARCHIVED = booleanPreferencesKey("include_archived")
         private val KEY_SORT_ORDER = stringPreferencesKey("sort_order")
-        private val KEY_DEFAULT_CARD_DISPLAY_MODE = stringPreferencesKey("default_card_display_mode")
         private val KEY_SHOW_SWIPE_BUTTONS = booleanPreferencesKey("show_swipe_buttons")
         private val KEY_SHOW_ARCHIVE = booleanPreferencesKey("show_archive")
         private val KEY_SHOW_LOCK = booleanPreferencesKey("show_lock")
@@ -259,8 +258,6 @@ class SessionDataStore(private val context: Context) {
 
     fun getSortOrder(): Flow<String?> = context.dataStore.data.map { it[KEY_SORT_ORDER] }
     suspend fun saveSortOrder(order: String) { context.dataStore.edit { it[KEY_SORT_ORDER] = order } }
-
-    fun getDefaultCardDisplayMode(): Flow<String?> = context.dataStore.data.map { it[KEY_DEFAULT_CARD_DISPLAY_MODE] }
 
     fun isShowSwipeButtons(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_SWIPE_BUTTONS] ?: false }
     suspend fun saveShowSwipeButtons(show: Boolean) { context.dataStore.edit { it[KEY_SHOW_SWIPE_BUTTONS] = show } }

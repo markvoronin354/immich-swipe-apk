@@ -4,7 +4,6 @@ import com.markvoronin.immichswipe.core.AppPalette
 import com.markvoronin.immichswipe.core.PaletteStyle
 import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.ButtonStackOrientation
-import com.markvoronin.immichswipe.core.CardDisplayMode
 import com.markvoronin.immichswipe.core.DoubleTapAction
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichOpenMode
@@ -55,7 +54,6 @@ data class SettingsUiState(
     val includeArchived: Boolean = false,
     val sortOrder: SortOrder = SortOrder.CHRONOLOGICAL_DESC,
     val showLogsDialog: Boolean = false,
-    val defaultCardDisplayMode: CardDisplayMode = CardDisplayMode.FIT,
     val showSwipeButtons: Boolean = false,
     val showArchiveButton: Boolean = true,
     val showLockButton: Boolean = false,

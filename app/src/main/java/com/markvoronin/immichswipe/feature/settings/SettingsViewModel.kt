@@ -207,11 +207,6 @@ class SettingsViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            sessionRepository.defaultCardDisplayMode.collect { mode ->
-                _uiState.update { it.copy(defaultCardDisplayMode = mode) }
-            }
-        }
-        viewModelScope.launch {
             sessionRepository.showSwipeButtons.collect { show ->
                 _uiState.update { it.copy(showSwipeButtons = show) }
             }
