@@ -87,7 +87,6 @@ import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
-import com.markvoronin.immichswipe.core.CardDisplayMode
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.cache.VideoCache
 import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
@@ -565,7 +564,7 @@ fun SwipeCard(
                         SubcomposeAsyncImage(
                             model = placeholderRequest,
                             contentDescription = null,
-                            contentScale = if (config.cardDisplayMode == CardDisplayMode.FILL) ContentScale.Crop else ContentScale.Fit,
+                            contentScale = ContentScale.Fit,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .graphicsLayer { rotationZ = animatedRotation }
@@ -591,7 +590,6 @@ fun SwipeCard(
                             showControls = !isHoldingByPress && !wasHoldDetected,
                             // The player records its own video surface here, leaving its controls out of the panel's glass.
                             backdrop = glassBackdrop,
-                            cardDisplayMode = config.cardDisplayMode,
                             fileSize = asset.exifInfo?.fileSizeInBytes,
                             showSize = config.showSizeIndicator,
                             videoSurfaceWrapper = { surface ->
@@ -603,7 +601,6 @@ fun SwipeCard(
                                             exif.displayAspectRatio
                                         if (config.rotationAngle % 180 != 0) 1f / baseAR else baseAR
                                     },
-                                    isFillMode = config.cardDisplayMode == CardDisplayMode.FILL,
                                     onTap = { offset, size ->
                                         if (panelProgress.value > 0.1f) {
                                             scope.launch {
@@ -729,7 +726,6 @@ fun SwipeCard(
                                 exif.displayAspectRatio
                             if (config.rotationAngle % 180 != 0) 1f / baseAR else baseAR
                         },
-                        isFillMode = config.cardDisplayMode == CardDisplayMode.FILL,
                         onTap = { offset, size ->
                             if (panelProgress.value > 0.1f) {
                                 scope.launch {

@@ -1,6 +1,5 @@
 package com.markvoronin.immichswipe.feature.swipe
 
-import com.markvoronin.immichswipe.core.CardDisplayMode
 import com.markvoronin.immichswipe.core.ConnectionStatus
 import com.markvoronin.immichswipe.core.DoubleTapAction
 import com.markvoronin.immichswipe.core.IconPosition
@@ -62,7 +61,6 @@ data class SwipeUiState(
     val sortOrder: SortOrder = SortOrder.CHRONOLOGICAL_DESC,
     val localFavorites: Map<String, Boolean> = emptyMap(),
     val localRotations: Map<String, Int> = emptyMap(),
-    val cardDisplayMode: CardDisplayMode = CardDisplayMode.FIT,
     val showSwipeButtons: Boolean = false,
     val showArchiveButton: Boolean = true,
     val showLockButton: Boolean = false,

@@ -80,7 +80,6 @@ import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
-import com.markvoronin.immichswipe.core.CardDisplayMode
 import com.markvoronin.immichswipe.feature.swipe.utils.formatMediaTime
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 import kotlinx.coroutines.delay
@@ -125,7 +124,6 @@ fun SharedVideoPlayer(
     isVideoReady: Boolean = true,
     toggleControllerTrigger: Int = 0,
     showControls: Boolean = true,
-    cardDisplayMode: CardDisplayMode = CardDisplayMode.FIT,
     fileSize: Long? = null,
     showSize: Boolean = false,
     onControllerVisibilityChanged: ((Boolean) -> Unit)? = null,
@@ -223,11 +221,7 @@ fun SharedVideoPlayer(
                         SubcomposeAsyncImage(
                             model = thumbnailRequest,
                             contentDescription = null,
-                            contentScale = if (isFullscreen) {
-                                ContentScale.Fit
-                            } else {
-                                if (cardDisplayMode == CardDisplayMode.FILL) ContentScale.Crop else ContentScale.Fit
-                            },
+                            contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize(),
                             error = {
                                 AssetErrorView(
@@ -288,15 +282,7 @@ fun SharedVideoPlayer(
 
                                 view.useController = false
                                 player.volume = if (isMuted) 0f else 1f
-                                view.resizeMode = if (isFullscreen) {
-                                    AspectRatioFrameLayout.RESIZE_MODE_FIT
-                                } else {
-                                    if (cardDisplayMode == CardDisplayMode.FILL) {
-                                        AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                                    } else {
-                                        AspectRatioFrameLayout.RESIZE_MODE_FIT
-                                    }
-                                }
+                                view.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
 
                                 if (toggleControllerTrigger > 0 && isFullscreen) {
                                     if (view.isControllerFullyVisible) view.hideController() else view.showController()

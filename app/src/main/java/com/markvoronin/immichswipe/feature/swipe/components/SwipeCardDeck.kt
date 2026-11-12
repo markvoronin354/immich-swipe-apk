@@ -136,7 +136,6 @@ fun SwipeCardDeck(
                             showDownloadButton = uiState.showDownloadButton,
                             showShareButton = uiState.showShareButton,
                             showFullSizeButton = uiState.showFullSizeButton,
-                            cardDisplayMode = uiState.cardDisplayMode,
                             tapToSwipeEnabled = uiState.tapToSwipeEnabled,
                             canUndo = !isBulk && uiState.history.isNotEmpty(),
                             showSizeIndicator = (uiState.sortOrder == SortOrder.SIZE_DESC) || (uiState.sortOrder == SortOrder.SIZE_ASC),

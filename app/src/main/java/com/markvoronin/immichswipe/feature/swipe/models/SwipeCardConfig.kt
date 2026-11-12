@@ -1,7 +1,6 @@
 package com.markvoronin.immichswipe.feature.swipe.models
 
 import com.markvoronin.immichswipe.core.ButtonStackOrientation
-import com.markvoronin.immichswipe.core.CardDisplayMode
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichOpenMode
 import com.markvoronin.immichswipe.core.PlaybackBehavior
@@ -28,7 +27,6 @@ data class SwipeCardConfig(
     val showFullSizeButton: Boolean = false,
     val immichOpenMode: ImmichOpenMode = ImmichOpenMode.APP,
     val immichLongPressWeb: Boolean = true,
-    val cardDisplayMode: CardDisplayMode,
     val tapToSwipeEnabled: Boolean = false,
     val canUndo: Boolean = false,
     val showSizeIndicator: Boolean = false,

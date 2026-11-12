@@ -38,8 +38,8 @@ fun ZoomableBox(
     resetOnRelease: Boolean = false,
     enabled: Boolean = true,
     aspectRatio: Float? = null,
-    isFillMode: Boolean = false,
     enableDoubleTapZoom: Boolean = true,
+    doubleTapScale: Float = 3f,
     onTap: ((Offset, IntSize) -> Unit)? = null,
     onDoubleTap: (() -> Unit)? = null,
     onPress: (suspend PressGestureScope.(Offset, IntSize) -> Unit)? = null,
@@ -53,7 +53,6 @@ fun ZoomableBox(
 
     val scope = rememberCoroutineScope()
     val motionScheme = MaterialTheme.motionScheme
-    var fillScale by remember(aspectRatio) { mutableFloatStateOf(1f) }
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     var boxSize by remember { mutableStateOf(IntSize.Zero) }
@@ -68,6 +67,7 @@ fun ZoomableBox(
     val currentOnTap by rememberUpdatedState(onTap)
     val currentOnDoubleTap by rememberUpdatedState(onDoubleTap)
     val currentOnPress by rememberUpdatedState(onPress)
+    val currentAspectRatio by rememberUpdatedState(aspectRatio)
 
     LaunchedEffect(isZoomedIn) {
         onIsZoomedChanged?.invoke(isZoomedIn)
@@ -80,8 +80,9 @@ fun ZoomableBox(
         if (w <= 0f || h <= 0f) return o
         var contentW = w
         var contentH = h
-        if (aspectRatio != null) {
-            if (aspectRatio > w / h) contentH = w / aspectRatio else contentW = h * aspectRatio
+        val ratio = currentAspectRatio
+        if (ratio != null) {
+            if (ratio > w / h) contentH = w / ratio else contentW = h * ratio
         }
         val maxX = ((contentW * s - w) / 2f).coerceAtLeast(0f)
         val maxY = ((contentH * s - h) / 2f).coerceAtLeast(0f)
@@ -91,7 +92,7 @@ fun ZoomableBox(
     fun resetZoom() {
         if (resetOnRelease) {
             scope.launch {
-                launch { animatedScale.animateTo(if (isFillMode) fillScale else 1f, motionScheme.fastEffectsSpec()) }
+                launch { animatedScale.animateTo(1f, motionScheme.fastEffectsSpec()) }
                 launch { animatedOffset.animateTo(Offset.Zero, motionScheme.fastEffectsSpec()) }
             }
         } else {
@@ -102,32 +103,11 @@ fun ZoomableBox(
         }
     }
 
-    LaunchedEffect(isFillMode, fillScale) {
-        val target = if (isFillMode) fillScale else 1f
-        if (resetOnRelease) {
-            launch { animatedScale.animateTo(target, motionScheme.fastSpatialSpec()) }
-            launch { animatedOffset.animateTo(Offset.Zero, motionScheme.fastSpatialSpec()) }
-        } else {
-            scale = target
-            offset = Offset.Zero
-        }
-    }
-
     Box(
         modifier = modifier
             .clipToBounds()
-            .onSizeChanged { intSize ->
-                boxSize = intSize
-                if (aspectRatio != null && intSize.width > 0 && intSize.height > 0) {
-                    val boxRatio = intSize.width.toFloat() / intSize.height.toFloat()
-                    fillScale = if (aspectRatio > boxRatio) {
-                        aspectRatio / boxRatio
-                    } else {
-                        boxRatio / aspectRatio
-                    }
-                }
-            }
-            .pointerInput(resetOnRelease, isFillMode, fillScale) {
+            .onSizeChanged { boxSize = it }
+            .pointerInput(resetOnRelease) {
                 awaitEachGesture {
                     do {
                         val event = awaitPointerEvent()
@@ -177,7 +157,7 @@ fun ZoomableBox(
                     }
                 }
             }
-            .pointerInput(enableDoubleTapZoom, onDoubleTap != null) {
+            .pointerInput(enableDoubleTapZoom, onDoubleTap != null, doubleTapScale) {
                 val shouldHandleDoubleTap = enableDoubleTapZoom || onDoubleTap != null
                 detectTapGestures(
                     onTap = { tapOffset -> currentOnTap?.invoke(tapOffset, boxSize) },
@@ -188,7 +168,7 @@ fun ZoomableBox(
                             } else if (currentOnDoubleTap != null) {
                                 currentOnDoubleTap?.invoke()
                             } else if (!resetOnRelease) {
-                                val targetScale = 3f
+                                val targetScale = doubleTapScale
                                 val zoomChange = targetScale / scale
                                 val targetOffset = clampOffset((tapOffset - boxSize.toSize().center) * (1f - zoomChange) + offset * zoomChange, targetScale)
                                 scope.launch {
