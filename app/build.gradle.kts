@@ -85,7 +85,7 @@ if (abiSplitsEnabled) {
     // Split APKs must have distinct, ordered version codes. The scaled scheme is only used for
     // these GitHub builds: base * 10 plus an offset per ABI (0 for the universal APK).
     androidComponents {
-        onVariants { variant ->
+        onVariants(selector().withBuildType("release")) { variant ->
             val offsets = mapOf("x86" to 1, "x86_64" to 2, "armeabi-v7a" to 3, "arm64-v8a" to 4)
             variant.outputs.forEach { output ->
                 val abi = output.filters
