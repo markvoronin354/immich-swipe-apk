@@ -664,28 +664,39 @@ fun SettingsScreen(
             if (showLogoutConfirmation) {
                 AlertDialog(
                     onDismissRequest = { showLogoutConfirmation = false },
-                    title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                    icon = {
+                        // Same gem shape and error color as the destructive settings dialogs.
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(MaterialTheme.colorScheme.error, MaterialShapes.Gem.toShape()),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Logout,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error
+                                tint = MaterialTheme.colorScheme.onError
                             )
-                            Spacer(Modifier.width(12.dp))
-                            Text(stringResource(R.string.profile_logout_confirm_title))
                         }
+                    },
+                    title = {
+                        Text(
+                            text = stringResource(R.string.profile_logout_confirm_title),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     },
                     text = {
                         Text(stringResource(R.string.profile_logout_confirm_msg))
                     },
                     confirmButton = {
-                        Button(
+                        TextButton(
                             onClick = {
                                 showLogoutConfirmation = false
                                 viewModel.logout()
                             },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
                             )
                         ) {
                             Text(stringResource(R.string.profile_logout_button))
