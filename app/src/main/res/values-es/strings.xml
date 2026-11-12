@@ -378,6 +378,16 @@
     <string name="duplicates_keep_all">Conservar todo</string>
     <string name="duplicates_delete_all">Eliminar todo</string>
     <string name="duplicates_cluster_progress">%1$d de %2$d ordenadas</string>
+    <string name="duplicates_undecided_only">Solo grupos sin ordenar</string>
+    <string name="duplicates_autoselect_title">¿Aplicar a qué grupos?</string>
+    <plurals name="duplicates_autoselect_msg">
+        <item quantity="one">%1$d grupo ya tiene elecciones. La selección automática puede dejarlo como está y ordenar solo el resto, o reemplazar sus elecciones.</item>
+        <item quantity="many">%1$d grupos ya tienen elecciones. La selección automática puede dejarlos como están y ordenar solo el resto, o reemplazar sus elecciones.</item>
+        <item quantity="other">%1$d grupos ya tienen elecciones. La selección automática puede dejarlos como están y ordenar solo el resto, o reemplazar sus elecciones.</item>
+    </plurals>
+    <string name="duplicates_autoselect_all_msg">Todos los grupos ya tienen elecciones. ¿Reemplazarlas?</string>
+    <string name="duplicates_autoselect_only_unsorted">Solo sin ordenar</string>
+    <string name="duplicates_autoselect_replace_all">Reemplazar todo</string>
 
     <!-- Reminder -->
     <string name="settings_section_reminder">Recordatorio</string>
@@ -467,5 +477,4 @@
     <string name="duplicates_unknown_size">Tamaño desconocido</string>
     <string name="duplicates_unknown">Desconocido</string>
     <string name="duplicates_photo_fallback">Foto</string>
-    <string name="duplicates_decision_none">NINGUNO</string>
 </resources>

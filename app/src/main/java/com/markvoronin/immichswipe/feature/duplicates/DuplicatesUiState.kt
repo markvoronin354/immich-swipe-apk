@@ -1,5 +1,6 @@
 package com.markvoronin.immichswipe.feature.duplicates
 
+import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.domain.model.Asset
 
 data class DuplicatesUiState(
@@ -17,12 +18,24 @@ data class DuplicatesUiState(
     val hasCompletedDuplicatesTutorial: Boolean = true,
     val skipDeepAnalyzeConfirmation: Boolean = false,
     val isAnalyzingAi: Boolean = false,
-    val aiProgress: Pair<Int, Int>? = null
+    val aiProgress: Pair<Int, Int>? = null,
+    // Clusters that still had undecided photos when "undecided only" was turned on; null while the filter is off.
+    val undecidedOnlyIds: Set<String>? = null,
+    val playbackBehavior: PlaybackBehavior = PlaybackBehavior.PAUSE_OTHERS
 ) {
     fun isFavorite(asset: Asset): Boolean {
         return favorites[asset.id] ?: asset.isFavorite
     }
 
+    fun hasDecisions(cluster: DuplicateClusterUiModel): Boolean =
+        cluster.assets.any { (decisions[it.id] ?: DuplicateDecision.NONE) != DuplicateDecision.NONE }
+
+    fun hasUndecided(cluster: DuplicateClusterUiModel): Boolean =
+        cluster.assets.any { (decisions[it.id] ?: DuplicateDecision.NONE) == DuplicateDecision.NONE }
+
+    /** What the list and the fullscreen preview show: every cluster, or only the filtered ones. */
+    val visibleClusters: List<DuplicateClusterUiModel>
+        get() = undecidedOnlyIds?.let { ids -> clusters.filter { it.clusterId in ids } } ?: clusters
 }
 
 data class DuplicateClusterUiModel(

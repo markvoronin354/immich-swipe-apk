@@ -375,6 +375,15 @@
     <string name="duplicates_keep_all">Keep all</string>
     <string name="duplicates_delete_all">Delete all</string>
     <string name="duplicates_cluster_progress">%1$d of %2$d sorted</string>
+    <string name="duplicates_undecided_only">Only undecided groups</string>
+    <string name="duplicates_autoselect_title">Apply to which groups?</string>
+    <plurals name="duplicates_autoselect_msg">
+        <item quantity="one">%1$d group already has choices. Auto-select can leave it alone and only sort the rest, or replace its choices.</item>
+        <item quantity="other">%1$d groups already have choices. Auto-select can leave them alone and only sort the rest, or replace their choices.</item>
+    </plurals>
+    <string name="duplicates_autoselect_all_msg">Every group already has choices. Replace them?</string>
+    <string name="duplicates_autoselect_only_unsorted">Only unsorted</string>
+    <string name="duplicates_autoselect_replace_all">Replace all</string>
 
     <!-- Reminder -->
     <string name="settings_section_reminder">Reminder</string>
@@ -459,5 +468,4 @@
     <string name="duplicates_unknown_size">Unknown size</string>
     <string name="duplicates_unknown">Unknown</string>
     <string name="duplicates_photo_fallback">Photo</string>
-    <string name="duplicates_decision_none">NONE</string>
 </resources>

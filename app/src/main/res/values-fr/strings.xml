@@ -379,6 +379,16 @@
     <string name="duplicates_keep_all">Tout garder</string>
     <string name="duplicates_delete_all">Tout supprimer</string>
     <string name="duplicates_cluster_progress">%1$d sur %2$d triées</string>
+    <string name="duplicates_undecided_only">Seulement les groupes non triés</string>
+    <string name="duplicates_autoselect_title">Appliquer à quels groupes ?</string>
+    <plurals name="duplicates_autoselect_msg">
+        <item quantity="one">%1$d groupe a déjà des choix. La sélection automatique peut le laisser tel quel et ne trier que le reste, ou remplacer ses choix.</item>
+        <item quantity="many">%1$d groupes ont déjà des choix. La sélection automatique peut les laisser tels quels et ne trier que le reste, ou remplacer leurs choix.</item>
+        <item quantity="other">%1$d groupes ont déjà des choix. La sélection automatique peut les laisser tels quels et ne trier que le reste, ou remplacer leurs choix.</item>
+    </plurals>
+    <string name="duplicates_autoselect_all_msg">Tous les groupes ont déjà des choix. Les remplacer ?</string>
+    <string name="duplicates_autoselect_only_unsorted">Seulement non triés</string>
+    <string name="duplicates_autoselect_replace_all">Tout remplacer</string>
 
     <!-- Reminder -->
     <string name="settings_section_reminder">Rappel</string>
@@ -468,5 +478,4 @@
     <string name="duplicates_unknown_size">Taille inconnue</string>
     <string name="duplicates_unknown">Inconnu</string>
     <string name="duplicates_photo_fallback">Photo</string>
-    <string name="duplicates_decision_none">AUCUN</string>
 </resources>

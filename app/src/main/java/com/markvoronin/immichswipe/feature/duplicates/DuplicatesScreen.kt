@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
@@ -47,7 +48,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -56,11 +56,12 @@ import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.ImageSearch
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -115,6 +116,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.markvoronin.immichswipe.R
+import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.common.SolidShapeLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.components.ClusterCardChromeHeight
@@ -127,7 +129,10 @@ import com.markvoronin.immichswipe.feature.duplicates.components.InstagramZoomOv
 import com.markvoronin.immichswipe.feature.duplicates.components.ZoomData
 import com.markvoronin.immichswipe.feature.duplicates.components.formatSizeStr
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
+import com.markvoronin.immichswipe.feature.swipe.components.HeaderInfo
+import com.markvoronin.immichswipe.feature.swipe.components.RemainingInfo
 import com.markvoronin.immichswipe.feature.swipe.components.SortOptionGroup
+import com.markvoronin.immichswipe.feature.swipe.components.StatBadge
 import com.markvoronin.immichswipe.feature.swipe.components.SortPopupItem
 import com.markvoronin.immichswipe.feature.swipe.components.checkedWidthFactor
 import com.markvoronin.immichswipe.feature.swipe.components.connectedTileShape
@@ -234,6 +239,13 @@ fun DuplicatesScreen(
     val decidedCount = keepCount + deleteCount
     val remainingCount = (totalAssetsCount - decidedCount).coerceAtLeast(0)
     val progress = if (totalAssetsCount > 0) decidedCount.toFloat() / totalAssetsCount.toFloat() else 0f
+
+    val visibleClusters = remember(uiState.clusters, uiState.undecidedOnlyIds) { uiState.visibleClusters }
+    LaunchedEffect(uiState.undecidedOnlyIds) {
+        if (uiState.undecidedOnlyIds != null) listState.scrollToItem(0)
+    }
+    // Set when an auto-select would touch groups that already have decisions; asks which groups to apply it to.
+    var pendingAutoSelect by remember { mutableStateOf<AutoSelectMode?>(null) }
 
     ProvideTutorialController(tutorialController) {
         Box(
@@ -354,7 +366,7 @@ fun DuplicatesScreen(
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                             flingBehavior = snapFlingBehavior
                         ) {
-                            itemsIndexed(uiState.clusters, key = { _, item -> item.clusterId }) { index, cluster ->
+                            itemsIndexed(visibleClusters, key = { _, item -> item.clusterId }) { index, cluster ->
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -408,23 +420,23 @@ fun DuplicatesScreen(
                                             }
                                         },
                                         onAssetLongPress = { clickedAsset ->
-                                            val clusterIdx = uiState.clusters.indexOfFirst { it.clusterId == cluster.clusterId }.coerceAtLeast(0)
+                                            val clusterIdx = visibleClusters.indexOfFirst { it.clusterId == cluster.clusterId }.coerceAtLeast(0)
                                             val initialIdx = cluster.assets.indexOfFirst { it.id == clickedAsset.id }.coerceAtLeast(0)
                                             activeClusterIndex = clusterIdx
                                             fullScreenPreviewData = FullScreenPreviewData(
                                                 cluster = cluster,
                                                 initialIndex = initialIdx,
-                                                clusters = uiState.clusters,
+                                                clusters = visibleClusters,
                                                 clusterIndex = clusterIdx
                                             )
                                         },
                                         onOpenFullScreen = {
-                                            val clusterIdx = uiState.clusters.indexOfFirst { it.clusterId == cluster.clusterId }.coerceAtLeast(0)
+                                            val clusterIdx = visibleClusters.indexOfFirst { it.clusterId == cluster.clusterId }.coerceAtLeast(0)
                                             activeClusterIndex = clusterIdx
                                             fullScreenPreviewData = FullScreenPreviewData(
                                                 cluster = cluster,
                                                 initialIndex = 0,
-                                                clusters = uiState.clusters,
+                                                clusters = visibleClusters,
                                                 clusterIndex = clusterIdx
                                             )
                                         },
@@ -449,7 +461,16 @@ fun DuplicatesScreen(
 
                 DuplicatesBottomBar(
                     uiState = uiState,
-                    viewModel = viewModel,
+                    undecidedOnly = uiState.undecidedOnlyIds != null,
+                    canFilterUndecided = remainingCount > 0,
+                    onToggleUndecidedOnly = { viewModel.toggleUndecidedOnly() },
+                    onAutoSelect = { mode ->
+                        if (uiState.clusters.any { uiState.hasDecisions(it) }) {
+                            pendingAutoSelect = mode
+                        } else {
+                            viewModel.applyAutoSelect(mode, onlyUndecidedGroups = false)
+                        }
+                    },
                     modifier = with(boxScope) {
                         Modifier
                             .align(Alignment.BottomCenter)
@@ -461,13 +482,10 @@ fun DuplicatesScreen(
                         viewModel.setSortOrder(newSortOrder)
                         coroutineScope.launch {
                             val updatedState = viewModel.uiState.value
-                            val targetIndex = updatedState.clusters.indexOfFirst { cluster ->
-                                cluster.assets.any { asset ->
-                                    updatedState.decisions[asset.id] == null || updatedState.decisions[asset.id] == DuplicateDecision.NONE
-                                }
-                            }.coerceAtLeast(0)
+                            val updatedClusters = updatedState.visibleClusters
+                            val targetIndex = updatedClusters.indexOfFirst { updatedState.hasUndecided(it) }.coerceAtLeast(0)
 
-                            if (updatedState.clusters.isNotEmpty()) {
+                            if (updatedClusters.isNotEmpty()) {
                                 listState.animateScrollToItem(targetIndex, 0)
                             }
                         }
@@ -477,7 +495,6 @@ fun DuplicatesScreen(
 
             InstagramZoomOverlay(
                 zoomData = activeZoomData,
-                decision = activeZoomData?.let { uiState.decisions[it.asset.id] ?: DuplicateDecision.NONE } ?: DuplicateDecision.NONE,
                 isFavorite = activeZoomData?.let { uiState.isFavorite(it.asset) } ?: false,
                 rootWindowOffset = rootWindowOffset,
                 baseUrl = uiState.baseUrl,
@@ -489,20 +506,19 @@ fun DuplicatesScreen(
                 decisions = uiState.decisions,
                 isFavorite = { uiState.isFavorite(it) },
                 baseUrl = uiState.baseUrl,
-                onDecisionToggle = { assetId -> viewModel.toggleDecision(assetId) },
+                handleAudioFocus = uiState.playbackBehavior != PlaybackBehavior.IGNORE,
+                loadAlbumNames = viewModel::loadAlbumNames,
+                onDecisionChange = { assetId, decision -> viewModel.setDecision(assetId, decision) },
                 onFavoriteToggle = { asset -> viewModel.toggleFavorite(asset) },
                 onClusterChanged = { index ->
+                    // Follow under the opaque viewer, so the photo has its thumbnail to shrink back into on close.
+                    if (index != activeClusterIndex && index in visibleClusters.indices) {
+                        coroutineScope.launch { listState.scrollToItem(index, 0) }
+                    }
                     activeClusterIndex = index
                 },
-                onDismiss = {
-                    fullScreenPreviewData = null
-                    coroutineScope.launch {
-                        val targetIndex = activeClusterIndex.coerceIn(0, (uiState.clusters.size - 1).coerceAtLeast(0))
-                        if (targetIndex in uiState.clusters.indices) {
-                            listState.animateScrollToItem(targetIndex, 0)
-                        }
-                    }
-                }
+                thumbnailBounds = { assetId -> thumbnailBounds[assetId]?.second },
+                onDismiss = { fullScreenPreviewData = null }
             )
 
             if (uiState.showResetConfirmation) {
@@ -550,19 +566,34 @@ fun DuplicatesScreen(
                 )
             }
 
-            deepAnalyzeTarget?.let { cluster ->
-                val downloadBytes = cluster.assets
-                    .filter { !it.type.equals("VIDEO", ignoreCase = true) }
-                    .sumOf { it.exifInfo?.fileSizeInBytes ?: 0L }
+            pendingAutoSelect?.let { mode ->
+                val decidedGroups = uiState.clusters.count { uiState.hasDecisions(it) }
+                val allDecided = decidedGroups == uiState.clusters.size
                 AlertDialog(
-                    onDismissRequest = { deepAnalyzeTarget = null },
-                    title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = stringResource(R.string.duplicates_deep_analyze_title),
-                                modifier = Modifier.weight(1f)
-                            )
-                            IconButton(onClick = { deepAnalyzeTarget = null }) {
+                    onDismissRequest = { pendingAutoSelect = null },
+                    icon = {
+                        // Two actions fill the button row, so closing moves to an X, as in the deep analyze dialog.
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .size(48.dp)
+                                    .background(MaterialTheme.colorScheme.secondaryContainer, MaterialShapes.Cookie9Sided.toShape()),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                            // Offset tucks the glyph into the corner, the dialog's padding away from both edges.
+                            IconButton(
+                                onClick = { pendingAutoSelect = null },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 12.dp, y = (-12).dp)
+                            ) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = stringResource(R.string.common_close)
@@ -570,9 +601,92 @@ fun DuplicatesScreen(
                             }
                         }
                     },
+                    title = {
+                        Text(
+                            text = stringResource(R.string.duplicates_autoselect_title),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
+                    text = {
+                        Text(
+                            if (allDecided) {
+                                stringResource(R.string.duplicates_autoselect_all_msg)
+                            } else {
+                                pluralStringResource(R.plurals.duplicates_autoselect_msg, decidedGroups, decidedGroups)
+                            }
+                        )
+                    },
+                    confirmButton = {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TextButton(
+                                onClick = {
+                                    pendingAutoSelect = null
+                                    viewModel.applyAutoSelect(mode, onlyUndecidedGroups = false)
+                                },
+                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                            ) {
+                                Text(stringResource(R.string.duplicates_autoselect_replace_all))
+                            }
+                            if (!allDecided) {
+                                TextButton(
+                                    onClick = {
+                                        pendingAutoSelect = null
+                                        viewModel.applyAutoSelect(mode, onlyUndecidedGroups = true)
+                                    }
+                                ) {
+                                    Text(stringResource(R.string.duplicates_autoselect_only_unsorted))
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+
+            deepAnalyzeTarget?.let { cluster ->
+                val downloadBytes = cluster.assets
+                    .filter { !it.type.equals("VIDEO", ignoreCase = true) }
+                    .sumOf { it.exifInfo?.fileSizeInBytes ?: 0L }
+                AlertDialog(
+                    onDismissRequest = { deepAnalyzeTarget = null },
+                    icon = {
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .size(48.dp)
+                                    .background(MaterialTheme.colorScheme.secondaryContainer, MaterialShapes.Cookie6Sided.toShape()),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ImageSearch,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                            IconButton(
+                                onClick = { deepAnalyzeTarget = null },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 12.dp, y = (-12).dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.common_close)
+                                )
+                            }
+                        }
+                    },
+                    title = {
+                        Text(
+                            text = stringResource(R.string.duplicates_deep_analyze_title),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
                     text = { Text(stringResource(R.string.duplicates_deep_analyze_msg, formatSizeStr(downloadBytes))) },
                     confirmButton = {
-                        Button(
+                        TextButton(
                             onClick = {
                                 deepAnalyzeTarget = null
                                 viewModel.deepAnalyzeCluster(cluster)
@@ -793,6 +907,8 @@ private fun DuplicatesHeader(
                 HeaderInfo(
                     progressText = "${(progress * 100).toInt()}%",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 13.sp,
+                    iconSize = 16.dp,
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .graphicsLayer { translationX = infoTranslationX }
@@ -842,6 +958,8 @@ private fun DuplicatesHeader(
                     HeaderInfo(
                         progressText = "${(progress * 100).toInt()}%",
                         color = Color.White,
+                        fontSize = 13.sp,
+                        iconSize = 16.dp,
                         modifier = Modifier
                             .align(Alignment.CenterStart)
                             .graphicsLayer { translationX = infoTranslationX }
@@ -865,76 +983,12 @@ private fun DuplicatesHeader(
 }
 
 @Composable
-private fun RemainingInfo(
-    remainingText: String,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    Text(
-        text = remainingText,
-        style = MaterialTheme.typography.labelSmall,
-        fontSize = 13.sp,
-        fontWeight = FontWeight.Bold,
-        color = color,
-        modifier = modifier
-    )
-}
-
-@Composable
-private fun HeaderInfo(
-    progressText: String,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = progressText,
-            style = MaterialTheme.typography.labelSmall,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Black,
-            color = color
-        )
-        Spacer(Modifier.width(4.dp))
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.List,
-            contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = color
-        )
-    }
-}
-
-@Composable
-private fun StatBadge(label: String, count: Int, color: Color, shape: Shape) {
-    StatBadge(text = "$count $label", color = color, shape = shape)
-}
-
-@Composable
-private fun StatBadge(text: String, color: Color, shape: Shape) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier
-                .size(12.dp)
-                .clip(shape)
-                .background(color)
-        )
-        Spacer(Modifier.width(6.dp))
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-    }
-}
-
-@Composable
 private fun DuplicatesBottomBar(
     uiState: DuplicatesUiState,
-    viewModel: DuplicatesViewModel,
+    undecidedOnly: Boolean,
+    canFilterUndecided: Boolean,
+    onToggleUndecidedOnly: () -> Unit,
+    onAutoSelect: (AutoSelectMode) -> Unit,
     onSortOrderSelected: (DuplicatesSortOrder) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -973,7 +1027,7 @@ private fun DuplicatesBottomBar(
                     checked = sortMenuExpanded,
                     onCheckedChange = { sortMenuExpanded = true },
                     shapes = ToggleButtonShapes(
-                        shape = connectedTileShape(0, 2, outer = tileHeight / 2),
+                        shape = connectedTileShape(0, 3, outer = tileHeight / 2),
                         pressedShape = RoundedCornerShape(10.dp),
                         checkedShape = CircleShape
                     ),
@@ -1032,6 +1086,30 @@ private fun DuplicatesBottomBar(
                 }
             }
 
+            ToggleButton(
+                checked = undecidedOnly,
+                onCheckedChange = { onToggleUndecidedOnly() },
+                enabled = undecidedOnly || canFilterUndecided,
+                shapes = ToggleButtonShapes(
+                    shape = connectedTileShape(1, 3, outer = tileHeight / 2),
+                    pressedShape = RoundedCornerShape(10.dp),
+                    checkedShape = CircleShape
+                ),
+                colors = tileColors,
+                modifier = Modifier.size(
+                    width = IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide).width *
+                        checkedWidthFactor(undecidedOnly),
+                    height = tileHeight
+                ),
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FilterAlt,
+                    contentDescription = stringResource(R.string.duplicates_undecided_only),
+                    modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
+                )
+            }
+
             var selectMenuExpanded by remember { mutableStateOf(false) }
 
             val selectButtonText = when (uiState.selectedAutoSelectMode) {
@@ -1061,7 +1139,7 @@ private fun DuplicatesBottomBar(
                     checked = selectMenuExpanded,
                     onCheckedChange = { selectMenuExpanded = true },
                     shapes = ToggleButtonShapes(
-                        shape = connectedTileShape(1, 2, outer = tileHeight / 2),
+                        shape = connectedTileShape(2, 3, outer = tileHeight / 2),
                         pressedShape = RoundedCornerShape(10.dp),
                         checkedShape = CircleShape
                     ),
@@ -1108,7 +1186,7 @@ private fun DuplicatesBottomBar(
                         uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_LARGEST
                     ) {
                         selectMenuExpanded = false
-                        viewModel.autoSelect(keepLargest = true)
+                        onAutoSelect(AutoSelectMode.KEEP_LARGEST)
                     }
                     SortPopupItem(
                         R.string.duplicates_keep_smallest,
@@ -1116,7 +1194,7 @@ private fun DuplicatesBottomBar(
                         uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_SMALLEST
                     ) {
                         selectMenuExpanded = false
-                        viewModel.autoSelect(keepLargest = false)
+                        onAutoSelect(AutoSelectMode.KEEP_SMALLEST)
                     }
                     }
                     Spacer(Modifier.height(8.dp))
@@ -1127,7 +1205,7 @@ private fun DuplicatesBottomBar(
                         uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_BEST_SHOT_AUTO
                     ) {
                         selectMenuExpanded = false
-                        viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.AUTO)
+                        onAutoSelect(AutoSelectMode.KEEP_BEST_SHOT_AUTO)
                     }
                     SortPopupItem(
                         R.string.duplicates_best_shot_single,
@@ -1135,7 +1213,7 @@ private fun DuplicatesBottomBar(
                         uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_BEST_SHOT_SINGLE
                     ) {
                         selectMenuExpanded = false
-                        viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.SINGLE_BEST)
+                        onAutoSelect(AutoSelectMode.KEEP_BEST_SHOT_SINGLE)
                     }
                     SortPopupItem(
                         R.string.duplicates_best_shot_top_2,
@@ -1143,7 +1221,7 @@ private fun DuplicatesBottomBar(
                         uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_BEST_SHOT_TOP_2
                     ) {
                         selectMenuExpanded = false
-                        viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.TOP_2)
+                        onAutoSelect(AutoSelectMode.KEEP_BEST_SHOT_TOP_2)
                     }
                     SortPopupItem(
                         R.string.duplicates_best_shot_top_3,
@@ -1151,7 +1229,7 @@ private fun DuplicatesBottomBar(
                         uiState.selectedAutoSelectMode == AutoSelectMode.KEEP_BEST_SHOT_TOP_3
                     ) {
                         selectMenuExpanded = false
-                        viewModel.autoSelectBestShot(BestShotAnalyzer.BestShotMode.TOP_3)
+                        onAutoSelect(AutoSelectMode.KEEP_BEST_SHOT_TOP_3)
                     }
                     }
                 }

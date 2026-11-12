@@ -77,6 +77,11 @@ class DuplicatesViewModel @Inject constructor(
                 _uiState.update { it.copy(skipDeepAnalyzeConfirmation = skip) }
             }
         }
+        viewModelScope.launch {
+            sessionRepository.playbackBehavior.collect { behavior ->
+                _uiState.update { it.copy(playbackBehavior = behavior) }
+            }
+        }
     }
 
     fun skipDeepAnalyzeConfirmation() {
@@ -144,7 +149,9 @@ class DuplicatesViewModel @Inject constructor(
                     isLoading = false,
                     isSyncing = false,
                     clusters = sortedClusters,
-                    selectedAutoSelectMode = null
+                    selectedAutoSelectMode = null,
+                    // Cluster ids are new on every load, so a filter snapshot no longer matches anything.
+                    undecidedOnlyIds = null
                 ) 
             }
         } catch (e: Exception) {
@@ -167,7 +174,10 @@ class DuplicatesViewModel @Inject constructor(
             DuplicateDecision.KEEP -> DuplicateDecision.DELETE
             DuplicateDecision.DELETE -> DuplicateDecision.NONE
         }
+        setDecision(assetId, next)
+    }
 
+    fun setDecision(assetId: String, next: DuplicateDecision) {
         _uiState.update { state ->
             state.copy(
                 decisions = state.decisions.toMutableMap().apply { put(assetId, next) }
@@ -390,9 +400,66 @@ class DuplicatesViewModel @Inject constructor(
         clearAllDecisions()
     }
 
-    fun autoSelect(keepLargest: Boolean) {
+    /** Shows only the clusters that have undecided photos right now; they stay listed once sorted, until toggled off. */
+    fun toggleUndecidedOnly() {
+        _uiState.update { state ->
+            if (state.undecidedOnlyIds != null) {
+                state.copy(undecidedOnlyIds = null)
+            } else {
+                state.copy(undecidedOnlyIds = state.clusters.filter { state.hasUndecided(it) }.map { it.clusterId }.toSet())
+            }
+        }
+    }
+
+    suspend fun loadAlbumNames(assetId: String): List<String> = try {
+        api.getAlbumsForAsset(assetId).filter { !it.isVirtual }.map { it.albumName }
+    } catch (e: Exception) {
+        e.rethrowIfCancelled()
+        AppLogger.e("Duplicates", "Failed to load albums for asset", e)
+        emptyList()
+    }
+
+    /** Runs [mode] on every cluster, or with [onlyUndecidedGroups] only on clusters that have no decisions yet. */
+    fun applyAutoSelect(mode: AutoSelectMode, onlyUndecidedGroups: Boolean) {
+        when (mode) {
+            AutoSelectMode.KEEP_LARGEST -> autoSelect(keepLargest = true, onlyUndecidedGroups)
+            AutoSelectMode.KEEP_SMALLEST -> autoSelect(keepLargest = false, onlyUndecidedGroups)
+            AutoSelectMode.KEEP_BEST_SHOT_AUTO -> autoSelectBestShot(BestShotAnalyzer.BestShotMode.AUTO, onlyUndecidedGroups)
+            AutoSelectMode.KEEP_BEST_SHOT_SINGLE -> autoSelectBestShot(BestShotAnalyzer.BestShotMode.SINGLE_BEST, onlyUndecidedGroups)
+            AutoSelectMode.KEEP_BEST_SHOT_TOP_2 -> autoSelectBestShot(BestShotAnalyzer.BestShotMode.TOP_2, onlyUndecidedGroups)
+            AutoSelectMode.KEEP_BEST_SHOT_TOP_3 -> autoSelectBestShot(BestShotAnalyzer.BestShotMode.TOP_3, onlyUndecidedGroups)
+        }
+    }
+
+    private fun autoSelectTargets(onlyUndecidedGroups: Boolean): List<DuplicateClusterUiModel> {
+        val state = _uiState.value
+        return if (onlyUndecidedGroups) state.clusters.filter { !state.hasDecisions(it) } else state.clusters
+    }
+
+    /** Stores the decisions of [clusters]' assets; the decision map also holds the user's decisions outside duplicates. */
+    private suspend fun saveClusterDecisions(clusters: List<DuplicateClusterUiModel>, decisions: Map<String, DuplicateDecision>) {
+        val userId = sessionManager.getUserId() ?: return
+        val entities = clusters.flatMap { it.assets }.mapNotNull { asset ->
+            val decision = decisions[asset.id]
+            if (decision == null || decision == DuplicateDecision.NONE) null
+            else SwipeDecisionEntity(
+                assetId = asset.id,
+                albumId = Album.VIRTUAL_DUPLICATES_ID,
+                userId = userId,
+                decision = decision.name,
+                fileSize = asset.exifInfo?.fileSizeInBytes,
+                createdAt = System.currentTimeMillis()
+            )
+        }
+        if (entities.isNotEmpty()) {
+            swipeDecisionRepository.saveDecisions(entities)
+        }
+    }
+
+    fun autoSelect(keepLargest: Boolean, onlyUndecidedGroups: Boolean = false) {
         val newDecisions = _uiState.value.decisions.toMutableMap()
-        _uiState.value.clusters.forEach { cluster ->
+        val targets = autoSelectTargets(onlyUndecidedGroups)
+        targets.forEach { cluster ->
             val photosOnly = cluster.assets.filter { !it.type.equals("VIDEO", ignoreCase = true) }
             val sorted = if (keepLargest) {
                 photosOnly.sortedWith(
@@ -425,34 +492,19 @@ class DuplicatesViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            val userId = sessionManager.getUserId() ?: return@launch
-            val allAssetsMap = _uiState.value.clusters.flatMap { it.assets }.associateBy { it.id }
-            val entitiesToSave = newDecisions.mapNotNull { (assetId, decision) ->
-                if (decision == DuplicateDecision.NONE) null
-                else {
-                    val asset = allAssetsMap[assetId]
-                    SwipeDecisionEntity(
-                        assetId = assetId,
-                        albumId = Album.VIRTUAL_DUPLICATES_ID,
-                        userId = userId,
-                        decision = decision.name,
-                        fileSize = asset?.exifInfo?.fileSizeInBytes,
-                        createdAt = System.currentTimeMillis()
-                    )
-                }
-            }
-            if (entitiesToSave.isNotEmpty()) {
-                swipeDecisionRepository.saveDecisions(entitiesToSave)
-            }
+            saveClusterDecisions(targets, newDecisions)
         }
     }
 
-    fun autoSelectBestShot(mode: BestShotAnalyzer.BestShotMode = BestShotAnalyzer.BestShotMode.AUTO) {
+    fun autoSelectBestShot(
+        mode: BestShotAnalyzer.BestShotMode = BestShotAnalyzer.BestShotMode.AUTO,
+        onlyUndecidedGroups: Boolean = false
+    ) {
         aiJob?.cancel()
         aiJob = viewModelScope.launch {
             _uiState.update { it.copy(isAnalyzingAi = true) }
             try {
-                val clusters = _uiState.value.clusters
+                val clusters = autoSelectTargets(onlyUndecidedGroups)
                 val newDecisions = _uiState.value.decisions.toMutableMap()
 
                 clusters.forEachIndexed { index, cluster ->
@@ -487,25 +539,7 @@ class DuplicatesViewModel @Inject constructor(
                     )
                 }
 
-                val userId = sessionManager.getUserId() ?: return@launch
-                val allAssetsMap = clusters.flatMap { it.assets }.associateBy { it.id }
-                val entitiesToSave = newDecisions.mapNotNull { (assetId, decision) ->
-                    if (decision == DuplicateDecision.NONE) null
-                    else {
-                        val asset = allAssetsMap[assetId]
-                        SwipeDecisionEntity(
-                            assetId = assetId,
-                            albumId = Album.VIRTUAL_DUPLICATES_ID,
-                            userId = userId,
-                            decision = decision.name,
-                            fileSize = asset?.exifInfo?.fileSizeInBytes,
-                            createdAt = System.currentTimeMillis()
-                        )
-                    }
-                }
-                if (entitiesToSave.isNotEmpty()) {
-                    swipeDecisionRepository.saveDecisions(entitiesToSave)
-                }
+                saveClusterDecisions(clusters, newDecisions)
             } catch (e: CancellationException) {
                 throw e
             } finally {

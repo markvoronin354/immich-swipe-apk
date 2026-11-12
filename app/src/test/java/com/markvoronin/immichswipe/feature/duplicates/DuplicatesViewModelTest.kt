@@ -389,6 +389,107 @@ class DuplicatesViewModelTest {
     }
 
     @Test
+    fun `auto select can leave groups that already have decisions alone`() {
+        val vm = createViewModel()
+        vm.toggleDecision("small") // KEEP in the big group
+        val saved = slot<List<SwipeDecisionEntity>>()
+        coEvery { swipeDecisionRepository.saveDecisions(capture(saved)) } returns Unit
+
+        vm.applyAutoSelect(AutoSelectMode.KEEP_LARGEST, onlyUndecidedGroups = true)
+
+        assertEquals(
+            mapOf("small" to DuplicateDecision.KEEP, "lone2" to DuplicateDecision.KEEP, "lone1" to DuplicateDecision.DELETE),
+            vm.decisions()
+        )
+        assertEquals(setOf("lone1", "lone2"), saved.captured.map { it.assetId }.toSet())
+        assertEquals(AutoSelectMode.KEEP_LARGEST, vm.uiState.value.selectedAutoSelectMode)
+    }
+
+    @Test
+    fun `auto select on all groups replaces earlier decisions`() {
+        val vm = createViewModel()
+        vm.toggleDecision("small")
+
+        vm.applyAutoSelect(AutoSelectMode.KEEP_LARGEST, onlyUndecidedGroups = false)
+
+        assertEquals(DuplicateDecision.DELETE, vm.decisions()["small"])
+        assertEquals(DuplicateDecision.KEEP, vm.decisions()["large"])
+    }
+
+    @Test
+    fun `auto select stores only the duplicate decisions it made`() {
+        // A decision from a regular album lives in the same per-user map.
+        storedDecisions.value = listOf(entity("fromAnAlbum", "KEEP"))
+        val vm = createViewModel()
+        val saved = slot<List<SwipeDecisionEntity>>()
+        coEvery { swipeDecisionRepository.saveDecisions(capture(saved)) } returns Unit
+
+        vm.autoSelect(keepLargest = true)
+
+        assertEquals(setOf("small", "medium", "large", "lone1", "lone2"), saved.captured.map { it.assetId }.toSet())
+        assertTrue(saved.captured.all { it.fileSize != null })
+    }
+
+    @Test
+    fun `best shot on undecided groups only analyses those groups`() {
+        val photos = mutableListOf<List<String>>()
+        coEvery { bestShotAnalyzer.analyzeCluster(any(), any()) } answers {
+            photos += firstArg<List<Asset>>().map { it.id }
+            emptyList()
+        }
+        val vm = createViewModel()
+        vm.toggleDecision("small")
+
+        vm.applyAutoSelect(AutoSelectMode.KEEP_BEST_SHOT_AUTO, onlyUndecidedGroups = true)
+
+        assertEquals(listOf(listOf("lone2", "lone1")), photos)
+        assertEquals(AutoSelectMode.KEEP_BEST_SHOT_AUTO, vm.uiState.value.selectedAutoSelectMode)
+    }
+
+    // --- undecided only ---
+
+    @Test
+    fun `undecided only shows the groups that had undecided photos and keeps them once sorted`() {
+        val vm = createViewModel()
+        val (bigGroup, loneGroup) = vm.uiState.value.clusters
+        vm.setClusterDecisions(loneGroup, DuplicateDecision.KEEP)
+
+        vm.toggleUndecidedOnly()
+        assertEquals(listOf(bigGroup.clusterId), vm.uiState.value.visibleClusters.map { it.clusterId })
+
+        // Finishing the group doesn't make it vanish mid-review.
+        vm.setClusterDecisions(bigGroup, DuplicateDecision.DELETE)
+        assertEquals(listOf(bigGroup.clusterId), vm.uiState.value.visibleClusters.map { it.clusterId })
+
+        vm.toggleUndecidedOnly()
+        assertEquals(2, vm.uiState.value.visibleClusters.size)
+    }
+
+    @Test
+    fun `album names leave out virtual albums and a failure gives none`() = kotlinx.coroutines.test.runTest {
+        coEvery { api.getAlbumsForAsset("large") } returns listOf(
+            Album(id = "a1", albumName = "Holidays", assetCount = 3, albumThumbnailAssetId = null),
+            Album(id = "s", albumName = "SKIP", assetCount = 1, albumThumbnailAssetId = null)
+        )
+        coEvery { api.getAlbumsForAsset("small") } throws IOException("offline")
+        val vm = createViewModel()
+
+        assertEquals(listOf("Holidays"), vm.loadAlbumNames("large"))
+        assertTrue(vm.loadAlbumNames("small").isEmpty())
+    }
+
+    @Test
+    fun `reloading turns undecided only off`() {
+        val vm = createViewModel()
+        vm.toggleUndecidedOnly()
+
+        vm.loadDuplicates()
+
+        assertNull(vm.uiState.value.undecidedOnlyIds)
+        assertEquals(2, vm.uiState.value.visibleClusters.size)
+    }
+
+    @Test
     fun `skipping the deep analysis confirmation is saved and mirrored into the state`() {
         val vm = createViewModel()
         assertFalse(vm.uiState.value.skipDeepAnalyzeConfirmation)
