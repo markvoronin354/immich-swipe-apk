@@ -39,9 +39,6 @@ fun formatSizeStr(bytes: Long): String {
     }
 }
 
-fun formatMegapixels(width: Int, height: Int): String =
-    String.format(Locale.getDefault(), "%.1f MP", width.toLong() * height / 1_000_000.0)
-
 fun formatMediaTime(ms: Long): String {
     val totalSeconds = (ms / 1000).toInt()
     val minutes = (totalSeconds / 60) % 60

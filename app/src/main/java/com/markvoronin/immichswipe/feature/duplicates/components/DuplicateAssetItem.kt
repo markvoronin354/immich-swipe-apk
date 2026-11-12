@@ -57,7 +57,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
@@ -199,49 +198,51 @@ fun DuplicateAssetItem(
                         }
                     }
                 )
+            }
 
-                if (isFavorite) {
+            // The heart, play and GIF badges sit outside the delete fade, around 24dp in, the centre of the decided
+            // corner's arc, so they clear the frame and the corner.
+            if (isFavorite) {
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = stringResource(R.string.cd_favorite),
+                    tint = Color.Red,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(14.dp)
+                        .size(20.dp)
+                )
+            }
+
+            if (asset.type == "VIDEO") {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(12.dp)
+                        .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
+                        .padding(4.dp)
+                ) {
                     Icon(
-                        imageVector = Icons.Default.Favorite,
-                        contentDescription = stringResource(R.string.cd_favorite),
-                        tint = Color.Red,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(8.dp)
-                            .size(20.dp)
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = stringResource(R.string.cd_video),
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
                     )
                 }
-
-                if (asset.type == "VIDEO") {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(8.dp)
-                            .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
-                            .padding(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = stringResource(R.string.cd_video),
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                } else if (asset.isGif) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(8.dp)
-                            .background(Color.Black.copy(alpha = 0.6f), shape = RoundedCornerShape(4.dp))
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = "GIF",
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+            } else if (asset.isGif) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(12.dp)
+                        .background(Color.Black.copy(alpha = 0.6f), shape = RoundedCornerShape(4.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "GIF",
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 
@@ -260,13 +261,6 @@ fun DuplicateAssetItem(
                         }
                     }
             )
-
-            DecisionBadge(
-                decision = decision,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
-            )
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -278,26 +272,7 @@ fun DuplicateAssetItem(
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1
         )
-        Text(
-            text = assetDetails(asset),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
     }
-}
-
-/** Megapixels (photos only) and file type, the details that tell duplicates apart. */
-private fun assetDetails(asset: Asset): String {
-    val width = asset.exifInfo?.imageWidth ?: 0
-    val height = asset.exifInfo?.imageHeight ?: 0
-    val megapixels = if (!asset.isVideo && width > 0 && height > 0) formatMegapixels(width, height) else null
-    val extension = (asset.fileExtension ?: asset.originalFileName?.substringAfterLast('.', ""))
-        ?.removePrefix(".")
-        ?.takeIf { it.isNotBlank() }
-        ?.uppercase()
-    return listOfNotNull(megapixels, extension).joinToString(" · ")
 }
 
 /** Keep is the header's green cookie, delete its red gem; the badge pops in and swaps on each tap. */

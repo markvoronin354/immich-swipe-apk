@@ -1,8 +1,6 @@
 package com.markvoronin.immichswipe.feature.duplicates.components
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -33,14 +32,12 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.markvoronin.immichswipe.R
-import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
 fun InstagramZoomOverlay(
     zoomData: ZoomData?,
-    decision: DuplicateDecision,
     rootWindowOffset: Offset,
     baseUrl: String = "",
     isFavorite: Boolean = false,
@@ -55,6 +52,8 @@ fun InstagramZoomOverlay(
     val scaleAnim = remember { Animatable(zoomData.scale) }
     val offsetXAnim = remember { Animatable(zoomData.offset.x) }
     val offsetYAnim = remember { Animatable(zoomData.offset.y) }
+    // The photo springs back into its thumbnail with the theme's spatial spring.
+    val settleSpec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
 
     LaunchedEffect(zoomData.asset.id, zoomData.scale, zoomData.offset, zoomData.isGestureActive) {
         if (zoomData.isGestureActive) {
@@ -63,33 +62,9 @@ fun InstagramZoomOverlay(
             offsetYAnim.snapTo(zoomData.offset.y)
         } else {
             coroutineScope {
-                launch {
-                    scaleAnim.animateTo(
-                        targetValue = 1f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioNoBouncy,
-                            stiffness = Spring.StiffnessMediumLow
-                        )
-                    )
-                }
-                launch {
-                    offsetXAnim.animateTo(
-                        targetValue = 0f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioNoBouncy,
-                            stiffness = Spring.StiffnessMediumLow
-                        )
-                    )
-                }
-                launch {
-                    offsetYAnim.animateTo(
-                        targetValue = 0f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioNoBouncy,
-                            stiffness = Spring.StiffnessMediumLow
-                        )
-                    )
-                }
+                launch { scaleAnim.animateTo(targetValue = 1f, animationSpec = settleSpec) }
+                launch { offsetXAnim.animateTo(targetValue = 0f, animationSpec = settleSpec) }
+                launch { offsetYAnim.animateTo(targetValue = 0f, animationSpec = settleSpec) }
             }
             onDismiss()
         }
@@ -161,19 +136,6 @@ fun InstagramZoomOverlay(
                         .size(20.dp)
                 )
             }
-
-            DecisionBadge(
-                decision = decision,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .graphicsLayer {
-                        scaleX = inverseScale
-                        scaleY = inverseScale
-                        transformOrigin = TransformOrigin(1f, 0f)
-                        alpha = badgeAlpha
-                    }
-            )
         }
     }
 }

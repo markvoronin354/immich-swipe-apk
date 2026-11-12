@@ -82,9 +82,9 @@ internal val ClusterPhotoGap = 4.dp
 private val ClusterHeaderHeight = 48.dp
 private val ClusterButtonHeight = 48.dp
 
-/** Everything in the card but the photos: padding, header, photo captions (labelLarge + bodySmall) and buttons. */
+/** Everything in the card but the photos: padding, header, photo size captions (labelLarge) and buttons. */
 internal val ClusterCardChromeHeight =
-    ClusterCardPadding * 2 + ClusterHeaderHeight + 12.dp + 8.dp + 36.dp + 12.dp + ClusterButtonHeight
+    ClusterCardPadding * 2 + ClusterHeaderHeight + 12.dp + 8.dp + 20.dp + 12.dp + ClusterButtonHeight
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable

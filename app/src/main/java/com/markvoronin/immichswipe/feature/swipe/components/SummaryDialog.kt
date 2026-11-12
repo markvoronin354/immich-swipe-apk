@@ -84,6 +84,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
 import com.markvoronin.immichswipe.R
+import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.common.SolidShapeLoadingIndicator
 import com.markvoronin.immichswipe.feature.common.WavyLoadingBar
@@ -638,6 +639,7 @@ fun SummaryFullscreenPreviewDialog(
                         DuplicateVideoPlayer(
                             asset = pageAsset,
                             baseUrl = baseUrlClean,
+                            handleAudioFocus = uiState.playbackBehavior != PlaybackBehavior.IGNORE,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Fit
                         )
