@@ -300,6 +300,11 @@ fun HeaderInfo(
 
 @Composable
 fun StatBadge(label: String, count: Int, color: Color, shape: Shape) {
+    StatBadge(text = "$count $label", color = color, shape = shape)
+}
+
+@Composable
+fun StatBadge(text: String, color: Color, shape: Shape) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             modifier = Modifier
@@ -309,7 +314,7 @@ fun StatBadge(label: String, count: Int, color: Color, shape: Shape) {
         )
         Spacer(Modifier.width(6.dp))
         Text(
-            text = "$count $label",
+            text = text,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground

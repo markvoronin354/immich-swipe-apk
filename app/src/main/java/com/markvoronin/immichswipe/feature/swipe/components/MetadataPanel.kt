@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.AspectRatio
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Collections
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Storage
@@ -170,35 +171,49 @@ fun MetadataPanel(
                 }
             }
             Spacer(Modifier.height(4.dp))
-            val date = runCatching { LocalDate.parse(asset.fileCreatedAt.substringBefore("T")) }.getOrNull()
-                ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
-                ?: asset.fileCreatedAt.substringBefore("T")
-            MetadataRow(Icons.Outlined.CalendarMonth, stringResource(R.string.swipe_metadata_date), date, showDivider = false)
-            val extension = (asset.fileExtension ?: asset.originalFileName?.substringAfterLast('.', ""))
-                ?.removePrefix(".")?.takeIf { it.isNotEmpty() }
-            val typeLabel = asset.type.lowercase().replaceFirstChar { it.uppercase() }
-            val formatLabel = if (extension != null) "$typeLabel (.${extension.uppercase()})" else typeLabel
-            MetadataRow(Icons.Outlined.Info, stringResource(R.string.swipe_metadata_format), formatLabel)
-            asset.exifInfo?.let { exif ->
-                val sizeLabel = exif.fileSizeInBytes?.let { formatSize(it) } ?: stringResource(R.string.swipe_metadata_unavailable)
-                MetadataRow(Icons.Outlined.Storage, stringResource(R.string.swipe_metadata_size), sizeLabel)
-                MetadataRow(Icons.Outlined.AspectRatio, stringResource(R.string.swipe_metadata_resolution), "${exif.imageWidth ?: "?"} × ${exif.imageHeight ?: "?"}")
-                val camera = cameraLabel(exif.make, exif.model)
-                if (camera.isNotEmpty()) {
-                    MetadataRow(Icons.Outlined.PhotoCamera, stringResource(R.string.swipe_metadata_camera), camera)
-                }
-            } ?: run {
-                MetadataRow(Icons.Outlined.Storage, stringResource(R.string.swipe_metadata_size), stringResource(R.string.swipe_loading))
-                MetadataRow(Icons.Outlined.AspectRatio, stringResource(R.string.swipe_metadata_resolution), stringResource(R.string.swipe_loading))
-            }
-            val albumsLabel = when {
-                albumNames == null -> stringResource(R.string.swipe_loading)
-                albumNames.isEmpty() -> stringResource(R.string.swipe_metadata_no_albums)
-                else -> albumNames.joinToString(", ")
-            }
-            MetadataRow(Icons.Outlined.Collections, stringResource(R.string.swipe_metadata_albums), albumsLabel)
+            AssetMetadataRows(asset = asset, albumNames = albumNames)
         }
     }
+}
+
+/** The detail rows of [MetadataPanel], shared with the duplicates info dialog, which also lists the file name. */
+@Composable
+internal fun AssetMetadataRows(asset: Asset, albumNames: List<String>?, showFileName: Boolean = false) {
+    if (showFileName) {
+        MetadataRow(
+            Icons.Outlined.Description,
+            stringResource(R.string.swipe_metadata_file),
+            asset.originalFileName ?: stringResource(R.string.swipe_metadata_unavailable),
+            showDivider = false
+        )
+    }
+    val date = runCatching { LocalDate.parse(asset.fileCreatedAt.substringBefore("T")) }.getOrNull()
+        ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
+        ?: asset.fileCreatedAt.substringBefore("T")
+    MetadataRow(Icons.Outlined.CalendarMonth, stringResource(R.string.swipe_metadata_date), date, showDivider = showFileName)
+    val extension = (asset.fileExtension ?: asset.originalFileName?.substringAfterLast('.', ""))
+        ?.removePrefix(".")?.takeIf { it.isNotEmpty() }
+    val typeLabel = asset.type.lowercase().replaceFirstChar { it.uppercase() }
+    val formatLabel = if (extension != null) "$typeLabel (.${extension.uppercase()})" else typeLabel
+    MetadataRow(Icons.Outlined.Info, stringResource(R.string.swipe_metadata_format), formatLabel)
+    asset.exifInfo?.let { exif ->
+        val sizeLabel = exif.fileSizeInBytes?.let { formatSize(it) } ?: stringResource(R.string.swipe_metadata_unavailable)
+        MetadataRow(Icons.Outlined.Storage, stringResource(R.string.swipe_metadata_size), sizeLabel)
+        MetadataRow(Icons.Outlined.AspectRatio, stringResource(R.string.swipe_metadata_resolution), "${exif.imageWidth ?: "?"} × ${exif.imageHeight ?: "?"}")
+        val camera = cameraLabel(exif.make, exif.model)
+        if (camera.isNotEmpty()) {
+            MetadataRow(Icons.Outlined.PhotoCamera, stringResource(R.string.swipe_metadata_camera), camera)
+        }
+    } ?: run {
+        MetadataRow(Icons.Outlined.Storage, stringResource(R.string.swipe_metadata_size), stringResource(R.string.swipe_loading))
+        MetadataRow(Icons.Outlined.AspectRatio, stringResource(R.string.swipe_metadata_resolution), stringResource(R.string.swipe_loading))
+    }
+    val albumsLabel = when {
+        albumNames == null -> stringResource(R.string.swipe_loading)
+        albumNames.isEmpty() -> stringResource(R.string.swipe_metadata_no_albums)
+        else -> albumNames.joinToString(", ")
+    }
+    MetadataRow(Icons.Outlined.Collections, stringResource(R.string.swipe_metadata_albums), albumsLabel)
 }
 
 private val CompanyWords = Regex("""(?<!\w)(Co\.?,?\s*Ltd\.?|Corporation|Corp\.?|Company|Inc\.?|Ltd\.?|Imaging)(?!\w)""", RegexOption.IGNORE_CASE)
