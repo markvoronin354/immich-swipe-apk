@@ -66,9 +66,9 @@ import com.markvoronin.immichswipe.core.cache.VideoCache
 import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.common.MediaLoadingIndicator
-import com.markvoronin.immichswipe.feature.swipe.components.PlayPauseIcon
-import com.markvoronin.immichswipe.feature.swipe.components.VolumeIcon
-import com.markvoronin.immichswipe.feature.swipe.components.bounce
+import com.markvoronin.immichswipe.feature.common.PlayPauseIcon
+import com.markvoronin.immichswipe.feature.common.VolumeIcon
+import com.markvoronin.immichswipe.feature.common.bounce
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 

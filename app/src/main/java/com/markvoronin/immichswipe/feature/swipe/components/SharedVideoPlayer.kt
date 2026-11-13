@@ -11,7 +11,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -23,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -52,20 +50,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.lerp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
@@ -84,6 +77,7 @@ import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
+import com.markvoronin.immichswipe.feature.common.PlayPauseIcon
 import com.markvoronin.immichswipe.feature.swipe.utils.formatMediaTime
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 import kotlinx.coroutines.delay
@@ -357,33 +351,6 @@ fun SharedVideoPlayer(
                 }
             }
         }
-}
-
-// Material's play_arrow split down the middle into two quads, each of which morphs into one of pause's bars.
-// Points run top-start, top-end, bottom-end, bottom-start in a 24-unit box.
-private val PlayStart = floatArrayOf(8f, 5f, 13.5f, 8.5f, 13.5f, 15.5f, 8f, 19f)
-private val PlayEnd = floatArrayOf(13.5f, 8.5f, 19f, 12f, 19f, 12f, 13.5f, 15.5f)
-private val PauseStart = floatArrayOf(6f, 5f, 10f, 5f, 10f, 19f, 6f, 19f)
-private val PauseEnd = floatArrayOf(14f, 5f, 18f, 5f, 18f, 19f, 14f, 19f)
-
-/** Play icon at [progress] 0, pause icon at 1, morphing and turning half a turn in between (pause looks the same upside down). */
-@Composable
-internal fun PlayPauseIcon(progress: () -> Float, contentDescription: String, color: Color) {
-    val path = remember { Path() }
-    Canvas(modifier = Modifier.size(24.dp).semantics { this.contentDescription = contentDescription }) {
-        val t = progress()
-        val unit = size.width / 24f
-        path.reset()
-        for ((from, to) in listOf(PlayStart to PauseStart, PlayEnd to PauseEnd)) {
-            for (i in 0 until 4) {
-                val x = lerp(from[i * 2], to[i * 2], t) * unit
-                val y = lerp(from[i * 2 + 1], to[i * 2 + 1], t) * unit
-                if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
-            }
-            path.close()
-        }
-        rotate(180f * t) { drawPath(path, color) }
-    }
 }
 
 /**
