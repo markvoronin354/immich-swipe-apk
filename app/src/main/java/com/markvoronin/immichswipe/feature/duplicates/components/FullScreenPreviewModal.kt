@@ -1,63 +1,23 @@
 package com.markvoronin.immichswipe.feature.duplicates.components
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsDraggedAsState
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.NavigateBefore
-import androidx.compose.material.icons.automirrored.filled.NavigateNext
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ToggleButtonDefaults
-import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -69,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -84,22 +43,17 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -117,25 +71,14 @@ import com.markvoronin.immichswipe.core.cache.VideoPreloader
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.common.MediaLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
-import com.markvoronin.immichswipe.feature.settings.components.horizontalFadingEdges
 import com.markvoronin.immichswipe.feature.swipe.components.AssetInfoDialog
-import com.markvoronin.immichswipe.feature.swipe.components.FavoriteIcon
 import com.markvoronin.immichswipe.feature.swipe.components.ZoomableBox
-import com.markvoronin.immichswipe.feature.swipe.components.bounce
-import com.markvoronin.immichswipe.feature.swipe.components.connectedTileShape
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
-
-// Small tiles keep the chrome quiet around the photo; the buttons still get a 48dp touch target.
-private val ControlTileHeight = 40.dp
-private val ThumbShape = RoundedCornerShape(12.dp)
-// A 16dp badge inset 4dp shares its centre with the 12dp corner arc, so it never touches the corner or the 3dp frame.
-private val ThumbBadgeSize = 16.dp
-private val ThumbBadgeInset = 4.dp
 
 // Taps don't decide anything here (only the decision buttons do), so a double-tap is free to zoom.
 private const val DoubleTapZoom = 5f
@@ -258,94 +201,6 @@ fun FullScreenPreviewModal(
             }
         }
     }
-    val carouselState = remember(currentCluster.clusterId) {
-        LazyListState(firstVisibleItemIndex = initialIndex)
-    }
-    val isUserDragging by carouselState.interactionSource.collectIsDraggedAsState()
-
-    var carouselWidthPx by remember { mutableIntStateOf(0) }
-    val itemWidthDp = 54.dp
-    val itemWidthPx = with(density) { itemWidthDp.roundToPx() }
-
-    val sidePaddingDp = if (carouselWidthPx > 0) {
-        val paddingPx = ((carouselWidthPx - itemWidthPx) / 2).coerceAtLeast(0)
-        with(density) { paddingPx.toDp() }
-    } else {
-        16.dp
-    }
-
-    LaunchedEffect(carouselState, isUserDragging, carouselWidthPx) {
-        if (!isUserDragging || carouselWidthPx <= 0) return@LaunchedEffect
-
-        snapshotFlow {
-            @Suppress("UNUSED_EXPRESSION")
-            carouselState.firstVisibleItemIndex
-            @Suppress("UNUSED_EXPRESSION")
-            carouselState.firstVisibleItemScrollOffset
-
-            val layoutInfo = carouselState.layoutInfo
-            val contentStart = layoutInfo.beforeContentPadding
-            val viewportCenter = layoutInfo.viewportSize.width / 2
-
-            if (layoutInfo.viewportSize.width > 0) {
-                layoutInfo.visibleItemsInfo.minByOrNull { item ->
-                    val itemCenter = contentStart + item.offset + item.size / 2
-                    abs(itemCenter - viewportCenter)
-                }?.index
-            } else null
-        }.collect { closestIndex ->
-            if (closestIndex != null && closestIndex in assets.indices && closestIndex != selectedIndex) {
-                selectedIndex = closestIndex
-            }
-        }
-    }
-
-    val glideSpec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
-    // Slides the strip until [index] sits in the centre (offset 0 after the side padding). Jumps instead when that
-    // thumbnail isn't laid out yet, as when the strip first appears or a new cluster opens.
-    suspend fun LazyListState.glideTo(index: Int) {
-        val target = layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }
-        if (target != null) animateScrollBy(target.offset.toFloat(), glideSpec) else scrollToItem(index, 0)
-    }
-
-    LaunchedEffect(carouselState, carouselWidthPx) {
-        if (carouselWidthPx > 0 && !isUserDragging && selectedIndex in assets.indices) {
-            carouselState.scrollToItem(selectedIndex, 0)
-        }
-    }
-
-    // A swipe or a tap moves the selection; the strip follows. Another swipe mid-glide restarts this and retargets
-    // from where the strip is. Stays out of the way while a finger is on the strip.
-    LaunchedEffect(carouselState, selectedIndex) {
-        if (carouselWidthPx > 0 && !isUserDragging && selectedIndex in assets.indices) {
-            carouselState.glideTo(selectedIndex)
-        }
-    }
-
-    var wasCarouselDragged by remember { mutableStateOf(false) }
-    LaunchedEffect(isUserDragging) {
-        if (isUserDragging) {
-            wasCarouselDragged = true
-        } else if (wasCarouselDragged) {
-            wasCarouselDragged = false
-            if (carouselWidthPx > 0) {
-                val layoutInfo = carouselState.layoutInfo
-                val contentStart = layoutInfo.beforeContentPadding
-                val viewportCenter = layoutInfo.viewportSize.width / 2
-                if (layoutInfo.viewportSize.width > 0) {
-                    val closest = layoutInfo.visibleItemsInfo.minByOrNull { item ->
-                        val itemCenter = contentStart + item.offset + item.size / 2
-                        abs(itemCenter - viewportCenter)
-                    }?.index
-                    if (closest != null && closest in assets.indices) {
-                        selectedIndex = closest
-                        carouselState.glideTo(closest)
-                    }
-                }
-            }
-        }
-    }
-
     var dismissOffsetY by remember { mutableFloatStateOf(0f) }
     // Stays set through a close that follows a drag, so the photo leaves from where the finger let go.
     var isDraggingDismiss by remember { mutableStateOf(false) }
@@ -456,110 +311,16 @@ fun FullScreenPreviewModal(
                     }
                 }
 
-                var isFileNameExpanded by remember(currentAsset.id) { mutableStateOf(false) }
                 var showMetadataDialog by remember { mutableStateOf(false) }
 
-                // White on the black backdrop, dimmed like the swipe fullscreen's undo when there's nowhere to go.
-                val chromeButtonColors = IconButtonDefaults.iconButtonColors(
-                    contentColor = Color.White,
-                    disabledContentColor = Color.White.copy(alpha = 0.38f)
+                PreviewTopBar(
+                    asset = currentAsset,
+                    isFavorite = currentIsFav,
+                    onBack = { close() },
+                    onToggleFavorite = { currentOnFavoriteToggle(currentAsset) },
+                    onShowInfo = { showMetadataDialog = true },
+                    modifier = Modifier.graphicsLayer { alpha = chromeAlpha() }
                 )
-
-                // Containerless like the swipe fullscreen's top bar: back on the left, then the name, favourite and info.
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .graphicsLayer { alpha = chromeAlpha() }
-                        .statusBarsPadding()
-                        .padding(horizontal = 4.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = { close() },
-                        shapes = IconButtonDefaults.shapes(),
-                        colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.common_back)
-                        )
-                    }
-
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 4.dp)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) {
-                                isFileNameExpanded = !isFileNameExpanded
-                            }
-                    ) {
-                        val sizeStr = currentAsset.exifInfo?.fileSizeInBytes?.let { formatSizeStr(it) } ?: ""
-                        val originalName = currentAsset.originalFileName ?: stringResource(R.string.duplicates_photo_fallback)
-
-                        val displayedName = if (isFileNameExpanded) {
-                            originalName
-                        } else {
-                            formatMiddleEllipsisFileName(originalName, maxLength = 22)
-                        }
-
-                        Text(
-                            text = displayedName,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = if (isFileNameExpanded) Int.MAX_VALUE else 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (sizeStr.isNotEmpty()) {
-                            Text(
-                                text = sizeStr,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.8f)
-                            )
-                        }
-                    }
-
-                    // Same bounce and burst as the swipe fullscreen's heart, started by the tap rather than the state.
-                    val favoriteScale = remember { Animatable(1f) }
-                    val favoriteBurst = remember { Animatable(1f) }
-                    IconToggleButton(
-                        checked = currentIsFav,
-                        onCheckedChange = {
-                            scope.bounce(favoriteScale, motionScheme)
-                            if (!currentIsFav) scope.launch {
-                                favoriteBurst.snapTo(0f)
-                                favoriteBurst.animateTo(1f, motionScheme.slowSpatialSpec())
-                            }
-                            currentOnFavoriteToggle(currentAsset)
-                        },
-                        shapes = IconButtonDefaults.toggleableShapes(),
-                        colors = IconButtonDefaults.iconToggleButtonColors(
-                            contentColor = Color.White,
-                            checkedContentColor = Color.White
-                        )
-                    ) {
-                        FavoriteIcon(
-                            isFavorite = currentIsFav,
-                            scale = { favoriteScale.value },
-                            burst = { favoriteBurst.value },
-                            contentDescription = stringResource(R.string.cd_favorite)
-                        )
-                    }
-
-                    IconButton(
-                        onClick = { showMetadataDialog = true },
-                        shapes = IconButtonDefaults.shapes(),
-                        colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Info,
-                            contentDescription = stringResource(R.string.cd_asset_info)
-                        )
-                    }
-                }
 
                 if (showMetadataDialog) {
                     AssetInfoDialog(
@@ -868,271 +629,41 @@ fun FullScreenPreviewModal(
                         .padding(top = 8.dp, bottom = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // The current photo's decision, and the only way to change it here; tapping the selected one clears it.
                     // 18dp here and 2dp above the group navigator leave the carousel 20dp from each, counting the 2dp around
                     // its thumbnails and the 16dp above the navigator's label in its 56dp row.
-                    Row(
-                        modifier = Modifier.padding(bottom = 18.dp),
-                        horizontalArrangement = Arrangement.spacedBy(3.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        listOf(
-                            Triple(DuplicateDecision.DELETE, Icons.Default.Delete, R.string.swipe_delete_upper),
-                            Triple(DuplicateDecision.KEEP, Icons.Default.Check, R.string.swipe_keep_upper)
-                        ).forEachIndexed { index, (decision, icon, label) ->
-                            val checked = currentDecision == decision
-                            DecisionToggleButton(
-                                checked = checked,
-                                onClick = {
-                                    currentOnDecisionChange(currentAsset.id, if (checked) DuplicateDecision.NONE else decision)
-                                },
-                                index = index,
-                                icon = icon,
-                                iconAtEnd = decision == DuplicateDecision.DELETE,
-                                label = stringResource(label),
-                                checkedColor = decisionColor(decision),
-                                contentColor = Color.White
-                            )
-                        }
-                    }
+                    DecisionButtons(
+                        decision = currentDecision,
+                        onDecisionChange = { currentOnDecisionChange(currentAsset.id, it) },
+                        modifier = Modifier.padding(bottom = 18.dp)
+                    )
 
-                    LazyRow(
-                        state = carouselState,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(72.dp)
-                            .horizontalFadingEdges(carouselState, length = 24.dp)
-                            .onSizeChanged { size ->
-                                carouselWidthPx = size.width
-                            },
-                        contentPadding = PaddingValues(horizontal = sidePaddingDp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        itemsIndexed(assets, key = { _, asset -> asset.id }) { index, asset ->
-                            val isSelected = index == selectedIndex
-                            val assetDecision = decisions[asset.id] ?: DuplicateDecision.NONE
-                            val assetFav = isFavorite(asset)
-                            // The current photo sits centered at full size; the others shrink and dim.
-                            val selectedProgress by animateFloatAsState(
-                                targetValue = if (isSelected) 1f else 0f,
-                                animationSpec = motionScheme.defaultSpatialSpec(),
-                                label = "thumbSelected"
-                            )
-
-                            Box(
-                                modifier = Modifier
-                                    .size(width = itemWidthDp, height = 68.dp)
-                                    .graphicsLayer {
-                                        val scale = 0.86f + 0.14f * selectedProgress
-                                        scaleX = scale
-                                        scaleY = scale
-                                        shape = ThumbShape
-                                        clip = true
-                                    }
-                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                                    .then(
-                                        if (assetDecision != DuplicateDecision.NONE) {
-                                            Modifier.border(3.dp, decisionColor(assetDecision), ThumbShape)
-                                        } else Modifier
-                                    )
-                                    .clickable {
-                                        selectedIndex = index
-                                    }
-                            ) {
-                                val thumbRequest = remember(asset.id, baseUrlClean, asset.isGif) {
-                                    ImageRequest.Builder(context)
-                                        .data(
-                                            if (asset.isGif) "$baseUrlClean/api/assets/${asset.id}/original"
-                                            else "$baseUrlClean/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview"
-                                        )
-                                        .crossfade(false)
-                                        .build()
-                                }
-
-                                AsyncImage(
-                                    model = thumbRequest,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .graphicsLayer {
-                                            alpha = 0.6f + 0.4f * selectedProgress
-                                        }
-                                )
-
-                                // Favourite and video share one pill.
-                                if (assetFav || asset.type == "VIDEO") {
-                                    Row(
-                                        modifier = Modifier
-                                            .align(Alignment.TopStart)
-                                            .padding(ThumbBadgeInset)
-                                            .height(ThumbBadgeSize)
-                                            .widthIn(min = ThumbBadgeSize)
-                                            .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                                            .padding(horizontal = 3.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(1.dp, Alignment.CenterHorizontally),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        if (assetFav) {
-                                            Icon(
-                                                imageVector = Icons.Default.Favorite,
-                                                contentDescription = null,
-                                                tint = Color.Red,
-                                                modifier = Modifier.size(10.dp)
-                                            )
-                                        }
-                                        if (asset.type == "VIDEO") {
-                                            Icon(
-                                                imageVector = Icons.Default.PlayArrow,
-                                                contentDescription = stringResource(R.string.cd_video),
-                                                tint = Color.White,
-                                                modifier = Modifier.size(10.dp)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    PreviewCarousel(
+                        assets = assets,
+                        clusterId = currentCluster.clusterId,
+                        initialIndex = initialIndex,
+                        selectedIndex = selectedIndex,
+                        onSelect = { selectedIndex = it },
+                        decisions = decisions,
+                        isFavorite = isFavorite,
+                        baseUrl = baseUrlClean
+                    )
 
                     Spacer(modifier = Modifier.height(2.dp))
 
-                    // Previous group, position, next group: containerless, like the top bar.
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        val hasPreviousGroup = currentClusterIdx > 0
-                        val previousScale = remember { Animatable(1f) }
-                        val nextScale = remember { Animatable(1f) }
-                        // A size up from the top bar's buttons: without containers the row needs the extra weight.
-                        IconButton(
-                            onClick = {
-                                if (hasPreviousGroup) {
-                                    scope.bounce(previousScale, motionScheme)
-                                    currentClusterIdx--
-                                }
-                            },
-                            enabled = hasPreviousGroup,
-                            shapes = IconButtonDefaults.shapes(),
-                            colors = chromeButtonColors,
-                            modifier = Modifier.size(IconButtonDefaults.mediumContainerSize())
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
-                                contentDescription = stringResource(R.string.cd_previous_group),
-                                modifier = Modifier
-                                    .size(IconButtonDefaults.mediumIconSize)
-                                    .graphicsLayer {
-                                        scaleX = previousScale.value
-                                        scaleY = previousScale.value
-                                    }
-                            )
-                        }
-
-                        Text(
-                            text = if (clusters.size > 1) {
-                                stringResource(R.string.duplicates_ai_cluster_progress, currentClusterIdx + 1, clusters.size)
-                            } else {
-                                "${selectedIndex + 1} / ${assets.size}"
-                            },
-                            style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.widthIn(min = 160.dp).padding(horizontal = 8.dp)
-                        )
-
-                        val hasNextGroup = currentClusterIdx < clusters.size - 1
-                        IconButton(
-                            onClick = {
-                                if (hasNextGroup) {
-                                    scope.bounce(nextScale, motionScheme)
-                                    currentClusterIdx++
-                                }
-                            },
-                            enabled = hasNextGroup,
-                            shapes = IconButtonDefaults.shapes(),
-                            colors = chromeButtonColors,
-                            modifier = Modifier.size(IconButtonDefaults.mediumContainerSize())
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                                contentDescription = stringResource(R.string.cd_next_group),
-                                modifier = Modifier
-                                    .size(IconButtonDefaults.mediumIconSize)
-                                    .graphicsLayer {
-                                        scaleX = nextScale.value
-                                        scaleY = nextScale.value
-                                    }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/** One half of the delete/keep pair: just the label at rest, the icon slides out on its outer side once it's selected. */
-@Composable
-private fun DecisionToggleButton(
-    checked: Boolean,
-    onClick: () -> Unit,
-    index: Int,
-    icon: ImageVector,
-    iconAtEnd: Boolean,
-    label: String,
-    checkedColor: Color,
-    contentColor: Color
-) {
-    val motionScheme = MaterialTheme.motionScheme
-    ToggleButton(
-        checked = checked,
-        onCheckedChange = { onClick() },
-        shapes = ToggleButtonShapes(
-            shape = connectedTileShape(index, 2, outer = ControlTileHeight / 2),
-            pressedShape = RoundedCornerShape(10.dp),
-            checkedShape = CircleShape
-        ),
-        // Neutral at rest, like the white chrome around it; only a decision brings in its green or red.
-        colors = ToggleButtonDefaults.colors(
-            containerColor = Color.White.copy(alpha = 0.14f),
-            contentColor = contentColor,
-            checkedContainerColor = checkedColor,
-            checkedContentColor = Color.White
-        ),
-        modifier = Modifier.height(ControlTileHeight),
-        contentPadding = PaddingValues(horizontal = 16.dp)
-    ) {
-        val slidingIcon: @Composable () -> Unit = {
-            // Grows outward from the label's side.
-            val anchor = if (iconAtEnd) Alignment.Start else Alignment.End
-            AnimatedVisibility(
-                visible = checked,
-                enter = expandHorizontally(motionScheme.defaultSpatialSpec(), expandFrom = anchor) +
-                    fadeIn(motionScheme.defaultEffectsSpec()),
-                exit = shrinkHorizontally(motionScheme.defaultSpatialSpec(), shrinkTowards = anchor) +
-                    fadeOut(motionScheme.fastEffectsSpec())
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    val spacer = @Composable { Spacer(Modifier.width(ButtonDefaults.iconSpacingFor(ControlTileHeight))) }
-                    if (iconAtEnd) spacer()
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(ButtonDefaults.iconSizeFor(ControlTileHeight))
+                    GroupNavigator(
+                        label = if (clusters.size > 1) {
+                            stringResource(R.string.duplicates_ai_cluster_progress, currentClusterIdx + 1, clusters.size)
+                        } else {
+                            "${selectedIndex + 1} / ${assets.size}"
+                        },
+                        hasPrevious = currentClusterIdx > 0,
+                        hasNext = currentClusterIdx < clusters.size - 1,
+                        onPrevious = { currentClusterIdx-- },
+                        onNext = { currentClusterIdx++ }
                     )
-                    if (!iconAtEnd) spacer()
                 }
             }
         }
-        if (!iconAtEnd) slidingIcon()
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1
-        )
-        if (iconAtEnd) slidingIcon()
     }
 }
 
