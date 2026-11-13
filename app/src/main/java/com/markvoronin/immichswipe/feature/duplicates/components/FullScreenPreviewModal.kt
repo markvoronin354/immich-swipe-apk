@@ -13,7 +13,6 @@ import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -38,7 +37,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -133,7 +131,7 @@ import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.common.MediaLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
 import com.markvoronin.immichswipe.feature.settings.components.horizontalFadingEdges
-import com.markvoronin.immichswipe.feature.swipe.components.AssetMetadataRows
+import com.markvoronin.immichswipe.feature.swipe.components.AssetInfoDialog
 import com.markvoronin.immichswipe.feature.swipe.components.ZoomableBox
 import com.markvoronin.immichswipe.feature.swipe.components.checkedWidthFactor
 import com.markvoronin.immichswipe.feature.swipe.components.connectedTileShape
@@ -616,108 +614,12 @@ fun FullScreenPreviewModal(
                 }
 
                 if (showMetadataDialog) {
-                    Dialog(onDismissRequest = { showMetadataDialog = false }) {
-                        Surface(
-                            shape = MaterialTheme.shapes.extraLarge,
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .padding(20.dp)
-                                    .verticalScroll(rememberScrollState())
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Info,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(22.dp)
-                                        )
-                                        Spacer(Modifier.width(8.dp))
-                                        val titleRes = if (currentAsset.isVideo) R.string.swipe_metadata_title_video else R.string.swipe_metadata_title
-                                        Text(
-                                            text = stringResource(titleRes),
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                    IconButton(onClick = { showMetadataDialog = false }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Close,
-                                            contentDescription = stringResource(R.string.common_close)
-                                        )
-                                    }
-                                }
-
-                                Spacer(Modifier.height(12.dp))
-
-                                // Album membership tells copies apart; loaded when the dialog opens.
-                                val albumNames by produceState<List<String>?>(initialValue = null, currentAsset.id) {
-                                    value = currentLoadAlbumNames(currentAsset.id)
-                                }
-                                AssetMetadataRows(asset = currentAsset, albumNames = albumNames, showFileName = true)
-
-                                Spacer(Modifier.height(20.dp))
-
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(CircleShape)
-                                        .combinedClickable(
-                                            onClick = {
-                                                ImmichLauncher.openAssetInImmich(context, baseUrlClean, currentAsset.id)
-                                            },
-                                            onLongClick = if (baseUrlClean.isNotBlank()) {
-                                                {
-                                                    ImmichLauncher.openInWeb(context, baseUrlClean, currentAsset.id)
-                                                }
-                                            } else null
-                                        )
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 12.dp),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(
-                                            text = stringResource(R.string.settings_card_immich),
-                                            fontWeight = FontWeight.Bold,
-                                            style = MaterialTheme.typography.labelLarge
-                                        )
-                                    }
-                                }
-
-                                if (baseUrlClean.isNotBlank()) {
-                                    Spacer(Modifier.height(6.dp))
-                                    Text(
-                                        text = stringResource(R.string.settings_immich_long_press_web),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.outline,
-                                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    AssetInfoDialog(
+                        asset = currentAsset,
+                        baseUrl = baseUrlClean,
+                        loadAlbumNames = currentLoadAlbumNames,
+                        onDismiss = { showMetadataDialog = false }
+                    )
                 }
 
                 var isZoomedIn by remember { mutableStateOf(false) }

@@ -6,10 +6,12 @@ import android.view.LayoutInflater
 import android.view.View
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -30,15 +33,14 @@ import androidx.compose.material.icons.outlined.VideocamOff
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingToolbarDefaults
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -53,15 +55,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
@@ -314,12 +321,16 @@ fun SharedVideoPlayer(
                     durationMs = duration,
                     showSize = showSize,
                     fileSize = fileSize,
+                    isPlaying = isPlayWhenReady && isCorrectMediaBound,
+                    onTogglePlay = { player.togglePlayPause() },
                     onSeek = {
                         isScrubbing = true
                         scrubValue = it
                         player.seekTo(it)
                     },
                     onSeekFinished = {
+                        // The polled time is from before the drag until the next poll; start from the drop point.
+                        currentTime = scrubValue
                         isScrubbing = false
                         player.seekTo(scrubValue)
                     },
@@ -329,32 +340,22 @@ fun SharedVideoPlayer(
 
             AnimatedVisibility(
                 // Shown while the video is paused (e.g. by a tap); hidden during hold-to-pause along with the other controls.
-                visible = !isPlayWhenReady && isCorrectMediaBound && finalShowControls,
+                // Fullscreen shows the paused state on its play/pause button instead.
+                visible = !isFullscreen && !isPlayWhenReady && isCorrectMediaBound && finalShowControls,
                 enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()) + scaleIn(MaterialTheme.motionScheme.defaultSpatialSpec(), initialScale = 0.8f),
                 exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()) + scaleOut(MaterialTheme.motionScheme.defaultSpatialSpec(), targetScale = 1.2f),
                 modifier = Modifier.align(Alignment.Center)
             ) {
-                // Fullscreen matches the translucent Material 3 Expressive toolbar; the card keeps its glass look.
-                val toolbarColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
                 Box(
                     modifier = Modifier
                         .requiredSize(64.dp)
-                        .then(
-                            if (isFullscreen) {
-                                Modifier.background(
-                                    toolbarColors.toolbarContainerColor.copy(alpha = 0.7f),
-                                    MaterialShapes.Cookie9Sided.toShape()
-                                )
-                            } else {
-                                Modifier.glassSurface(playerBackdrop, CircleShape, 12.dp)
-                            }
-                        ),
+                        .glassSurface(playerBackdrop, CircleShape, 12.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Pause,
                         contentDescription = stringResource(R.string.cd_paused),
-                        tint = if (isFullscreen) toolbarColors.toolbarContentColor else Color.White.copy(alpha = 0.9f),
+                        tint = Color.White.copy(alpha = 0.9f),
                         modifier = Modifier.requiredSize(32.dp)
                     )
                 }
@@ -362,9 +363,36 @@ fun SharedVideoPlayer(
         }
 }
 
+// Material's play_arrow split down the middle into two quads, each of which morphs into one of pause's bars.
+// Points run top-start, top-end, bottom-end, bottom-start in a 24-unit box.
+private val PlayStart = floatArrayOf(8f, 5f, 13.5f, 8.5f, 13.5f, 15.5f, 8f, 19f)
+private val PlayEnd = floatArrayOf(13.5f, 8.5f, 19f, 12f, 19f, 12f, 13.5f, 15.5f)
+private val PauseStart = floatArrayOf(6f, 5f, 10f, 5f, 10f, 19f, 6f, 19f)
+private val PauseEnd = floatArrayOf(14f, 5f, 18f, 5f, 18f, 19f, 14f, 19f)
+
+/** Play icon at [progress] 0, pause icon at 1, morphing and turning half a turn in between (pause looks the same upside down). */
+@Composable
+private fun PlayPauseIcon(progress: () -> Float, contentDescription: String, color: Color) {
+    val path = remember { Path() }
+    Canvas(modifier = Modifier.size(24.dp).semantics { this.contentDescription = contentDescription }) {
+        val t = progress()
+        val unit = size.width / 24f
+        path.reset()
+        for ((from, to) in listOf(PlayStart to PauseStart, PlayEnd to PauseEnd)) {
+            for (i in 0 until 4) {
+                val x = lerp(from[i * 2], to[i * 2], t) * unit
+                val y = lerp(from[i * 2 + 1], to[i * 2 + 1], t) * unit
+                if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            }
+            path.close()
+        }
+        rotate(180f * t) { drawPath(path, color) }
+    }
+}
+
 /**
- * Timestamp and size pills, plus the seekbar in fullscreen. Also drawn on the next fullscreen card before its video
- * loads, so the controls are already in place when it becomes the current one.
+ * Timestamp and size pills, plus the play/pause button and seekbar in fullscreen. Also drawn on the next fullscreen card
+ * before its video loads, so the controls are already in place when it becomes the current one.
  */
 @kotlin.OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -381,6 +409,8 @@ internal fun VideoControls(
     onSeek: (Long) -> Unit,
     onSeekFinished: () -> Unit,
     modifier: Modifier = Modifier,
+    isPlaying: Boolean = false,
+    onTogglePlay: () -> Unit = {},
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -392,7 +422,7 @@ internal fun VideoControls(
             modifier = Modifier
                 // Fullscreen: sits above PreviewControls' floating toolbar (plus a 4dp gap).
                 .padding(bottom = (if (isFullscreen) (if (isLandscape) 12.dp else 24.dp) + PreviewToolbarHeight + PreviewToolbarGap else 12.dp) + (if (isLandscape) 0.dp else controlsOffset))
-                .padding(horizontal = if (isFullscreen) 24.dp else 16.dp)
+                .padding(horizontal = if (isFullscreen) 12.dp else 16.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -408,12 +438,12 @@ internal fun VideoControls(
             }
             val pillTextColor = if (isFullscreen) MaterialTheme.colorScheme.onSecondaryContainer else Color.White
 
-            // 1. Indicators Row (Timestamp, Size) - Now ABOVE. In fullscreen the times sit beside the seekbar instead.
-            Row(
+            // 1. Indicators Row (Timestamp, Size) - Now ABOVE. In fullscreen they sit beside the play/pause button instead.
+            if (!isFullscreen) Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                if (!isFullscreen && durationMs > 0) {
+                if (durationMs > 0) {
                     Box(
                         modifier = Modifier
                             .glassSurface(backdrop, CircleShape, pillLens)
@@ -430,7 +460,7 @@ internal fun VideoControls(
                 }
 
                 if (showSize && fileSize != null) {
-                    if (!isFullscreen && durationMs > 0) Spacer(Modifier.width(8.dp))
+                    if (durationMs > 0) Spacer(Modifier.width(8.dp))
                     Box(
                         modifier = pillModifier
                             .padding(horizontal = 4.dp)
@@ -446,43 +476,67 @@ internal fun VideoControls(
                 }
             }
 
-            // 2. Progress Bar Row (Slider) - Now BELOW
+            // 2. Fullscreen: play/pause and the times on one row, the seekbar on its own row below.
             if (isFullscreen) {
-                Spacer(Modifier.height(2.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // SliderState works in 0..1 fractions of the duration.
-                    val sliderDuration = durationMs.toFloat().coerceAtLeast(1f)
-                    val sliderState = remember { SliderState() }
-                    SideEffect {
-                        sliderState.value = (timeMs.toFloat() / sliderDuration).coerceIn(0f, 1f)
+                    val playProgress = animateFloatAsState(
+                        targetValue = if (isPlaying) 1f else 0f,
+                        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+                        label = "PlayPauseMorph"
+                    )
+                    IconButton(onClick = onTogglePlay, shapes = IconButtonDefaults.shapes()) {
+                        PlayPauseIcon(
+                            progress = { playProgress.value },
+                            contentDescription = stringResource(if (isPlaying) R.string.cd_pause else R.string.cd_play),
+                            color = Color.White
+                        )
                     }
-
+                    Spacer(Modifier.weight(1f))
+                    if (showSize && fileSize != null) {
+                        Box(modifier = pillModifier.padding(horizontal = 4.dp)) {
+                            Text(
+                                text = formatSize(fileSize),
+                                color = pillTextColor,
+                                style = pillTextStyle,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = pillVerticalPadding)
+                            )
+                        }
+                        Spacer(Modifier.width(12.dp))
+                    }
                     Text(
-                        text = formatMediaTime(timeMs),
+                        text = "${formatMediaTime(timeMs)} / ${formatMediaTime(durationMs)}",
                         color = Color.White,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Slider(
-                        state = sliderState,
-                        onValueChange = {
-                            sliderState.value = it
-                            onSeek((it * sliderDuration).toLong())
-                        },
-                        onValueChangeFinished = onSeekFinished,
-                        colors = SliderDefaults.colors(inactiveTrackColor = previewTileColor()),
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        text = formatMediaTime(durationMs),
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelLarge
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(end = 12.dp)
                     )
                 }
+
+                // SliderState works in 0..1 fractions of the duration.
+                val sliderDuration = durationMs.toFloat().coerceAtLeast(1f)
+                val sliderState = remember { SliderState() }
+                SideEffect {
+                    sliderState.value = (timeMs.toFloat() / sliderDuration).coerceIn(0f, 1f)
+                }
+                Slider(
+                    state = sliderState,
+                    onValueChange = {
+                        sliderState.value = it
+                        onSeek((it * sliderDuration).toLong())
+                    },
+                    onValueChangeFinished = onSeekFinished,
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.White,
+                        activeTrackColor = Color.White,
+                        inactiveTrackColor = Color.White.copy(alpha = 0.4f),
+                        activeTickColor = Color.White,
+                        inactiveTickColor = Color.White
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }

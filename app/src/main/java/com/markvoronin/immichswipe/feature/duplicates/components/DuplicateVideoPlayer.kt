@@ -308,6 +308,8 @@ fun DuplicateVideoPlayer(
                         exoPlayer?.seekTo(scrubValue)
                     },
                     onValueChangeFinished = {
+                        // The polled time is from before the drag until the next poll; start from the drop point.
+                        currentTime = scrubValue
                         isScrubbing = false
                         exoPlayer?.seekTo(scrubValue)
                     },

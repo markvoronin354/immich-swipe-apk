@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -40,7 +41,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -99,7 +99,7 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
-/** Keeps the KEEP/DELETE badge below the close button, which spans 50dp to 98dp from the top. */
+/** Keeps the KEEP/DELETE badge below the top bar, which spans 40dp to 104dp from the top. */
 private val FullscreenBadgeTopPadding = 110.dp
 
 @OptIn(UnstableApi::class)
@@ -123,6 +123,9 @@ fun FullscreenViewer(
     rotation: Int = 0,
     baseUrl: String = "",
     isFullSize: Boolean = false,
+    showButtonLabels: Boolean = true,
+    loadAlbumNames: suspend (String) -> List<String> = { emptyList() },
+    canUndo: Boolean = true,
     // The swipe card's bounds on screen, for the media to grow from and shrink back into.
     cardBounds: () -> Rect? = { null },
 ) {
@@ -181,8 +184,6 @@ fun FullscreenViewer(
         }
     }
 
-    var toggleControllerTrigger by remember { mutableIntStateOf(0) }
-
     var isVideoReady by remember(asset.id) { mutableStateOf(false) }
     var showLoadingIndicator by remember(asset.id, providedPlayer) {
         val isSameAsset = providedPlayer?.currentMediaItem?.mediaId == asset.id
@@ -202,6 +203,7 @@ fun FullscreenViewer(
     }
 
     var controlsVisible by remember { mutableStateOf(true) }
+    var infoAsset by remember { mutableStateOf<Asset?>(null) }
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     
@@ -378,6 +380,8 @@ fun FullscreenViewer(
                         }
                     )
 
+                    ViewerScrim(visible = controlsVisible && !isHoldingByPress && !wasHoldDetected)
+
                     if (showSizeIndicator && nextAsset.type != "VIDEO") {
                         AnimatedVisibility(
                             visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
@@ -388,15 +392,15 @@ fun FullscreenViewer(
                             Surface(
                                 modifier = Modifier
                                     .padding(bottom = previewToolbarBottom(isLandscape) + PreviewToolbarHeight + PreviewToolbarGap),
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                                shape = RoundedCornerShape(4.dp)
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                shape = CircleShape
                             ) {
                                 Text(
                                     text = formatSize(nextAsset.exifInfo?.fileSizeInBytes ?: 0L),
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
                                 )
                             }
                         }
@@ -431,7 +435,10 @@ fun FullscreenViewer(
                         showMuteButton = showMuteButton,
                         isMuted = isMuted,
                         onToggleMute = onToggleMute,
-                        assetType = nextAsset.type
+                        assetType = nextAsset.type,
+                        assetDate = nextAsset.effectiveDate,
+                        showButtonLabels = showButtonLabels,
+                        onShowInfo = { infoAsset = nextAsset }
                     )
                 }
             }
@@ -551,7 +558,6 @@ fun FullscreenViewer(
                     isMuted = isMuted,
                     isPaused = pausedByHoldState,
                     isVideoReady = isVideoReady,
-                    toggleControllerTrigger = toggleControllerTrigger,
                     showControls = finalControlsVisible && !isClosing,
                     fileSize = asset.exifInfo?.fileSizeInBytes,
                     showSize = showSizeIndicator,
@@ -573,9 +579,8 @@ fun FullscreenViewer(
                                                 offset.x > width * 0.7f -> performSwipe(
                                                     SwipeDecision.KEEP)
                                             }
-                                        } else if (asset.type == "VIDEO") {
-                                            exoPlayer.togglePlayPause()
-                                            toggleControllerTrigger++
+                                        } else {
+                                            controlsVisible = !controlsVisible
                                         }
                                     }
                                     ignoreNextTap = false
@@ -642,6 +647,8 @@ fun FullscreenViewer(
                                 }
                             }
 
+                            ViewerScrim(visible = finalControlsVisible && !isClosing)
+
                             if (showLoadingIndicator) {
                                 Box(
                                     modifier = Modifier.fillMaxSize(),
@@ -666,6 +673,8 @@ fun FullscreenViewer(
                                     offset.x < width * 0.3f -> performSwipe(SwipeDecision.DELETE)
                                     offset.x > width * 0.7f -> performSwipe(SwipeDecision.KEEP)
                                 }
+                            } else {
+                                controlsVisible = !controlsVisible
                             }
                         }
                         ignoreNextTap = false
@@ -750,6 +759,8 @@ fun FullscreenViewer(
                     )
                     }
                 }
+
+                ViewerScrim(visible = finalControlsVisible && !isClosing)
             }
             }
 
@@ -772,15 +783,15 @@ fun FullscreenViewer(
                     Surface(
                         modifier = Modifier
                             .padding(bottom = previewToolbarBottom(isLandscape) + PreviewToolbarHeight + PreviewToolbarGap),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                        shape = RoundedCornerShape(4.dp)
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        shape = CircleShape
                     ) {
                         Text(
                             text = formatSize(asset.exifInfo?.fileSizeInBytes ?: 0L),
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
                         )
                     }
                 }
@@ -813,11 +824,24 @@ fun FullscreenViewer(
                     showMuteButton = showMuteButton,
                     isMuted = isMuted,
                     onToggleMute = onToggleMute,
-                    assetType = asset.type
+                    assetType = asset.type,
+                    assetDate = asset.effectiveDate,
+                    showButtonLabels = showButtonLabels,
+                    onShowInfo = { infoAsset = asset },
+                    canUndo = canUndo
                 )
                 }
 
         }
     }
+
+        infoAsset?.let {
+            AssetInfoDialog(
+                asset = it,
+                baseUrl = baseUrlClean,
+                loadAlbumNames = loadAlbumNames,
+                onDismiss = { infoAsset = null }
+            )
+        }
 }
 }

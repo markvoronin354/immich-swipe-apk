@@ -56,6 +56,9 @@ fun SwipeScreenDialogs(
             rotation = uiState.getRotation(currentAsset.id),
             baseUrl = uiState.baseUrl,
             isFullSize = uiState.isFullResolution && currentAsset.supportsFullResolution,
+            showButtonLabels = uiState.showToolbarLabels,
+            loadAlbumNames = { viewModel.loadAlbumNames(it) },
+            canUndo = uiState.history.isNotEmpty(),
             cardBounds = cardBounds,
         )
     }
