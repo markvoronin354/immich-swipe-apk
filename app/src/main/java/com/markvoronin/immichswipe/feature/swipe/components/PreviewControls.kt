@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -102,11 +101,6 @@ internal fun Modifier.glassCircle(backdrop: Backdrop): Modifier = this
 /** Height of the bottom action bar; VideoControls sits above it in fullscreen. */
 internal val PreviewToolbarHeight = 64.dp
 
-/** Translucent tile color of the duplicates preview tiles. */
-@Composable
-internal fun previewTileColor(): Color =
-    FloatingToolbarDefaults.vibrantFloatingToolbarColors().toolbarContainerColor.copy(alpha = 0.7f)
-
 /** Space between the bottom toolbar and the seekbar or size pill above it. */
 internal val PreviewToolbarGap = 12.dp
 
@@ -172,14 +166,14 @@ private fun rememberViewerDateTime(isoDate: String): Pair<String, String>? {
 }
 
 /** Squashes an icon and lets it spring back past full size. */
-private fun CoroutineScope.bounce(scale: Animatable<Float, AnimationVector1D>, motionScheme: MotionScheme) = launch {
+internal fun CoroutineScope.bounce(scale: Animatable<Float, AnimationVector1D>, motionScheme: MotionScheme) = launch {
     scale.animateTo(0.7f, motionScheme.fastEffectsSpec())
     scale.animateTo(1f, motionScheme.fastSpatialSpec(), initialVelocity = 6f)
 }
 
 /** The heart, scaled by [scale], with a ring of dots flying out from behind it while [burst] runs from 0 to 1. */
 @Composable
-private fun FavoriteIcon(isFavorite: Boolean, scale: () -> Float, burst: () -> Float, contentDescription: String?) {
+internal fun FavoriteIcon(isFavorite: Boolean, scale: () -> Float, burst: () -> Float, contentDescription: String?) {
     val color = LocalContentColor.current
     Icon(
         imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -226,7 +220,7 @@ private fun DrawScope.soundWave(radius: Float, sweep: Float, visible: Float, col
 
 /** A speaker whose waves shrink away, outer first, before a slash cuts across it; reversed when unmuting. */
 @Composable
-private fun VolumeIcon(isMuted: Boolean, scale: () -> Float, contentDescription: String?) {
+internal fun VolumeIcon(isMuted: Boolean, scale: () -> Float, contentDescription: String?) {
     val color = LocalContentColor.current
     val progress = animateFloatAsState(
         targetValue = if (isMuted) 1f else 0f,

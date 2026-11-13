@@ -4,25 +4,21 @@ import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.VolumeOff
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconToggleButton
@@ -39,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -69,6 +66,9 @@ import com.markvoronin.immichswipe.core.cache.VideoCache
 import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.common.MediaLoadingIndicator
+import com.markvoronin.immichswipe.feature.swipe.components.PlayPauseIcon
+import com.markvoronin.immichswipe.feature.swipe.components.VolumeIcon
+import com.markvoronin.immichswipe.feature.swipe.components.bounce
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -250,7 +250,8 @@ fun DuplicateVideoPlayer(
             }
         }
 
-        // One light row over a soft scrim: plain icons, inline times and a thin seekbar.
+        // Laid out like the swipe fullscreen (play/pause and mute with the times, the seekbar below) but kept compact:
+        // plain icons, small times and a thin seekbar over a soft scrim.
         val controlColor = Color.White
         val timeStyle = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum")
         AnimatedVisibility(
@@ -259,35 +260,71 @@ fun DuplicateVideoPlayer(
             exit = fadeOut(MaterialTheme.motionScheme.defaultEffectsSpec()),
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f))))
                     .padding(start = 4.dp, end = 4.dp, top = 16.dp, bottom = 4.dp)
             ) {
-                IconButton(
-                    onClick = {
-                        val player = exoPlayer ?: return@IconButton
-                        if (player.isPlaying) {
-                            player.pause()
-                        } else {
-                            player.play()
-                        }
-                    },
-                    shapes = IconButtonDefaults.shapes(),
-                    colors = IconButtonDefaults.iconButtonColors(contentColor = controlColor)
-                ) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = if (isPlaying) stringResource(R.string.cd_pause) else stringResource(R.string.cd_play)
-                    )
-                }
-
                 val timeToDisplay = if (isScrubbing) scrubValue else currentTime
-                if (duration > 0) {
-                    Text(text = formatMediaTime(timeToDisplay), color = controlColor, style = timeStyle)
-                    Spacer(modifier = Modifier.width(12.dp))
+                val scope = rememberCoroutineScope()
+                val motionScheme = MaterialTheme.motionScheme
+                val playProgress = animateFloatAsState(
+                    targetValue = if (isPlaying) 1f else 0f,
+                    animationSpec = motionScheme.fastSpatialSpec(),
+                    label = "PlayPauseMorph"
+                )
+                val muteScale = remember { Animatable(1f) }
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    IconButton(
+                        onClick = {
+                            val player = exoPlayer ?: return@IconButton
+                            if (player.isPlaying) {
+                                player.pause()
+                            } else {
+                                player.play()
+                            }
+                        },
+                        shapes = IconButtonDefaults.shapes(),
+                        colors = IconButtonDefaults.iconButtonColors(contentColor = controlColor)
+                    ) {
+                        PlayPauseIcon(
+                            progress = { playProgress.value },
+                            contentDescription = if (isPlaying) stringResource(R.string.cd_pause) else stringResource(R.string.cd_play),
+                            color = controlColor
+                        )
+                    }
+
+                    IconToggleButton(
+                        checked = isMuted,
+                        onCheckedChange = {
+                            scope.bounce(muteScale, motionScheme)
+                            localMuted = it
+                            onMutedChange(it)
+                            exoPlayer?.volume = if (it) 0f else 1f
+                        },
+                        shapes = IconButtonDefaults.toggleableShapes(),
+                        colors = IconButtonDefaults.iconToggleButtonColors(
+                            contentColor = controlColor,
+                            checkedContentColor = controlColor
+                        )
+                    ) {
+                        VolumeIcon(
+                            isMuted = isMuted,
+                            scale = { muteScale.value },
+                            contentDescription = if (isMuted) stringResource(R.string.cd_unmute) else stringResource(R.string.cd_mute)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+                    if (duration > 0) {
+                        Text(
+                            text = "${formatMediaTime(timeToDisplay)} / ${formatMediaTime(duration)}",
+                            color = controlColor,
+                            style = timeStyle,
+                            modifier = Modifier.padding(end = 12.dp)
+                        )
+                    }
                 }
 
                 // SliderState works in 0..1 fractions of the duration.
@@ -331,32 +368,10 @@ fun DuplicateVideoPlayer(
                             modifier = Modifier.height(4.dp)
                         )
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp)
                 )
-
-                if (duration > 0) {
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(text = formatMediaTime(duration), color = controlColor, style = timeStyle)
-                }
-
-                IconToggleButton(
-                    checked = isMuted,
-                    onCheckedChange = {
-                        localMuted = it
-                        onMutedChange(it)
-                        exoPlayer?.volume = if (it) 0f else 1f
-                    },
-                    shapes = IconButtonDefaults.toggleableShapes(),
-                    colors = IconButtonDefaults.iconToggleButtonColors(
-                        contentColor = controlColor,
-                        checkedContentColor = controlColor
-                    )
-                ) {
-                    Icon(
-                        imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
-                        contentDescription = if (isMuted) stringResource(R.string.cd_unmute) else stringResource(R.string.cd_mute)
-                    )
-                }
             }
         }
     }

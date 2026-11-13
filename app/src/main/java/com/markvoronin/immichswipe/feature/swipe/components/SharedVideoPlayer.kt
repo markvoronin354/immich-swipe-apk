@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
@@ -31,8 +30,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.outlined.VideocamOff
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -119,7 +116,6 @@ internal fun Player.togglePlayPause() {
 }
 
 @OptIn(UnstableApi::class)
-@kotlin.OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SharedVideoPlayer(
     player: Player,
@@ -372,7 +368,7 @@ private val PauseEnd = floatArrayOf(14f, 5f, 18f, 5f, 18f, 19f, 14f, 19f)
 
 /** Play icon at [progress] 0, pause icon at 1, morphing and turning half a turn in between (pause looks the same upside down). */
 @Composable
-private fun PlayPauseIcon(progress: () -> Float, contentDescription: String, color: Color) {
+internal fun PlayPauseIcon(progress: () -> Float, contentDescription: String, color: Color) {
     val path = remember { Path() }
     Canvas(modifier = Modifier.size(24.dp).semantics { this.contentDescription = contentDescription }) {
         val t = progress()
@@ -394,7 +390,6 @@ private fun PlayPauseIcon(progress: () -> Float, contentDescription: String, col
  * Timestamp and size pills, plus the play/pause button and seekbar in fullscreen. Also drawn on the next fullscreen card
  * before its video loads, so the controls are already in place when it becomes the current one.
  */
-@kotlin.OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun VideoControls(
     visible: Boolean,

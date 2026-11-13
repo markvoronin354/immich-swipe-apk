@@ -1,15 +1,8 @@
 package com.markvoronin.immichswipe.feature.duplicates.components
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.updateTransition
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -23,17 +16,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.BrokenImage
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -59,7 +47,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import coil3.compose.AsyncImage
@@ -277,45 +264,5 @@ fun DuplicateAssetItem(
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1
         )
-    }
-}
-
-/** Keep is the header's green cookie, delete its red gem; the badge pops in and swaps on each tap. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-internal fun DecisionBadge(decision: DuplicateDecision, modifier: Modifier = Modifier, size: Dp = 32.dp) {
-    val motionScheme = MaterialTheme.motionScheme
-    AnimatedContent(
-        targetState = decision,
-        modifier = modifier,
-        transitionSpec = {
-            (scaleIn(motionScheme.fastSpatialSpec()) + fadeIn(motionScheme.fastEffectsSpec())) togetherWith
-                (scaleOut(motionScheme.fastSpatialSpec()) + fadeOut(motionScheme.fastEffectsSpec())) using
-                SizeTransform(clip = false)
-        },
-        contentAlignment = Alignment.Center,
-        label = "decisionBadge"
-    ) { state ->
-        if (state == DuplicateDecision.NONE) {
-            Spacer(Modifier.size(size))
-        } else {
-            val isDelete = state == DuplicateDecision.DELETE
-            Box(
-                modifier = Modifier
-                    .size(size)
-                    .background(
-                        color = decisionColor(state),
-                        shape = if (isDelete) MaterialShapes.Gem.toShape() else MaterialShapes.Cookie6Sided.toShape()
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = if (isDelete) Icons.Default.Delete else Icons.Default.Check,
-                    contentDescription = stringResource(if (isDelete) R.string.swipe_delete else R.string.swipe_keep),
-                    tint = Color.White,
-                    modifier = Modifier.size(size * 0.56f)
-                )
-            }
-        }
     }
 }

@@ -4,8 +4,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.SpringSpec
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -13,9 +13,9 @@ import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
@@ -39,30 +39,21 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.NavigateBefore
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.FilledTonalIconToggleButton
-import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.IconToggleButtonColors
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
@@ -74,7 +65,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -82,7 +72,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -95,7 +84,6 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -110,11 +98,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
@@ -125,17 +113,16 @@ import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.markvoronin.immichswipe.R
-import com.markvoronin.immichswipe.core.ImmichLauncher
 import com.markvoronin.immichswipe.core.cache.VideoPreloader
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.common.MediaLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.DuplicateDecision
 import com.markvoronin.immichswipe.feature.settings.components.horizontalFadingEdges
 import com.markvoronin.immichswipe.feature.swipe.components.AssetInfoDialog
+import com.markvoronin.immichswipe.feature.swipe.components.FavoriteIcon
 import com.markvoronin.immichswipe.feature.swipe.components.ZoomableBox
-import com.markvoronin.immichswipe.feature.swipe.components.checkedWidthFactor
+import com.markvoronin.immichswipe.feature.swipe.components.bounce
 import com.markvoronin.immichswipe.feature.swipe.components.connectedTileShape
-import com.markvoronin.immichswipe.feature.swipe.components.previewTileColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -144,10 +131,9 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 // Small tiles keep the chrome quiet around the photo; the buttons still get a 48dp touch target.
-private val ControlTileWidth = 48.dp
 private val ControlTileHeight = 40.dp
 private val ThumbShape = RoundedCornerShape(12.dp)
-// A 16dp badge inset 4dp shares its centre with the 12dp corner arc, so it never touches the corner or the 2dp frame.
+// A 16dp badge inset 4dp shares its centre with the 12dp corner arc, so it never touches the corner or the 3dp frame.
 private val ThumbBadgeSize = 16.dp
 private val ThumbBadgeInset = 4.dp
 
@@ -179,47 +165,6 @@ internal fun rectAround(center: Offset, width: Float, height: Float) =
 internal class RoundRectClip(private val rect: Rect, private val radius: Float) : Shape {
     override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density) =
         Outline.Rounded(RoundRect(rect, CornerRadius(radius)))
-}
-
-// Favourite, info, close and group navigation sit back behind the decision buttons: a faint tint of the toolbar color
-// with icons in the full color.
-@Composable
-private fun quietTileColor(): Color =
-    FloatingToolbarDefaults.vibrantFloatingToolbarColors().toolbarContainerColor.copy(alpha = 0.22f)
-
-// The lighter of the toolbar's two colors, so icons stay readable on the black backdrop in light and dark themes.
-@Composable
-private fun quietContentColor(): Color {
-    val colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
-    return if (colors.toolbarContainerColor.luminance() > colors.toolbarContentColor.luminance()) {
-        colors.toolbarContainerColor
-    } else {
-        colors.toolbarContentColor
-    }
-}
-
-@Composable
-private fun quietButtonColors(): IconButtonColors {
-    val accent = FloatingToolbarDefaults.vibrantFloatingToolbarColors().toolbarContainerColor
-    return IconButtonDefaults.filledTonalIconButtonColors(
-        containerColor = quietTileColor(),
-        contentColor = quietContentColor(),
-        disabledContainerColor = accent.copy(alpha = 0.1f),
-        disabledContentColor = quietContentColor().copy(alpha = 0.38f)
-    )
-}
-
-// A checked favourite gets a stronger tint; its filled icon and round shape carry the rest, so it never outshines the
-// decision buttons.
-@Composable
-private fun quietToggleColors(): IconToggleButtonColors {
-    val accent = FloatingToolbarDefaults.vibrantFloatingToolbarColors().toolbarContainerColor
-    return IconButtonDefaults.filledTonalIconToggleButtonColors(
-        containerColor = quietTileColor(),
-        contentColor = quietContentColor(),
-        checkedContainerColor = accent.copy(alpha = 0.4f),
-        checkedContentColor = quietContentColor()
-    )
 }
 
 @Composable
@@ -514,20 +459,36 @@ fun FullScreenPreviewModal(
                 var isFileNameExpanded by remember(currentAsset.id) { mutableStateOf(false) }
                 var showMetadataDialog by remember { mutableStateOf(false) }
 
-                val buttonColors = quietButtonColors()
-                val pressedShape = RoundedCornerShape(10.dp)
+                // White on the black backdrop, dimmed like the swipe fullscreen's undo when there's nowhere to go.
+                val chromeButtonColors = IconButtonDefaults.iconButtonColors(
+                    contentColor = Color.White,
+                    disabledContentColor = Color.White.copy(alpha = 0.38f)
+                )
 
+                // Containerless like the swipe fullscreen's top bar: back on the left, then the name, favourite and info.
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .graphicsLayer { alpha = chromeAlpha() }
                         .statusBarsPadding()
-                        .padding(start = 16.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
+                        .padding(horizontal = 4.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    IconButton(
+                        onClick = { close() },
+                        shapes = IconButtonDefaults.shapes(),
+                        colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.common_back)
+                        )
+                    }
+
                     Column(
                         modifier = Modifier
                             .weight(1f)
+                            .padding(horizontal = 4.dp)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
@@ -546,7 +507,7 @@ fun FullScreenPreviewModal(
 
                         Text(
                             text = displayedName,
-                            style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp),
+                            style = MaterialTheme.typography.titleMedium,
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             maxLines = if (isFileNameExpanded) Int.MAX_VALUE else 1,
@@ -561,54 +522,41 @@ fun FullScreenPreviewModal(
                         }
                     }
 
-                    Spacer(Modifier.width(8.dp))
-
-                    // Same tiles as the swipe fullscreen toolbar: a connected pair, and a separate close button.
-                    Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                        FilledTonalIconToggleButton(
-                            checked = currentIsFav,
-                            onCheckedChange = { currentOnFavoriteToggle(currentAsset) },
-                            shapes = IconButtonDefaults.toggleableShapes(
-                                shape = connectedTileShape(0, 2, outer = ControlTileHeight / 2),
-                                pressedShape = pressedShape,
-                                checkedShape = CircleShape
-                            ),
-                            colors = quietToggleColors(),
-                            modifier = Modifier.size(width = ControlTileWidth * checkedWidthFactor(currentIsFav), height = ControlTileHeight)
-                        ) {
-                            Icon(
-                                imageVector = if (currentIsFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = stringResource(R.string.cd_favorite)
-                            )
-                        }
-
-                        FilledTonalIconButton(
-                            onClick = { showMetadataDialog = true },
-                            shapes = IconButtonDefaults.shapes(
-                                shape = connectedTileShape(1, 2, outer = ControlTileHeight / 2),
-                                pressedShape = pressedShape
-                            ),
-                            colors = buttonColors,
-                            modifier = Modifier.size(width = ControlTileWidth, height = ControlTileHeight)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Info,
-                                contentDescription = stringResource(R.string.cd_asset_info)
-                            )
-                        }
+                    // Same bounce and burst as the swipe fullscreen's heart, started by the tap rather than the state.
+                    val favoriteScale = remember { Animatable(1f) }
+                    val favoriteBurst = remember { Animatable(1f) }
+                    IconToggleButton(
+                        checked = currentIsFav,
+                        onCheckedChange = {
+                            scope.bounce(favoriteScale, motionScheme)
+                            if (!currentIsFav) scope.launch {
+                                favoriteBurst.snapTo(0f)
+                                favoriteBurst.animateTo(1f, motionScheme.slowSpatialSpec())
+                            }
+                            currentOnFavoriteToggle(currentAsset)
+                        },
+                        shapes = IconButtonDefaults.toggleableShapes(),
+                        colors = IconButtonDefaults.iconToggleButtonColors(
+                            contentColor = Color.White,
+                            checkedContentColor = Color.White
+                        )
+                    ) {
+                        FavoriteIcon(
+                            isFavorite = currentIsFav,
+                            scale = { favoriteScale.value },
+                            burst = { favoriteBurst.value },
+                            contentDescription = stringResource(R.string.cd_favorite)
+                        )
                     }
 
-                    Spacer(Modifier.width(12.dp))
-
-                    FilledTonalIconButton(
-                        onClick = { close() },
+                    IconButton(
+                        onClick = { showMetadataDialog = true },
                         shapes = IconButtonDefaults.shapes(),
-                        colors = buttonColors,
-                        modifier = Modifier.size(ControlTileHeight)
+                        colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = stringResource(R.string.common_close)
+                            imageVector = Icons.Outlined.Info,
+                            contentDescription = stringResource(R.string.cd_asset_info)
                         )
                     }
                 }
@@ -659,6 +607,8 @@ fun FullScreenPreviewModal(
                                 var totalDragX = 0f
                                 var totalDragY = 0f
                                 val touchSlop = viewConfiguration.touchSlop
+                                val swipeThresholdPx = 40.dp.toPx()
+                                val dismissThresholdPx = 80.dp.toPx()
                                 val velocityTracker = VelocityTracker()
 
                                 do {
@@ -699,7 +649,7 @@ fun FullScreenPreviewModal(
                                 } while (event.changes.any { it.pressed })
 
                                 if (isDraggingVertical) {
-                                    if (dismissOffsetY > 200f) {
+                                    if (dismissOffsetY > dismissThresholdPx) {
                                         close()
                                     } else {
                                         isDraggingDismiss = false
@@ -713,7 +663,7 @@ fun FullScreenPreviewModal(
                                         boundarySettle.snapTo(releaseX)
                                         isDraggingBoundary = false
                                         boundaryDragX = 0f
-                                        if (abs(releaseX) > 100f) {
+                                        if (abs(releaseX) > swipeThresholdPx) {
                                             val toNext = releaseX < 0f
                                             boundarySettle.animateTo(
                                                 targetValue = if (toNext) -widthPx else widthPx,
@@ -732,9 +682,9 @@ fun FullScreenPreviewModal(
                                         boundarySettle.snapTo(0f)
                                     }
                                 } else if (isDraggingHorizontal) {
-                                    if (totalDragX < -100f && selectedIndex < assets.size - 1) {
+                                    if (totalDragX < -swipeThresholdPx && selectedIndex < assets.size - 1) {
                                         selectedIndex++
-                                    } else if (totalDragX > 100f && selectedIndex > 0) {
+                                    } else if (totalDragX > swipeThresholdPx && selectedIndex > 0) {
                                         selectedIndex--
                                     }
                                 }
@@ -919,9 +869,10 @@ fun FullScreenPreviewModal(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // The current photo's decision, and the only way to change it here; tapping the selected one clears it.
-                    val toolbarContentColor = FloatingToolbarDefaults.vibrantFloatingToolbarColors().toolbarContentColor
+                    // 18dp here and 2dp above the group navigator leave the carousel 20dp from each, counting the 2dp around
+                    // its thumbnails and the 16dp above the navigator's label in its 56dp row.
                     Row(
-                        modifier = Modifier.padding(bottom = 8.dp),
+                        modifier = Modifier.padding(bottom = 18.dp),
                         horizontalArrangement = Arrangement.spacedBy(3.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -940,7 +891,7 @@ fun FullScreenPreviewModal(
                                 iconAtEnd = decision == DuplicateDecision.DELETE,
                                 label = stringResource(label),
                                 checkedColor = decisionColor(decision),
-                                contentColor = toolbarContentColor
+                                contentColor = Color.White
                             )
                         }
                     }
@@ -982,7 +933,7 @@ fun FullScreenPreviewModal(
                                     .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                                     .then(
                                         if (assetDecision != DuplicateDecision.NONE) {
-                                            Modifier.border(2.dp, decisionColor(assetDecision), ThumbShape)
+                                            Modifier.border(3.dp, decisionColor(assetDecision), ThumbShape)
                                         } else Modifier
                                     )
                                     .clickable {
@@ -1010,15 +961,7 @@ fun FullScreenPreviewModal(
                                         }
                                 )
 
-                                DecisionBadge(
-                                    decision = assetDecision,
-                                    size = ThumbBadgeSize,
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .padding(ThumbBadgeInset)
-                                )
-
-                                // Favourite and video share one pill on the same line as the decision badge.
+                                // Favourite and video share one pill.
                                 if (assetFav || asset.type == "VIDEO") {
                                     Row(
                                         modifier = Modifier
@@ -1053,68 +996,73 @@ fun FullScreenPreviewModal(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
 
-                    // Previous group, position, next group as one connected group, like the swipe fullscreen toolbar.
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(3.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    // Previous group, position, next group: containerless, like the top bar.
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         val hasPreviousGroup = currentClusterIdx > 0
-                        FilledTonalIconButton(
-                            onClick = { if (hasPreviousGroup) currentClusterIdx-- },
+                        val previousScale = remember { Animatable(1f) }
+                        val nextScale = remember { Animatable(1f) }
+                        // A size up from the top bar's buttons: without containers the row needs the extra weight.
+                        IconButton(
+                            onClick = {
+                                if (hasPreviousGroup) {
+                                    scope.bounce(previousScale, motionScheme)
+                                    currentClusterIdx--
+                                }
+                            },
                             enabled = hasPreviousGroup,
-                            shapes = IconButtonDefaults.shapes(
-                                shape = connectedTileShape(0, 3, outer = ControlTileHeight / 2),
-                                pressedShape = pressedShape
-                            ),
-                            colors = buttonColors,
-                            modifier = Modifier.size(width = ControlTileWidth, height = ControlTileHeight)
+                            shapes = IconButtonDefaults.shapes(),
+                            colors = chromeButtonColors,
+                            modifier = Modifier.size(IconButtonDefaults.mediumContainerSize())
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
-                                contentDescription = stringResource(R.string.cd_previous_group)
+                                contentDescription = stringResource(R.string.cd_previous_group),
+                                modifier = Modifier
+                                    .size(IconButtonDefaults.mediumIconSize)
+                                    .graphicsLayer {
+                                        scaleX = previousScale.value
+                                        scaleY = previousScale.value
+                                    }
                             )
                         }
 
-                        Surface(
-                            shape = connectedTileShape(1, 3),
-                            color = quietTileColor(),
-                            contentColor = quietContentColor(),
-                            modifier = Modifier
-                                .height(ControlTileHeight)
-                                .widthIn(min = 136.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier.padding(horizontal = 16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = if (clusters.size > 1) {
-                                        stringResource(R.string.duplicates_ai_cluster_progress, currentClusterIdx + 1, clusters.size)
-                                    } else {
-                                        "${selectedIndex + 1} / ${assets.size}"
-                                    },
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
+                        Text(
+                            text = if (clusters.size > 1) {
+                                stringResource(R.string.duplicates_ai_cluster_progress, currentClusterIdx + 1, clusters.size)
+                            } else {
+                                "${selectedIndex + 1} / ${assets.size}"
+                            },
+                            style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.widthIn(min = 160.dp).padding(horizontal = 8.dp)
+                        )
 
                         val hasNextGroup = currentClusterIdx < clusters.size - 1
-                        FilledTonalIconButton(
-                            onClick = { if (hasNextGroup) currentClusterIdx++ },
+                        IconButton(
+                            onClick = {
+                                if (hasNextGroup) {
+                                    scope.bounce(nextScale, motionScheme)
+                                    currentClusterIdx++
+                                }
+                            },
                             enabled = hasNextGroup,
-                            shapes = IconButtonDefaults.shapes(
-                                shape = connectedTileShape(2, 3, outer = ControlTileHeight / 2),
-                                pressedShape = pressedShape
-                            ),
-                            colors = buttonColors,
-                            modifier = Modifier.size(width = ControlTileWidth, height = ControlTileHeight)
+                            shapes = IconButtonDefaults.shapes(),
+                            colors = chromeButtonColors,
+                            modifier = Modifier.size(IconButtonDefaults.mediumContainerSize())
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                                contentDescription = stringResource(R.string.cd_next_group)
+                                contentDescription = stringResource(R.string.cd_next_group),
+                                modifier = Modifier
+                                    .size(IconButtonDefaults.mediumIconSize)
+                                    .graphicsLayer {
+                                        scaleX = nextScale.value
+                                        scaleY = nextScale.value
+                                    }
                             )
                         }
                     }
@@ -1125,7 +1073,6 @@ fun FullScreenPreviewModal(
 }
 
 /** One half of the delete/keep pair: just the label at rest, the icon slides out on its outer side once it's selected. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DecisionToggleButton(
     checked: Boolean,
@@ -1146,8 +1093,9 @@ private fun DecisionToggleButton(
             pressedShape = RoundedCornerShape(10.dp),
             checkedShape = CircleShape
         ),
+        // Neutral at rest, like the white chrome around it; only a decision brings in its green or red.
         colors = ToggleButtonDefaults.colors(
-            containerColor = previewTileColor(),
+            containerColor = Color.White.copy(alpha = 0.14f),
             contentColor = contentColor,
             checkedContainerColor = checkedColor,
             checkedContentColor = Color.White
