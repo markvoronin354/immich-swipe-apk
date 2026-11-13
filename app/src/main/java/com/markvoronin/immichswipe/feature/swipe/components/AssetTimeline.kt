@@ -7,18 +7,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -62,6 +63,7 @@ import coil3.size.Precision
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
+import com.markvoronin.immichswipe.feature.swipe.utils.MaterialOrange
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import com.markvoronin.immichswipe.feature.swipe.utils.rotateLayout
 import kotlin.math.abs
@@ -137,7 +139,6 @@ fun AssetTimeline(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(75.dp)
-                .padding(vertical = 5.dp)
                 .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
                 .drawWithContent {
                     drawContent()
@@ -152,7 +153,8 @@ fun AssetTimeline(
                         blendMode = BlendMode.DstIn
                     )
                 },
-            contentPadding = PaddingValues(horizontal = sidePadding),
+            // Top room inside the faded layer (which clips) for the badges that hang over the thumbnails' top edge.
+            contentPadding = PaddingValues(start = sidePadding, top = 7.dp, end = sidePadding),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             itemsIndexed(assets, key = { _, asset -> asset.id }) { index, asset ->
@@ -251,12 +253,16 @@ private fun AssetTimelineItem(
                 scaleX = itemScale
                 scaleY = itemScale
             }
-            .clip(RoundedCornerShape(8.dp))
+    ) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(MaterialTheme.shapes.medium)
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .border(
                 width = borderWidth,
                 color = borderColor,
-                shape = RoundedCornerShape(8.dp)
+                shape = MaterialTheme.shapes.medium
             )
             .clickable { onAssetClick(index) }
     ) {
@@ -295,43 +301,21 @@ private fun AssetTimelineItem(
             )
         }
 
-        if (asset.type == "VIDEO") {
-            Icon(
-                imageVector = Icons.Default.PlayArrow,
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.8f),
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(2.dp)
-                    .size(14.dp)
-                    .background(Color.Black.copy(alpha = 0.4f), CircleShape)
-            )
-        } else if (asset.isGif) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(3.dp)
-                    .background(Color.Black.copy(alpha = 0.65f), shape = RoundedCornerShape(3.dp))
-                    .padding(horizontal = 3.dp, vertical = 1.dp)
-            ) {
-                Text(
-                    text = "GIF",
-                    color = Color.White,
-                    fontSize = 8.sp,
-                    fontWeight = FontWeight.Bold,
-                    lineHeight = 9.sp
+    }
+
+        if (hasHeart) {
+            InsetBadge(Modifier.align(Alignment.TopStart)) {
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = null,
+                    tint = Color.Red,
+                    modifier = Modifier.size(10.dp)
                 )
             }
         }
 
-        Column(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(2.dp),
-            horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            decision?.let { d ->
+        decision?.let { d ->
+            EdgeBadge(Modifier.align(Alignment.TopEnd).onCorner(x = 1, y = -1)) {
                 Box(
                     modifier = Modifier
                         .size(16.dp)
@@ -342,7 +326,7 @@ private fun AssetTimelineItem(
                                 SwipeDecision.DELETE -> MaterialRed
                                 SwipeDecision.ARCHIVE -> MaterialTheme.colorScheme.primary
                                 SwipeDecision.LOCK -> MaterialTheme.colorScheme.outline
-                                SwipeDecision.SKIP -> Color(0xFFFFA500)
+                                SwipeDecision.SKIP -> MaterialOrange
                             }
                         ),
                     contentAlignment = Alignment.Center
@@ -361,17 +345,91 @@ private fun AssetTimelineItem(
                     )
                 }
             }
+        }
 
-            if (hasHeart) {
-                TimelineMiniBadge(Icons.Default.Favorite, Color.Red)
+        if (asset.type == "VIDEO") {
+            InsetBadge(Modifier.align(Alignment.BottomStart)) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(12.dp)
+                )
             }
-            if (hasArchive && decision != SwipeDecision.ARCHIVE) {
-                TimelineMiniBadge(Icons.Default.Archive, Color.Black)
-            }
-            if (hasLock && decision != SwipeDecision.LOCK) {
-                TimelineMiniBadge(Icons.Default.Lock, Color.Black)
+        } else if (asset.isGif) {
+            InsetBadge(Modifier.align(Alignment.BottomStart)) {
+                Text(
+                    text = "GIF",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 9.sp,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
             }
         }
+
+        // Already archived or locked on the server, without a matching decision this session.
+        val showArchive = hasArchive && decision != SwipeDecision.ARCHIVE
+        val showLock = hasLock && decision != SwipeDecision.LOCK
+        if (showArchive || showLock) {
+            EdgeBadge(Modifier.align(Alignment.BottomEnd).onCorner(x = 1, y = 1)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                    if (showArchive) GreyBadge { GreyBadgeIcon(Icons.Default.Archive) }
+                    if (showLock) GreyBadge { GreyBadgeIcon(Icons.Default.Lock) }
+                }
+            }
+        }
+    }
+}
+
+// Where a 12dp corner's curve crosses its diagonal: 12dp × (1 − 1/√2).
+private val CornerEdgeInset = 3.5.dp
+
+/** Centres a badge on the curve of the thumbnail corner it's aligned to; [x] and [y] are -1 for start/top, 1 for end/bottom. */
+private fun Modifier.onCorner(x: Int, y: Int) = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    val inset = CornerEdgeInset.roundToPx()
+    layout(placeable.width, placeable.height) {
+        placeable.placeRelative(x * (placeable.width / 2 - inset), y * (placeable.height / 2 - inset))
+    }
+}
+
+/** A 16dp badge tucked 4dp into a thumbnail corner, so it shares the 12dp corner's centre. */
+@Composable
+private fun InsetBadge(modifier: Modifier, content: @Composable () -> Unit) {
+    GreyBadge(modifier.padding(4.dp), content)
+}
+
+/** The timeline's 16dp grey badge: a disc, or a pill when its content is wider. */
+@Composable
+private fun GreyBadge(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Box(
+        modifier = modifier
+            .height(16.dp)
+            .widthIn(min = 16.dp)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f), CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun GreyBadgeIcon(icon: ImageVector) {
+    Icon(
+        imageVector = icon,
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.size(10.dp)
+    )
+}
+
+/** Rings a badge in the background colour, cutting it out of the thumbnail like the avatar's status dot. */
+@Composable
+private fun EdgeBadge(modifier: Modifier, content: @Composable () -> Unit) {
+    Box(modifier = modifier.background(MaterialTheme.colorScheme.surface, CircleShape).padding(2.dp)) {
+        content()
     }
 }
 

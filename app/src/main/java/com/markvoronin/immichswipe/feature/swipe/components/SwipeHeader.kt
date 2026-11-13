@@ -51,6 +51,7 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.feature.common.SolidShapeLoadingIndicator
 import com.markvoronin.immichswipe.feature.swipe.SwipeUiState
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
+import com.markvoronin.immichswipe.feature.swipe.utils.MaterialOrange
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 
 
@@ -244,7 +245,7 @@ fun SwipeHeader(
         ) {
             StatBadge(label = stringResource(R.string.swipe_keep), count = uiState.allKeptCount, color = MaterialGreen, shape = MaterialShapes.Cookie6Sided.toShape())
             if (uiState.skippedCount > 0) {
-                StatBadge(label = stringResource(R.string.swipe_skip), count = uiState.skippedCount, color = Color(0xFFFFA500), shape = MaterialShapes.Clover4Leaf.toShape())
+                StatBadge(label = stringResource(R.string.swipe_skip), count = uiState.skippedCount, color = MaterialOrange, shape = MaterialShapes.Clover4Leaf.toShape())
             }
             StatBadge(label = stringResource(R.string.swipe_delete), count = uiState.deletedCount, color = MaterialRed, shape = MaterialShapes.Gem.toShape())
             StatBadge(label = stringResource(R.string.swipe_total), count = uiState.totalCount, color = MaterialTheme.colorScheme.outline, shape = MaterialShapes.Flower.toShape())
