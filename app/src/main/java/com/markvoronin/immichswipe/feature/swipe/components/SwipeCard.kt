@@ -12,8 +12,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.GestureCancellationException
+import androidx.compose.foundation.gestures.PressGestureScope
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,8 +37,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -59,15 +57,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -91,7 +91,8 @@ import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.cache.VideoCache
 import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
 import com.markvoronin.immichswipe.domain.model.Asset
-import com.markvoronin.immichswipe.feature.common.MediaLoadingIndicator
+import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
+import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardActions
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardConfig
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
@@ -117,6 +118,9 @@ fun SwipeCard(
     providedPlayer: ExoPlayer? = null,
     isMuted: Boolean = false,
     topCardSwipeOffset: Float = 0f,
+    // Set by a long press and kept after release; the next tap brings the controls back.
+    controlsHidden: Boolean = false,
+    onControlsHiddenChange: (Boolean) -> Unit = {},
     config: SwipeCardConfig,
     actions: SwipeCardActions
 ) {
@@ -180,6 +184,7 @@ fun SwipeCard(
     val currentCanUndo by rememberUpdatedState(config.canUndo)
     var pausedByHoldState by remember(asset.id) { mutableStateOf(value = false) }
     var ignoreNextTap by remember(asset.id) { mutableStateOf(value = false) }
+    val currentControlsHidden by rememberUpdatedState(controlsHidden)
 
     var isVideoReady by remember(asset.id) { mutableStateOf(value = false) }
     var showLoadingIndicator by remember(asset.id, providedPlayer) {
@@ -305,6 +310,75 @@ fun SwipeCard(
         label = "AlphaAnimation"
     )
 
+    // Shared by the photo and the video. A tap closes an open metadata panel; otherwise, with tap-to-swipe on, a tap near
+    // either edge swipes, and a tap in the middle plays or pauses a video. A long press hides the controls until the next
+    // tap (and pauses a video while held).
+    val haptic = LocalHapticFeedback.current
+    val onMediaTap: (Offset, IntSize) -> Unit = { offset, size ->
+        if (panelProgress.value > 0.1f) {
+            scope.launch { panelProgress.animateTo(0f, motionScheme.fastSpatialSpec()) }
+        } else if (!ignoreNextTap) {
+            val width = size.width.toFloat()
+            when {
+                config.tapToSwipeEnabled && offset.x < width * 0.3f -> actions.onSwipe(SwipeDecision.DELETE)
+                config.tapToSwipeEnabled && offset.x > width * 0.7f -> actions.onSwipe(SwipeDecision.KEEP)
+                // The shared player is handed to the top card even when it's a photo.
+                asset.type == "VIDEO" -> exoPlayer?.togglePlayPause()
+            }
+        }
+        ignoreNextTap = false
+    }
+    val onMediaPress: suspend PressGestureScope.(Offset, IntSize) -> Unit = { offset, size ->
+        ignoreNextTap = false
+        wasHoldDetected = false
+        val wasReleased = withTimeoutOrNull(500.milliseconds) {
+            awaitRelease()
+            true
+        }
+        if (wasReleased == true) {
+            val width = size.width.toFloat()
+            when {
+                currentControlsHidden -> {
+                    onControlsHiddenChange(false)
+                    haptic.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                    ignoreNextTap = true
+                }
+
+                panelProgress.value > 0.1f -> {
+                    scope.launch { panelProgress.animateTo(0f, motionScheme.fastSpatialSpec()) }
+                    ignoreNextTap = true
+                }
+
+                config.tapToSwipeEnabled && offset.x < width * 0.3f -> {
+                    actions.onSwipe(SwipeDecision.DELETE)
+                    ignoreNextTap = true
+                }
+
+                config.tapToSwipeEnabled && offset.x > width * 0.7f -> {
+                    actions.onSwipe(SwipeDecision.KEEP)
+                    ignoreNextTap = true
+                }
+            }
+        } else {
+            ignoreNextTap = true
+            isHoldingByPress = true
+            wasHoldDetected = true
+            if (asset.type == "VIDEO") pausedByHoldState = true
+            if (!currentControlsHidden) {
+                onControlsHiddenChange(true)
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            }
+            try {
+                awaitRelease()
+                isHoldingByPress = false
+                pausedByHoldState = false
+                wasHoldDetected = false
+            } catch (_: GestureCancellationException) {
+                isHoldingByPress = false
+            }
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Card(
             modifier = Modifier
@@ -355,10 +429,10 @@ fun SwipeCard(
                                         offsetY.snapTo(0f)
                                     } else if (currentX > 250 || isFlickRight) {
                                         offsetX.animateTo(1500f, tween(150))
-                                        actions.onSwipe(com.markvoronin.immichswipe.feature.swipe.SwipeDecision.KEEP)
+                                        actions.onSwipe(SwipeDecision.KEEP)
                                     } else if (currentX < -250 || isFlickLeft) {
                                         offsetX.animateTo(-1500f, tween(150))
-                                        actions.onSwipe(com.markvoronin.immichswipe.feature.swipe.SwipeDecision.DELETE)
+                                        actions.onSwipe(SwipeDecision.DELETE)
                                     } else {
                                         launch { offsetY.animateTo(0f, motionScheme.fastSpatialSpec()) }
                                         offsetX.animateTo(0f, motionScheme.fastSpatialSpec())
@@ -587,7 +661,7 @@ fun SwipeCard(
                             isMuted = isMuted,
                             isPaused = pausedByHoldState,
                             isVideoReady = isVideoReady,
-                            showControls = !isHoldingByPress && !wasHoldDetected,
+                            showControls = !controlsHidden,
                             // The player records its own video surface here, leaving its controls out of the panel's glass.
                             backdrop = glassBackdrop,
                             fileSize = asset.exifInfo?.fileSizeInBytes,
@@ -601,82 +675,9 @@ fun SwipeCard(
                                             exif.displayAspectRatio
                                         if (config.rotationAngle % 180 != 0) 1f / baseAR else baseAR
                                     },
-                                    onTap = { offset, size ->
-                                        if (panelProgress.value > 0.1f) {
-                                            scope.launch {
-                                                panelProgress.animateTo(
-                                                    0f,
-                                                    motionScheme.fastSpatialSpec()
-                                                )
-                                            }
-                                        } else if (!ignoreNextTap) {
-                                            val width = size.width.toFloat()
-                                            if (config.tapToSwipeEnabled) {
-                                                when {
-                                                    offset.x < width * 0.3f -> actions.onSwipe(
-                                                        com.markvoronin.immichswipe.feature.swipe.SwipeDecision.DELETE
-                                                    )
-
-                                                    offset.x > width * 0.7f -> actions.onSwipe(
-                                                        com.markvoronin.immichswipe.feature.swipe.SwipeDecision.KEEP
-                                                    )
-
-                                                    else -> exoPlayer.togglePlayPause()
-                                                }
-                                            } else {
-                                                exoPlayer.togglePlayPause()
-                                            }
-                                        }
-                                        ignoreNextTap = false
-                                    },
+                                    onTap = onMediaTap,
                                     onDoubleTap = actions.onDoubleTap,
-                                    onPress = { offset, size ->
-                                        ignoreNextTap = false
-                                        wasHoldDetected = false
-                                        val wasReleased = withTimeoutOrNull(500.milliseconds) {
-                                            awaitRelease()
-                                            true
-                                        }
-                                        if (wasReleased == true) {
-                                            // Fast tap detected
-                                            if (panelProgress.value > 0.1f) {
-                                                scope.launch {
-                                                    panelProgress.animateTo(
-                                                        0f,
-                                                        motionScheme.fastSpatialSpec()
-                                                    )
-                                                }
-                                                ignoreNextTap = true
-                                            } else if (config.tapToSwipeEnabled) {
-                                                val width = size.width.toFloat()
-                                                when {
-                                                    offset.x < width * 0.3f -> {
-                                                        actions.onSwipe(com.markvoronin.immichswipe.feature.swipe.SwipeDecision.DELETE)
-                                                        ignoreNextTap = true
-                                                    }
-
-                                                    offset.x > width * 0.7f -> {
-                                                        actions.onSwipe(com.markvoronin.immichswipe.feature.swipe.SwipeDecision.KEEP)
-                                                        ignoreNextTap = true
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            // Hold detected
-                                            ignoreNextTap = true
-                                            isHoldingByPress = true
-                                            wasHoldDetected = true
-                                            pausedByHoldState = true
-                                            try {
-                                                awaitRelease()
-                                                isHoldingByPress = false
-                                                pausedByHoldState = false
-                                                wasHoldDetected = false
-                                            } catch (_: GestureCancellationException) {
-                                                isHoldingByPress = false
-                                            }
-                                        }
-                                    }
+                                    onPress = onMediaPress
                                 ) {
                                     Box(
                                         modifier = Modifier
@@ -692,7 +693,7 @@ fun SwipeCard(
                                             modifier = Modifier.fillMaxSize(),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            MediaLoadingIndicator()
+                                            WavyLoadingIndicator(size = 40.dp, delayed = true)
                                         }
                                     }
                                 }
@@ -726,79 +727,9 @@ fun SwipeCard(
                                 exif.displayAspectRatio
                             if (config.rotationAngle % 180 != 0) 1f / baseAR else baseAR
                         },
-                        onTap = { offset, size ->
-                            if (panelProgress.value > 0.1f) {
-                                scope.launch {
-                                    panelProgress.animateTo(
-                                        0f,
-                                        motionScheme.fastSpatialSpec()
-                                    )
-                                }
-                            } else if (!ignoreNextTap) {
-                                val width = size.width.toFloat()
-                                if (config.tapToSwipeEnabled) {
-                                    when {
-                                        offset.x < width * 0.3f -> actions.onSwipe(
-                                            com.markvoronin.immichswipe.feature.swipe.SwipeDecision.DELETE
-                                        )
-
-                                        offset.x > width * 0.7f -> actions.onSwipe(
-                                            com.markvoronin.immichswipe.feature.swipe.SwipeDecision.KEEP
-                                        )
-
-                                        else -> { /* Middle tap for photos */
-                                        }
-                                    }
-                                }
-                            }
-                            ignoreNextTap = false
-                        },
+                        onTap = onMediaTap,
                         onDoubleTap = actions.onDoubleTap,
-                        onPress = { offset, size ->
-                            ignoreNextTap = false
-                            wasHoldDetected = false
-                            val wasReleased = withTimeoutOrNull(500.milliseconds) {
-                                awaitRelease()
-                                true
-                            }
-                            if (wasReleased == true) {
-                                // Fast tap detected
-                                if (panelProgress.value > 0.1f) {
-                                    scope.launch {
-                                        panelProgress.animateTo(
-                                            0f,
-                                            motionScheme.fastSpatialSpec()
-                                        )
-                                    }
-                                    ignoreNextTap = true
-                                } else if (config.tapToSwipeEnabled) {
-                                    val width = size.width.toFloat()
-                                    when {
-                                        offset.x < width * 0.3f -> {
-                                            actions.onSwipe(com.markvoronin.immichswipe.feature.swipe.SwipeDecision.DELETE)
-                                            ignoreNextTap = true
-                                        }
-
-                                        offset.x > width * 0.7f -> {
-                                            actions.onSwipe(com.markvoronin.immichswipe.feature.swipe.SwipeDecision.KEEP)
-                                            ignoreNextTap = true
-                                        }
-                                    }
-                                }
-                            } else {
-                                // Hold detected
-                                ignoreNextTap = true
-                                isHoldingByPress = true
-                                wasHoldDetected = true
-                                try {
-                                    awaitRelease()
-                                    isHoldingByPress = false
-                                    wasHoldDetected = false
-                                } catch (_: GestureCancellationException) {
-                                    isHoldingByPress = false
-                                }
-                            }
-                        }
+                        onPress = onMediaPress
                     ) {
                         SubcomposeAsyncImage(
                             model = photoRequest,
@@ -820,14 +751,14 @@ fun SwipeCard(
 
                 if (config.isFullSize && !isFullSizeLoaded) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        // The preview stays visible underneath, so keep this small and see-through.
-                        MediaLoadingIndicator(
-                            size = 32.dp,
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-                        )
+                        // The preview stays visible underneath, so a thin ring rather than a filled loader.
+                        WavyLoadingIndicator(size = 40.dp, delayed = true)
                     }
                 }
 
+                }
+
+                // Outside the captured box: glass buttons sample that backdrop and must not be part of it.
                 if (config.showSizeIndicator && !isNext && asset.type != "VIDEO") {
                     Column(
                         modifier = Modifier
@@ -837,33 +768,17 @@ fun SwipeCard(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         AnimatedVisibility(
-                            visible = !isHoldingByPress && !wasHoldDetected,
+                            visible = !controlsHidden,
                             enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
                             exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec())
                         ) {
-                            Surface(
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                                shape = RoundedCornerShape(4.dp)
-                            ) {
-                                Text(
-                                    text = formatSize(
-                                        asset.exifInfo?.fileSizeInBytes ?: 0L
-                                    ),
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
+                            GlassPill(formatSize(asset.exifInfo?.fileSizeInBytes ?: 0L), glassBackdrop)
                         }
                     }
                 }
 
-                }
-
-                // Outside the captured box: glass buttons sample that backdrop and must not be part of it.
                 ActionButtonsOverlay(
-                    visible = !isHoldingByPress && !wasHoldDetected,
+                    visible = !controlsHidden,
                     isNext = isNext,
                     asset = asset,
                     config = config,
@@ -1006,7 +921,7 @@ fun SwipeCard(
                     }
                 }
 
-                // Mute/Unmute popup indicator
+                // Mute/Unmute popup indicator, styled like SharedVideoPlayer's pause overlay.
                 androidx.compose.animation.AnimatedVisibility(
                     visible = showMuteIndicator,
                     enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()) + scaleIn(MaterialTheme.motionScheme.defaultSpatialSpec(), initialScale = 0.8f),
@@ -1016,13 +931,13 @@ fun SwipeCard(
                     Box(
                         modifier = Modifier
                             .requiredSize(64.dp)
-                            .background(Color.Black.copy(alpha = 0.6f), CircleShape),
+                            .glassSurface(glassBackdrop, CircleShape, 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = Color.White.copy(alpha = 0.9f),
                             modifier = Modifier.requiredSize(32.dp)
                         )
                     }

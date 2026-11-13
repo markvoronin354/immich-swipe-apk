@@ -24,6 +24,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,6 +53,9 @@ fun SwipeCardDeck(
     modifier: Modifier = Modifier,
     onTopCardSwipeOffsetChanged: (Float) -> Unit = {}
 ) {
+    // Shared by every card, so controls hidden by a long press stay hidden on the cards that follow.
+    var controlsHidden by rememberSaveable { mutableStateOf(false) }
+
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
@@ -116,6 +120,8 @@ fun SwipeCardDeck(
                         providedPlayer = if (!isNextCard && !uiState.isFullscreenMode) sharedPlayer else null,
                         isMuted = uiState.isMuted,
                         topCardSwipeOffset = if (isNextCard) topCardOffsetX else 0f,
+                        controlsHidden = controlsHidden,
+                        onControlsHiddenChange = { controlsHidden = it },
                         config = SwipeCardConfig(
                             baseUrl = uiState.baseUrl,
                             playbackBehavior = uiState.playbackBehavior,

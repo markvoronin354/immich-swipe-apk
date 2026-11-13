@@ -28,14 +28,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -75,12 +72,13 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
+import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.domain.model.Asset
-import com.markvoronin.immichswipe.feature.common.MediaLoadingIndicator
+import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.components.RoundRectClip
 import com.markvoronin.immichswipe.feature.duplicates.components.fitRect
 import com.markvoronin.immichswipe.feature.duplicates.components.rectAround
@@ -106,26 +104,18 @@ private val FullscreenBadgeTopPadding = 110.dp
 
 /** A photo's file size, centred above the bottom toolbar; a video shows it in its own controls. */
 @Composable
-private fun PhotoSizePill(visible: Boolean, sizeInBytes: Long, isLandscape: Boolean, modifier: Modifier = Modifier) {
+private fun PhotoSizePill(visible: Boolean, sizeInBytes: Long, isLandscape: Boolean, backdrop: Backdrop, modifier: Modifier = Modifier) {
     AnimatedVisibility(
         visible = visible,
         enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
         exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
         modifier = modifier
     ) {
-        Surface(
-            modifier = Modifier.padding(bottom = previewToolbarBottom(isLandscape) + PreviewToolbarHeight + PreviewToolbarGap),
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            shape = CircleShape
-        ) {
-            Text(
-                text = formatSize(sizeInBytes),
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
-            )
-        }
+        GlassPill(
+            text = formatSize(sizeInBytes),
+            backdrop = backdrop,
+            modifier = Modifier.padding(bottom = previewToolbarBottom(isLandscape) + PreviewToolbarHeight + PreviewToolbarGap)
+        )
     }
 }
 
@@ -474,6 +464,7 @@ fun FullscreenViewer(
                             visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
                             sizeInBytes = nextAsset.exifInfo?.fileSizeInBytes ?: 0L,
                             isLandscape = isLandscape,
+                            backdrop = nextMediaBackdrop,
                             modifier = Modifier.align(Alignment.BottomCenter)
                         )
                     }
@@ -667,7 +658,7 @@ fun FullscreenViewer(
                                     modifier = Modifier.fillMaxSize(),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    MediaLoadingIndicator()
+                                    WavyLoadingIndicator(size = 40.dp, delayed = true)
                                 }
                             }
                         }
@@ -727,11 +718,11 @@ fun FullscreenViewer(
             }
 
             if (isFullSize && !isFullSizeLoaded && asset.type != "VIDEO") {
-                // The preview stays visible underneath, so keep this small and see-through.
-                MediaLoadingIndicator(
+                // The preview stays visible underneath, so a thin ring rather than a filled loader.
+                WavyLoadingIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    size = 32.dp,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                    size = 40.dp,
+                    delayed = true
                 )
             }
 
@@ -740,6 +731,7 @@ fun FullscreenViewer(
                     visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
                     sizeInBytes = asset.exifInfo?.fileSizeInBytes ?: 0L,
                     isLandscape = isLandscape,
+                    backdrop = mediaBackdrop,
                     modifier = Modifier.align(Alignment.BottomCenter)
                 )
             }

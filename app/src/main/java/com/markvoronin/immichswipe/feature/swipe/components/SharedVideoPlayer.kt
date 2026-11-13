@@ -353,6 +353,21 @@ fun SharedVideoPlayer(
         }
 }
 
+/** The small glass pill for file sizes and the card's video time, on the card and in fullscreen. */
+@Composable
+internal fun GlassPill(text: String, backdrop: Backdrop, modifier: Modifier = Modifier) {
+    // A pill's lens can't exceed its corner radius.
+    Box(modifier = modifier.glassSurface(backdrop, CircleShape, 6.dp).padding(horizontal = 4.dp)) {
+        Text(
+            text = text,
+            color = Color.White,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+        )
+    }
+}
+
 /**
  * Timestamp and size pills, plus the play/pause button and seekbar in fullscreen. Also drawn on the next fullscreen card
  * before its video loads, so the controls are already in place when it becomes the current one.
@@ -388,53 +403,18 @@ internal fun VideoControls(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // The card's pills are larger than the fullscreen ones; a pill's lens can't exceed its corner radius.
-            val pillTextStyle = if (isFullscreen) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium
-            val pillVerticalPadding = if (isFullscreen) 2.dp else 4.dp
-            val pillLens = if (isFullscreen) 4.dp else 6.dp
-            // Fullscreen uses a plain Material 3 tonal pill; the card keeps its glass look.
-            val pillModifier = if (isFullscreen) {
-                Modifier.background(MaterialTheme.colorScheme.secondaryContainer, CircleShape)
-            } else {
-                Modifier.glassSurface(backdrop, CircleShape, pillLens)
-            }
-            val pillTextColor = if (isFullscreen) MaterialTheme.colorScheme.onSecondaryContainer else Color.White
-
             // 1. Indicators Row (Timestamp, Size) - Now ABOVE. In fullscreen they sit beside the play/pause button instead.
             if (!isFullscreen) Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
                 if (durationMs > 0) {
-                    Box(
-                        modifier = Modifier
-                            .glassSurface(backdrop, CircleShape, pillLens)
-                            .padding(horizontal = 4.dp)
-                    ) {
-                        Text(
-                            text = "${formatMediaTime(timeMs)} / ${formatMediaTime(durationMs)}",
-                            color = Color.White,
-                            style = pillTextStyle,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = pillVerticalPadding)
-                        )
-                    }
+                    GlassPill("${formatMediaTime(timeMs)} / ${formatMediaTime(durationMs)}", backdrop)
                 }
 
                 if (showSize && fileSize != null) {
                     if (durationMs > 0) Spacer(Modifier.width(8.dp))
-                    Box(
-                        modifier = pillModifier
-                            .padding(horizontal = 4.dp)
-                    ) {
-                        Text(
-                            text = formatSize(fileSize),
-                            color = pillTextColor,
-                            style = pillTextStyle,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = pillVerticalPadding)
-                        )
-                    }
+                    GlassPill(formatSize(fileSize), backdrop)
                 }
             }
 
@@ -458,15 +438,7 @@ internal fun VideoControls(
                     }
                     Spacer(Modifier.weight(1f))
                     if (showSize && fileSize != null) {
-                        Box(modifier = pillModifier.padding(horizontal = 4.dp)) {
-                            Text(
-                                text = formatSize(fileSize),
-                                color = pillTextColor,
-                                style = pillTextStyle,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = pillVerticalPadding)
-                            )
-                        }
+                        GlassPill(formatSize(fileSize), backdrop)
                         Spacer(Modifier.width(12.dp))
                     }
                     Text(
