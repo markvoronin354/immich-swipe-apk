@@ -563,6 +563,7 @@ class SwipeViewModel @Inject constructor(
                     if (_uiState.value.albumId == Album.VIRTUAL_ORPHANS_ID) {
                         allAssetsFoundFlow.value = allAssetsFoundFlow.value.filter { it.id != asset.id }
                     }
+                    _uiState.update { it.copy(albumAddSuccessCount = it.albumAddSuccessCount + 1) }
                 }
                 onResult(success, targetAlbum.albumName)
             } catch (e: Exception) {

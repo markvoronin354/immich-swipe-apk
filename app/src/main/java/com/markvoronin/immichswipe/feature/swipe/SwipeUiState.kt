@@ -70,6 +70,8 @@ data class SwipeUiState(
     val showAddToAlbumDialog: Boolean = false,
     val albumsForAddToAlbum: List<Album> = emptyList(),
     val isFetchingAlbumsForDialog: Boolean = false,
+    // Bumped each time an asset is added to an album, so the toolbar's album tile can confirm it.
+    val albumAddSuccessCount: Int = 0,
     val isFullscreenMode: Boolean = false,
     // Whether the current asset shows its original instead of the preview, on the card and in the fullscreen viewer.
     val isFullResolution: Boolean = false,

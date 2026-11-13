@@ -1,5 +1,9 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.EnterExitState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
@@ -12,6 +16,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -30,18 +35,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.LibraryAdd
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LibraryAddCheck
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.FilledTonalIconButton
@@ -51,12 +52,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -73,23 +77,29 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.SortOrder
 import com.markvoronin.immichswipe.core.ToolbarButton
-import com.markvoronin.immichswipe.feature.settings.components.rememberJiggleGroup
+import com.markvoronin.immichswipe.feature.common.FavoriteIcon
+import com.markvoronin.immichswipe.feature.common.LockIcon
+import com.markvoronin.immichswipe.feature.common.bounce
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.swipe.SwipeUiState
 import com.markvoronin.immichswipe.feature.swipe.SwipeViewModel
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * One tile of the connected action group, styled like the fullscreen toolbar. When [checked] is non-null it is a
@@ -224,7 +234,11 @@ fun SwipeActionBarLayout(
     showButtonLabels: Boolean = true,
     undoEnabled: Boolean = true,
     isFavorite: Boolean = false,
+    // Bumped on every favourite toggle; favoriteToggledOn says whether that toggle added the favourite.
+    favoriteToggleCount: Int = 0,
+    favoriteToggledOn: Boolean = false,
     isAlbumDialogOpen: Boolean = false,
+    albumAddedCount: Int = 0,
     isSortMenuOpen: Boolean = false,
     isBulkDeleteMode: Boolean = false,
     isBulkKeepMode: Boolean = false,
@@ -348,21 +362,38 @@ fun SwipeActionBarLayout(
 
             Row(modifier = Modifier.fillMaxWidth()) {
                 var index = 0
-                val jiggle = rememberJiggleGroup(tileCount, grow = 0.14f)
 
                 val undoIndex = index++
+                // Same as the fullscreen undo: the arrow winds back a full turn, against the way it points in RTL too.
+                val undoScale = remember { Animatable(1f) }
+                val undoSpin = remember { Animatable(0f) }
+                val undoDirection = if (LocalLayoutDirection.current == LayoutDirection.Rtl) 1f else -1f
+                val motionScheme = MaterialTheme.motionScheme
                 ActionTile(
-                    onClick = { jiggle.tap(undoIndex); onUndo() },
+                    onClick = {
+                        scope.bounce(undoScale, motionScheme)
+                        scope.launch {
+                            undoSpin.snapTo(0f)
+                            undoSpin.animateTo(360f, motionScheme.defaultSpatialSpec())
+                        }
+                        onUndo()
+                    },
                     label = stringResource(R.string.swipe_undo),
                     showLabel = showLabels,
                     enabled = undoEnabled,
                     shape = animatedTileShape(undoIndex, tileCount),
-                    modifier = Modifier.weight(jiggle.factor(undoIndex))
+                    modifier = Modifier.weight(1f)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Undo,
                         contentDescription = stringResource(R.string.swipe_undo),
-                        modifier = Modifier.size(iconSize)
+                        modifier = Modifier
+                            .size(iconSize)
+                            .graphicsLayer {
+                                scaleX = undoScale.value
+                                scaleY = undoScale.value
+                                rotationZ = undoSpin.value * undoDirection
+                            }
                     )
                 }
 
@@ -379,7 +410,7 @@ fun SwipeActionBarLayout(
                         )
                         AnimatedTileSlot(
                             visible = button in shown,
-                            weight = if (tileIndex >= 0) jiggle.factor(tileIndex) * widthFactor else 1f,
+                            weight = if (tileIndex >= 0) widthFactor else 1f,
                             modifier = Modifier
                                 .zIndex(if (dragged == button) 1f else 0f)
                                 .graphicsLayer {
@@ -389,63 +420,140 @@ fun SwipeActionBarLayout(
                                 }
                         ) {
                             when (button) {
-                                ToolbarButton.ARCHIVE -> ActionTile(
-                                    onClick = { jiggle.tap(tileIndex); onArchive() },
-                                    label = stringResource(R.string.swipe_archive),
-                                    showLabel = showLabels,
-                                    shape = animatedTileShape(tileIndex, tileCount),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Archive,
-                                        contentDescription = stringResource(R.string.swipe_archive),
-                                        modifier = Modifier.size(iconSize)
-                                    )
+                                ToolbarButton.ARCHIVE -> {
+                                    // Squashes and dips, as if something dropped into the box.
+                                    val archiveScale = remember { Animatable(1f) }
+                                    val archiveDrop = remember { Animatable(0f) }
+                                    ActionTile(
+                                        onClick = {
+                                            scope.bounce(archiveScale, motionScheme)
+                                            scope.launch {
+                                                archiveDrop.animateTo(1f, motionScheme.fastSpatialSpec())
+                                                archiveDrop.animateTo(0f, motionScheme.defaultSpatialSpec())
+                                            }
+                                            onArchive()
+                                        },
+                                        label = stringResource(R.string.swipe_archive),
+                                        showLabel = showLabels,
+                                        shape = animatedTileShape(tileIndex, tileCount),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Archive,
+                                            contentDescription = stringResource(R.string.swipe_archive),
+                                            modifier = Modifier
+                                                .size(iconSize)
+                                                .graphicsLayer {
+                                                    scaleX = archiveScale.value
+                                                    scaleY = archiveScale.value
+                                                    translationY = archiveDrop.value * 4.dp.toPx()
+                                                }
+                                        )
+                                    }
                                 }
 
-                                ToolbarButton.FAVORITE -> ActionTile(
-                                    onClick = { jiggle.tap(tileIndex); onFavorite() },
-                                    label = stringResource(R.string.swipe_label_favorite),
-                                    showLabel = showLabels,
-                                    shape = animatedTileShape(tileIndex, tileCount),
-                                    checked = isFavorite,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(
-                                        imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                        contentDescription = stringResource(R.string.swipe_favorite),
-                                        tint = if (isFavorite) Color.Red else LocalContentColor.current,
-                                        modifier = Modifier.size(iconSize)
-                                    )
+                                ToolbarButton.FAVORITE -> {
+                                    val favoriteScale = remember { Animatable(1f) }
+                                    val favoriteBurst = remember { Animatable(1f) }
+                                    // Driven by toggles from anywhere (this tile, a double-tap on the card), not by isFavorite,
+                                    // so moving to an already-favourite asset doesn't celebrate. Starts at the current count so
+                                    // the tile reappearing doesn't replay the last toggle.
+                                    var handledToggles by remember { mutableIntStateOf(favoriteToggleCount) }
+                                    LaunchedEffect(favoriteToggleCount) {
+                                        if (favoriteToggleCount == handledToggles) return@LaunchedEffect
+                                        handledToggles = favoriteToggleCount
+                                        bounce(favoriteScale, motionScheme)
+                                        if (favoriteToggledOn) launch {
+                                            favoriteBurst.snapTo(0f)
+                                            favoriteBurst.animateTo(1f, motionScheme.slowSpatialSpec())
+                                        }
+                                    }
+                                    ActionTile(
+                                        onClick = onFavorite,
+                                        label = stringResource(R.string.swipe_label_favorite),
+                                        showLabel = showLabels,
+                                        shape = animatedTileShape(tileIndex, tileCount),
+                                        checked = isFavorite,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        CompositionLocalProvider(
+                                            LocalContentColor provides if (isFavorite) Color.Red else LocalContentColor.current
+                                        ) {
+                                            FavoriteIcon(
+                                                isFavorite = isFavorite,
+                                                scale = { favoriteScale.value },
+                                                burst = { favoriteBurst.value },
+                                                contentDescription = stringResource(R.string.swipe_favorite)
+                                            )
+                                        }
+                                    }
                                 }
 
-                                ToolbarButton.ALBUM -> ActionTile(
-                                    onClick = { jiggle.tap(tileIndex); onAddToAlbum() },
-                                    label = stringResource(R.string.swipe_label_album),
-                                    showLabel = showLabels,
-                                    shape = animatedTileShape(tileIndex, tileCount),
-                                    checked = isAlbumDialogOpen,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.LibraryAdd,
-                                        contentDescription = stringResource(R.string.add_to_album_title),
-                                        modifier = Modifier.size(iconSize)
-                                    )
+                                ToolbarButton.ALBUM -> {
+                                    // Turns into a check for a moment after an add succeeds. Starts at the current count so
+                                    // the tile reappearing doesn't replay the last add.
+                                    val albumScale = remember { Animatable(1f) }
+                                    var showAdded by remember { mutableStateOf(false) }
+                                    var handledAdds by remember { mutableIntStateOf(albumAddedCount) }
+                                    LaunchedEffect(albumAddedCount) {
+                                        if (albumAddedCount == handledAdds) return@LaunchedEffect
+                                        handledAdds = albumAddedCount
+                                        showAdded = true
+                                        bounce(albumScale, motionScheme)
+                                        delay(1000.milliseconds)
+                                        showAdded = false
+                                    }
+                                    ActionTile(
+                                        onClick = onAddToAlbum,
+                                        label = stringResource(R.string.swipe_label_album),
+                                        showLabel = showLabels,
+                                        shape = animatedTileShape(tileIndex, tileCount),
+                                        checked = isAlbumDialogOpen,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        AnimatedContent(
+                                            targetState = showAdded,
+                                            transitionSpec = { iconSwap(motionScheme) },
+                                            label = "albumIcon"
+                                        ) { added ->
+                                            Icon(
+                                                imageVector = if (added) Icons.Default.LibraryAddCheck else Icons.Default.LibraryAdd,
+                                                contentDescription = stringResource(R.string.add_to_album_title),
+                                                modifier = Modifier
+                                                    .size(iconSize)
+                                                    .graphicsLayer {
+                                                        scaleX = albumScale.value
+                                                        scaleY = albumScale.value
+                                                    }
+                                            )
+                                        }
+                                    }
                                 }
 
-                                ToolbarButton.LOCK -> ActionTile(
-                                    onClick = { jiggle.tap(tileIndex); onLock() },
-                                    label = stringResource(R.string.swipe_locked),
-                                    showLabel = showLabels,
-                                    shape = animatedTileShape(tileIndex, tileCount),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Lock,
-                                        contentDescription = stringResource(R.string.swipe_locked),
-                                        modifier = Modifier.size(iconSize)
-                                    )
+                                ToolbarButton.LOCK -> {
+                                    // The shackle pops open and clunks back shut.
+                                    val lockScale = remember { Animatable(1f) }
+                                    val lockLift = remember { Animatable(0f) }
+                                    ActionTile(
+                                        onClick = {
+                                            scope.bounce(lockScale, motionScheme)
+                                            scope.launch {
+                                                lockLift.animateTo(1f, motionScheme.fastSpatialSpec())
+                                                lockLift.animateTo(0f, motionScheme.fastSpatialSpec())
+                                            }
+                                            onLock()
+                                        },
+                                        label = stringResource(R.string.swipe_locked),
+                                        showLabel = showLabels,
+                                        shape = animatedTileShape(tileIndex, tileCount),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        LockIcon(
+                                            lift = { lockLift.value },
+                                            scale = { lockScale.value },
+                                            contentDescription = stringResource(R.string.swipe_locked)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -454,30 +562,50 @@ fun SwipeActionBarLayout(
 
                 val sortIndex = index
                 Spacer(Modifier.width(3.dp))
-                Box(modifier = Modifier.weight(jiggle.factor(sortIndex) * checkedWidthFactor(isSortMenuOpen))) {
+                Box(modifier = Modifier.weight(checkedWidthFactor(isSortMenuOpen))) {
                     ActionTile(
-                        onClick = { jiggle.tap(sortIndex); onSort() },
+                        onClick = onSort,
                         label = stringResource(R.string.swipe_label_sort),
                         showLabel = showLabels,
                         shape = animatedTileShape(sortIndex, tileCount),
                         checked = isSortMenuOpen,
                         modifier = Modifier.fillMaxWidth()
                     ) {
+                        // Ascending is the descending icon turned upside down.
                         val icon = when (sortOrder) {
                             SortOrder.SHUFFLED -> Icons.Default.Shuffle
-                            SortOrder.CHRONOLOGICAL_ASC -> Icons.Default.ArrowUpward
-                            SortOrder.CHRONOLOGICAL_DESC -> Icons.Default.ArrowDownward
-                            SortOrder.SIZE_DESC -> Icons.Default.ExpandMore
-                            SortOrder.SIZE_ASC -> Icons.Default.ExpandLess
+                            SortOrder.CHRONOLOGICAL_ASC, SortOrder.CHRONOLOGICAL_DESC -> Icons.Default.ArrowDownward
+                            SortOrder.SIZE_DESC, SortOrder.SIZE_ASC -> Icons.Default.ExpandMore
                             SortOrder.TYPE_VIDEO_FIRST, SortOrder.TYPE_VIDEO_FIRST_ASC, SortOrder.TYPE_VIDEO_FIRST_SHUFFLED -> Icons.Default.Videocam
                             SortOrder.TYPE_PHOTO_FIRST, SortOrder.TYPE_PHOTO_FIRST_ASC, SortOrder.TYPE_PHOTO_FIRST_SHUFFLED -> Icons.Default.Image
                         }
+                        val flipped = sortOrder == SortOrder.CHRONOLOGICAL_ASC || sortOrder == SortOrder.SIZE_ASC
 
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = stringResource(R.string.settings_sort_order_label),
-                            modifier = Modifier.size(iconSize)
-                        )
+                        // Every change turns the icon half a turn: the old one spins out as the new one spins in, so
+                        // flipping the order reads as the arrow turning over.
+                        AnimatedContent(
+                            targetState = icon to flipped,
+                            transitionSpec = { iconSwap(motionScheme) },
+                            label = "sortIcon"
+                        ) { (targetIcon, targetFlipped) ->
+                            val spin by transition.animateFloat(
+                                transitionSpec = { motionScheme.defaultSpatialSpec() },
+                                label = "sortSpin"
+                            ) { state ->
+                                when (state) {
+                                    EnterExitState.PreEnter -> -180f
+                                    EnterExitState.Visible -> 0f
+                                    EnterExitState.PostExit -> 180f
+                                }
+                            }
+                            Icon(
+                                imageVector = targetIcon,
+                                contentDescription = stringResource(R.string.settings_sort_order_label),
+                                modifier = Modifier
+                                    .size(iconSize)
+                                    .graphicsLayer { rotationZ = (if (targetFlipped) 180f else 0f) + spin }
+                            )
+                        }
                     }
 
                     sortMenu()
@@ -561,6 +689,13 @@ fun SwipeActionBarLayout(
     }
 }
 
+private data class FavoriteToggles(val count: Int, val toggledOn: Boolean)
+
+/** One tile icon fading and scaling out as the next fades and scales in. */
+private fun iconSwap(motionScheme: MotionScheme): ContentTransform =
+    (fadeIn(motionScheme.fastEffectsSpec()) + scaleIn(motionScheme.fastSpatialSpec(), initialScale = 0.6f)) togetherWith
+        (fadeOut(motionScheme.fastEffectsSpec()) + scaleOut(motionScheme.fastSpatialSpec(), targetScale = 0.6f))
+
 private fun Modifier.blockTouches(): Modifier =
     pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }
 
@@ -626,6 +761,15 @@ fun SwipeActionBar(
     val notBulk = !uiState.isBulkDeleteMode && !uiState.isBulkKeepMode
     val haptic = LocalHapticFeedback.current
     val currentUiState by rememberUpdatedState(uiState)
+    // Every favourite toggle lands in localFavorites, whoever made it (the toolbar, a double-tap on the card), and even
+    // when auto-next has already moved on to the next asset; diffing it tells the heart when and which way to animate.
+    var favoriteToggles by remember { mutableStateOf(FavoriteToggles(0, false)) }
+    var previousFavorites by remember { mutableStateOf(uiState.localFavorites) }
+    LaunchedEffect(uiState.localFavorites) {
+        val toggled = uiState.localFavorites.entries.firstOrNull { (id, favorite) -> previousFavorites[id] != favorite }
+        previousFavorites = uiState.localFavorites
+        if (toggled != null) favoriteToggles = FavoriteToggles(favoriteToggles.count + 1, toggled.value)
+    }
     SwipeActionBarLayout(
         showSwipeButtons = uiState.showSwipeButtons,
         showArchiveButton = uiState.showArchiveButton,
@@ -637,7 +781,10 @@ fun SwipeActionBar(
         buttonOrder = uiState.toolbarButtonOrder,
         undoEnabled = uiState.history.isNotEmpty(),
         isFavorite = uiState.currentAsset?.let { uiState.isFavorite(it.id) } ?: false,
+        favoriteToggleCount = favoriteToggles.count,
+        favoriteToggledOn = favoriteToggles.toggledOn,
         isAlbumDialogOpen = uiState.showAddToAlbumDialog,
+        albumAddedCount = uiState.albumAddSuccessCount,
         isSortMenuOpen = showSortMenu,
         isBulkDeleteMode = uiState.isBulkDeleteMode,
         isBulkKeepMode = uiState.isBulkKeepMode,

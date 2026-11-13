@@ -16,17 +16,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -123,6 +129,68 @@ internal fun VolumeIcon(isMuted: Boolean, scale: () -> Float, contentDescription
                 drawLine(Color.Black, start, end, strokeWidth = 5f, cap = StrokeCap.Round, blendMode = BlendMode.Clear)
                 drawLine(color, start, end, strokeWidth = 2f, cap = StrokeCap.Round)
             }
+        }
+    }
+}
+
+// Material's file_download arrow, drawn apart from its tray so it can fall in on its own.
+private val DownloadArrowPath = Path().apply {
+    moveTo(19f, 9f); lineTo(15f, 9f); lineTo(15f, 3f); lineTo(9f, 3f); lineTo(9f, 9f); lineTo(5f, 9f); lineTo(12f, 16f); close()
+}
+
+/** The download icon, its arrow moved down by [drop]: gone into the tray at 1, and dropping back in from above between -1 and 0. */
+@Composable
+internal fun DownloadIcon(drop: () -> Float, scale: () -> Float, contentDescription: String?) {
+    val color = LocalContentColor.current
+    Canvas(
+        modifier = Modifier
+            .size(24.dp)
+            .graphicsLayer {
+                scaleX = scale()
+                scaleY = scale()
+            }
+            .then(if (contentDescription != null) Modifier.semantics { this.contentDescription = contentDescription } else Modifier)
+    ) {
+        scale(size.width / 24f, pivot = Offset.Zero) {
+            clipRect(left = 0f, top = 0f, right = 24f, bottom = 17f) {
+                translate(top = drop() * 16f) { drawPath(DownloadArrowPath, color) }
+            }
+            drawRect(color, topLeft = Offset(5f, 18f), size = Size(14f, 2f))
+        }
+    }
+}
+
+// Material's lock shackle as a centre line, stroked 1.9 wide; its legs reach into the body.
+private val LockShacklePath = Path().apply {
+    moveTo(7.95f, 9f)
+    lineTo(7.95f, 6f)
+    arcTo(Rect(7.95f, 1.95f, 16.05f, 10.05f), 180f, 180f, false)
+    lineTo(16.05f, 9f)
+}
+
+// The body with its keyhole cut out by the even-odd fill, so no offscreen layer clips the raised shackle.
+private val LockBodyPath = Path().apply {
+    fillType = PathFillType.EvenOdd
+    addRoundRect(RoundRect(4f, 8f, 20f, 22f, CornerRadius(2f)))
+    addOval(Rect(center = Offset(12f, 15f), radius = 2f))
+}
+
+/** Material's lock with its shackle raised by [lift]: shut at 0, open at 1. */
+@Composable
+internal fun LockIcon(lift: () -> Float, scale: () -> Float, contentDescription: String?) {
+    val color = LocalContentColor.current
+    Canvas(
+        modifier = Modifier
+            .size(24.dp)
+            .graphicsLayer {
+                scaleX = scale()
+                scaleY = scale()
+            }
+            .then(if (contentDescription != null) Modifier.semantics { this.contentDescription = contentDescription } else Modifier)
+    ) {
+        scale(size.width / 24f, pivot = Offset.Zero) {
+            drawPath(LockBodyPath, color)
+            translate(top = -lift() * 3f) { drawPath(LockShacklePath, color, style = Stroke(width = 1.9f)) }
         }
     }
 }
