@@ -12,7 +12,15 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.lerp
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.gestures.GestureCancellationException
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
@@ -71,6 +79,10 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.common.MediaLoadingIndicator
+import com.markvoronin.immichswipe.feature.duplicates.components.RoundRectClip
+import com.markvoronin.immichswipe.feature.duplicates.components.fitRect
+import com.markvoronin.immichswipe.feature.duplicates.components.rectAround
+import com.markvoronin.immichswipe.feature.duplicates.components.withoutBounce
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
@@ -83,6 +95,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -110,6 +123,8 @@ fun FullscreenViewer(
     rotation: Int = 0,
     baseUrl: String = "",
     isFullSize: Boolean = false,
+    // The swipe card's bounds on screen, for the media to grow from and shrink back into.
+    cardBounds: () -> Rect? = { null },
 ) {
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
@@ -138,6 +153,31 @@ fun FullscreenViewer(
             currentOnSwipe(decision)
             swipeX.snapTo(0f)
             swipeY.snapTo(0f)
+        }
+    }
+
+    // 0 with the media in its swipe card, 1 open. Opening and every way of closing animate this one value.
+    val presence = remember { Animatable(0f) }
+    var isClosing by remember { mutableStateOf(false) }
+    // Hiding the system bars shifts the swipe screen by the status bar's height, so they only hide while the media
+    // covers it.
+    var hideSystemBars by remember { mutableStateOf(false) }
+    var mediaOrigin by remember { mutableStateOf<Offset?>(null) }
+    val cardColor = CardDefaults.cardColors().containerColor
+    LaunchedEffect(Unit) {
+        presence.animateTo(1f, motionScheme.defaultSpatialSpec())
+        hideSystemBars = true
+    }
+    fun close() {
+        if (isClosing) return
+        isClosing = true
+        hideSystemBars = false
+        scope.launch {
+            val closeSpec = motionScheme.defaultSpatialSpec<Float>().withoutBounce()
+            launch { swipeX.animateTo(0f, closeSpec) }
+            launch { swipeY.animateTo(0f, closeSpec) }
+            presence.animateTo(0f, closeSpec)
+            onClose()
         }
     }
 
@@ -254,16 +294,26 @@ fun FullscreenViewer(
     }
 
     Dialog(
-        onDismissRequest = onClose,
+        onDismissRequest = { close() },
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
         val dialogView = LocalView.current
+        // Read here rather than in the SideEffect, so a change recomposes and re-runs it.
+        val barsHidden = hideSystemBars
 
         SideEffect {
             val window = (dialogView.parent as? DialogWindowProvider)?.window
             if (window != null) {
+                // The media's own transition replaces the window fade and dim.
+                window.setWindowAnimations(0)
+                window.setDimAmount(0f)
                 val insetsController = WindowCompat.getInsetsController(window, dialogView)
-                insetsController.hide(WindowInsetsCompat.Type.systemBars())
+                insetsController.isAppearanceLightStatusBars = false
+                if (barsHidden) {
+                    insetsController.hide(WindowInsetsCompat.Type.systemBars())
+                } else {
+                    insetsController.show(WindowInsetsCompat.Type.systemBars())
+                }
                 insetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             }
         }
@@ -282,7 +332,7 @@ fun FullscreenViewer(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = fadeAlpha))
+                .drawBehind { drawRect(Color.Black, alpha = fadeAlpha * presence.value.coerceIn(0f, 1f)) }
         ) {
             if (nextAsset != null) {
                 val swipeProgress = (abs(swipeX.value) / 500f).coerceIn(0f, 1f)
@@ -308,7 +358,13 @@ fun FullscreenViewer(
                         .graphicsLayer {
                             scaleX = nextScale
                             scaleY = nextScale
-                            alpha = nextAlpha
+                            // Hidden while the current media grows out of its card, so it doesn't ghost around it.
+                            alpha = nextAlpha * when {
+                                // Gone early in the flight back, so it doesn't ghost around the shrinking media.
+                                isClosing -> ((presence.value - 0.6f) / 0.4f).coerceIn(0f, 1f)
+                                presence.isRunning -> 0f
+                                else -> 1f
+                            }
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -369,7 +425,7 @@ fun FullscreenViewer(
                         visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
                         isFavorite = isNextFavorite,
                         onToggleFavorite = onToggleFavoriteNext,
-                        onClose = onClose,
+                        onClose = { close() },
                         onUndo = onUndo,
                         isLandscape = isLandscape,
                         showMuteButton = showMuteButton,
@@ -399,7 +455,7 @@ fun FullscreenViewer(
                                     val currentY = swipeY.value
 
                                     if (currentY > 120 && abs(currentX) < 100) {
-                                        onClose()
+                                        close()
                                     } else if (currentX > 150) {
                                         performSwipe(SwipeDecision.KEEP)
                                     } else if (currentX < -150) {
@@ -430,13 +486,57 @@ fun FullscreenViewer(
                             }
                         )
                     }
+                    .onGloballyPositioned { mediaOrigin = it.positionOnScreen() }
+                    // The container transform: the card's rect grows to the screen while the fitted media inside it moves
+                    // from its place in the card to its place here.
+                    .graphicsLayer {
+                        val origin = mediaOrigin
+                        if (origin == null) {
+                            alpha = 0f
+                            return@graphicsLayer
+                        }
+                        val p = presence.value
+                        val aspectRatio = asset.exifInfo?.displayAspectRatio
+                            ?.let { if (rotation % 180 != 0) 1f / it else it }
+                            ?.takeIf { it.isFinite() }
+                        val full = Rect(Offset.Zero, size)
+                        val fit = fitRect(size, aspectRatio)
+                        // Read live, so a closing photo follows the card as the returning status bar pushes it down.
+                        val card = cardBounds()?.translate(-origin.x, -origin.y)
+                        val container = if (card != null) lerp(card, full, p) else full
+                        val start = card?.let { fitRect(it.size, aspectRatio).translate(it.topLeft) }
+                            ?: rectAround(fit.center, fit.width * 0.8f, fit.height * 0.8f)
+                        val media = lerp(start, fit, p)
+                        val scale = max(media.width / fit.width, media.height / fit.height)
+                        transformOrigin = TransformOrigin(fit.center.x / size.width, fit.center.y / size.height)
+                        scaleX = scale
+                        scaleY = scale
+                        translationX = media.center.x - fit.center.x
+                        translationY = media.center.y - fit.center.y
+                        // The container in the layer's own coordinates, with the card's corners at every scale.
+                        shape = RoundRectClip(
+                            Rect(
+                                fit.center + (container.topLeft - media.center) / scale,
+                                fit.center + (container.bottomRight - media.center) / scale
+                            ),
+                            28.dp.toPx() / scale
+                        )
+                        clip = p != 1f
+                        // Crossfades with the card: quickly on the way out of it. On the way back it fades over the second half
+                        // and is gone before the spring's slow last stretch, so the media dissolves into the card as it lands.
+                        alpha = when {
+                            card == null -> p.coerceIn(0f, 1f)
+                            isClosing -> ((p - 0.1f) / 0.4f).coerceIn(0f, 1f)
+                            else -> (p / 0.15f).coerceIn(0f, 1f)
+                        }
+                    }
                     .offset { IntOffset(swipeX.value.roundToInt(), swipeY.value.roundToInt()) }
                     .graphicsLayer {
                         rotationZ = swipeX.value / 60f
                         shape = RoundedCornerShape(28.dp)
                         clip = true
                     }
-                    .background(Color.Black.copy(alpha = fadeAlpha)),
+                    .drawBehind { drawRect(lerp(cardColor, Color.Black, presence.value.coerceIn(0f, 1f)), alpha = fadeAlpha) },
                 contentAlignment = Alignment.Center
             ) {
             val finalControlsVisible = controlsVisible && !isHoldingByPress && !wasHoldDetected
@@ -452,7 +552,7 @@ fun FullscreenViewer(
                     isPaused = pausedByHoldState,
                     isVideoReady = isVideoReady,
                     toggleControllerTrigger = toggleControllerTrigger,
-                    showControls = finalControlsVisible,
+                    showControls = finalControlsVisible && !isClosing,
                     fileSize = asset.exifInfo?.fileSizeInBytes,
                     showSize = showSizeIndicator,
                     onControllerVisibilityChanged = { /* Now handled externally via controlsVisible */ },
@@ -701,12 +801,13 @@ fun FullscreenViewer(
                 topPadding = FullscreenBadgeTopPadding
             ) { (-swipeX.value / 200f).coerceIn(0f, 1f) * 0.9f }
 
+                Box(modifier = Modifier.fillMaxSize().graphicsLayer { alpha = presence.value.coerceIn(0f, 1f) }) {
                 PreviewControls(
                     backdrop = mediaBackdrop,
                     visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
                     isFavorite = isFavorite,
                     onToggleFavorite = onToggleFavorite,
-                    onClose = onClose,
+                    onClose = { close() },
                     onUndo = onUndo,
                     isLandscape = isLandscape,
                     showMuteButton = showMuteButton,
@@ -714,6 +815,7 @@ fun FullscreenViewer(
                     onToggleMute = onToggleMute,
                     assetType = asset.type
                 )
+                }
 
         }
     }

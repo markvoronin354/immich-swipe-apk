@@ -29,6 +29,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.core.content.ContextCompat
@@ -560,6 +561,8 @@ fun SwipeScreen(
     }
 
     var topCardSwipeOffset by remember(uiState.currentIndex) { mutableFloatStateOf(0f) }
+    // Only read in the fullscreen viewer's draw phase, so layout changes don't recompose the screen.
+    val cardBounds = remember { mutableStateOf<Rect?>(null) }
 
     Column(modifier = modifier.fillMaxSize()) {
         AppTopBar(
@@ -580,6 +583,7 @@ fun SwipeScreen(
             onSortMenuToggle = { showSortMenu = it },
             topCardSwipeOffset = topCardSwipeOffset,
             onTopCardSwipeOffsetChanged = { topCardSwipeOffset = it },
+            onCardBoundsChanged = { cardBounds.value = it },
             modifier = Modifier.weight(1f)
         )
     }
@@ -587,6 +591,7 @@ fun SwipeScreen(
     SwipeScreenDialogs(
         uiState = uiState,
         viewModel = viewModel,
-        sharedPlayer = sharedPlayer
+        sharedPlayer = sharedPlayer,
+        cardBounds = { cardBounds.value }
     )
 }

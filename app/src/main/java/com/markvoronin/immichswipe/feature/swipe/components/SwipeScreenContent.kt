@@ -14,6 +14,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.media3.exoplayer.ExoPlayer
@@ -33,6 +37,7 @@ fun SwipeScreenContent(
     onSortMenuToggle: (Boolean) -> Unit,
     topCardSwipeOffset: Float,
     onTopCardSwipeOffsetChanged: (Float) -> Unit,
+    onCardBoundsChanged: (Rect) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     ProvideTutorialController(tutorialController) {
@@ -76,6 +81,8 @@ fun SwipeScreenContent(
                         .weight(1f)
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 4.dp)
+                        // The top card fills the deck, so these are its bounds at rest.
+                        .onGloballyPositioned { onCardBoundsChanged(Rect(it.positionOnScreen(), it.size.toSize())) }
                         .tutorialTarget("swipe_deck", tutorialController)
                         .zIndex(1f)
                 )

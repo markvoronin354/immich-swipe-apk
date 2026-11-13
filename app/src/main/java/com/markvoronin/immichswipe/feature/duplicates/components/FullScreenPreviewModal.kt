@@ -161,11 +161,11 @@ private fun FiniteAnimationSpec<Float>.settlingWithinPixel(): FiniteAnimationSpe
     (this as? SpringSpec<Float>)?.let { spring(it.dampingRatio, it.stiffness, visibilityThreshold = 1f) } ?: this
 
 // The same spring without the bounce, so a closing photo lands in its thumbnail instead of shrinking past it.
-private fun FiniteAnimationSpec<Float>.withoutBounce(): FiniteAnimationSpec<Float> =
+internal fun FiniteAnimationSpec<Float>.withoutBounce(): FiniteAnimationSpec<Float> =
     (this as? SpringSpec<Float>)?.let { spring(1f, it.stiffness, visibilityThreshold = 0.01f) } ?: this
 
 // Where a ContentScale.Fit photo of [aspectRatio] sits in [size]; the whole box when the ratio is unknown.
-private fun fitRect(size: Size, aspectRatio: Float?): Rect {
+internal fun fitRect(size: Size, aspectRatio: Float?): Rect {
     if (aspectRatio == null || aspectRatio <= 0f || size.height <= 0f) return Rect(Offset.Zero, size)
     val fitted = if (aspectRatio > size.width / size.height) {
         Size(size.width, size.width / aspectRatio)
@@ -175,10 +175,10 @@ private fun fitRect(size: Size, aspectRatio: Float?): Rect {
     return Rect(Offset((size.width - fitted.width) / 2f, (size.height - fitted.height) / 2f), fitted)
 }
 
-private fun rectAround(center: Offset, width: Float, height: Float) =
+internal fun rectAround(center: Offset, width: Float, height: Float) =
     Rect(center - Offset(width / 2f, height / 2f), Size(width, height))
 
-private class RoundRectClip(private val rect: Rect, private val radius: Float) : Shape {
+internal class RoundRectClip(private val rect: Rect, private val radius: Float) : Shape {
     override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density) =
         Outline.Rounded(RoundRect(rect, CornerRadius(radius)))
 }

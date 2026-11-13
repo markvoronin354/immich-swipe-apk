@@ -2,6 +2,7 @@ package com.markvoronin.immichswipe.feature.swipe.components
 
 import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.media3.exoplayer.ExoPlayer
@@ -15,7 +16,8 @@ import com.markvoronin.immichswipe.feature.swipe.utils.supportsFullResolution
 fun SwipeScreenDialogs(
     uiState: SwipeUiState,
     viewModel: SwipeViewModel,
-    sharedPlayer: ExoPlayer
+    sharedPlayer: ExoPlayer,
+    cardBounds: () -> Rect? = { null }
 ) {
     val context = LocalContext.current
 
@@ -54,6 +56,7 @@ fun SwipeScreenDialogs(
             rotation = uiState.getRotation(currentAsset.id),
             baseUrl = uiState.baseUrl,
             isFullSize = uiState.isFullResolution && currentAsset.supportsFullResolution,
+            cardBounds = cardBounds,
         )
     }
 
