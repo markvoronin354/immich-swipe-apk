@@ -22,6 +22,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.gestures.GestureCancellationException
+import androidx.compose.foundation.gestures.PressGestureScope
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -58,6 +59,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -101,6 +103,31 @@ import kotlin.time.Duration.Companion.milliseconds
 
 /** Keeps the KEEP/DELETE badge below the top bar, which spans 40dp to 104dp from the top. */
 private val FullscreenBadgeTopPadding = 110.dp
+
+/** A photo's file size, centred above the bottom toolbar; a video shows it in its own controls. */
+@Composable
+private fun PhotoSizePill(visible: Boolean, sizeInBytes: Long, isLandscape: Boolean, modifier: Modifier = Modifier) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
+        exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
+        modifier = modifier
+    ) {
+        Surface(
+            modifier = Modifier.padding(bottom = previewToolbarBottom(isLandscape) + PreviewToolbarHeight + PreviewToolbarGap),
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            shape = CircleShape
+        ) {
+            Text(
+                text = formatSize(sizeInBytes),
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
+            )
+        }
+    }
+}
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -295,6 +322,66 @@ fun FullscreenViewer(
         }
     }
 
+    // Shared by the photo and the video. With tap-to-swipe on, a tap near either edge swipes; anywhere else it toggles the
+    // controls. Holding hides them (and pauses a video) until release.
+    val onMediaTap: (Offset, IntSize) -> Unit = { offset, size ->
+        if (!ignoreNextTap) {
+            val width = size.width.toFloat()
+            if (tapToSwipeEnabled && !isZoomedIn && (offset.x < width * 0.3f || offset.x > width * 0.7f)) {
+                when {
+                    offset.x < width * 0.3f -> performSwipe(SwipeDecision.DELETE)
+                    offset.x > width * 0.7f -> performSwipe(SwipeDecision.KEEP)
+                }
+            } else {
+                controlsVisible = !controlsVisible
+            }
+        }
+        ignoreNextTap = false
+    }
+    val onMediaPress: suspend PressGestureScope.(Offset, IntSize) -> Unit = { offset, size ->
+        ignoreNextTap = false
+        wasHoldDetected = false
+        val wasReleased = withTimeoutOrNull(500.milliseconds) {
+            awaitRelease()
+            true
+        }
+        if (wasReleased == true) {
+            val width = size.width.toFloat()
+            if (tapToSwipeEnabled && !isZoomedIn && (offset.x < width * 0.3f || offset.x > width * 0.7f)) {
+                when {
+                    offset.x < width * 0.3f -> {
+                        performSwipe(SwipeDecision.DELETE)
+                        ignoreNextTap = true
+                    }
+
+                    offset.x > width * 0.7f -> {
+                        performSwipe(SwipeDecision.KEEP)
+                        ignoreNextTap = true
+                    }
+                }
+            }
+        } else {
+            ignoreNextTap = true
+            isHoldingByPress = true
+            wasHoldDetected = true
+            if (asset.type == "VIDEO") {
+                pausedByHoldState = true
+            }
+            try {
+                awaitRelease()
+                isHoldingByPress = false
+                pausedByHoldState = false
+                wasHoldDetected = false
+            } catch (_: GestureCancellationException) {
+                isHoldingByPress = false
+            }
+        }
+    }
+    val zoomAspectRatio = asset.exifInfo?.let {
+        val baseAR = it.displayAspectRatio
+        if (rotation % 180 != 0) 1f / baseAR else baseAR
+    }
+
     Dialog(
         onDismissRequest = { close() },
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
@@ -383,27 +470,12 @@ fun FullscreenViewer(
                     ViewerScrim(visible = controlsVisible && !isHoldingByPress && !wasHoldDetected)
 
                     if (showSizeIndicator && nextAsset.type != "VIDEO") {
-                        AnimatedVisibility(
+                        PhotoSizePill(
                             visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
-                            enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
-                            exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
+                            sizeInBytes = nextAsset.exifInfo?.fileSizeInBytes ?: 0L,
+                            isLandscape = isLandscape,
                             modifier = Modifier.align(Alignment.BottomCenter)
-                        ) {
-                            Surface(
-                                modifier = Modifier
-                                    .padding(bottom = previewToolbarBottom(isLandscape) + PreviewToolbarHeight + PreviewToolbarGap),
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                shape = CircleShape
-                            ) {
-                                Text(
-                                    text = formatSize(nextAsset.exifInfo?.fileSizeInBytes ?: 0L),
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
+                        )
                     }
 
                     if (nextAsset.type == "VIDEO") {
@@ -569,68 +641,9 @@ fun FullscreenViewer(
                                 modifier = Modifier.fillMaxSize(),
                                 resetOnRelease = false,
                                 onIsZoomedChanged = { isZoomedIn = it },
-                                onTap = { offset, size ->
-                                    if (!ignoreNextTap) {
-                                        val width = size.width.toFloat()
-                                        if (tapToSwipeEnabled && !isZoomedIn && (offset.x < width * 0.3f || offset.x > width * 0.7f)) {
-                                            when {
-                                                offset.x < width * 0.3f -> performSwipe(
-                                                    SwipeDecision.DELETE)
-                                                offset.x > width * 0.7f -> performSwipe(
-                                                    SwipeDecision.KEEP)
-                                            }
-                                        } else {
-                                            controlsVisible = !controlsVisible
-                                        }
-                                    }
-                                    ignoreNextTap = false
-                                },
-                                onPress = { offset, size ->
-                                    ignoreNextTap = false
-                                    wasHoldDetected = false
-                                    val wasReleased = withTimeoutOrNull(500.milliseconds) {
-                                        awaitRelease()
-                                        true
-                                    }
-                                    if (wasReleased == true) {
-                                        // Fast tap detected
-                                        val width = size.width.toFloat()
-                                        if (tapToSwipeEnabled && !isZoomedIn && (offset.x < width * 0.3f || offset.x > width * 0.7f)) {
-                                            when {
-                                                offset.x < width * 0.3f -> {
-                                                    performSwipe(SwipeDecision.DELETE)
-                                                    ignoreNextTap = true
-                                                }
-
-                                                offset.x > width * 0.7f -> {
-                                                    performSwipe(SwipeDecision.KEEP)
-                                                    ignoreNextTap = true
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        // Hold detected
-                                        ignoreNextTap = true
-                                        isHoldingByPress = true
-                                        wasHoldDetected = true
-                                        if (asset.type == "VIDEO") {
-                                            pausedByHoldState = true
-                                        }
-                                        try {
-                                            awaitRelease()
-                                            isHoldingByPress = false
-                                            pausedByHoldState = false
-                                            wasHoldDetected = false
-                                        } catch (_: GestureCancellationException) {
-                                            isHoldingByPress = false
-                                        }
-                                    }
-                                },
-                                aspectRatio = asset.exifInfo?.let {
-                                    val baseAR =
-                                        it.displayAspectRatio
-                                    if (rotation % 180 != 0) 1f / baseAR else baseAR
-                                }
+                                onTap = onMediaTap,
+                                onPress = onMediaPress,
+                                aspectRatio = zoomAspectRatio
                             ) {
                                 val animatedRotation by animateFloatAsState(
                                     targetValue = rotation.toFloat(),
@@ -665,60 +678,9 @@ fun FullscreenViewer(
                     modifier = Modifier.fillMaxSize(),
                     resetOnRelease = false,
                     onIsZoomedChanged = { isZoomedIn = it },
-                    onTap = { offset, size ->
-                        if (!ignoreNextTap) {
-                            val width = size.width.toFloat()
-                            if (tapToSwipeEnabled && !isZoomedIn && (offset.x < width * 0.3f || offset.x > width * 0.7f)) {
-                                when {
-                                    offset.x < width * 0.3f -> performSwipe(SwipeDecision.DELETE)
-                                    offset.x > width * 0.7f -> performSwipe(SwipeDecision.KEEP)
-                                }
-                            } else {
-                                controlsVisible = !controlsVisible
-                            }
-                        }
-                        ignoreNextTap = false
-                    },
-                    onPress = { offset, size ->
-                        ignoreNextTap = false
-                        wasHoldDetected = false
-                        val wasReleased = withTimeoutOrNull(500.milliseconds) {
-                            awaitRelease()
-                            true
-                        }
-                        if (wasReleased == true) {
-                            val width = size.width.toFloat()
-                            if (tapToSwipeEnabled && !isZoomedIn && (offset.x < width * 0.3f || offset.x > width * 0.7f)) {
-                                when {
-                                    offset.x < width * 0.3f -> {
-                                        performSwipe(SwipeDecision.DELETE)
-                                        ignoreNextTap = true
-                                    }
-
-                                    offset.x > width * 0.7f -> {
-                                        performSwipe(SwipeDecision.KEEP)
-                                        ignoreNextTap = true
-                                    }
-                                }
-                            }
-                        } else {
-                            ignoreNextTap = true
-                            isHoldingByPress = true
-                            wasHoldDetected = true
-                            try {
-                                awaitRelease()
-                                isHoldingByPress = false
-                                wasHoldDetected = false
-                            } catch (_: GestureCancellationException) {
-                                isHoldingByPress = false
-                            }
-                        }
-                    },
-                    aspectRatio = asset.exifInfo?.let {
-                        val baseAR =
-                            it.displayAspectRatio
-                        if (rotation % 180 != 0) 1f / baseAR else baseAR
-                    }
+                    onTap = onMediaTap,
+                    onPress = onMediaPress,
+                    aspectRatio = zoomAspectRatio
                 ) {
                     val animatedRotation by animateFloatAsState(
                         targetValue = rotation.toFloat(),
@@ -774,27 +736,12 @@ fun FullscreenViewer(
             }
 
             if (showSizeIndicator && asset.type != "VIDEO") {
-                AnimatedVisibility(
+                PhotoSizePill(
                     visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
-                    enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
-                    exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
+                    sizeInBytes = asset.exifInfo?.fileSizeInBytes ?: 0L,
+                    isLandscape = isLandscape,
                     modifier = Modifier.align(Alignment.BottomCenter)
-                ) {
-                    Surface(
-                        modifier = Modifier
-                            .padding(bottom = previewToolbarBottom(isLandscape) + PreviewToolbarHeight + PreviewToolbarGap),
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        shape = CircleShape
-                    ) {
-                        Text(
-                            text = formatSize(asset.exifInfo?.fileSizeInBytes ?: 0L),
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
-                        )
-                    }
-                }
+                )
             }
 
             if (swipeX.value > 0f) IndicatorBadge(
