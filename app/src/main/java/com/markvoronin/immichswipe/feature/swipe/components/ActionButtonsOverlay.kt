@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.Hd
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -31,7 +32,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
 import com.markvoronin.immichswipe.R
@@ -59,7 +62,9 @@ fun ActionButtonsOverlay(
     baseUrl: String,
     context: Context,
     backdrop: Backdrop,
-    onToggleMuteWithIndicator: () -> Unit
+    onToggleMuteWithIndicator: () -> Unit,
+    // Size of each corner's button group (zero when empty), so the video time pill can move out of their way.
+    onCornerSizeChanged: (IconPosition, IntSize) -> Unit = { _, _ -> }
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -193,10 +198,13 @@ fun ActionButtonsOverlay(
                     }
                 }
 
-                if (buttons.isNotEmpty()) {
+                if (buttons.isEmpty()) {
+                    SideEffect { onCornerSizeChanged(pos, IntSize.Zero) }
+                } else {
                     Box(
                         modifier = Modifier
                             .align(alignment)
+                            .onSizeChanged { onCornerSizeChanged(pos, it) }
                             .padding(8.dp)
                     ) {
                         if (config.buttonStackOrientation == ButtonStackOrientation.HORIZONTAL) {

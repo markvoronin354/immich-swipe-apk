@@ -13,6 +13,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,16 +49,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
@@ -125,6 +129,8 @@ fun SharedVideoPlayer(
     showSize: Boolean = false,
     onControllerVisibilityChanged: ((Boolean) -> Unit)? = null,
     controlsOffset: Dp = 0.dp,
+    bottomStartObstacle: IntSize = IntSize.Zero,
+    bottomEndObstacle: IntSize = IntSize.Zero,
     // Lets the caller record the video surface (without these controls) into a backdrop it owns.
     backdrop: LayerBackdrop? = null,
     videoSurfaceWrapper: @Composable (surfaceContent: @Composable () -> Unit) -> Unit = { surfaceContent -> surfaceContent() },
@@ -311,6 +317,8 @@ fun SharedVideoPlayer(
                     durationMs = duration,
                     showSize = showSize,
                     fileSize = fileSize,
+                    bottomStartObstacle = bottomStartObstacle,
+                    bottomEndObstacle = bottomEndObstacle,
                     isPlaying = isPlayWhenReady && isCorrectMediaBound,
                     onTogglePlay = { player.togglePlayPause() },
                     onSeek = {
@@ -353,6 +361,23 @@ fun SharedVideoPlayer(
         }
 }
 
+/**
+ * Moves a horizontally centred element (8dp from the card's top or bottom edge) past the corner button groups it would
+ * overlap. `start`/`end` are the groups' sizes including their 8dp inset; `sideInset` is the container's horizontal padding.
+ */
+internal fun Modifier.clearOfCornerButtons(start: IntSize, end: IntSize, fromTop: Boolean, sideInset: Dp = 0.dp): Modifier =
+    layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints)
+        val cardWidth = constraints.maxWidth + 2 * sideInset.roundToPx()
+        val left = (cardWidth - placeable.width) / 2
+        val overlapped = listOfNotNull(
+            start.takeIf { left < it.width },
+            end.takeIf { left + placeable.width > cardWidth - it.width }
+        )
+        val shift = overlapped.maxOfOrNull { it.height - 8.dp.roundToPx() }?.coerceAtLeast(0) ?: 0
+        layout(placeable.width, placeable.height + shift) { placeable.place(0, if (fromTop) shift else 0) }
+    }
+
 /** The small glass pill for file sizes and the card's video time, on the card and in fullscreen. */
 @Composable
 internal fun GlassPill(text: String, backdrop: Backdrop, modifier: Modifier = Modifier) {
@@ -364,6 +389,37 @@ internal fun GlassPill(text: String, backdrop: Backdrop, modifier: Modifier = Mo
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+        )
+    }
+}
+
+/** The card's video time pill with a play/pause button. */
+@Composable
+private fun PlayPauseTimePill(text: String, isPlaying: Boolean, onTogglePlay: () -> Unit, backdrop: Backdrop) {
+    val playProgress = animateFloatAsState(
+        targetValue = if (isPlaying) 1f else 0f,
+        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+        label = "PillPlayPauseMorph"
+    )
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .glassSurface(backdrop, CircleShape, 12.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onTogglePlay)
+            .padding(start = 8.dp, top = 4.dp, bottom = 4.dp, end = 14.dp)
+    ) {
+        PlayPauseIcon(
+            progress = { playProgress.value },
+            contentDescription = stringResource(if (isPlaying) R.string.cd_pause else R.string.cd_play),
+            color = Color.White
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = text,
+            color = Color.White,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold
         )
     }
 }
@@ -388,6 +444,9 @@ internal fun VideoControls(
     modifier: Modifier = Modifier,
     isPlaying: Boolean = false,
     onTogglePlay: () -> Unit = {},
+    // The card's bottom corner button groups; the pills move up above any they would overlap.
+    bottomStartObstacle: IntSize = IntSize.Zero,
+    bottomEndObstacle: IntSize = IntSize.Zero,
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -398,7 +457,7 @@ internal fun VideoControls(
         Column(
             modifier = Modifier
                 // Fullscreen: sits above PreviewControls' floating toolbar (plus a 4dp gap).
-                .padding(bottom = (if (isFullscreen) (if (isLandscape) 12.dp else 24.dp) + PreviewToolbarHeight + PreviewToolbarGap else 12.dp) + (if (isLandscape) 0.dp else controlsOffset))
+                .padding(bottom = (if (isFullscreen) (if (isLandscape) 12.dp else 24.dp) + PreviewToolbarHeight + PreviewToolbarGap else 8.dp) + (if (isLandscape) 0.dp else controlsOffset))
                 .padding(horizontal = if (isFullscreen) 12.dp else 16.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -406,15 +465,16 @@ internal fun VideoControls(
             // 1. Indicators Row (Timestamp, Size) - Now ABOVE. In fullscreen they sit beside the play/pause button instead.
             if (!isFullscreen) Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.clearOfCornerButtons(bottomStartObstacle, bottomEndObstacle, fromTop = false, sideInset = 16.dp)
             ) {
                 if (durationMs > 0) {
-                    GlassPill("${formatMediaTime(timeMs)} / ${formatMediaTime(durationMs)}", backdrop)
-                }
-
-                if (showSize && fileSize != null) {
-                    if (durationMs > 0) Spacer(Modifier.width(8.dp))
-                    GlassPill(formatSize(fileSize), backdrop)
+                    PlayPauseTimePill(
+                        text = "${formatMediaTime(timeMs)} / ${formatMediaTime(durationMs)}",
+                        isPlaying = isPlaying,
+                        onTogglePlay = onTogglePlay,
+                        backdrop = backdrop
+                    )
                 }
             }
 

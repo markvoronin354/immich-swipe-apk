@@ -87,6 +87,7 @@ import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
+import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.cache.VideoCache
 import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
@@ -182,9 +183,12 @@ fun SwipeCard(
     var wasHoldDetected by remember(asset.id) { mutableStateOf(value = false) }
     val currentIsHolding by rememberUpdatedState(isHoldingByPress || wasHoldDetected)
     val currentCanUndo by rememberUpdatedState(config.canUndo)
-    var pausedByHoldState by remember(asset.id) { mutableStateOf(value = false) }
     var ignoreNextTap by remember(asset.id) { mutableStateOf(value = false) }
     val currentControlsHidden by rememberUpdatedState(controlsHidden)
+    var topStartButtons by remember { mutableStateOf(IntSize.Zero) }
+    var topEndButtons by remember { mutableStateOf(IntSize.Zero) }
+    var bottomStartButtons by remember { mutableStateOf(IntSize.Zero) }
+    var bottomEndButtons by remember { mutableStateOf(IntSize.Zero) }
 
     var isVideoReady by remember(asset.id) { mutableStateOf(value = false) }
     var showLoadingIndicator by remember(asset.id, providedPlayer) {
@@ -259,17 +263,6 @@ fun SwipeCard(
         internalExoPlayer?.volume = if (isMuted) 0f else 1f
     }
 
-    var wasPlayingBeforeHold by remember(asset.id) { mutableStateOf(false) }
-
-    LaunchedEffect(pausedByHoldState) {
-        if (pausedByHoldState) {
-            wasPlayingBeforeHold = exoPlayer?.playWhenReady == true
-            exoPlayer?.pause()
-        } else if (wasPlayingBeforeHold) {
-            exoPlayer?.play()
-        }
-    }
-
     ExoPlayerLifecycleEffect(
         exoPlayer = exoPlayer,
         assetId = asset.id,
@@ -311,8 +304,7 @@ fun SwipeCard(
     )
 
     // Shared by the photo and the video. A tap closes an open metadata panel; otherwise, with tap-to-swipe on, a tap near
-    // either edge swipes, and a tap in the middle plays or pauses a video. A long press hides the controls until the next
-    // tap (and pauses a video while held).
+    // either edge swipes. A long press hides the controls until the next tap. Videos only pause from their time pill.
     val haptic = LocalHapticFeedback.current
     val onMediaTap: (Offset, IntSize) -> Unit = { offset, size ->
         if (panelProgress.value > 0.1f) {
@@ -322,8 +314,6 @@ fun SwipeCard(
             when {
                 config.tapToSwipeEnabled && offset.x < width * 0.3f -> actions.onSwipe(SwipeDecision.DELETE)
                 config.tapToSwipeEnabled && offset.x > width * 0.7f -> actions.onSwipe(SwipeDecision.KEEP)
-                // The shared player is handed to the top card even when it's a photo.
-                asset.type == "VIDEO" -> exoPlayer?.togglePlayPause()
             }
         }
         ignoreNextTap = false
@@ -363,7 +353,6 @@ fun SwipeCard(
             ignoreNextTap = true
             isHoldingByPress = true
             wasHoldDetected = true
-            if (asset.type == "VIDEO") pausedByHoldState = true
             if (!currentControlsHidden) {
                 onControlsHiddenChange(true)
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -371,7 +360,6 @@ fun SwipeCard(
             try {
                 awaitRelease()
                 isHoldingByPress = false
-                pausedByHoldState = false
                 wasHoldDetected = false
             } catch (_: GestureCancellationException) {
                 isHoldingByPress = false
@@ -405,7 +393,6 @@ fun SwipeCard(
                                     panelProgress.animateTo(startProgress, motionScheme.fastSpatialSpec())
                                     dragDirection = 0
                                     wasHoldDetected = false
-                                    pausedByHoldState = false
                                     return@launch
                                 }
                                 val currentX = offsetX.value
@@ -487,7 +474,6 @@ fun SwipeCard(
                                     panelProgress.animateTo(startProgress, motionScheme.fastSpatialSpec())
                                     dragDirection = 0
                                     wasHoldDetected = false
-                                    pausedByHoldState = false
                                     return@launch
                                 }
                                 val currentProgress = panelProgress.value
@@ -659,13 +645,12 @@ fun SwipeCard(
                             assetId = asset.id,
                             baseUrl = baseUrl,
                             isMuted = isMuted,
-                            isPaused = pausedByHoldState,
                             isVideoReady = isVideoReady,
                             showControls = !controlsHidden,
                             // The player records its own video surface here, leaving its controls out of the panel's glass.
                             backdrop = glassBackdrop,
-                            fileSize = asset.exifInfo?.fileSizeInBytes,
-                            showSize = config.showSizeIndicator,
+                            bottomStartObstacle = bottomStartButtons,
+                            bottomEndObstacle = bottomEndButtons,
                             videoSurfaceWrapper = { surface ->
                                 ZoomableBox(
                                     modifier = Modifier.fillMaxSize(),
@@ -759,18 +744,19 @@ fun SwipeCard(
                 }
 
                 // Outside the captured box: glass buttons sample that backdrop and must not be part of it.
-                if (config.showSizeIndicator && !isNext && asset.type != "VIDEO") {
+                if (config.showSizeIndicator && !isNext) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(bottom = 12.dp),
-                        verticalArrangement = Arrangement.Bottom,
+                            .padding(top = 8.dp),
+                        verticalArrangement = Arrangement.Top,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         AnimatedVisibility(
                             visible = !controlsHidden,
                             enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
-                            exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec())
+                            exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
+                            modifier = Modifier.clearOfCornerButtons(topStartButtons, topEndButtons, fromTop = true)
                         ) {
                             GlassPill(formatSize(asset.exifInfo?.fileSizeInBytes ?: 0L), glassBackdrop)
                         }
@@ -790,6 +776,14 @@ fun SwipeCard(
                     onToggleMuteWithIndicator = {
                         actions.onToggleMute()
                         showMuteIndicator = true
+                    },
+                    onCornerSizeChanged = { pos, size ->
+                        when (pos) {
+                            IconPosition.TOP_LEFT -> topStartButtons = size
+                            IconPosition.TOP_RIGHT -> topEndButtons = size
+                            IconPosition.BOTTOM_LEFT -> bottomStartButtons = size
+                            IconPosition.BOTTOM_RIGHT -> bottomEndButtons = size
+                        }
                     }
                 )
 
