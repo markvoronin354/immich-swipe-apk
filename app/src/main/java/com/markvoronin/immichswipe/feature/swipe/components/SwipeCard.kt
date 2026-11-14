@@ -27,11 +27,8 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.VideocamOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -96,7 +93,7 @@ import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardActions
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardConfig
-import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
+import com.markvoronin.immichswipe.feature.swipe.utils.KeepGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 import com.markvoronin.immichswipe.feature.swipe.utils.fullResolutionRequest
@@ -893,22 +890,18 @@ fun SwipeCard(
                     if (config.canUndo && !isEnteringFromBelow && currentY > abs(currentX)) {
                         IndicatorBadge(
                             stringResource(R.string.swipe_undo_upper),
-                            Icons.AutoMirrored.Filled.Undo,
                             MaterialTheme.colorScheme.primary,
-                            Alignment.TopCenter,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            Alignment.TopCenter
                         ) { (currentY / 200f).coerceIn(0f, 1f) * 0.9f }
                     } else if (currentX > 0f) {
                         IndicatorBadge(
                             stringResource(R.string.swipe_keep_upper),
-                            Icons.Default.Check,
-                            MaterialGreen,
+                            KeepGreen,
                             Alignment.TopStart
                         ) { (currentX / 200f).coerceIn(0f, 1f) * 0.9f }
                     } else if (currentX < 0f) {
                         IndicatorBadge(
                             stringResource(R.string.swipe_delete_upper),
-                            Icons.Default.Delete,
                             MaterialRed,
                             Alignment.TopEnd
                         ) { (-currentX / 200f).coerceIn(0f, 1f) * 0.9f }

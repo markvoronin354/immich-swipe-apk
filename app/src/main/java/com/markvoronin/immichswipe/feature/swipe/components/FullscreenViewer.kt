@@ -30,8 +30,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -84,7 +82,7 @@ import com.markvoronin.immichswipe.feature.duplicates.components.fitRect
 import com.markvoronin.immichswipe.feature.duplicates.components.rectAround
 import com.markvoronin.immichswipe.feature.duplicates.components.withoutBounce
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
-import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
+import com.markvoronin.immichswipe.feature.swipe.utils.KeepGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import com.markvoronin.immichswipe.feature.swipe.utils.findActivity
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
@@ -738,14 +736,12 @@ fun FullscreenViewer(
 
             if (swipeX.value > 0f) IndicatorBadge(
                 stringResource(R.string.swipe_keep_upper),
-                Icons.Default.Check,
-                MaterialGreen,
+                KeepGreen,
                 Alignment.TopStart,
                 topPadding = FullscreenBadgeTopPadding
             ) { (swipeX.value / 200f).coerceIn(0f, 1f) * 0.9f }
             else if (swipeX.value < 0f) IndicatorBadge(
                 stringResource(R.string.swipe_delete_upper),
-                Icons.Default.Delete,
                 MaterialRed,
                 Alignment.TopEnd,
                 topPadding = FullscreenBadgeTopPadding
