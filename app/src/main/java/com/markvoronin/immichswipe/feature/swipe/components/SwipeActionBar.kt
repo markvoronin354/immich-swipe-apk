@@ -5,6 +5,7 @@ import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -17,6 +18,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -68,6 +70,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
@@ -115,6 +118,7 @@ private fun ActionTile(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     checked: Boolean? = null,
+    highlightWhenChecked: Boolean = true,
     icon: @Composable () -> Unit
 ) {
     val pressedShape = RoundedCornerShape(10.dp)
@@ -147,8 +151,9 @@ private fun ActionTile(
             onClick = onClick,
             shapes = IconButtonDefaults.shapes(shape = shape, pressedShape = pressedShape),
             colors = IconButtonDefaults.filledTonalIconButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                contentColor = MaterialTheme.colorScheme.onSurface
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                disabledContainerColor = Color.Transparent
             ),
             enabled = enabled,
             modifier = tileModifier,
@@ -158,12 +163,16 @@ private fun ActionTile(
         FilledTonalIconToggleButton(
             checked = checked,
             onCheckedChange = { onClick() },
-            shapes = IconButtonDefaults.toggleableShapes(shape = shape, pressedShape = pressedShape, checkedShape = CircleShape),
+            shapes = IconButtonDefaults.toggleableShapes(
+                shape = shape,
+                pressedShape = pressedShape,
+                checkedShape = if (highlightWhenChecked) CircleShape else shape
+            ),
             colors = IconButtonDefaults.filledTonalIconToggleButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                containerColor = Color.Transparent,
                 contentColor = MaterialTheme.colorScheme.onSurface,
-                checkedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                checkedContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                checkedContainerColor = if (highlightWhenChecked) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+                checkedContentColor = if (highlightWhenChecked) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
             ),
             enabled = enabled,
             modifier = tileModifier,
@@ -175,9 +184,23 @@ private fun ActionTile(
 @Composable
 private fun animatedTileShape(index: Int, count: Int): Shape {
     val spec = MaterialTheme.motionScheme.defaultSpatialSpec<Dp>()
-    val start by animateDpAsState(if (index == 0) 24.dp else 6.dp, spec, label = "tileStart")
-    val end by animateDpAsState(if (index == count - 1) 24.dp else 6.dp, spec, label = "tileEnd")
+    val start by animateDpAsState(if (index == 0) 28.dp else 6.dp, spec, label = "tileStart")
+    val end by animateDpAsState(if (index == count - 1) 28.dp else 6.dp, spec, label = "tileEnd")
     return RoundedCornerShape(topStart = start, bottomStart = start, topEnd = end, bottomEnd = end)
+}
+
+/**
+ * Horizontal inset of the toolbar row; the header pill uses it too, so the two share one width. With the swipe buttons
+ * it is the card deck's 8dp, so Delete and Keep sit flush with the card's edges.
+ */
+@Composable
+internal fun toolbarHorizontalPadding(showSwipeButtons: Boolean): Dp {
+    val padding by animateDpAsState(
+        targetValue = if (showSwipeButtons) 8.dp else 24.dp,
+        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+        label = "barPadding"
+    )
+    return padding
 }
 
 /** Weight multiplier that widens a tile while it is checked, as in an M3 Expressive button group. */
@@ -254,11 +277,7 @@ fun SwipeActionBarLayout(
     keepButtonModifier: Modifier = Modifier,
     sortMenu: @Composable () -> Unit = {}
 ) {
-    val horizontalPadding by animateDpAsState(
-        targetValue = if (showSwipeButtons) 16.dp else 24.dp,
-        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
-        label = "barPadding"
-    )
+    val horizontalPadding = toolbarHorizontalPadding(showSwipeButtons)
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -360,7 +379,12 @@ fun SwipeActionBarLayout(
                 if (final != null && final != currentButtonOrder) currentOnReorder?.invoke(final) else localOrder = null
             }
 
-            Row(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            ) {
                 var index = 0
 
                 val undoIndex = index++
@@ -405,9 +429,12 @@ fun SwipeActionBarLayout(
                             animationSpec = spatialSpec,
                             label = "dragScale"
                         )
-                        val widthFactor = checkedWidthFactor(
-                            (button == ToolbarButton.FAVORITE && isFavorite) || (button == ToolbarButton.ALBUM && isAlbumDialogOpen)
+                        val lift by animateColorAsState(
+                            targetValue = MaterialTheme.colorScheme.surfaceContainerHighest.let { if (dragged == button) it else it.copy(alpha = 0f) },
+                            animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
+                            label = "dragLift"
                         )
+                        val widthFactor = checkedWidthFactor(button == ToolbarButton.ALBUM && isAlbumDialogOpen)
                         AnimatedTileSlot(
                             visible = button in shown,
                             weight = if (tileIndex >= 0) widthFactor else 1f,
@@ -418,6 +445,7 @@ fun SwipeActionBarLayout(
                                     scaleX = scale
                                     scaleY = scale
                                 }
+                                .background(lift, CircleShape)
                         ) {
                             when (button) {
                                 ToolbarButton.ARCHIVE -> {
@@ -474,6 +502,7 @@ fun SwipeActionBarLayout(
                                         showLabel = showLabels,
                                         shape = animatedTileShape(tileIndex, tileCount),
                                         checked = isFavorite,
+                                        highlightWhenChecked = false,
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         CompositionLocalProvider(

@@ -54,9 +54,13 @@ fun SwipeScreenContent(
                 Box(modifier = Modifier.tutorialTarget("swipe_header", tutorialController)) {
                     SwipeHeader(
                         uiState = uiState,
-                        onSummaryClick = { viewModel.toggleSummary(visible = true) }
+                        onSummaryClick = { viewModel.toggleSummary(visible = true) },
+                        horizontalPadding = toolbarHorizontalPadding(uiState.showSwipeButtons)
                     )
                 }
+
+                // With the header's 2dp and the deck's 4dp, this makes the gap above the card 20dp, like the gap below it.
+                Spacer(Modifier.height(14.dp))
 
                 val nextUnprocessedIndex = viewModel.getNextUnprocessedIndex(uiState)
 

@@ -50,6 +50,7 @@ import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 fun SwipeHeader(
     uiState: SwipeUiState,
     onSummaryClick: () -> Unit,
+    horizontalPadding: Dp,
     infoFontSize: TextUnit = 13.sp,
     iconSize: Dp = 20.dp
 ) {
@@ -63,8 +64,7 @@ fun SwipeHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            // Same horizontal inset as the card deck in SwipeScreenContent, so both share one width.
-            .padding(horizontal = 8.dp, vertical = 2.dp)
+            .padding(horizontal = horizontalPadding, vertical = 2.dp)
             .height(44.dp)
             .clip(RoundedCornerShape(22.dp))
             // The card's container color: on custom palettes surfaceVariant equals the ring's track color.
