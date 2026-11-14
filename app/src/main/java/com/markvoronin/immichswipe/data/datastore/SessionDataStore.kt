@@ -218,6 +218,29 @@ class SessionDataStore(private val context: Context) {
         context.dataStore.edit { it[KEY_BUTTON_STACK_ORIENTATION] = orientation }
     }
 
+    /** Clears everything the Action Buttons screen edits so the flows fall back to their defaults. */
+    suspend fun resetActionButtons() {
+        context.dataStore.edit {
+            it.remove(KEY_FULLSCREEN_ICON_POS)
+            it.remove(KEY_IMMICH_ICON_POS)
+            it.remove(KEY_CARD_DISPLAY_ICON_POS)
+            it.remove(KEY_MUTE_ICON_POS)
+            it.remove(KEY_DOWNLOAD_ICON_POS)
+            it.remove(KEY_SHARE_ICON_POS)
+            it.remove(KEY_FULL_SIZE_ICON_POS)
+            it.remove(KEY_BUTTON_STACK_ORIENTATION)
+            it.remove(KEY_SHOW_FULLSCREEN_ICON)
+            it.remove(KEY_SHOW_IMMICH_ICON)
+            it.remove(KEY_SHOW_CARD_DISPLAY_ICON)
+            it.remove(KEY_SHOW_MUTE_ICON)
+            it.remove(KEY_SHOW_DOWNLOAD_ICON)
+            it.remove(KEY_SHOW_SHARE_ICON)
+            it.remove(KEY_SHOW_FULL_SIZE_ICON)
+            it.remove(KEY_KEEP_FULL_RESOLUTION)
+            it.remove(KEY_IMMICH_OPEN_MODE)
+        }
+    }
+
     fun isShowFullscreenIcon(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_FULLSCREEN_ICON] ?: true }
     suspend fun saveShowFullscreenIcon(show: Boolean) { context.dataStore.edit { it[KEY_SHOW_FULLSCREEN_ICON] = show } }
 

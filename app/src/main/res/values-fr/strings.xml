@@ -125,6 +125,10 @@
     <string name="settings_show_toolbar_labels_label">Libellés des boutons</string>
     <string name="settings_section_actions">Actions</string>
     <string name="settings_section_layout">Disposition</string>
+    <string name="settings_action_buttons_reset_label">Rétablir les valeurs par défaut</string>
+    <string name="settings_action_buttons_reset_title">Réinitialiser les boutons d\'action ?</string>
+    <string name="settings_action_buttons_reset_msg">Tous les boutons d\'action reviendront à leur position, disposition et visibilité par défaut.</string>
+    <string name="settings_action_buttons_reset_confirm">Réinitialiser</string>
     <string name="settings_show_timeline_label">Frise des médias</string>
     <string name="settings_action_buttons_label">Boutons d\'action à l\'écran</string>
     <string name="settings_action_buttons_desc">Personnaliser la visibilité et la position des boutons superposés</string>

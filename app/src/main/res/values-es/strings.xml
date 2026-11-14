@@ -124,6 +124,10 @@
     <string name="settings_show_toolbar_labels_label">Etiquetas de botones</string>
     <string name="settings_section_actions">Acciones</string>
     <string name="settings_section_layout">Diseño</string>
+    <string name="settings_action_buttons_reset_label">Restablecer valores predeterminados</string>
+    <string name="settings_action_buttons_reset_title">¿Restablecer botones de acción?</string>
+    <string name="settings_action_buttons_reset_msg">Todos los botones de acción volverán a su posición, disposición y visibilidad predeterminadas.</string>
+    <string name="settings_action_buttons_reset_confirm">Restablecer</string>
     <string name="settings_show_timeline_label">Línea de tiempo</string>
     <string name="settings_action_buttons_label">Botones de acción en pantalla</string>
     <string name="settings_action_buttons_desc">Personalizar la visibilidad y posición de los botones superpuestos</string>

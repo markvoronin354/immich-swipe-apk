@@ -327,6 +327,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun resetActionButtons() {
+        viewModelScope.launch {
+            sessionRepository.resetActionButtons()
+        }
+    }
+
     fun setImmichButtonPosition(pos: IconPosition) {
         viewModelScope.launch {
             sessionRepository.saveImmichButtonPosition(pos)

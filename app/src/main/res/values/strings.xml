@@ -123,6 +123,10 @@
     <string name="settings_show_toolbar_labels_label">Button labels</string>
     <string name="settings_section_actions">Actions</string>
     <string name="settings_section_layout">Layout</string>
+    <string name="settings_action_buttons_reset_label">Reset to defaults</string>
+    <string name="settings_action_buttons_reset_title">Reset Action Buttons?</string>
+    <string name="settings_action_buttons_reset_msg">All action buttons will go back to their default positions, stacking and visibility.</string>
+    <string name="settings_action_buttons_reset_confirm">Reset</string>
     <string name="settings_show_timeline_label">Asset timeline</string>
     <string name="settings_action_buttons_label">Swipe card action buttons</string>
     <string name="settings_action_buttons_desc">Customize visibility and position of overlay buttons</string>

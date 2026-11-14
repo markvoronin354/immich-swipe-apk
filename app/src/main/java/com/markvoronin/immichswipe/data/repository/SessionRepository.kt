@@ -257,6 +257,8 @@ class SessionRepository @Inject constructor(
         dataStore.saveButtonStackOrientation(orientation.name)
     }
 
+    suspend fun resetActionButtons() { dataStore.resetActionButtons() }
+
     suspend fun saveShowFullscreenButton(show: Boolean) { dataStore.saveShowFullscreenIcon(show) }
     suspend fun saveShowImmichButton(show: Boolean) { dataStore.saveShowImmichIcon(show) }
     suspend fun saveShowRotationButton(show: Boolean) { dataStore.saveShowCardDisplayIcon(show) }
