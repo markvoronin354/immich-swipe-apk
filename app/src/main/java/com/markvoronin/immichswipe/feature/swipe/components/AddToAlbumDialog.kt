@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LibraryAdd
@@ -43,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -79,9 +81,11 @@ fun AddToAlbumDialog(
     albums: List<Album>,
     isLoading: Boolean,
     showLockButton: Boolean = false,
+    showArchiveButton: Boolean = true,
     baseUrl: String = "",
     onAlbumSelect: (Album) -> Unit,
     onLockSelect: (() -> Unit)? = null,
+    onArchiveSelect: (() -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -111,6 +115,17 @@ fun AddToAlbumDialog(
                     "lock".contains(q) ||
                     "verrouil".contains(q) ||
                     "bloque".contains(q)
+        }
+    }
+
+    val archiveTitle = stringResource(R.string.swipe_archive)
+    val showArchiveInDialog = !showArchiveButton && onArchiveSelect != null && remember(searchQuery, archiveTitle) {
+        val trimmed = searchQuery.trim()
+        if (trimmed.isEmpty()) {
+            true
+        } else {
+            val q = trimmed.normalizeForSearch()
+            archiveTitle.normalizeForSearch().contains(q) || "archive".contains(q)
         }
     }
 
@@ -241,7 +256,7 @@ fun AddToAlbumDialog(
                         isLoading -> {
                             SolidShapeLoadingIndicator(size = 48.dp)
                         }
-                        filteredAlbums.isEmpty() && !showLockInDialog -> {
+                        filteredAlbums.isEmpty() && !showLockInDialog && !showArchiveInDialog -> {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
@@ -269,10 +284,27 @@ fun AddToAlbumDialog(
                                     .verticalFadingEdges(listState, length = 24.dp),
                                 verticalArrangement = Arrangement.spacedBy(AlbumTileGap)
                             ) {
-                                if (showLockInDialog) {
-                                    item(key = "locked_folder_item") {
-                                        // Separate tile: moving to the locked folder is a different action.
-                                        LockedFolderSelectionItem(onClick = onLockSelect)
+                                if (showArchiveInDialog || showLockInDialog) {
+                                    item(key = "shortcut_items") {
+                                        // Separate tiles: archiving and locking are different actions.
+                                        Column(verticalArrangement = Arrangement.spacedBy(AlbumTileGap)) {
+                                            if (showArchiveInDialog) {
+                                                ShortcutSelectionItem(
+                                                    icon = Icons.Default.Archive,
+                                                    title = archiveTitle,
+                                                    subtitle = stringResource(R.string.add_to_album_archive_subtitle),
+                                                    onClick = onArchiveSelect
+                                                )
+                                            }
+                                            if (showLockInDialog) {
+                                                ShortcutSelectionItem(
+                                                    icon = Icons.Default.Lock,
+                                                    title = lockFolderTitle,
+                                                    subtitle = stringResource(R.string.add_to_album_lock_subtitle),
+                                                    onClick = onLockSelect
+                                                )
+                                            }
+                                        }
                                         Spacer(Modifier.height(8.dp))
                                     }
                                 }
@@ -395,7 +427,10 @@ private fun AlbumSelectionItem(
 }
 
 @Composable
-private fun LockedFolderSelectionItem(
+private fun ShortcutSelectionItem(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
     onClick: () -> Unit
 ) {
     Surface(
@@ -420,7 +455,7 @@ private fun LockedFolderSelectionItem(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Lock,
+                        imageVector = icon,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(24.dp)
@@ -432,14 +467,14 @@ private fun LockedFolderSelectionItem(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(R.string.add_to_album_lock_folder),
+                    text = title,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = stringResource(R.string.add_to_album_lock_subtitle),
+                    text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline
                 )

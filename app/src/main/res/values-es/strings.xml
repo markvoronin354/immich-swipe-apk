@@ -169,7 +169,7 @@
     <string name="settings_show_add_to_album_label">Botón Añadir a un álbum</string>
     <string name="settings_show_swipe_buttons_label">Mostrar botones Keep/Delete</string>
     <string name="settings_show_archive_label">Botón Archivar</string>
-    <string name="settings_show_lock_label">Botón Bloquear dedicado</string>
+    <string name="settings_show_lock_label">Botón Bloquear</string>
     <string name="settings_sync_local_deletion_label">Sincronizar eliminación local</string>
     <string name="settings_sync_local_deletion_desc">Cuando eliminas una foto de Immich, también intenta eliminar el archivo local de tu dispositivo para evitar que se vuelva a subir.</string>
     <string name="settings_include_archived_label">Incluir archivados externos</string>
@@ -193,6 +193,8 @@
     <string name="add_to_album_lock_folder">Carpeta bloqueada</string>
     <string name="add_to_album_lock_subtitle">Mover a la carpeta bloqueada</string>
     <string name="add_to_album_lock_success">Elemento bloqueado</string>
+    <string name="add_to_album_archive_subtitle">Mover al archivo</string>
+    <string name="add_to_album_archive_success">Elemento archivado</string>
     <string name="swipe_locked">Bloquear</string>
     <string name="swipe_undo">Deshacer</string>
     <string name="swipe_undo_upper">DESHACER</string>

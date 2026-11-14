@@ -168,7 +168,7 @@
     <string name="settings_show_add_to_album_label">Add to album button</string>
     <string name="settings_show_swipe_buttons_label">Keep/Delete buttons</string>
     <string name="settings_show_archive_label">Archive button</string>
-    <string name="settings_show_lock_label">Dedicated lock button</string>
+    <string name="settings_show_lock_label">Lock button</string>
     <string name="settings_sync_local_deletion_label">Sync deletion with device</string>
     <string name="settings_sync_local_deletion_desc">When you delete a photo from Immich, also attempt to delete the local file from your device storage to prevent re-uploading.</string>
     <string name="settings_include_archived_label">Include external archives</string>
@@ -200,6 +200,8 @@
     <string name="add_to_album_lock_folder">Locked folder</string>
     <string name="add_to_album_lock_subtitle">Move asset to locked folder</string>
     <string name="add_to_album_lock_success">Asset locked</string>
+    <string name="add_to_album_archive_subtitle">Move asset to archive</string>
+    <string name="add_to_album_archive_success">Asset archived</string>
     <string name="swipe_summary_title">Sorting summary</string>
     <string name="swipe_sync_success">Synced!</string>
     <string name="swipe_sync_success_desc">Your changes are on Immich</string>

@@ -87,11 +87,13 @@ fun SwipeScreenDialogs(
         val successTemplate = stringResource(R.string.add_to_album_success)
         val errorTemplate = stringResource(R.string.add_to_album_error)
         val lockSuccessMessage = stringResource(R.string.add_to_album_lock_success)
+        val archiveSuccessMessage = stringResource(R.string.add_to_album_archive_success)
 
         AddToAlbumDialog(
             albums = uiState.albumsForAddToAlbum,
             isLoading = uiState.isFetchingAlbumsForDialog,
             showLockButton = uiState.showLockButton,
+            showArchiveButton = uiState.showArchiveButton,
             baseUrl = uiState.baseUrl,
             onAlbumSelect = { targetAlbum ->
                 viewModel.addCurrentAssetToAlbum(targetAlbum) { success, albumName ->
@@ -108,6 +110,11 @@ fun SwipeScreenDialogs(
                 viewModel.toggleLock()
                 viewModel.dismissAddToAlbumDialog()
                 Toast.makeText(context, lockSuccessMessage, Toast.LENGTH_SHORT).show()
+            },
+            onArchiveSelect = {
+                viewModel.toggleArchive()
+                viewModel.dismissAddToAlbumDialog()
+                Toast.makeText(context, archiveSuccessMessage, Toast.LENGTH_SHORT).show()
             },
             onDismiss = { viewModel.dismissAddToAlbumDialog() }
         )

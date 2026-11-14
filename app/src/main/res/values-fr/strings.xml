@@ -194,6 +194,8 @@
     <string name="add_to_album_lock_folder">Dossier verrouillé</string>
     <string name="add_to_album_lock_subtitle">Placer dans le dossier verrouillé</string>
     <string name="add_to_album_lock_success">Élément verrouillé</string>
+    <string name="add_to_album_archive_subtitle">Placer dans les archives</string>
+    <string name="add_to_album_archive_success">Élément archivé</string>
     <string name="swipe_locked">Verrouiller</string>
     <string name="swipe_undo">Annuler</string>
     <string name="swipe_undo_upper">ANNULER</string>
