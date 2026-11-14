@@ -123,7 +123,7 @@ fun SwipeScreen(
                 placement = TooltipPlacement.TOP,
                 gestureAnimation = GestureAnimationType.NONE,
                 targetPaddingDp = 0,
-                targetCornerRadiusDp = 16
+                targetCornerRadiusDp = 28
             ),
             TutorialStep(
                 id = "header",
