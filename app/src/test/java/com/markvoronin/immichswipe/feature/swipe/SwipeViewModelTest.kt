@@ -73,6 +73,7 @@ class SwipeViewModelTest {
     private val sessionConfig = MutableStateFlow<SessionConfig?>(SessionConfig("https://photos.example.com", "key", "u1"))
     private val swipeSettings = MutableStateFlow(settings())
     private val sortOrder = MutableStateFlow(SortOrder.CHRONOLOGICAL_DESC)
+    private val includeArchived = MutableStateFlow(false)
     private val storedDecisions = MutableStateFlow<List<SwipeDecisionEntity>>(emptyList())
 
     private val assetRepository = mockk<AssetRepository>(relaxed = true) {
@@ -88,6 +89,7 @@ class SwipeViewModelTest {
         every { sessionConfig } returns this@SwipeViewModelTest.sessionConfig
         every { swipeSettings } returns this@SwipeViewModelTest.swipeSettings
         every { sortOrder } returns this@SwipeViewModelTest.sortOrder
+        every { includeArchived } returns this@SwipeViewModelTest.includeArchived
     }
     private val swipeDecisionRepository = mockk<SwipeDecisionRepository>(relaxed = true) {
         every { getDecisionsForAlbum(any(), "u1") } returns storedDecisions
@@ -224,6 +226,17 @@ class SwipeViewModelTest {
         vm.initAlbum(album)
 
         verify(exactly = 1) { swipeDecisionRepository.getDecisionsForAlbum("album", "u1") }
+    }
+
+    @Test
+    fun `the include archived setting is passed to the asset fetch and reloads it when changed`() {
+        val vm = openAlbum()
+        verify { assetRepository.getAssetsByAlbum("album", false, "u1", any(), any()) }
+        assertFalse(vm.uiState.value.includeArchived)
+
+        includeArchived.value = true
+        vm.await { it.includeArchived && !it.isFetchingAssets }
+        verify { assetRepository.getAssetsByAlbum("album", true, "u1", any(), any()) }
     }
 
     @Test

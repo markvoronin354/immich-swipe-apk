@@ -233,12 +233,14 @@ class SwipeViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun fetchAssetsLoop(userId: String) {
         try {
-            sessionRepository.sortOrder.flatMapLatest { sortOrder ->
+            combine(sessionRepository.sortOrder, sessionRepository.includeArchived, ::Pair).flatMapLatest { (sortOrder, includeArchived) ->
                 pendingJumpToFirstUnprocessed = true
                 isAssetsLoadingFlow.value = true
                 isFetchingAssetsFlow.value = true
+                _uiState.update { it.copy(includeArchived = includeArchived) }
                 assetRepository.getAssetsByAlbum(
                     albumId = _uiState.value.albumId,
+                    includeArchived = includeArchived,
                     userId = userId,
                     sortOrder = sortOrder,
                     shuffleSeed = sessionManager.globalShuffleSeed
