@@ -383,7 +383,7 @@ private fun AlbumSelectionItem(
                         error = rememberVectorPainter(Icons.Default.PhotoLibrary)
                     )
                 } else {
-                    val (icon, brush, tint) = getVirtualCollectionStyle(album.id, album.albumName)
+                    val (icon, brush, tint) = getVirtualCollectionStyle(album.id)
                     Box(
                         modifier = Modifier.fillMaxSize().background(brush),
                         contentAlignment = Alignment.Center

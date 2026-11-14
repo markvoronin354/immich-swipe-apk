@@ -328,16 +328,7 @@ class SwipeViewModel @Inject constructor(
         }.collect {}
     }
 
-    private val isSkipAlbum: Boolean
-        get() = currentAlbum?.albumName?.equals("SKIP", ignoreCase = true) == true || _uiState.value.albumName.equals("SKIP", ignoreCase = true)
-
-    private fun SwipeDecision?.isFinalProcessed(): Boolean {
-        if (this == null) return false
-        if (isSkipAlbum) {
-            return this == SwipeDecision.KEEP || this == SwipeDecision.DELETE || this == SwipeDecision.ARCHIVE || this == SwipeDecision.LOCK
-        }
-        return true
-    }
+    private fun SwipeDecision?.isFinalProcessed(): Boolean = this != null
 
     private fun refreshSortedWorkPile(
         jumpToFirstUnprocessed: Boolean = false,
@@ -722,11 +713,7 @@ class SwipeViewModel @Inject constructor(
                     allAssetsFoundFlow.value = updatedWorkPile
                 }
                 
-                val toRemoveFromWorkPile = if (isSkipAlbum) {
-                    (result.toDelete + result.toLock + result.nonSkipDecidedIds).toSet()
-                } else {
-                    (result.toDelete + result.toLock).toSet()
-                }
+                val toRemoveFromWorkPile = (result.toDelete + result.toLock).toSet()
 
                 if (toRemoveFromWorkPile.isNotEmpty()) {
                     masterWorkPile = masterWorkPile.filter { it.id !in toRemoveFromWorkPile }

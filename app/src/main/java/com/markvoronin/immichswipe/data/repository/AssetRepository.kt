@@ -581,31 +581,4 @@ class AssetRepository(
         api.getDuplicates().sumOf { it.assets.size }
     }.onFailure { AppLogger.w("AssetRepo", "Could not load the duplicates count: ${it.message}") }
 
-    suspend fun insertAlbumAssetsLocally(albumId: String, userId: String, assets: List<Asset>) {
-        if (albumAssetDao == null || assets.isEmpty()) return
-        withContext(Dispatchers.IO) {
-            albumAssetDao.insertAlbumAssets(assets.map { asset ->
-                AlbumAssetEntity(
-                    albumId = albumId,
-                    assetId = asset.id,
-                    userId = userId,
-                    type = asset.type,
-                    fileCreatedAt = asset.fileCreatedAt,
-                    originalFileName = asset.originalFileName,
-                    fileSizeInBytes = asset.exifInfo?.fileSizeInBytes,
-                    imageWidth = asset.exifInfo?.imageWidth,
-                    imageHeight = asset.exifInfo?.imageHeight,
-                    rotation = asset.rotation
-                )
-            })
-        }
-    }
-
-    suspend fun removeAlbumAssetsLocally(albumId: String, userId: String, assetIds: List<String>) {
-        if (albumAssetDao == null || assetIds.isEmpty()) return
-        withContext(Dispatchers.IO) {
-            albumAssetDao.deleteAlbumAssets(albumId, userId, assetIds)
-        }
-    }
-
 }

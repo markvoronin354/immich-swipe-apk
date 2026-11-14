@@ -88,7 +88,7 @@ data class HomeUiState(
                 ))
             }
 
-            val baseList = virtuals + if (Album.IS_SKIP_FEATURE_ENABLED) albums else albums.filter { !it.albumName.equals("SKIP", ignoreCase = true) }
+            val baseList = virtuals + albums
 
             return if (searchQuery.isBlank()) {
                 baseList

@@ -40,12 +40,6 @@ class HomeUiStateTest {
     }
 
     @Test
-    fun `the SKIP album is hidden while the feature is off`() {
-        val state = HomeUiState(albums = listOf(album("a1"), album("s", name = "skip")))
-        assertEquals(listOf("a1"), ids(state.filteredAlbums))
-    }
-
-    @Test
     fun `search matches names and descriptions ignoring case`() {
         val albums = listOf(
             album("a1", name = "Holiday 2024"),

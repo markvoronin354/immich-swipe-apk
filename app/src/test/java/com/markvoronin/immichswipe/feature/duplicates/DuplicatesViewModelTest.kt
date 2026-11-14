@@ -469,7 +469,7 @@ class DuplicatesViewModelTest {
     fun `album names leave out virtual albums and a failure gives none`() = kotlinx.coroutines.test.runTest {
         coEvery { api.getAlbumsForAsset("large") } returns listOf(
             Album(id = "a1", albumName = "Holidays", assetCount = 3, albumThumbnailAssetId = null),
-            Album(id = "s", albumName = "SKIP", assetCount = 1, albumThumbnailAssetId = null)
+            Album(id = Album.VIRTUAL_ORPHANS_ID, albumName = "Orphans", assetCount = 1, albumThumbnailAssetId = null)
         )
         coEvery { api.getAlbumsForAsset("small") } throws IOException("offline")
         val vm = createViewModel()

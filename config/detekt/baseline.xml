@@ -5,7 +5,6 @@
     <ID>ComplexCondition:FullscreenViewer.kt:tapToSwipeEnabled &amp;&amp; !isZoomedIn &amp;&amp; (offset.x &lt; width * 0.3f || offset.x &gt; width * 0.7f)</ID>
     <ID>ComplexCondition:MainActivity.kt:MainActivity$(api != null) &amp;&amp; (baseUrl != null) &amp;&amp; (fingerprint != null) &amp;&amp; (activeUserId != null)</ID>
     <ID>ComplexCondition:SwipeCard.kt:asset.type == "VIDEO" &amp;&amp; !isNext &amp;&amp; providedPlayer == null &amp;&amp; !isFullscreenOpen</ID>
-    <ID>ComplexCondition:SwipeCard.kt:com.markvoronin.immichswipe.domain.model.Album.IS_SKIP_FEATURE_ENABLED &amp;&amp; (dragDirection == 3 || (dragDirection == 0 &amp;&amp; currentY &gt; 0f &amp;&amp; currentY &gt; abs(currentX)))</ID>
     <ID>ComplexCondition:SwipeUiState.kt:SwipeUiState$(albumId == Album.VIRTUAL_ALL_ID || albumId == Album.VIRTUAL_DUPLICATES_ID) &amp;&amp; userQuotaBytes != null &amp;&amp; userQuotaBytes &gt; 0 &amp;&amp; !includeArchived</ID>
     <ID>EnumNaming:ImmichApi.kt:AssetEditAction$crop</ID>
     <ID>EnumNaming:ImmichApi.kt:AssetEditAction$rotate</ID>

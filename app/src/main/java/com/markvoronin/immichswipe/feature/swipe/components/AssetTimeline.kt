@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Archive
-import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
@@ -63,7 +62,6 @@ import coil3.size.Precision
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
-import com.markvoronin.immichswipe.feature.swipe.utils.MaterialOrange
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import com.markvoronin.immichswipe.feature.swipe.utils.rotateLayout
 import kotlin.math.abs
@@ -326,7 +324,6 @@ private fun AssetTimelineItem(
                                 SwipeDecision.DELETE -> MaterialRed
                                 SwipeDecision.ARCHIVE -> MaterialTheme.colorScheme.primary
                                 SwipeDecision.LOCK -> MaterialTheme.colorScheme.outline
-                                SwipeDecision.SKIP -> MaterialOrange
                             }
                         ),
                     contentAlignment = Alignment.Center
@@ -337,7 +334,6 @@ private fun AssetTimelineItem(
                             SwipeDecision.DELETE -> Icons.Default.Delete
                             SwipeDecision.ARCHIVE -> Icons.Default.Archive
                             SwipeDecision.LOCK -> Icons.Default.Lock
-                            SwipeDecision.SKIP -> Icons.Default.ArrowDownward
                         },
                         contentDescription = null,
                         tint = Color.White,

@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.AutoAwesomeMotion
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Extension
@@ -142,14 +141,7 @@ fun ErrorView(
 
 
 @Composable
-fun getVirtualCollectionStyle(albumId: String, albumName: String = ""): Triple<ImageVector, Brush, Color> {
-    if (albumName.equals("SKIP", ignoreCase = true)) {
-        return Triple(
-            Icons.Default.ArrowDownward,
-            Brush.linearGradient(listOf(Color(0xFFa18cd1), Color(0xFFfbc2eb))),
-            Color.White
-        )
-    }
+fun getVirtualCollectionStyle(albumId: String): Triple<ImageVector, Brush, Color> {
     return when (albumId) {
         Album.VIRTUAL_ALL_ID -> Triple(
             Icons.Default.AutoAwesomeMotion,

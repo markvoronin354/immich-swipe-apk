@@ -259,8 +259,7 @@ fun AlbumItem(
             Box(modifier = Modifier.size(60.dp)) {
                 val isVirtualCollection = album.id == Album.VIRTUAL_ALL_ID ||
                         album.id == Album.VIRTUAL_ORPHANS_ID ||
-                        album.id == Album.VIRTUAL_DUPLICATES_ID ||
-                        album.albumName.equals("SKIP", ignoreCase = true)
+                        album.id == Album.VIRTUAL_DUPLICATES_ID
 
                 // Special collections each get their own expressive shape; real albums keep a rounded photo tile
                 val tilePolygon = if (isVirtualCollection) virtualCollectionPolygon(album.id) else null
@@ -300,7 +299,7 @@ fun AlbumItem(
                             error = rememberVectorPainter(Icons.Default.PhotoLibrary)
                         )
                     } else {
-                        val (icon, brush, tint) = getVirtualCollectionStyle(album.id, album.albumName)
+                        val (icon, brush, tint) = getVirtualCollectionStyle(album.id)
                         Box(
                             modifier = Modifier.fillMaxSize().background(brush),
                             contentAlignment = Alignment.Center
@@ -347,11 +346,7 @@ fun AlbumItem(
                         fontWeight = FontWeight.Bold
                     )
                 }
-                val displayDescription = if (album.albumName.equals("SKIP", ignoreCase = true) && album.description.isNullOrBlank()) {
-                    stringResource(R.string.home_virtual_skip_desc)
-                } else {
-                    album.description
-                }
+                val displayDescription = album.description
                 if (!displayDescription.isNullOrBlank()) {
                     Text(text = displayDescription, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline, maxLines = 3)
                 }

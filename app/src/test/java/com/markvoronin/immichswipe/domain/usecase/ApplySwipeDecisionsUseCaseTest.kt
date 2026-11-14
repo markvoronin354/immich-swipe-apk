@@ -4,10 +4,8 @@ import com.markvoronin.immichswipe.data.api.ImmichApi
 import com.markvoronin.immichswipe.data.local.dao.AlbumAssetDao
 import com.markvoronin.immichswipe.data.local.dao.SwipeDecisionDao
 import com.markvoronin.immichswipe.data.local.entity.SyncHistoryEntity
-import com.markvoronin.immichswipe.data.repository.AlbumRepository
 import com.markvoronin.immichswipe.data.repository.AssetRepository
 import com.markvoronin.immichswipe.data.repository.SwipeDecisionRepository
-import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.domain.usecase.ApplySwipeDecisionsUseCase.SyncStep
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
@@ -15,12 +13,10 @@ import com.markvoronin.immichswipe.testutil.RecordedCall
 import com.markvoronin.immichswipe.testutil.fake
 import com.markvoronin.immichswipe.testutil.testSessionManager
 import kotlinx.coroutines.runBlocking
-import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import retrofit2.Response
 
 /**
  * Exercises the use case against fake server and database layers, focusing on what happens when a
@@ -30,9 +26,7 @@ class ApplySwipeDecisionsUseCaseTest {
 
     private class Env(
         failingApi: Set<String> = emptySet(),
-        failingDecisionDao: Set<String> = emptySet(),
-        albums: List<Album> = emptyList(),
-        addToAlbumResponse: Response<Unit> = Response.success(Unit)
+        failingDecisionDao: Set<String> = emptySet()
     ) {
         val api = mutableListOf<RecordedCall>()
         val decisionDao = mutableListOf<RecordedCall>()
@@ -44,19 +38,15 @@ class ApplySwipeDecisionsUseCaseTest {
             val fakeApi = fake<ImmichApi>(api) { name, _ ->
                 when (name) {
                     in failingApi -> throw RuntimeException("$name failed")
-                    "getAlbums" -> albums
-                    "addAssetsToAlbum", "removeAssetsFromAlbum" -> addToAlbumResponse
-                    "createAlbum" -> throw RuntimeException("not scripted")
                     else -> Unit
                 }
             }
             val sessionManager = testSessionManager()
             val assets = AssetRepository(sessionManager, fakeApi, fake<AlbumAssetDao>(albumAssetDao))
-            val albumsRepo = AlbumRepository(sessionManager, fakeApi)
             val decisions = SwipeDecisionRepository(fake<SwipeDecisionDao>(decisionDao) { name, _ ->
                 if (name in failingDecisionDao) throw RuntimeException("$name failed") else Unit
             })
-            useCase = ApplySwipeDecisionsUseCase(assets, decisions, albumsRepo)
+            useCase = ApplySwipeDecisionsUseCase(assets, decisions)
         }
 
         fun apiCalls(name: String) = api.filter { it.name == name }
@@ -69,8 +59,7 @@ class ApplySwipeDecisionsUseCaseTest {
         env: Env,
         decisions: Map<String, SwipeDecision>,
         favorites: Map<String, Boolean> = emptyMap(),
-        assets: List<Asset> = decisions.keys.map(::asset),
-        skipFeatureEnabled: Boolean = true
+        assets: List<Asset> = decisions.keys.map(::asset)
     ) = runBlocking {
         env.useCase(
             userId = "u",
@@ -83,8 +72,7 @@ class ApplySwipeDecisionsUseCaseTest {
             deletedSize = 1000L,
             keptCount = decisions.values.count { it == SwipeDecision.KEEP },
             archiveCount = decisions.values.count { it == SwipeDecision.ARCHIVE },
-            lockedCount = decisions.values.count { it == SwipeDecision.LOCK },
-            skipFeatureEnabled = skipFeatureEnabled
+            lockedCount = decisions.values.count { it == SwipeDecision.LOCK }
         )
     }
 
@@ -179,46 +167,6 @@ class ApplySwipeDecisionsUseCaseTest {
 
         assertFalse(result.hasFailures)
         assertTrue(result.failedFavoriteIds.isEmpty())
-    }
-
-    @Test
-    fun `skip album lookup failure is reported and the skipped asset stays pending`() {
-        val env = Env(failingApi = setOf("getAlbums"))
-        val result = apply(env, mapOf("skip" to SwipeDecision.SKIP))
-
-        assertTrue(SyncStep.SKIP_ALBUM in result.failedSteps)
-        assertFalse("skip" in env.syncedIds())
-    }
-
-    @Test
-    fun `skip album rejected by the server is reported`() {
-        val skipAlbum = Album(id = "skipId", albumName = "SKIP", assetCount = 0, albumThumbnailAssetId = null)
-        val rejected = Response.error<Unit>(500, "".toResponseBody())
-        val env = Env(albums = listOf(skipAlbum), addToAlbumResponse = rejected)
-        val result = apply(env, mapOf("skip" to SwipeDecision.SKIP))
-
-        // The album repository swallows the error and returns false: it must still be surfaced.
-        assertTrue(SyncStep.SKIP_ALBUM in result.failedSteps)
-        assertFalse("skip" in env.syncedIds())
-    }
-
-    @Test
-    fun `with the skip feature disabled no skip album request is ever made`() {
-        // getAlbums would fail, but it must not even be called.
-        val env = Env(failingApi = setOf("getAlbums"))
-        val result = apply(env, mixed + ("skip" to SwipeDecision.SKIP), skipFeatureEnabled = false)
-
-        assertFalse(result.hasFailures)
-        assertTrue(env.apiCalls("getAlbums").isEmpty())
-        assertTrue(env.apiCalls("createAlbum").isEmpty())
-        assertTrue(env.apiCalls("addAssetsToAlbum").isEmpty())
-        assertTrue(env.apiCalls("removeAssetsFromAlbum").isEmpty())
-    }
-
-    @Test
-    fun `the skip feature flag defaults to the app wide switch`() {
-        // Guards the shipped default: the feature must stay off unless it is deliberately enabled.
-        assertFalse(Album.IS_SKIP_FEATURE_ENABLED)
     }
 
     @Test

@@ -159,7 +159,7 @@ class SwipeViewModelTest {
         failedFavoriteIds: Set<String> = emptySet(),
         failed: Set<ApplySwipeDecisionsUseCase.SyncStep> = emptySet()
     ) = ApplyResult(
-        toDelete = toDelete, toLock = toLock, nonSkipDecidedIds = emptyList(),
+        toDelete = toDelete, toLock = toLock,
         deletedAssets = deletedAssets, failedSteps = failed, failedFavoriteIds = failedFavoriteIds
     )
 
@@ -507,8 +507,8 @@ class SwipeViewModelTest {
     @Test
     fun `the add to album dialog lists real albums only`() {
         val real = Album("r1", "Pets", assetCount = 3, albumThumbnailAssetId = null)
-        val skip = Album("s", "SKIP", assetCount = 0, albumThumbnailAssetId = null)
-        coEvery { albumRepository.getAlbumsRaw() } returns listOf(real, skip)
+        val virtual = Album(Album.VIRTUAL_ORPHANS_ID, "Orphans", assetCount = 0, albumThumbnailAssetId = null)
+        coEvery { albumRepository.getAlbumsRaw() } returns listOf(real, virtual)
         val vm = openAlbum()
 
         vm.openAddToAlbumDialog()
@@ -618,7 +618,7 @@ class SwipeViewModelTest {
 
     private fun stubApply(result: ApplyResult) = slot<Map<String, SwipeDecision>>().also { decisions ->
         coEvery {
-            applyUseCase(any(), any(), capture(decisions), any(), any(), any(), any(), any(), any(), any(), any(), any())
+            applyUseCase(any(), any(), capture(decisions), any(), any(), any(), any(), any(), any(), any(), any())
         } returns result
     }
 
@@ -705,7 +705,7 @@ class SwipeViewModelTest {
     fun `a crash while applying is reported and stops the spinner`() {
         val vm = openAlbum()
         coEvery {
-            applyUseCase(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
+            applyUseCase(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
         } throws IOException("server down")
 
         vm.applyChanges()

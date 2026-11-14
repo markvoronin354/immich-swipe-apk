@@ -12,8 +12,6 @@ import com.markvoronin.immichswipe.core.IconPosition
 val MaterialGreen = Color(0xFF2E7D32)
 val KeepGreen = Color(0xFF00C853)
 val MaterialRed = Color(0xFFC62828)
-// Skip; a fixed status colour like keep and delete, since tertiary is red in some palettes and would read as delete.
-val MaterialOrange = Color(0xFFEF6C00)
 
 
 fun Context.findActivity(): Activity? = when (this) {

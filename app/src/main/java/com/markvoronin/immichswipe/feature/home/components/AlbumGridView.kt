@@ -262,8 +262,7 @@ fun AlbumGridItem(
         Box(modifier = Modifier.fillMaxSize()) {
             val isVirtualCollection = album.id == Album.VIRTUAL_ALL_ID ||
                     album.id == Album.VIRTUAL_ORPHANS_ID ||
-                    album.id == Album.VIRTUAL_DUPLICATES_ID ||
-                    album.albumName.equals("SKIP", ignoreCase = true)
+                    album.id == Album.VIRTUAL_DUPLICATES_ID
 
             if (!isVirtualCollection && album.albumThumbnailAssetId != null && baseUrlClean.isNotEmpty()) {
                 val imageRequest = remember(album.albumThumbnailAssetId, baseUrlClean) {
@@ -298,7 +297,7 @@ fun AlbumGridItem(
                     }
                 )
             } else {
-                val (icon, brush, tint) = getVirtualCollectionStyle(album.id, album.albumName)
+                val (icon, brush, tint) = getVirtualCollectionStyle(album.id)
                 // Icon sits top-left so it never collides with the name at the bottom.
                 Box(
                     modifier = Modifier.fillMaxSize().background(brush),
