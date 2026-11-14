@@ -132,7 +132,7 @@ fun CountBadge(count: Int, description: String, icon: ImageVector, color: Color)
         )
         Spacer(Modifier.width(4.dp))
         Text(
-            text = "$count",
+            text = "%,d".format(count),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground

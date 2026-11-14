@@ -386,7 +386,7 @@ fun AlbumGridItem(
                     modifier = Modifier.sharedAlbumName(album.id)
                 )
                 Text(
-                    text = "$effectiveTreatedCount / ${album.assetCount}",
+                    text = "%,d / %,d".format(effectiveTreatedCount, album.assetCount),
                     color = labelColor.copy(alpha = if (isVirtualCollection) 0.7f else 0.8f),
                     style = MaterialTheme.typography.labelMedium
                 )

@@ -351,7 +351,7 @@ fun AlbumItem(
                     Text(text = displayDescription, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline, maxLines = 3)
                 }
                 Text(
-                    text = "$effectiveTreatedCount / ${album.assetCount}",
+                    text = "%,d / %,d".format(effectiveTreatedCount, album.assetCount),
                     style = MaterialTheme.typography.labelMedium,
                     color = if (isCompleted) Color(0xFF388E3C) else MaterialTheme.colorScheme.primary
                 )
@@ -489,7 +489,7 @@ fun SectionHeader(
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = count.toString(),
+                    text = "%,d".format(count),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -233,7 +233,7 @@ fun SummaryDialog(
                                 WavyLoadingIndicator(size = 12.dp, strokeWidth = 2.dp, delayed = true)
                                 Spacer(Modifier.width(6.dp))
                                 Text(
-                                    "${uiState.deletedAssets.size} / ${uiState.deletedCount}",
+                                    "%,d / %,d".format(uiState.deletedAssets.size, uiState.deletedCount),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -432,7 +432,7 @@ fun StatSummaryBox(
                     Icon(icon, contentDescription = label, tint = badgeContentColor, modifier = Modifier.size(22.dp))
                 }
                 Text(
-                    text = count.toString(),
+                    text = "%,d".format(count),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -698,7 +698,7 @@ fun SummaryFullscreenPreviewDialog(
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
-                                text = "${pagerState.currentPage + 1} / ${assets.size}",
+                                text = "%,d / %,d".format(pagerState.currentPage + 1, assets.size),
                                 color = Color.White,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,

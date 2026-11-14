@@ -38,9 +38,9 @@
     <string name="home_status_virtual">Colecciones especiales</string>
     <string name="home_album_completed">Completado</string>
     <plurals name="home_unsynced_changes">
-        <item quantity="one">%1$d cambio sin sincronizar</item>
-        <item quantity="many">%1$d cambios sin sincronizar</item>
-        <item quantity="other">%1$d cambios sin sincronizar</item>
+        <item quantity="one">%1$,d cambio sin sincronizar</item>
+        <item quantity="many">%1$,d cambios sin sincronizar</item>
+        <item quantity="other">%1$,d cambios sin sincronizar</item>
     </plurals>
     <string name="home_unsynced_badge">SIN SINCRONIZAR</string>
     <string name="home_virtual_all_assets">Todos los archivos</string>
@@ -181,7 +181,7 @@
     <string name="swipe_keep_upper">CONSERVAR</string>
     <string name="swipe_delete">Eliminar</string>
     <string name="swipe_delete_upper">ELIMINAR</string>
-    <string name="swipe_remaining_left">%1$d restantes</string>
+    <string name="swipe_remaining_left">%1$,d restantes</string>
     <string name="swipe_favorite">Favoritos</string>
     <string name="swipe_archive">Archivar</string>
     <string name="add_to_album_title">Añadir a un álbum</string>
@@ -189,7 +189,7 @@
     <string name="add_to_album_no_albums">No se encontraron álbumes</string>
     <string name="add_to_album_success">Añadido a %1$s</string>
     <string name="add_to_album_error">Error al añadir al álbum: %1$s</string>
-    <string name="add_to_album_items_count">%1$d elementos</string>
+    <string name="add_to_album_items_count">%1$,d elementos</string>
     <string name="add_to_album_lock_folder">Carpeta bloqueada</string>
     <string name="add_to_album_lock_subtitle">Mover a la carpeta bloqueada</string>
     <string name="add_to_album_lock_success">Elemento bloqueado</string>
@@ -204,7 +204,7 @@
     <string name="swipe_summary_title">Resumen de ordenación</string>
     <string name="swipe_sync_success">¡Sincronizado!</string>
     <string name="swipe_sync_success_desc">Tus cambios están en Immich</string>
-    <string name="swipe_liberate_button">Liberar %1$s (%2$d elementos)</string>
+    <string name="swipe_liberate_button">Liberar %1$s (%2$,d elementos)</string>
     <string name="swipe_no_deletions">No hay fotos para eliminar.</string>
     <string name="swipe_metadata_title">Detalles de la imagen</string>
     <string name="swipe_metadata_title_video">Detalles del video</string>
@@ -251,9 +251,9 @@
     <string name="swipe_reset_confirm_msg">Esto eliminará permanentemente todas las decisiones locales de este álbum. Las decisiones ya sincronizadas (KEEP/DELETE) en Immich NO se desharán en el servidor, pero se borrarán de tu progreso local en esta aplicación.</string>
     <string name="duplicates_delete_confirm_title">¿Eliminar fotos duplicadas?</string>
     <plurals name="duplicates_delete_confirm_msg">
-        <item quantity="one">Esto eliminará permanentemente %1$d foto (%2$s) de tu servidor Immich. ¿Estás seguro?</item>
-        <item quantity="many">Esto eliminará permanentemente %1$d fotos (%2$s) de tu servidor Immich. ¿Estás seguro?</item>
-        <item quantity="other">Esto eliminará permanentemente %1$d fotos (%2$s) de tu servidor Immich. ¿Estás seguro?</item>
+        <item quantity="one">Esto eliminará permanentemente %1$,d foto (%2$s) de tu servidor Immich. ¿Estás seguro?</item>
+        <item quantity="many">Esto eliminará permanentemente %1$,d fotos (%2$s) de tu servidor Immich. ¿Estás seguro?</item>
+        <item quantity="other">Esto eliminará permanentemente %1$,d fotos (%2$s) de tu servidor Immich. ¿Estás seguro?</item>
     </plurals>
     <string name="duplicates_reset_confirm_title">¿Restablecer elecciones de duplicados?</string>
     <string name="duplicates_reset_confirm_msg">Esto borrará todas las elecciones locales (CONSERVAR/ELIMINAR) para los grupos de duplicados.</string>
@@ -275,12 +275,12 @@
     <string name="duplicates_select_best_shot_top_2">Top 2</string>
     <string name="duplicates_select_best_shot_top_3">Top 3</string>
     <plurals name="duplicates_groups_count">
-        <item quantity="one">%1$d grupo</item>
-        <item quantity="many">%1$d grupos</item>
-        <item quantity="other">%1$d grupos</item>
+        <item quantity="one">%1$,d grupo</item>
+        <item quantity="many">%1$,d grupos</item>
+        <item quantity="other">%1$,d grupos</item>
     </plurals>
     <string name="duplicates_ai_analyzing">Analizando la mejor toma…</string>
-    <string name="duplicates_ai_cluster_progress">Grupo %1$d de %2$d</string>
+    <string name="duplicates_ai_cluster_progress">Grupo %1$,d de %2$,d</string>
     <string name="duplicates_deep_analyze">Analizar a tamaño completo</string>
     <string name="duplicates_deep_analyze_title">¿Analizar a tamaño completo?</string>
     <string name="duplicates_deep_analyze_msg">Esto descarga los originales a tamaño completo de este grupo (unos %1$s) y busca caras por zonas. Es más lento y consume más datos, pero puede leer caras demasiado pequeñas para el análisis normal.</string>
@@ -316,15 +316,15 @@
     <string name="settings_db_confirm_import_msg">La importación agregará los datos del archivo a su base de datos actual. Las decisiones existentes se actualizarán.\n\n¿Desea continuar?</string>
     <string name="settings_db_delete_success">Datos eliminados con éxito</string>
     <plurals name="settings_db_export_success">
-        <item quantity="one">Exportación completada (%1$d decisión)</item>
-        <item quantity="many">Exportación completada (%1$d decisiones)</item>
-        <item quantity="other">Exportación completada (%1$d decisiones)</item>
+        <item quantity="one">Exportación completada (%1$,d decisión)</item>
+        <item quantity="many">Exportación completada (%1$,d decisiones)</item>
+        <item quantity="other">Exportación completada (%1$,d decisiones)</item>
     </plurals>
     <string name="settings_db_export_error">Error al exportar: %1$s</string>
     <plurals name="settings_db_import_success">
-        <item quantity="one">Importación exitosa (%1$d decisión)</item>
-        <item quantity="many">Importación exitosa (%1$d decisiones)</item>
-        <item quantity="other">Importación exitosa (%1$d decisiones)</item>
+        <item quantity="one">Importación exitosa (%1$,d decisión)</item>
+        <item quantity="many">Importación exitosa (%1$,d decisiones)</item>
+        <item quantity="other">Importación exitosa (%1$,d decisiones)</item>
     </plurals>
     <string name="settings_db_import_error">Error al importar: %1$s</string>
 
@@ -390,9 +390,9 @@
     <string name="duplicates_label_undecided">Sin ordenar</string>
     <string name="duplicates_autoselect_title">¿Aplicar a qué grupos?</string>
     <plurals name="duplicates_autoselect_msg">
-        <item quantity="one">%1$d grupo ya tiene elecciones. La selección automática puede dejarlo como está y ordenar solo el resto, o reemplazar sus elecciones.</item>
-        <item quantity="many">%1$d grupos ya tienen elecciones. La selección automática puede dejarlos como están y ordenar solo el resto, o reemplazar sus elecciones.</item>
-        <item quantity="other">%1$d grupos ya tienen elecciones. La selección automática puede dejarlos como están y ordenar solo el resto, o reemplazar sus elecciones.</item>
+        <item quantity="one">%1$,d grupo ya tiene elecciones. La selección automática puede dejarlo como está y ordenar solo el resto, o reemplazar sus elecciones.</item>
+        <item quantity="many">%1$,d grupos ya tienen elecciones. La selección automática puede dejarlos como están y ordenar solo el resto, o reemplazar sus elecciones.</item>
+        <item quantity="other">%1$,d grupos ya tienen elecciones. La selección automática puede dejarlos como están y ordenar solo el resto, o reemplazar sus elecciones.</item>
     </plurals>
     <string name="duplicates_autoselect_all_msg">Todos los grupos ya tienen elecciones. ¿Reemplazarlas?</string>
     <string name="duplicates_autoselect_only_unsorted">Solo sin ordenar</string>
@@ -414,14 +414,14 @@
         <item quantity="other">Cada %1$d–%2$d días, a intervalos aleatorios</item>
     </plurals>
     <plurals name="swipe_bulk_delete_title">
-        <item quantity="one">Eliminación masiva: %1$d seleccionado</item>
-        <item quantity="many">Eliminación masiva: %1$d seleccionados</item>
-        <item quantity="other">Eliminación masiva: %1$d seleccionados</item>
+        <item quantity="one">Eliminación masiva: %1$,d seleccionado</item>
+        <item quantity="many">Eliminación masiva: %1$,d seleccionados</item>
+        <item quantity="other">Eliminación masiva: %1$,d seleccionados</item>
     </plurals>
     <plurals name="swipe_bulk_keep_title">
-        <item quantity="one">Conservación masiva: %1$d seleccionado</item>
-        <item quantity="many">Conservación masiva: %1$d seleccionados</item>
-        <item quantity="other">Conservación masiva: %1$d seleccionados</item>
+        <item quantity="one">Conservación masiva: %1$,d seleccionado</item>
+        <item quantity="many">Conservación masiva: %1$,d seleccionados</item>
+        <item quantity="other">Conservación masiva: %1$,d seleccionados</item>
     </plurals>
     <string name="settings_reminder_custom_dialog_title">Frecuencia personalizada</string>
     <string name="settings_reminder_custom_min_label">Días mínimos</string>
@@ -475,11 +475,11 @@
     <string name="swipe_share_chooser_title">Compartir recurso</string>
     <string name="swipe_bulk_delete_hint">Desliza a la derecha para seleccionar, suelta para eliminar</string>
     <string name="swipe_bulk_keep_hint">Desliza a la izquierda para seleccionar, suelta para conservar</string>
-    <string name="swipe_loading_metadata">Cargando metadatos del álbum… %1$d / %2$d</string>
+    <string name="swipe_loading_metadata">Cargando metadatos del álbum… %1$,d / %2$,d</string>
     <plurals name="swipe_summary_photos_count">
-        <item quantity="one">%1$d foto</item>
-        <item quantity="many">%1$d de fotos</item>
-        <item quantity="other">%1$d fotos</item>
+        <item quantity="one">%1$,d foto</item>
+        <item quantity="many">%1$,d de fotos</item>
+        <item quantity="other">%1$,d fotos</item>
     </plurals>
     <string name="swipe_metadata_unavailable">N/D</string>
     <string name="duplicates_none_found">¡No se encontraron duplicados!</string>

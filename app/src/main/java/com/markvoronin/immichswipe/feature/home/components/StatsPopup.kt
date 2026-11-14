@@ -119,7 +119,7 @@ fun StatsPopup(
                     ) {
                         StatCard(
                             label = stringResource(R.string.stats_deleted_count),
-                            value = stats.totalDeleted.toString(),
+                            value = "%,d".format(stats.totalDeleted),
                             icon = Icons.Default.Delete,
                             badgeColor = MaterialTheme.colorScheme.errorContainer,
                             badgeContentColor = MaterialTheme.colorScheme.onErrorContainer,
@@ -143,7 +143,7 @@ fun StatsPopup(
                     ) {
                         StatCard(
                             label = stringResource(R.string.stats_swiped_count),
-                            value = stats.totalSwiped.toString(),
+                            value = "%,d".format(stats.totalSwiped),
                             icon = Icons.Default.Swipe,
                             badgeColor = MaterialTheme.colorScheme.primaryContainer,
                             badgeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -176,7 +176,7 @@ fun StatsPopup(
                 ) {
                     WeeklyStatTile(
                         label = stringResource(R.string.stats_deleted_count),
-                        value = stats.weeklyDeleted.toString(),
+                        value = "%,d".format(stats.weeklyDeleted),
                         shape = connectedTileShape(index = 0, count = 2, outer = 24.dp),
                         modifier = Modifier.weight(1f)
                     )

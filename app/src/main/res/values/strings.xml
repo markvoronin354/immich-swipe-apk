@@ -38,8 +38,8 @@
     <string name="home_status_virtual">Special collections</string>
     <string name="home_album_completed">Completed</string>
     <plurals name="home_unsynced_changes">
-        <item quantity="one">%1$d unsynced change</item>
-        <item quantity="other">%1$d unsynced changes</item>
+        <item quantity="one">%1$,d unsynced change</item>
+        <item quantity="other">%1$,d unsynced changes</item>
     </plurals>
     <string name="home_unsynced_badge">NOT SYNCED</string>
     <string name="home_virtual_all_assets">All Assets</string>
@@ -180,7 +180,7 @@
     <string name="swipe_keep_upper">KEEP</string>
     <string name="swipe_delete">Delete</string>
     <string name="swipe_delete_upper">DELETE</string>
-    <string name="swipe_remaining_left">%1$d left</string>
+    <string name="swipe_remaining_left">%1$,d left</string>
     <string name="swipe_favorite">Favorites</string>
     <string name="swipe_archive">Archive</string>
     <string name="swipe_locked">Lock</string>
@@ -194,7 +194,7 @@
     <string name="add_to_album_no_albums">No albums found</string>
     <string name="add_to_album_success">Added to %1$s</string>
     <string name="add_to_album_error">Error adding to album: %1$s</string>
-    <string name="add_to_album_items_count" tools:ignore="PluralsCandidate">%1$d items</string>
+    <string name="add_to_album_items_count" tools:ignore="PluralsCandidate">%1$,d items</string>
     <string name="add_to_album_lock_folder">Locked folder</string>
     <string name="add_to_album_lock_subtitle">Move asset to locked folder</string>
     <string name="add_to_album_lock_success">Asset locked</string>
@@ -203,7 +203,7 @@
     <string name="swipe_summary_title">Sorting summary</string>
     <string name="swipe_sync_success">Synced!</string>
     <string name="swipe_sync_success_desc">Your changes are on Immich</string>
-    <string name="swipe_liberate_button" tools:ignore="PluralsCandidate">Free %1$s (%2$d items)</string>
+    <string name="swipe_liberate_button" tools:ignore="PluralsCandidate">Free %1$s (%2$,d items)</string>
     <string name="swipe_no_deletions">No photos to delete.</string>
     <string name="swipe_metadata_title">Image details</string>
     <string name="swipe_metadata_title_video">Video details</string>
@@ -250,8 +250,8 @@
     <string name="swipe_reset_confirm_msg">This will permanently delete all local decisions for this album. Previously synced decisions (KEEP/DELETE) on Immich will NOT be undone on the server, but they will be cleared from your local progress in this app.</string>
     <string name="duplicates_delete_confirm_title">Delete Duplicate Photos?</string>
     <plurals name="duplicates_delete_confirm_msg">
-        <item quantity="one">This will permanently delete %1$d photo (%2$s) from your Immich server. Are you sure?</item>
-        <item quantity="other">This will permanently delete %1$d photos (%2$s) from your Immich server. Are you sure?</item>
+        <item quantity="one">This will permanently delete %1$,d photo (%2$s) from your Immich server. Are you sure?</item>
+        <item quantity="other">This will permanently delete %1$,d photos (%2$s) from your Immich server. Are you sure?</item>
     </plurals>
     <string name="duplicates_reset_confirm_title">Reset Duplicate Choices?</string>
     <string name="duplicates_reset_confirm_msg">This will clear all local KEEP/DELETE choices for duplicate clusters.</string>
@@ -273,11 +273,11 @@
     <string name="duplicates_select_best_shot_top_2">Top 2</string>
     <string name="duplicates_select_best_shot_top_3">Top 3</string>
     <plurals name="duplicates_groups_count">
-        <item quantity="one">%1$d group</item>
-        <item quantity="other">%1$d groups</item>
+        <item quantity="one">%1$,d group</item>
+        <item quantity="other">%1$,d groups</item>
     </plurals>
     <string name="duplicates_ai_analyzing">Analyzing Best Shot…</string>
-    <string name="duplicates_ai_cluster_progress">Group %1$d of %2$d</string>
+    <string name="duplicates_ai_cluster_progress">Group %1$,d of %2$,d</string>
     <string name="duplicates_deep_analyze">Analyze at full size</string>
     <string name="duplicates_deep_analyze_title">Analyze at full size?</string>
     <string name="duplicates_deep_analyze_msg">This downloads the full-size originals of this group (about %1$s) and looks for faces tile by tile. It is slower and uses more data, but can read faces that are too small in the normal analysis.</string>
@@ -313,13 +313,13 @@
     <string name="settings_db_confirm_import_msg">Importing will add the file data to your current database. Existing decisions will be updated.\n\nDo you want to continue?</string>
     <string name="settings_db_delete_success">Data deleted successfully</string>
     <plurals name="settings_db_export_success">
-        <item quantity="one">Export completed (%1$d decision)</item>
-        <item quantity="other">Export completed (%1$d decisions)</item>
+        <item quantity="one">Export completed (%1$,d decision)</item>
+        <item quantity="other">Export completed (%1$,d decisions)</item>
     </plurals>
     <string name="settings_db_export_error">Export error: %1$s</string>
     <plurals name="settings_db_import_success">
-        <item quantity="one">Import successful (%1$d decision)</item>
-        <item quantity="other">Import successful (%1$d decisions)</item>
+        <item quantity="one">Import successful (%1$,d decision)</item>
+        <item quantity="other">Import successful (%1$,d decisions)</item>
     </plurals>
     <string name="settings_db_import_error">Import error: %1$s</string>
 
@@ -385,8 +385,8 @@
     <string name="duplicates_label_undecided">Unsorted</string>
     <string name="duplicates_autoselect_title">Apply to which groups?</string>
     <plurals name="duplicates_autoselect_msg">
-        <item quantity="one">%1$d group already has choices. Auto-select can leave it alone and only sort the rest, or replace its choices.</item>
-        <item quantity="other">%1$d groups already have choices. Auto-select can leave them alone and only sort the rest, or replace their choices.</item>
+        <item quantity="one">%1$,d group already has choices. Auto-select can leave it alone and only sort the rest, or replace its choices.</item>
+        <item quantity="other">%1$,d groups already have choices. Auto-select can leave them alone and only sort the rest, or replace their choices.</item>
     </plurals>
     <string name="duplicates_autoselect_all_msg">Every group already has choices. Replace them?</string>
     <string name="duplicates_autoselect_only_unsorted">Only unsorted</string>
@@ -407,12 +407,12 @@
         <item quantity="other">Every %1$d–%2$d days, at random intervals</item>
     </plurals>
     <plurals name="swipe_bulk_delete_title">
-        <item quantity="one">Bulk Delete: %1$d selected</item>
-        <item quantity="other">Bulk Delete: %1$d selected</item>
+        <item quantity="one">Bulk Delete: %1$,d selected</item>
+        <item quantity="other">Bulk Delete: %1$,d selected</item>
     </plurals>
     <plurals name="swipe_bulk_keep_title">
-        <item quantity="one">Bulk Keep: %1$d selected</item>
-        <item quantity="other">Bulk Keep: %1$d selected</item>
+        <item quantity="one">Bulk Keep: %1$,d selected</item>
+        <item quantity="other">Bulk Keep: %1$,d selected</item>
     </plurals>
     <string name="settings_reminder_custom_dialog_title">Custom frequency</string>
     <string name="settings_reminder_custom_min_label">Minimum days</string>
@@ -465,10 +465,10 @@
     <string name="swipe_share_chooser_title">Share media</string>
     <string name="swipe_bulk_delete_hint">Slide right to select, release to delete</string>
     <string name="swipe_bulk_keep_hint">Slide left to select, release to keep</string>
-    <string name="swipe_loading_metadata">Loading album metadata… %1$d / %2$d</string>
+    <string name="swipe_loading_metadata">Loading album metadata… %1$,d / %2$,d</string>
     <plurals name="swipe_summary_photos_count">
-        <item quantity="one">%1$d photo</item>
-        <item quantity="other">%1$d photos</item>
+        <item quantity="one">%1$,d photo</item>
+        <item quantity="other">%1$,d photos</item>
     </plurals>
     <string name="swipe_metadata_unavailable">N/A</string>
     <string name="duplicates_none_found">No duplicates found!</string>
