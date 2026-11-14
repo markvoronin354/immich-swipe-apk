@@ -5,7 +5,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -107,9 +105,9 @@ fun SwipeHeader(
         }
 
         // Delete first, keep second: the same order as the swipe directions.
-        CountBadge(label = stringResource(R.string.swipe_delete), count = uiState.deletedCount, icon = Icons.Default.Delete, color = MaterialRed)
+        CountBadge(count = uiState.deletedCount, description = "${uiState.deletedCount} ${stringResource(R.string.swipe_delete)}", icon = Icons.Default.Delete, color = MaterialRed)
         Spacer(Modifier.width(10.dp))
-        CountBadge(label = stringResource(R.string.swipe_keep), count = uiState.allKeptCount, icon = Icons.Default.CheckCircle, color = MaterialGreen)
+        CountBadge(count = uiState.allKeptCount, description = "${uiState.allKeptCount} ${stringResource(R.string.swipe_keep)}", icon = Icons.Default.CheckCircle, color = MaterialGreen)
         Spacer(Modifier.width(12.dp))
         Icon(
             imageVector = Icons.AutoMirrored.Filled.List,
@@ -121,9 +119,9 @@ fun SwipeHeader(
 }
 
 @Composable
-private fun CountBadge(label: String, count: Int, icon: ImageVector, color: Color) {
+fun CountBadge(count: Int, description: String, icon: ImageVector, color: Color) {
     Row(
-        modifier = Modifier.clearAndSetSemantics { contentDescription = "$count $label" },
+        modifier = Modifier.clearAndSetSemantics { contentDescription = description },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -157,59 +155,6 @@ fun RemainingInfo(
         color = color,
         modifier = modifier
     )
-}
-
-@Composable
-fun HeaderInfo(
-    progressText: String,
-    color: Color,
-    modifier: Modifier = Modifier,
-    fontSize: TextUnit = TextUnit.Unspecified,
-    iconSize: Dp = 14.dp
-) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = progressText,
-            style = MaterialTheme.typography.labelSmall,
-            fontSize = fontSize,
-            fontWeight = FontWeight.Black,
-            color = color
-        )
-        Spacer(Modifier.width(4.dp))
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.List,
-            contentDescription = null,
-            modifier = Modifier.size(iconSize),
-            tint = color
-        )
-    }
-}
-
-@Composable
-fun StatBadge(label: String, count: Int, color: Color, shape: Shape) {
-    StatBadge(text = "$count $label", color = color, shape = shape)
-}
-
-@Composable
-fun StatBadge(text: String, color: Color, shape: Shape) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier
-                .size(12.dp)
-                .clip(shape)
-                .background(color)
-        )
-        Spacer(Modifier.width(6.dp))
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-    }
 }
 
 @Composable

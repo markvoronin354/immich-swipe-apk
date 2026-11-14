@@ -30,28 +30,29 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.ExpandLess
@@ -63,6 +64,8 @@ import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -93,16 +96,12 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
@@ -112,7 +111,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.markvoronin.immichswipe.R
@@ -129,10 +127,9 @@ import com.markvoronin.immichswipe.feature.duplicates.components.InstagramZoomOv
 import com.markvoronin.immichswipe.feature.duplicates.components.ZoomData
 import com.markvoronin.immichswipe.feature.duplicates.components.formatSizeStr
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
-import com.markvoronin.immichswipe.feature.swipe.components.HeaderInfo
+import com.markvoronin.immichswipe.feature.swipe.components.CountBadge
 import com.markvoronin.immichswipe.feature.swipe.components.RemainingInfo
 import com.markvoronin.immichswipe.feature.swipe.components.SortOptionGroup
-import com.markvoronin.immichswipe.feature.swipe.components.StatBadge
 import com.markvoronin.immichswipe.feature.swipe.components.SortPopupItem
 import com.markvoronin.immichswipe.feature.swipe.components.checkedWidthFactor
 import com.markvoronin.immichswipe.feature.swipe.components.connectedTileShape
@@ -843,142 +840,53 @@ private fun DuplicatesHeader(
         label = "DuplicatesProgressBarAnimation"
     )
 
-    val groupsText = pluralStringResource(R.plurals.duplicates_groups_count, clustersCount, clustersCount)
-
-    Column(
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .height(44.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(CardDefaults.cardColors().containerColor)
+            .clickable { onSummaryClick() }
+            .padding(start = 12.dp, end = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(37.dp)
-                .clip(RoundedCornerShape(19.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .clickable { onSummaryClick() }
-        ) {
-            val totalWidth = constraints.maxWidth.toFloat()
-            val progressWidth = totalWidth * animatedProgress
-            val fullWidth = maxWidth
-
-            val density = LocalDensity.current
-            val paddingPx = with(density) { 16.dp.toPx() }
-            val infoWidthPx = with(density) { 54.dp.toPx() }
-            val remainingWidthPx = with(density) { 40.dp.toPx() }
-
-            val staticInfoX = totalWidth - infoWidthPx - paddingPx
-            val minRequiredRoomForRemaining = remainingWidthPx + paddingPx * 2f
-            val infoIsInside = progressWidth > staticInfoX
-
-            val infoTranslationX by animateFloatAsState(
-                targetValue = if (infoIsInside) {
-                    (progressWidth - infoWidthPx - paddingPx).coerceAtLeast(paddingPx)
-                } else {
-                    staticInfoX
-                },
-                animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
-                label = "DuplicatesInfoTranslation"
-            )
-
-            val remainingTranslationX by animateFloatAsState(
-                targetValue = if (progressWidth in paddingPx..minRequiredRoomForRemaining) {
-                    (progressWidth + with(density) { 6.dp.toPx() })
-                } else {
-                    paddingPx
-                },
-                animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
-                label = "DuplicatesRemainingTranslation"
-            )
-
-            val remainingText = remainingCount.toString()
-
-            // Layer 1: Dark Text (Background)
-            Box(modifier = Modifier.fillMaxSize()) {
-                RemainingInfo(
-                    remainingText = remainingText,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .graphicsLayer { translationX = remainingTranslationX }
-                )
-
-                HeaderInfo(
-                    progressText = "${(progress * 100).toInt()}%",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 13.sp,
-                    iconSize = 16.dp,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .graphicsLayer { translationX = infoTranslationX }
-                )
-            }
-
-            // Layer 2: Primary Bar Overlay with White Text
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .layout { measurable, constraints ->
-                        val targetWidth = progressWidth.toInt().coerceIn(0, constraints.maxWidth)
-                        val placeable = measurable.measure(
-                            constraints.copy(
-                                minWidth = targetWidth,
-                                maxWidth = targetWidth
-                            )
-                        )
-                        layout(targetWidth, placeable.height) {
-                            placeable.placeRelative(0, 0)
-                        }
-                    }
-                    .clipToBounds()
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.9f)
-                            )
-                        )
-                    )
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .wrapContentWidth(unbounded = true, align = Alignment.Start)
-                        .requiredWidth(fullWidth)
-                ) {
-                    RemainingInfo(
-                        remainingText = remainingText,
-                        color = Color.White,
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                            .graphicsLayer { translationX = remainingTranslationX }
-                    )
-
-                    HeaderInfo(
-                        progressText = "${(progress * 100).toInt()}%",
-                        color = Color.White,
-                        fontSize = 13.sp,
-                        iconSize = 16.dp,
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                            .graphicsLayer { translationX = infoTranslationX }
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            StatBadge(label = stringResource(R.string.swipe_keep), count = keepCount, color = MaterialGreen, shape = MaterialShapes.Cookie6Sided.toShape())
-            StatBadge(label = stringResource(R.string.swipe_delete), count = deleteCount, color = MaterialRed, shape = MaterialShapes.Gem.toShape())
-            StatBadge(text = groupsText, color = MaterialTheme.colorScheme.outline, shape = MaterialShapes.Flower.toShape())
+            CircularProgressIndicator(
+                progress = { animatedProgress },
+                modifier = Modifier.size(22.dp),
+                strokeWidth = 3.dp,
+                trackColor = MaterialTheme.colorScheme.outlineVariant,
+                gapSize = 0.dp
+            )
+            RemainingInfo(
+                remainingText = stringResource(R.string.swipe_remaining_left, remainingCount),
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
+
+        CountBadge(
+            count = clustersCount,
+            description = pluralStringResource(R.plurals.duplicates_groups_count, clustersCount, clustersCount),
+            icon = Icons.Default.ContentCopy,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.width(10.dp))
+        // Delete first, keep second: the same order as the swipe screen.
+        CountBadge(count = deleteCount, description = "$deleteCount ${stringResource(R.string.swipe_delete)}", icon = Icons.Default.Delete, color = MaterialRed)
+        Spacer(Modifier.width(10.dp))
+        CountBadge(count = keepCount, description = "$keepCount ${stringResource(R.string.swipe_keep)}", icon = Icons.Default.CheckCircle, color = MaterialGreen)
+        Spacer(Modifier.width(12.dp))
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.List,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
