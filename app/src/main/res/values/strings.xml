@@ -180,7 +180,7 @@
     <string name="swipe_keep_upper">KEEP</string>
     <string name="swipe_delete">Delete</string>
     <string name="swipe_delete_upper">DELETE</string>
-    <string name="swipe_total">Total</string>
+    <string name="swipe_remaining_left">%1$d left</string>
     <string name="swipe_favorite">Favorites</string>
     <string name="swipe_archive">Archive</string>
     <string name="swipe_locked">Lock</string>

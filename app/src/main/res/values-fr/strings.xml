@@ -182,7 +182,7 @@
     <string name="swipe_keep_upper">KEEP</string>
     <string name="swipe_delete">Supprimer</string>
     <string name="swipe_delete_upper">DELETE</string>
-    <string name="swipe_total">Total</string>
+    <string name="swipe_remaining_left">%1$d restants</string>
     <string name="swipe_favorite">Favoris</string>
     <string name="swipe_archive">Archiver</string>
     <string name="add_to_album_title">Ajouter à un album</string>

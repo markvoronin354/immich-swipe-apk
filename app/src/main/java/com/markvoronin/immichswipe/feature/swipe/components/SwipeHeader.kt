@@ -1,47 +1,39 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.layout
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -54,7 +46,6 @@ import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SwipeHeader(
     uiState: SwipeUiState,
@@ -67,185 +58,87 @@ fun SwipeHeader(
         animationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),
         label = "ProgressBarAnimation"
     )
+    val isFetching = (uiState.isFetchingAssets || uiState.isLoading) && uiState.assets.isNotEmpty()
 
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 2.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            // Same horizontal inset as the card deck in SwipeScreenContent, so both share one width.
+            .padding(horizontal = 8.dp, vertical = 2.dp)
+            .height(44.dp)
+            .clip(RoundedCornerShape(22.dp))
+            // The card's container color: on custom palettes surfaceVariant equals the ring's track color.
+            .background(CardDefaults.cardColors().containerColor)
+            .clickable { onSummaryClick() }
+            .padding(start = 12.dp, end = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(37.dp)
-                .clip(RoundedCornerShape(19.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .clickable { onSummaryClick() }
-        ) {
-            val totalWidth = constraints.maxWidth.toFloat()
-            val progressWidth = totalWidth * animatedProgress
-            val fullWidth = maxWidth
-
-            val density = LocalDensity.current
-            val paddingPx = with(density) { 16.dp.toPx() }
-            val infoWidthPx = with(density) { 54.dp.toPx() }
-            val remainingWidthPx = with(density) { 40.dp.toPx() }
-            
-            val staticInfoX = totalWidth - infoWidthPx - paddingPx
-            val minRequiredRoomForRemaining = remainingWidthPx + paddingPx * 2f
-            val infoIsInside = progressWidth > staticInfoX
-            
-            val infoTranslationX by animateFloatAsState(
-                targetValue = if (infoIsInside) {
-                    (progressWidth - infoWidthPx - paddingPx).coerceAtLeast(paddingPx)
-                } else {
-                    staticInfoX
-                },
-                animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
-                label = "InfoTranslation"
-            )
-
-            val remainingTranslationX by animateFloatAsState(
-                targetValue = if (progressWidth in paddingPx..minRequiredRoomForRemaining) {
-                    (progressWidth + with(density) { 6.dp.toPx() })
-                } else {
-                    paddingPx
-                },
-                animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
-                label = "RemainingTranslation"
-            )
-
-            val isFetching = (uiState.isFetchingAssets || uiState.isLoading) && uiState.assets.isNotEmpty()
-            val remainingText = uiState.remainingCount.toString()
-
-            // Layer 1: Dark Text (Background)
-            Box(modifier = Modifier.fillMaxSize()) {
-                Box(modifier = Modifier.align(Alignment.CenterStart).padding(start = 16.dp)) {
-                    androidx.compose.animation.AnimatedVisibility(
-                        visible = isFetching,
-                        enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
-                        exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec())
-                    ) {
-                        FetchingAssetsIndicator(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = infoFontSize,
-                            iconSize = 16.dp
-                        )
-                    }
-                }
-
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = !isFetching,
-                    enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
-                    exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
-                    modifier = Modifier.align(Alignment.CenterStart)
-                ) {
-                    RemainingInfo(
-                        remainingText = remainingText,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = infoFontSize,
-                        modifier = Modifier.graphicsLayer { translationX = remainingTranslationX }
-                    )
-                }
-
-                HeaderInfo(
-                    progressText = "${(uiState.progress * 100).toInt()}%",
+        Crossfade(
+            targetState = isFetching,
+            modifier = Modifier.weight(1f),
+            animationSpec = MaterialTheme.motionScheme.slowEffectsSpec(),
+            label = "HeaderLeadingContent"
+        ) { fetching ->
+            if (fetching) {
+                FetchingAssetsIndicator(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = infoFontSize,
-                    iconSize = iconSize,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .graphicsLayer { translationX = infoTranslationX }
+                    iconSize = 16.dp
                 )
-            }
-
-            // Layer 2: Blue Bar Overlay with White Text
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .layout { measurable, constraints ->
-                        val targetWidth = progressWidth.toInt().coerceIn(0, constraints.maxWidth)
-                        val placeable = measurable.measure(
-                            constraints.copy(
-                                minWidth = targetWidth,
-                                maxWidth = targetWidth
-                            )
-                        )
-                        layout(targetWidth, placeable.height) {
-                            placeable.placeRelative(0, 0)
-                        }
-                    }
-                    .clipToBounds()
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.9f)
-                            )
-                        )
-                    )
-                    .background(Color.Black.copy(alpha = 0.1f))
-            ) {
-                // Unbounded width aligned to Start ensures the inner box doesn't center itself
-                // when it overflows the parent's current progress width constraint.
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .wrapContentWidth(unbounded = true, align = Alignment.Start)
-                        .requiredWidth(fullWidth)
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Box(modifier = Modifier.align(Alignment.CenterStart).padding(start = 16.dp)) {
-                        androidx.compose.animation.AnimatedVisibility(
-                            visible = isFetching,
-                            enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
-                            exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec())
-                        ) {
-                            FetchingAssetsIndicator(
-                                color = Color.White,
-                                fontSize = infoFontSize,
-                                iconSize = 16.dp
-                            )
-                        }
-                    }
-
-                    androidx.compose.animation.AnimatedVisibility(
-                        visible = !isFetching,
-                        enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
-                        exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
-                        modifier = Modifier.align(Alignment.CenterStart)
-                    ) {
-                        RemainingInfo(
-                            remainingText = remainingText,
-                            color = Color.White,
-                            fontSize = infoFontSize,
-                            modifier = Modifier.graphicsLayer { translationX = remainingTranslationX }
-                        )
-                    }
-
-                    HeaderInfo(
-                        progressText = "${(uiState.progress * 100).toInt()}%",
-                        color = Color.White,
-                        fontSize = infoFontSize,
-                        iconSize = iconSize,
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                            .graphicsLayer { translationX = infoTranslationX }
+                    CircularProgressIndicator(
+                        progress = { animatedProgress },
+                        modifier = Modifier.size(22.dp),
+                        strokeWidth = 3.dp,
+                        trackColor = MaterialTheme.colorScheme.outlineVariant,
+                        gapSize = 0.dp
+                    )
+                    RemainingInfo(
+                        remainingText = stringResource(R.string.swipe_remaining_left, uiState.remainingCount),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = infoFontSize
                     )
                 }
             }
         }
 
-        Spacer(Modifier.height(8.dp))
+        // Delete first, keep second: the same order as the swipe directions.
+        CountBadge(label = stringResource(R.string.swipe_delete), count = uiState.deletedCount, icon = Icons.Default.Delete, color = MaterialRed)
+        Spacer(Modifier.width(10.dp))
+        CountBadge(label = stringResource(R.string.swipe_keep), count = uiState.allKeptCount, icon = Icons.Default.CheckCircle, color = MaterialGreen)
+        Spacer(Modifier.width(12.dp))
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.List,
+            contentDescription = null,
+            modifier = Modifier.size(iconSize),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            StatBadge(label = stringResource(R.string.swipe_keep), count = uiState.allKeptCount, color = MaterialGreen, shape = MaterialShapes.Cookie6Sided.toShape())
-            StatBadge(label = stringResource(R.string.swipe_delete), count = uiState.deletedCount, color = MaterialRed, shape = MaterialShapes.Gem.toShape())
-            StatBadge(label = stringResource(R.string.swipe_total), count = uiState.totalCount, color = MaterialTheme.colorScheme.outline, shape = MaterialShapes.Flower.toShape())
-        }
+@Composable
+private fun CountBadge(label: String, count: Int, icon: ImageVector, color: Color) {
+    Row(
+        modifier = Modifier.clearAndSetSemantics { contentDescription = "$count $label" },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = color
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = "$count",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
     }
 }
 
