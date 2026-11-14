@@ -28,6 +28,7 @@
 
     <!-- Pantalla de inicio -->
     <string name="home_search_placeholder">Buscar un álbum…</string>
+    <string name="home_scroll_to_top">Ir al principio</string>
     <string name="home_no_results">Ningún álbum coincide con tu búsqueda</string>
     <string name="home_error_title">¡Vaya! Se ha producido un error</string>
     <string name="home_retry_button">Reintentar</string>

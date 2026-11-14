@@ -29,6 +29,7 @@
 
     <!-- Écran d'Accueil -->
     <string name="home_search_placeholder">Rechercher un album…</string>
+    <string name="home_scroll_to_top">Retour en haut</string>
     <string name="home_no_results">Aucun album ne correspond à votre recherche</string>
     <string name="home_error_title">Oups ! Une erreur est survenue</string>
     <string name="home_retry_button">Réessayer</string>

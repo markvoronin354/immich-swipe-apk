@@ -28,6 +28,7 @@
 
     <!-- Home Screen -->
     <string name="home_search_placeholder">Search an album…</string>
+    <string name="home_scroll_to_top">Scroll to top</string>
     <string name="home_no_results">No albums match your search</string>
     <string name="home_error_title">Oops! An error occurred</string>
     <string name="home_retry_button">Retry</string>

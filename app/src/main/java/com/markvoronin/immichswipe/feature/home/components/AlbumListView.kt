@@ -47,6 +47,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,6 +74,7 @@ import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.feature.home.AlbumStatus
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
 import com.markvoronin.immichswipe.ui.theme.VirtualGold
+import kotlinx.coroutines.launch
 
 @Composable
 fun AlbumList(
@@ -166,6 +168,14 @@ fun AlbumList(
                 }
             }
         }
+
+        val showScrollToTop by remember { derivedStateOf { state.firstVisibleItemIndex >= 10 } }
+        val scope = rememberCoroutineScope()
+        ScrollToTopButton(
+            visible = showScrollToTop,
+            onClick = { scope.launch { state.animateScrollToItem(0) } },
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
 
         val scrollFraction by remember {
             derivedStateOf {
