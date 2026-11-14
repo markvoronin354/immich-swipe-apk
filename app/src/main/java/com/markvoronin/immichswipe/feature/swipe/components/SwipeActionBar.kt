@@ -110,7 +110,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * [label] is shown as small text under the icon when [showLabel] is true.
  */
 @Composable
-private fun ActionTile(
+internal fun ActionTile(
     onClick: () -> Unit,
     shape: Shape,
     label: String,

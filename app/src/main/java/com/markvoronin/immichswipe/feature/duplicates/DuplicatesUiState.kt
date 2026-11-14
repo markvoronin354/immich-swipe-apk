@@ -21,7 +21,8 @@ data class DuplicatesUiState(
     val aiProgress: Pair<Int, Int>? = null,
     // Clusters that still had undecided photos when "undecided only" was turned on; null while the filter is off.
     val undecidedOnlyIds: Set<String>? = null,
-    val playbackBehavior: PlaybackBehavior = PlaybackBehavior.PAUSE_OTHERS
+    val playbackBehavior: PlaybackBehavior = PlaybackBehavior.PAUSE_OTHERS,
+    val showToolbarLabels: Boolean = true
 ) {
     fun isFavorite(asset: Asset): Boolean {
         return favorites[asset.id] ?: asset.isFavorite

@@ -82,6 +82,11 @@ class DuplicatesViewModel @Inject constructor(
                 _uiState.update { it.copy(playbackBehavior = behavior) }
             }
         }
+        viewModelScope.launch {
+            sessionRepository.showToolbarLabels.collect { show ->
+                _uiState.update { it.copy(showToolbarLabels = show) }
+            }
+        }
     }
 
     fun skipDeepAnalyzeConfirmation() {

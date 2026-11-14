@@ -381,7 +381,8 @@
     <string name="duplicates_keep_all">Keep all</string>
     <string name="duplicates_delete_all">Delete all</string>
     <string name="duplicates_cluster_progress">%1$d of %2$d sorted</string>
-    <string name="duplicates_undecided_only">Only undecided groups</string>
+    <string name="duplicates_undecided_only">Only unsorted groups</string>
+    <string name="duplicates_label_undecided">Unsorted</string>
     <string name="duplicates_autoselect_title">Apply to which groups?</string>
     <plurals name="duplicates_autoselect_msg">
         <item quantity="one">%1$d group already has choices. Auto-select can leave it alone and only sort the rest, or replace its choices.</item>

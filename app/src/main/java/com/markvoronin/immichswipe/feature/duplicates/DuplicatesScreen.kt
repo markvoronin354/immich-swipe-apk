@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -47,7 +46,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Sort
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
@@ -62,6 +60,7 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.ImageSearch
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -70,18 +69,16 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ToggleButtonDefaults
-import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -108,7 +105,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -127,6 +124,7 @@ import com.markvoronin.immichswipe.feature.duplicates.components.InstagramZoomOv
 import com.markvoronin.immichswipe.feature.duplicates.components.ZoomData
 import com.markvoronin.immichswipe.feature.duplicates.components.formatSizeStr
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
+import com.markvoronin.immichswipe.feature.swipe.components.ActionTile
 import com.markvoronin.immichswipe.feature.swipe.components.CountBadge
 import com.markvoronin.immichswipe.feature.swipe.components.RemainingInfo
 import com.markvoronin.immichswipe.feature.swipe.components.SortOptionGroup
@@ -900,25 +898,43 @@ private fun DuplicatesBottomBar(
     onSortOrderSelected: (DuplicatesSortOrder) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    // One pill of tiles like the swipe toolbar; labels sit under the icons when the app setting is on and they fit.
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .navigationBarsPadding(),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .navigationBarsPadding()
+            .padding(start = 24.dp, top = 12.dp, end = 24.dp, bottom = 16.dp)
     ) {
-        Spacer(Modifier.height(12.dp))
-
-        // A connected group like the swipe toolbar: a tile inverts and morphs into a pill while its menu is open.
-        val tileColors = ToggleButtonDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            checkedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-            checkedContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        val iconSize = 24.dp
+        val sortLabel = stringResource(R.string.duplicates_sort_button)
+        val filterLabel = stringResource(R.string.duplicates_label_undecided)
+        // Every label the Select tile can show, so labels don't appear or vanish when its mode changes.
+        val labels = listOf(
+            sortLabel,
+            filterLabel,
+            stringResource(R.string.duplicates_select_button),
+            stringResource(R.string.duplicates_select_largest),
+            stringResource(R.string.duplicates_select_smallest),
+            stringResource(R.string.duplicates_select_best_shot_auto),
+            stringResource(R.string.duplicates_select_best_shot_single),
+            stringResource(R.string.duplicates_select_best_shot_top_2),
+            stringResource(R.string.duplicates_select_best_shot_top_3)
         )
-        val tileHeight = ButtonDefaults.MediumContainerHeight
+        val labelStyle = MaterialTheme.typography.labelSmall
+        val textMeasurer = rememberTextMeasurer()
+        val density = LocalDensity.current
+        val widestLabel = remember(labels, labelStyle, density) {
+            with(density) { labels.maxOf { textMeasurer.measure(it, labelStyle).size.width }.toDp() }
+        }
+        val tileWidth = (maxWidth - 3.dp * 2) / 3
+        val showLabels = uiState.showToolbarLabels && widestLabel + 16.dp <= tileWidth
+
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             horizontalArrangement = Arrangement.spacedBy(3.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -930,27 +946,19 @@ private fun DuplicatesBottomBar(
                 DuplicatesSortOrder.VIDEOS_FIRST -> Icons.Default.Videocam
             }
 
-            Box {
-                ToggleButton(
+            Box(modifier = Modifier.weight(checkedWidthFactor(sortMenuExpanded))) {
+                ActionTile(
+                    onClick = { sortMenuExpanded = true },
+                    label = sortLabel,
+                    showLabel = showLabels,
+                    shape = connectedTileShape(0, 3, outer = 28.dp),
                     checked = sortMenuExpanded,
-                    onCheckedChange = { sortMenuExpanded = true },
-                    shapes = ToggleButtonShapes(
-                        shape = connectedTileShape(0, 3, outer = tileHeight / 2),
-                        pressedShape = RoundedCornerShape(10.dp),
-                        checkedShape = CircleShape
-                    ),
-                    colors = tileColors,
-                    modifier = Modifier.size(
-                        width = IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide).width *
-                            checkedWidthFactor(sortMenuExpanded),
-                        height = tileHeight
-                    ),
-                    contentPadding = PaddingValues(0.dp)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(
                         imageVector = sortIcon,
-                        contentDescription = stringResource(R.string.duplicates_sort_button),
-                        modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
+                        contentDescription = sortLabel,
+                        modifier = Modifier.size(iconSize)
                     )
                 }
 
@@ -994,28 +1002,28 @@ private fun DuplicatesBottomBar(
                 }
             }
 
-            ToggleButton(
-                checked = undecidedOnly,
-                onCheckedChange = { onToggleUndecidedOnly() },
-                enabled = undecidedOnly || canFilterUndecided,
-                shapes = ToggleButtonShapes(
-                    shape = connectedTileShape(1, 3, outer = tileHeight / 2),
-                    pressedShape = RoundedCornerShape(10.dp),
-                    checkedShape = CircleShape
-                ),
-                colors = tileColors,
-                modifier = Modifier.size(
-                    width = IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide).width *
-                        checkedWidthFactor(undecidedOnly),
-                    height = tileHeight
-                ),
-                contentPadding = PaddingValues(0.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.FilterAlt,
-                    contentDescription = stringResource(R.string.duplicates_undecided_only),
-                    modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
-                )
+            Box(modifier = Modifier.weight(1f)) {
+                ActionTile(
+                    onClick = onToggleUndecidedOnly,
+                    label = filterLabel,
+                    showLabel = showLabels,
+                    enabled = undecidedOnly || canFilterUndecided,
+                    shape = connectedTileShape(1, 3, outer = 28.dp),
+                    checked = undecidedOnly,
+                    highlightWhenChecked = false,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Like the favorite heart: the outline fills in and is tinted instead of the tile inverting.
+                    CompositionLocalProvider(
+                        LocalContentColor provides if (undecidedOnly) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                    ) {
+                        Icon(
+                            imageVector = if (undecidedOnly) Icons.Default.FilterAlt else Icons.Outlined.FilterAlt,
+                            contentDescription = stringResource(R.string.duplicates_undecided_only),
+                            modifier = Modifier.size(iconSize)
+                        )
+                    }
+                }
             }
 
             var selectMenuExpanded by remember { mutableStateOf(false) }
@@ -1037,42 +1045,19 @@ private fun DuplicatesBottomBar(
                 else -> Icons.Default.AutoAwesome
             }
 
-            Box {
-                val arrowRotation by animateFloatAsState(
-                    targetValue = if (selectMenuExpanded) 180f else 0f,
-                    animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
-                    label = "selectArrow"
-                )
-                ToggleButton(
+            Box(modifier = Modifier.weight(checkedWidthFactor(selectMenuExpanded))) {
+                ActionTile(
+                    onClick = { selectMenuExpanded = true },
+                    label = selectButtonText,
+                    showLabel = showLabels,
+                    shape = connectedTileShape(2, 3, outer = 28.dp),
                     checked = selectMenuExpanded,
-                    onCheckedChange = { selectMenuExpanded = true },
-                    shapes = ToggleButtonShapes(
-                        shape = connectedTileShape(2, 3, outer = tileHeight / 2),
-                        pressedShape = RoundedCornerShape(10.dp),
-                        checkedShape = CircleShape
-                    ),
-                    colors = tileColors,
-                    // Wide enough for the longest label so the button and its popup don't shift between modes.
-                    modifier = Modifier
-                        .defaultMinSize(minWidth = 176.dp)
-                        .height(tileHeight),
-                    contentPadding = ButtonDefaults.contentPaddingFor(tileHeight)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(
                         imageVector = selectButtonIcon,
-                        contentDescription = null,
-                        modifier = Modifier.size(ButtonDefaults.iconSizeFor(tileHeight))
-                    )
-                    Spacer(Modifier.width(ButtonDefaults.iconSpacingFor(tileHeight)))
-                    Text(
-                        text = selectButtonText,
-                        fontWeight = FontWeight.Bold,
-                        style = ButtonDefaults.textStyleFor(tileHeight)
-                    )
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = null,
-                        modifier = Modifier.graphicsLayer { rotationZ = arrowRotation }
+                        contentDescription = selectButtonText,
+                        modifier = Modifier.size(iconSize)
                     )
                 }
 
@@ -1143,8 +1128,6 @@ private fun DuplicatesBottomBar(
                 }
             }
         }
-
-        Spacer(Modifier.height(16.dp))
     }
 }
 

@@ -388,6 +388,7 @@
     <string name="duplicates_delete_all">Tout supprimer</string>
     <string name="duplicates_cluster_progress">%1$d sur %2$d triées</string>
     <string name="duplicates_undecided_only">Seulement les groupes non triés</string>
+    <string name="duplicates_label_undecided">Non triés</string>
     <string name="duplicates_autoselect_title">Appliquer à quels groupes ?</string>
     <plurals name="duplicates_autoselect_msg">
         <item quantity="one">%1$d groupe a déjà des choix. La sélection automatique peut le laisser tel quel et ne trier que le reste, ou remplacer ses choix.</item>
