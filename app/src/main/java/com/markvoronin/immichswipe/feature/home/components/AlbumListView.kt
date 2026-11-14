@@ -107,10 +107,10 @@ fun AlbumList(
                 contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 85.dp)
             ) {
                 val statusOrder = listOf(
+                    AlbumStatus.VIRTUAL,
                     AlbumStatus.IN_PROGRESS,
                     AlbumStatus.NOT_STARTED,
-                    AlbumStatus.COMPLETED,
-                    AlbumStatus.VIRTUAL
+                    AlbumStatus.COMPLETED
                 )
                 val firstStatus = statusOrder.firstOrNull { !groupedAlbums[it].isNullOrEmpty() }
 

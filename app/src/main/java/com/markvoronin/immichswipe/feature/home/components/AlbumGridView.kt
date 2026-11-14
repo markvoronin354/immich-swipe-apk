@@ -100,10 +100,10 @@ fun AlbumGrid(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 val statusOrder = listOf(
+                    AlbumStatus.VIRTUAL,
                     AlbumStatus.IN_PROGRESS,
                     AlbumStatus.NOT_STARTED,
-                    AlbumStatus.COMPLETED,
-                    AlbumStatus.VIRTUAL
+                    AlbumStatus.COMPLETED
                 )
                 val firstStatus = statusOrder.firstOrNull { !groupedAlbums[it].isNullOrEmpty() }
 
