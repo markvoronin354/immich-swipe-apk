@@ -66,6 +66,7 @@ data class SwipeUiState(
     val showLockButton: Boolean = false,
     val showAddToAlbumButton: Boolean = true,
     val showToolbarLabels: Boolean = true,
+    val showTimeline: Boolean = true,
     val toolbarButtonOrder: List<ToolbarButton> = ToolbarButton.entries,
     val showAddToAlbumDialog: Boolean = false,
     val albumsForAddToAlbum: List<Album> = emptyList(),

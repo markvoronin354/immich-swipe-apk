@@ -59,6 +59,7 @@ data class SettingsUiState(
     val showLockButton: Boolean = false,
     val showAddToAlbumButton: Boolean = true,
     val showToolbarLabels: Boolean = true,
+    val showTimeline: Boolean = true,
     val toolbarButtonOrder: List<ToolbarButton> = ToolbarButton.entries,
     val syncLocalDeletion: Boolean = false,
     val trashLocalDeletion: Boolean = true,

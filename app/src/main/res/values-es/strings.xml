@@ -116,13 +116,15 @@
     <string name="sort_category_type">Tipo</string>
     <string name="settings_section_interaction">Interacción</string>
     <string name="settings_interactions_label">Interacciones</string>
-    <string name="settings_interactions_desc">Acciones de la barra de clasificación, avance automático y gestos táctiles</string>
+    <string name="settings_interactions_desc">Acciones de la barra de clasificación, avance automático, gestos táctiles y línea de tiempo</string>
     <string name="settings_interactions_dialog_title">Interacciones</string>
     <string name="settings_toolbar_preview">Vista previa de la barra</string>
     <string name="settings_toolbar_reorder_hint">Mantén pulsado y arrastra para reordenar los botones</string>
     <string name="settings_section_toolbar">Barra de herramientas</string>
     <string name="settings_show_toolbar_labels_label">Etiquetas de botones</string>
     <string name="settings_section_actions">Acciones</string>
+    <string name="settings_section_layout">Diseño</string>
+    <string name="settings_show_timeline_label">Línea de tiempo</string>
     <string name="settings_action_buttons_label">Botones de acción en pantalla</string>
     <string name="settings_action_buttons_desc">Personalizar la visibilidad y posición de los botones superpuestos</string>
     <string name="settings_action_buttons_dialog_title">Botones de Acción</string>

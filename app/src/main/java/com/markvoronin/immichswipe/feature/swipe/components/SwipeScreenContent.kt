@@ -1,5 +1,10 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,22 +60,28 @@ fun SwipeScreenContent(
 
                 val nextUnprocessedIndex = viewModel.getNextUnprocessedIndex(uiState)
 
-                AssetTimeline(
-                    assets = uiState.assets,
-                    decisions = uiState.decisions,
-                    currentIndex = uiState.currentIndex,
-                    isFavorite = { uiState.isFavorite(it) },
-                    isArchived = { uiState.isArchived(it) },
-                    isLocked = { uiState.isLocked(it) },
-                    onAssetClick = { viewModel.onMoveToAsset(it) },
-                    baseUrl = uiState.baseUrl,
-                    isBulkMode = uiState.isBulkDeleteMode || uiState.isBulkKeepMode,
-                    bulkSelection = uiState.bulkSelection,
-                    isBulkDelete = uiState.isBulkDeleteMode,
-                    getRotation = { uiState.getRotation(it) },
-                    swipeOffset = topCardSwipeOffset,
-                    nextIndex = nextUnprocessedIndex
-                )
+                AnimatedVisibility(
+                    visible = uiState.showTimeline,
+                    enter = fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()) + expandVertically(MaterialTheme.motionScheme.defaultSpatialSpec()),
+                    exit = fadeOut(MaterialTheme.motionScheme.defaultEffectsSpec()) + shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec())
+                ) {
+                    AssetTimeline(
+                        assets = uiState.assets,
+                        decisions = uiState.decisions,
+                        currentIndex = uiState.currentIndex,
+                        isFavorite = { uiState.isFavorite(it) },
+                        isArchived = { uiState.isArchived(it) },
+                        isLocked = { uiState.isLocked(it) },
+                        onAssetClick = { viewModel.onMoveToAsset(it) },
+                        baseUrl = uiState.baseUrl,
+                        isBulkMode = uiState.isBulkDeleteMode || uiState.isBulkKeepMode,
+                        bulkSelection = uiState.bulkSelection,
+                        isBulkDelete = uiState.isBulkDeleteMode,
+                        getRotation = { uiState.getRotation(it) },
+                        swipeOffset = topCardSwipeOffset,
+                        nextIndex = nextUnprocessedIndex
+                    )
+                }
 
                 SwipeCardDeck(
                     uiState = uiState,

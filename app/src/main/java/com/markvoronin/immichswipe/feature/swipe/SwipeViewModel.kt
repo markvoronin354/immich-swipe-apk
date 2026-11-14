@@ -132,6 +132,11 @@ class SwipeViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            sessionRepository.showTimeline.collect { show ->
+                _uiState.update { it.copy(showTimeline = show) }
+            }
+        }
+        viewModelScope.launch {
             sessionRepository.toolbarButtonOrder.collect { order ->
                 _uiState.update { it.copy(toolbarButtonOrder = order) }
             }

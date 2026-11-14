@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -233,6 +234,19 @@ fun InteractionsScreen(
                     }
                 }
             }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        SettingsSection(
+            title = stringResource(R.string.settings_section_layout)
+        ) {
+            SettingsToggleItemSmall(
+                title = stringResource(R.string.settings_show_timeline_label),
+                checked = uiState.showTimeline,
+                onCheckedChange = { viewModel.setShowTimeline(it) },
+                icon = Icons.Default.ViewCarousel
+            )
         }
 
         Spacer(Modifier.navigationBarsPadding().height(24.dp))

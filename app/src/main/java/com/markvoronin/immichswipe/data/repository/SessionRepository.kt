@@ -165,6 +165,7 @@ class SessionRepository @Inject constructor(
     val showLockButton: Flow<Boolean> = dataStore.isShowLockButton()
     val showAddToAlbumButton: Flow<Boolean> = dataStore.isShowAddToAlbumButton()
     val showToolbarLabels: Flow<Boolean> = dataStore.isShowToolbarLabels()
+    val showTimeline: Flow<Boolean> = dataStore.isShowTimeline()
     val toolbarButtonOrder: Flow<List<ToolbarButton>> = dataStore.getToolbarButtonOrder().map { saved ->
         val parsed = saved.orEmpty().split(",").mapNotNull { name -> ToolbarButton.entries.find { it.name == name } }
         (parsed + ToolbarButton.entries).distinct()
@@ -278,6 +279,7 @@ class SessionRepository @Inject constructor(
     suspend fun saveShowLockButton(show: Boolean) { dataStore.saveShowLockButton(show) }
     suspend fun saveShowAddToAlbumButton(show: Boolean) { dataStore.saveShowAddToAlbumButton(show) }
     suspend fun saveShowToolbarLabels(show: Boolean) { dataStore.saveShowToolbarLabels(show) }
+    suspend fun saveShowTimeline(show: Boolean) { dataStore.saveShowTimeline(show) }
     suspend fun saveToolbarButtonOrder(order: List<ToolbarButton>) { dataStore.saveToolbarButtonOrder(order.joinToString(",") { it.name }) }
     suspend fun saveBackupWarningShown(shown: Boolean) { dataStore.saveBackupWarningShown(shown) }
     suspend fun saveSyncLocalDeletion(sync: Boolean) { dataStore.saveSyncLocalDeletion(sync) }

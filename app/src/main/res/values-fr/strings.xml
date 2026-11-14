@@ -117,13 +117,15 @@
     <string name="sort_category_type">Type</string>
     <string name="settings_section_interaction">Interaction</string>
     <string name="settings_interactions_label">Interactions</string>
-    <string name="settings_interactions_desc">Actions de la barre de tri, défilement auto et gestes tactiles</string>
+    <string name="settings_interactions_desc">Actions de la barre de tri, défilement auto, gestes tactiles et frise</string>
     <string name="settings_interactions_dialog_title">Interactions</string>
     <string name="settings_toolbar_preview">Aperçu de la barre</string>
     <string name="settings_toolbar_reorder_hint">Appuyez longuement et faites glisser pour réorganiser les boutons</string>
     <string name="settings_section_toolbar">Barre d\'outils</string>
     <string name="settings_show_toolbar_labels_label">Libellés des boutons</string>
     <string name="settings_section_actions">Actions</string>
+    <string name="settings_section_layout">Disposition</string>
+    <string name="settings_show_timeline_label">Frise des médias</string>
     <string name="settings_action_buttons_label">Boutons d\'action à l\'écran</string>
     <string name="settings_action_buttons_desc">Personnaliser la visibilité et la position des boutons superposés</string>
     <string name="settings_action_buttons_dialog_title">Boutons d\'Action</string>

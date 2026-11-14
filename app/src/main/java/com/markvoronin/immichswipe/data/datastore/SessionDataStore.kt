@@ -55,6 +55,7 @@ class SessionDataStore(private val context: Context) {
         private val KEY_SHOW_LOCK = booleanPreferencesKey("show_lock")
         private val KEY_SHOW_ADD_TO_ALBUM = booleanPreferencesKey("show_add_to_album")
         private val KEY_SHOW_TOOLBAR_LABELS = booleanPreferencesKey("show_toolbar_labels")
+        private val KEY_SHOW_TIMELINE = booleanPreferencesKey("show_timeline")
         private val KEY_TOOLBAR_BUTTON_ORDER = stringPreferencesKey("toolbar_button_order")
         private val KEY_BACKUP_WARNING_SHOWN = booleanPreferencesKey("backup_warning_shown")
         private val KEY_SYNC_LOCAL_DELETION = booleanPreferencesKey("sync_local_deletion")
@@ -273,6 +274,9 @@ class SessionDataStore(private val context: Context) {
 
     fun isShowToolbarLabels(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_TOOLBAR_LABELS] ?: true }
     suspend fun saveShowToolbarLabels(show: Boolean) { context.dataStore.edit { it[KEY_SHOW_TOOLBAR_LABELS] = show } }
+
+    fun isShowTimeline(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_TIMELINE] ?: true }
+    suspend fun saveShowTimeline(show: Boolean) { context.dataStore.edit { it[KEY_SHOW_TIMELINE] = show } }
 
     fun getToolbarButtonOrder(): Flow<String?> = context.dataStore.data.map { it[KEY_TOOLBAR_BUTTON_ORDER] }
     suspend fun saveToolbarButtonOrder(order: String) { context.dataStore.edit { it[KEY_TOOLBAR_BUTTON_ORDER] = order } }
