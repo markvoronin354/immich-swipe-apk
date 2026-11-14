@@ -49,7 +49,6 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.DoneAll
@@ -295,7 +294,6 @@ fun DuplicatesScreen(
                 val context = LocalContext.current
                 Column(modifier = Modifier.fillMaxSize()) {
                     DuplicatesHeader(
-                        clustersCount = uiState.clusters.size,
                         keepCount = keepCount,
                         deleteCount = deleteCount,
                         remainingCount = remainingCount,
@@ -824,7 +822,6 @@ fun DuplicatesScreen(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DuplicatesHeader(
-    clustersCount: Int,
     keepCount: Int,
     deleteCount: Int,
     remainingCount: Int,
@@ -867,13 +864,6 @@ private fun DuplicatesHeader(
             )
         }
 
-        CountBadge(
-            count = clustersCount,
-            description = pluralStringResource(R.plurals.duplicates_groups_count, clustersCount, clustersCount),
-            icon = Icons.Default.ContentCopy,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.width(10.dp))
         // Delete first, keep second: the same order as the swipe screen.
         CountBadge(count = deleteCount, description = "$deleteCount ${stringResource(R.string.swipe_delete)}", icon = Icons.Default.Delete, color = MaterialRed)
         Spacer(Modifier.width(10.dp))

@@ -275,11 +275,6 @@
     <string name="duplicates_select_best_shot_single">Única</string>
     <string name="duplicates_select_best_shot_top_2">Top 2</string>
     <string name="duplicates_select_best_shot_top_3">Top 3</string>
-    <plurals name="duplicates_groups_count">
-        <item quantity="one">%1$,d grupo</item>
-        <item quantity="many">%1$,d grupos</item>
-        <item quantity="other">%1$,d grupos</item>
-    </plurals>
     <string name="duplicates_ai_analyzing">Analizando la mejor toma…</string>
     <string name="duplicates_ai_cluster_progress">Grupo %1$,d de %2$,d</string>
     <string name="duplicates_deep_analyze">Analizar a tamaño completo</string>
