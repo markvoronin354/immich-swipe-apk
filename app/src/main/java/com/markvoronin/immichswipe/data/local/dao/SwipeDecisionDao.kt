@@ -19,11 +19,11 @@ interface SwipeDecisionDao {
 
     @Query("""
         SELECT * FROM swipe_decisions
-        WHERE userId = :userId AND albumId = :albumId
+        WHERE userId = :userId AND albumId = :albumId AND decision != 'SKIP'
         UNION
         SELECT sd.* FROM swipe_decisions sd
         JOIN album_assets aa ON sd.assetId = aa.assetId AND aa.userId = :userId
-        WHERE sd.userId = :userId AND aa.albumId = :albumId
+        WHERE sd.userId = :userId AND aa.albumId = :albumId AND sd.decision != 'SKIP'
     """)
     fun getDecisionsForAlbum(albumId: String, userId: String): Flow<List<SwipeDecisionEntity>>
 

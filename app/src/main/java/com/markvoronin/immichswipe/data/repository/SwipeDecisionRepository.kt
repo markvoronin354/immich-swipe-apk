@@ -44,8 +44,7 @@ class SwipeDecisionRepository @Inject constructor(
             decision = decision,
             fileSize = fileSize,
             createdAt = System.currentTimeMillis(),
-            isSynced = isSynced,
-            wasSyncedSkip = false
+            isSynced = isSynced
         )
         swipeDecisionDao.insertDecision(entity)
     }
@@ -107,8 +106,7 @@ class SwipeDecisionRepository @Inject constructor(
             bytesSaved = bytesSaved,
             keptCount = keptCount,
             archivedCount = archivedCount,
-            lockedCount = lockedCount,
-            skippedCount = 0
+            lockedCount = lockedCount
         )
         swipeDecisionDao.insertSyncHistory(history)
     }
