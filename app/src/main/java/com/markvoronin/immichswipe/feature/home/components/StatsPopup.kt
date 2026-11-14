@@ -51,6 +51,7 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.feature.home.StatsUiData
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
 import com.markvoronin.immichswipe.feature.swipe.components.connectedTileShape
+import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 
 @Composable
 fun StatsPopup(
@@ -349,18 +350,5 @@ fun DistributionBar(label: String, percentValue: Float, color: Color) {
             trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
             drawStopIndicator = {}
         )
-    }
-}
-
-@Composable
-fun formatSize(bytes: Long): String {
-    val kb = bytes / 1024.0
-    val mb = kb / 1024.0
-    val gb = mb / 1024.0
-    
-    return when {
-        gb >= 1.0 -> stringResource(R.string.size_unit_gb, gb)
-        mb >= 1.0 -> stringResource(R.string.size_unit_mb, mb)
-        else -> stringResource(R.string.size_unit_kb, kb)
     }
 }
