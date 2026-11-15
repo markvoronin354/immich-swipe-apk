@@ -89,6 +89,7 @@ import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 import com.markvoronin.immichswipe.feature.swipe.utils.parseDurationMs
 import com.markvoronin.immichswipe.feature.swipe.utils.fullResolutionRequest
 import com.markvoronin.immichswipe.feature.swipe.utils.rotateLayout
+import com.markvoronin.immichswipe.feature.swipe.utils.supportsFullResolution
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -138,6 +139,7 @@ fun FullscreenViewer(
     rotation: Int = 0,
     baseUrl: String = "",
     isFullSize: Boolean = false,
+    onToggleFullSize: () -> Unit = {},
     showButtonLabels: Boolean = true,
     loadAlbumNames: suspend (String) -> List<String> = { emptyList() },
     canUndo: Boolean = true,
@@ -499,7 +501,11 @@ fun FullscreenViewer(
                         assetType = nextAsset.type,
                         assetDate = nextAsset.effectiveDate,
                         showButtonLabels = showButtonLabels,
-                        onShowInfo = { infoAsset = nextAsset }
+                        onShowInfo = { infoAsset = nextAsset },
+                        canUndo = canUndo,
+                        isFullSize = isFullSize,
+                        onToggleFullSize = onToggleFullSize,
+                        supportsFullResolution = nextAsset.supportsFullResolution
                     )
                 }
             }
@@ -763,7 +769,10 @@ fun FullscreenViewer(
                     assetDate = asset.effectiveDate,
                     showButtonLabels = showButtonLabels,
                     onShowInfo = { infoAsset = asset },
-                    canUndo = canUndo
+                    canUndo = canUndo,
+                    isFullSize = isFullSize,
+                    onToggleFullSize = onToggleFullSize,
+                    supportsFullResolution = asset.supportsFullResolution
                 )
                 }
 

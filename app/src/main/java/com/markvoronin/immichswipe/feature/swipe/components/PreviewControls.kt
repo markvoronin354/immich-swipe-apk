@@ -2,6 +2,7 @@ package com.markvoronin.immichswipe.feature.swipe.components
 
 import android.text.format.DateFormat
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.expandVertically
@@ -25,6 +26,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.Hd
+import androidx.compose.material.icons.outlined.Hd
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -200,7 +203,10 @@ fun PreviewControls(
     assetDate: String,
     showButtonLabels: Boolean = true,
     onShowInfo: () -> Unit = {},
-    canUndo: Boolean = true
+    canUndo: Boolean = true,
+    isFullSize: Boolean = false,
+    onToggleFullSize: () -> Unit = {},
+    supportsFullResolution: Boolean = false
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -258,8 +264,8 @@ fun PreviewControls(
                     }
                 }
 
-                // Three fixed slots, so the buttons stay put when a photo gives way to a video; the mute slot is kept empty
-                // on photos.
+                // Three fixed slots, so the buttons stay put when a photo gives way to a video; the mute slot is used for video mute,
+                // and for full-resolution toggle on photo assets.
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -320,6 +326,7 @@ fun PreviewControls(
 
                     Box(slot, contentAlignment = Alignment.Center) {
                         val muteScale = remember { Animatable(1f) }
+                        val fullSizeScale = remember { Animatable(1f) }
                         androidx.compose.animation.AnimatedVisibility(
                             visible = showMuteButton && assetType == "VIDEO",
                             enter = fadeIn(motionScheme.defaultEffectsSpec()) + scaleIn(motionScheme.defaultSpatialSpec(), initialScale = 0.6f),
@@ -333,6 +340,36 @@ fun PreviewControls(
                                     onToggleMute()
                                 }
                             ) { VolumeIcon(isMuted, { muteScale.value }, it) }
+                        }
+
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = assetType != "VIDEO" && supportsFullResolution,
+                            enter = fadeIn(motionScheme.defaultEffectsSpec()) + scaleIn(motionScheme.defaultSpatialSpec(), initialScale = 0.6f),
+                            exit = fadeOut(motionScheme.defaultEffectsSpec()) + scaleOut(motionScheme.defaultSpatialSpec(), targetScale = 0.6f)
+                        ) {
+                            LabeledAction(
+                                label = stringResource(R.string.cd_full_size),
+                                showLabel = showButtonLabels,
+                                onClick = {
+                                    scope.bounce(fullSizeScale, motionScheme)
+                                    onToggleFullSize()
+                                }
+                            ) {
+                                Crossfade(
+                                    targetState = isFullSize,
+                                    animationSpec = motionScheme.defaultEffectsSpec(),
+                                    label = "FullSizeIcon"
+                                ) { fullRes ->
+                                    Icon(
+                                        imageVector = if (fullRes) Icons.Default.Hd else Icons.Outlined.Hd,
+                                        contentDescription = it,
+                                        modifier = Modifier.graphicsLayer {
+                                            scaleX = fullSizeScale.value
+                                            scaleY = fullSizeScale.value
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
