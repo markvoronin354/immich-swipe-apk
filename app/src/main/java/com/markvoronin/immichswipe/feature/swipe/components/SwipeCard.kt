@@ -34,6 +34,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -288,9 +289,10 @@ fun SwipeCard(
 
     val isTracking = topCardSwipeOffset != 0f
 
+    // The standard scheme doesn't overshoot, so a card promoted by a tap settles without the expressive bounce.
     val animatedScale by animateFloatAsState(
         targetValue = targetScale,
-        animationSpec = if (isTracking) tween(0) else motionScheme.fastSpatialSpec(),
+        animationSpec = if (isTracking) tween(0) else MotionScheme.standard().fastSpatialSpec(),
         label = "ScaleAnimation"
     )
 
