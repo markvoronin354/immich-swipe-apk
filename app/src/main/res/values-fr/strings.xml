@@ -453,7 +453,7 @@
     <string name="cd_paused">En pause</string>
     <string name="cd_download">Télécharger</string>
     <string name="cd_share">Partager</string>
-    <string name="cd_full_size">Charger en pleine résolution</string>
+    <string name="cd_full_size">Rés. max.</string>
     <string name="cd_favorite">Favori</string>
     <string name="cd_video">Vidéo</string>
     <string name="cd_asset_info">Infos du média</string>

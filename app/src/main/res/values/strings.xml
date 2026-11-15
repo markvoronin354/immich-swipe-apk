@@ -443,7 +443,7 @@
     <string name="cd_paused">Paused</string>
     <string name="cd_download">Download</string>
     <string name="cd_share">Share</string>
-    <string name="cd_full_size">Load full resolution</string>
+    <string name="cd_full_size">Full-res</string>
     <string name="cd_favorite">Favorite</string>
     <string name="cd_video">Video</string>
     <string name="cd_asset_info">Asset info</string>
