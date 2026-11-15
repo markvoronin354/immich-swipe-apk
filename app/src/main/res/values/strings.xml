@@ -350,6 +350,8 @@
     <string name="settings_section_about">About &amp; Legal</string>
     <string name="settings_source_code_label">Source Code</string>
     <string name="settings_source_code_desc">View the open source repository on GitHub</string>
+    <string name="settings_report_bug_label">Report a Bug</string>
+    <string name="settings_report_bug_desc">Open an issue on GitHub</string>
 
     <!-- App Tutorial -->
     <string name="tutorial_skip">Skip</string>

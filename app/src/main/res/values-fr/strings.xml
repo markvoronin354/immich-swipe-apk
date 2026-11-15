@@ -355,6 +355,8 @@
     <string name="settings_section_about">À propos et Légal</string>
     <string name="settings_source_code_label">Code source</string>
     <string name="settings_source_code_desc">Consulter le dépôt open source sur GitHub</string>
+    <string name="settings_report_bug_label">Signaler un bug</string>
+    <string name="settings_report_bug_desc">Ouvrir un ticket sur GitHub</string>
 
     <!-- Tutoriel de l'application -->
     <string name="tutorial_skip">Passer</string>

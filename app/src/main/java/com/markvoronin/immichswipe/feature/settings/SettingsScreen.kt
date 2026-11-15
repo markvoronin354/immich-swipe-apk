@@ -38,6 +38,7 @@ import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AdsClick
 import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarViewWeek
 import androidx.compose.material.icons.filled.Code
@@ -573,6 +574,13 @@ fun SettingsScreen(
                     subtitle = stringResource(R.string.settings_source_code_desc),
                     icon = Icons.Default.Code,
                     onClick = { uriHandler.openUri("https://github.com/markvoronin354/immich-swipe-android") }
+                )
+                SettingsItemGap()
+                SettingsClickableItem(
+                    title = stringResource(R.string.settings_report_bug_label),
+                    subtitle = stringResource(R.string.settings_report_bug_desc),
+                    icon = Icons.Default.BugReport,
+                    onClick = { uriHandler.openUri("https://github.com/markvoronin354/immich-swipe-apk/issues/new?template=bug_report.md") }
                 )
             }
         }
