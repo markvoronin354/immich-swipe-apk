@@ -15,6 +15,7 @@ import com.markvoronin.immichswipe.data.repository.SessionRepository
 import com.markvoronin.immichswipe.data.repository.SwipeDecisionRepository
 import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.domain.model.Asset
+import com.markvoronin.immichswipe.domain.model.ExifInfo
 import com.markvoronin.immichswipe.domain.usecase.ApplySwipeDecisionsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -528,6 +529,29 @@ class SwipeViewModel @Inject constructor(
         e.rethrowIfCancelled()
         AppLogger.e("SwipeViewModel", "Error loading albums for asset", e)
         emptyList()
+    }
+
+    /** Saves the description on the server, then mirrors it into the deck. False when the request failed. */
+    suspend fun saveDescription(assetId: String, description: String): Boolean = try {
+        assetRepository.updateAssetDescription(assetId, description)
+        fun Asset.withDescription() =
+            copy(exifInfo = (exifInfo ?: ExifInfo()).copy(description = description))
+        val masterIndex = masterWorkPile.indexOfFirst { it.id == assetId }
+        if (masterIndex != -1) {
+            masterWorkPile = masterWorkPile.toMutableList().also { it[masterIndex] = it[masterIndex].withDescription() }
+        }
+        _uiState.update { state ->
+            val index = state.assets.indexOfFirst { it.id == assetId }
+            if (index == -1) state.copy(masterWorkPile = masterWorkPile)
+            else state.copy(
+                assets = state.assets.toMutableList().also { it[index] = it[index].withDescription() },
+                masterWorkPile = masterWorkPile
+            )
+        }
+        true
+    } catch (e: Exception) {
+        e.rethrowIfCancelled()
+        false
     }
 
     fun openAddToAlbumDialog() {

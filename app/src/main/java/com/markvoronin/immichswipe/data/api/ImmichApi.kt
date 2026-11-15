@@ -63,6 +63,12 @@ interface ImmichApi {
     @PUT("api/assets")
     suspend fun updateAssets(@Body request: UpdateAssetsRequest)
 
+    @PUT("api/assets/{id}")
+    suspend fun updateAsset(
+        @Path("id") assetId: String,
+        @Body request: UpdateAssetRequest
+    )
+
     @PUT("api/assets/{id}/edits")
     suspend fun editAsset(
         @Path("id") assetId: String,
@@ -83,6 +89,11 @@ data class AssetEditActionItem(
 enum class AssetEditAction {
     crop, rotate,
 }
+
+
+data class UpdateAssetRequest(
+    val description: String
+)
 
 
 data class UpdateAssetsRequest(

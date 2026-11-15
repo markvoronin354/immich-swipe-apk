@@ -45,5 +45,6 @@ data class SwipeCardActions(
     val onToggleMute: () -> Unit = {},
     val onToggleFullSize: () -> Unit = {},
     val loadAlbumNames: suspend (String) -> List<String> = { emptyList() },
+    val saveDescription: suspend (String, String) -> Boolean = { _, _ -> false },
     val onSwipeOffsetChanged: (Float) -> Unit = {}
 )

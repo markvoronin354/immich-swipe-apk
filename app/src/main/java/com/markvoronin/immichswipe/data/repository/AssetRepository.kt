@@ -12,6 +12,7 @@ import com.markvoronin.immichswipe.data.api.DuplicateCluster
 import com.markvoronin.immichswipe.data.api.EditAssetRequest
 import com.markvoronin.immichswipe.data.api.ImmichApi
 import com.markvoronin.immichswipe.data.api.SearchAssetsRequest
+import com.markvoronin.immichswipe.data.api.UpdateAssetRequest
 import com.markvoronin.immichswipe.data.api.UpdateAssetsRequest
 import com.markvoronin.immichswipe.data.local.dao.AlbumAssetDao
 import com.markvoronin.immichswipe.data.local.entity.AlbumAssetEntity
@@ -548,6 +549,17 @@ class AssetRepository(
         }
     }
 
+
+    /** Sets the asset's description on the server; an empty string clears it. */
+    suspend fun updateAssetDescription(assetId: String, description: String) {
+        try {
+            api.updateAsset(assetId, UpdateAssetRequest(description = description))
+        } catch (e: Exception) {
+            e.rethrowIfCancelled()
+            AppLogger.e("AssetRepo", "Failed to update description of asset $assetId: ${e.message}", e)
+            throw e
+        }
+    }
 
     suspend fun updateAssetEdits(assetId: String, rotation: Int) {
         val normalizedRotation = ((rotation % 360) + 360) % 360

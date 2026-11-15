@@ -170,6 +170,7 @@ fun SwipeCardDeck(
                             onToggleMute = { viewModel.toggleMute() },
                             onToggleFullSize = { viewModel.toggleFullResolution() },
                             loadAlbumNames = { viewModel.loadAlbumNames(it) },
+                            saveDescription = { id, text -> viewModel.saveDescription(id, text) },
                             onSwipeOffsetChanged = { offset ->
                                 if (!isNextCard) {
                                     topCardOffsetX = offset

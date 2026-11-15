@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
@@ -796,7 +795,6 @@ fun SwipeCard(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(max = 360.dp)
                                 .onSizeChanged { metadataHeightPx = it.height.toFloat() }
                                 .offset {
                                     val yOffset = (metadataHeightPx * (1f - panelProgress.value)).toInt()
@@ -812,6 +810,7 @@ fun SwipeCard(
                                 asset = asset,
                                 albumNames = albumNames,
                                 backdrop = glassBackdrop,
+                                onSaveDescription = { actions.saveDescription(asset.id, it) },
                                 onClose = {
                                     scope.launch {
                                         offsetX.animateTo(

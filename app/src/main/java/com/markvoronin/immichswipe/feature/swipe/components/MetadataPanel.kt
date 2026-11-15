@@ -1,6 +1,8 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,8 +17,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.AspectRatio
 import androidx.compose.material.icons.outlined.CalendarMonth
@@ -25,20 +29,32 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
@@ -46,8 +62,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
@@ -62,6 +80,7 @@ import com.markvoronin.immichswipe.feature.swipe.utils.samsungModelName
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import kotlinx.coroutines.launch
 
 @Composable
 fun MetadataPanel(
@@ -69,12 +88,14 @@ fun MetadataPanel(
     albumNames: List<String>?,
     backdrop: Backdrop,
     onClose: () -> Unit,
+    onSaveDescription: suspend (String) -> Boolean = { false },
     onDrag: (Float) -> Unit = {},
     onDragEnd: (Float) -> Unit = {},
     panelProgress: Float = 0f,
     maxHeightPx: Float = 0f
 ) {
     val scrollState = rememberScrollState()
+    var isEditingDescription by remember(asset.id) { mutableStateOf(false) }
 
     LaunchedEffect(panelProgress) {
         if (panelProgress == 0f) {
@@ -171,8 +192,20 @@ fun MetadataPanel(
                 }
             }
             Spacer(Modifier.height(4.dp))
+            DescriptionRow(
+                description = asset.exifInfo?.description?.takeIf { it.isNotBlank() },
+                onClick = { isEditingDescription = true }
+            )
             AssetMetadataRows(asset = asset, albumNames = albumNames)
         }
+    }
+
+    if (isEditingDescription) {
+        DescriptionDialog(
+            initial = asset.exifInfo?.description.orEmpty(),
+            onSave = onSaveDescription,
+            onDismiss = { isEditingDescription = false }
+        )
     }
 }
 
@@ -253,4 +286,106 @@ fun MetadataRow(icon: ImageVector, label: String, value: String, showDivider: Bo
             }
         }
     }
+}
+
+/** The description, or a prompt to add one. The text can run to several lines, so the icon stays beside the first. */
+@Composable
+private fun DescriptionRow(description: String?, onClick: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).clickable(onClick = onClick)) {
+        Box(modifier = Modifier.heightIn(min = 40.dp), contentAlignment = Alignment.CenterStart) {
+            Icon(imageVector = Icons.AutoMirrored.Outlined.Notes, contentDescription = null, tint = LocalContentColor.current.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Box(modifier = Modifier.heightIn(min = 40.dp), contentAlignment = Alignment.CenterStart) {
+                if (description != null) {
+                    Text(text = description, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 10.dp))
+                } else {
+                    Text(text = stringResource(R.string.swipe_metadata_add_description), style = MaterialTheme.typography.bodyMedium, color = LocalContentColor.current.copy(alpha = 0.7f))
+                }
+            }
+            HorizontalDivider(thickness = 0.5.dp, color = LocalContentColor.current.copy(alpha = 0.2f))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun DescriptionDialog(
+    initial: String,
+    onSave: suspend (String) -> Boolean,
+    onDismiss: () -> Unit
+) {
+    var text by remember { mutableStateOf(initial) }
+    // Saving is a network call: lock the dialog while it runs so it can't be saved twice or dismissed mid-request.
+    var saving by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val errorMessage = stringResource(R.string.swipe_metadata_description_error)
+    val trimmed = text.trim()
+    val canSave = !saving && trimmed != initial.trim()
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+
+    AlertDialog(
+        onDismissRequest = { if (!saving) onDismiss() },
+        icon = {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer, MaterialShapes.Cookie9Sided.toShape()),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.Notes,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        },
+        title = {
+            Text(
+                text = stringResource(R.string.swipe_metadata_description),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester),
+                placeholder = { Text(stringResource(R.string.swipe_metadata_add_description)) },
+                readOnly = saving,
+                minLines = 3,
+                maxLines = 6,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    saving = true
+                    scope.launch {
+                        if (onSave(trimmed)) {
+                            onDismiss()
+                        } else {
+                            saving = false
+                            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
+                enabled = canSave
+            ) {
+                Text(stringResource(R.string.swipe_metadata_description_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !saving) {
+                Text(stringResource(R.string.common_cancel))
+            }
+        }
+    )
 }

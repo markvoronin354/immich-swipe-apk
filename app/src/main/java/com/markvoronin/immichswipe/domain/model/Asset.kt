@@ -43,7 +43,8 @@ data class ExifInfo(
     @SerializedName("exifImageHeight")
     val imageHeight: Int? = null,
     val make: String? = null,
-    val model: String? = null
+    val model: String? = null,
+    val description: String? = null
 ) {
     // exifImageWidth/Height are pre-orientation; EXIF orientations 5-8 (and ±90) display rotated, so swap them.
     val displayAspectRatio: Float

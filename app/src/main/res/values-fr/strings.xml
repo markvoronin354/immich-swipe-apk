@@ -221,6 +221,10 @@
     <string name="swipe_metadata_camera">Appareil photo</string>
     <string name="swipe_metadata_albums">Albums</string>
     <string name="swipe_metadata_no_albums">Aucun</string>
+    <string name="swipe_metadata_description">Description</string>
+    <string name="swipe_metadata_add_description">Ajouter une description</string>
+    <string name="swipe_metadata_description_save">Enregistrer</string>
+    <string name="swipe_metadata_description_error">Impossible d\'enregistrer la description</string>
     <string name="swipe_loading">Chargement…</string>
     <string name="swipe_fetching_assets">Chargement des médias…</string>
     <string name="swipe_syncing">Synchronisation…</string>

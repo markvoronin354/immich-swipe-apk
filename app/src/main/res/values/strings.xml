@@ -219,6 +219,10 @@
     <string name="swipe_metadata_camera">Camera</string>
     <string name="swipe_metadata_albums">Albums</string>
     <string name="swipe_metadata_no_albums">None</string>
+    <string name="swipe_metadata_description">Description</string>
+    <string name="swipe_metadata_add_description">Add a description</string>
+    <string name="swipe_metadata_description_save">Save</string>
+    <string name="swipe_metadata_description_error">Couldn\'t save the description</string>
     <string name="swipe_loading">Loading…</string>
     <string name="swipe_fetching_assets">Fetching assets…</string>
     <string name="swipe_syncing">Syncing…</string>
