@@ -190,11 +190,21 @@ fun HomeScreen(
         )
     }
 
-    // Page transitions on the slow expressive springs: the page on top slides the full width and the page underneath
-    // shifts a third of it, both crossfading.
+    // Page transitions on the default springs: both pages drift a quarter of the width while crossfading.
+    // The swipe and duplicates screens override them with the slow springs: the page on top slides the full width and
+    // the page underneath shifts a third of it.
     val motionScheme = MaterialTheme.motionScheme
-    val pageSlideSpec = motionScheme.slowSpatialSpec<IntOffset>()
-    val pageFadeSpec = motionScheme.slowEffectsSpec<Float>()
+    val pageSlideSpec = motionScheme.defaultSpatialSpec<IntOffset>()
+    val pageFadeSpec = motionScheme.defaultEffectsSpec<Float>()
+    val slowSlideSpec = motionScheme.slowSpatialSpec<IntOffset>()
+    val slowFadeSpec = motionScheme.slowEffectsSpec<Float>()
+    val slowPageTransition = NavDisplay.transitionSpec {
+        (slideInHorizontally(slowSlideSpec) { it } + fadeIn(slowFadeSpec)) togetherWith
+            (slideOutHorizontally(slowSlideSpec) { -it / 3 } + fadeOut(slowFadeSpec))
+    } + NavDisplay.popTransitionSpec {
+        (slideInHorizontally(slowSlideSpec) { -it / 3 } + fadeIn(slowFadeSpec)) togetherWith
+            (slideOutHorizontally(slowSlideSpec) { it } + fadeOut(slowFadeSpec))
+    }
 
     val tutorialController = LocalTutorialController.current
         ?: rememberTutorialController()
@@ -211,12 +221,12 @@ fun HomeScreen(
                     onBack = navigateBack,
                     modifier = Modifier.fillMaxSize(),
                     transitionSpec = {
-                        (slideInHorizontally(pageSlideSpec) { it } + fadeIn(pageFadeSpec)) togetherWith
-                            (slideOutHorizontally(pageSlideSpec) { -it / 3 } + fadeOut(pageFadeSpec))
+                        (slideInHorizontally(pageSlideSpec) { it / 4 } + fadeIn(pageFadeSpec)) togetherWith
+                            (slideOutHorizontally(pageSlideSpec) { -it / 4 } + fadeOut(pageFadeSpec))
                     },
                     popTransitionSpec = {
-                        (slideInHorizontally(pageSlideSpec) { -it / 3 } + fadeIn(pageFadeSpec)) togetherWith
-                            (slideOutHorizontally(pageSlideSpec) { it } + fadeOut(pageFadeSpec))
+                        (slideInHorizontally(pageSlideSpec) { -it / 4 } + fadeIn(pageFadeSpec)) togetherWith
+                            (slideOutHorizontally(pageSlideSpec) { it / 4 } + fadeOut(pageFadeSpec))
                     },
                     entryProvider = entryProvider {
                         entry<NavKey.Home> {
@@ -312,7 +322,7 @@ fun HomeScreen(
                                 }
                             }
                         }
-                        entry<NavKey.Swipe> { key ->
+                        entry<NavKey.Swipe>(metadata = slowPageTransition) { key ->
                             val selectedAlbum = uiState.filteredAlbums.firstOrNull { it.id == key.albumId }
                                 ?: uiState.selectedAlbum?.takeIf { it.id == key.albumId }
                                 ?: Album(
@@ -331,7 +341,7 @@ fun HomeScreen(
                                 onBack = navigateBack
                             )
                         }
-                        entry<NavKey.Duplicates> {
+                        entry<NavKey.Duplicates>(metadata = slowPageTransition) {
                             val duplicatesViewModel: DuplicatesViewModel = hiltViewModel(
                                 key = "duplicates-$sessionKey"
                             )

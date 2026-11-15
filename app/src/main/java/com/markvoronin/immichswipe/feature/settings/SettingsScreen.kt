@@ -196,13 +196,10 @@ fun SettingsScreen(
     AnimatedContent(
         targetState = activeSubMenu,
         transitionSpec = {
-            if (targetState != SettingsSubMenu.NONE) {
-                (slideInHorizontally(animationSpec = motionScheme.defaultSpatialSpec()) { width -> width } + fadeIn(animationSpec = motionScheme.defaultEffectsSpec()))
-                    .togetherWith(slideOutHorizontally(animationSpec = motionScheme.defaultSpatialSpec()) { width -> -width } + fadeOut(animationSpec = motionScheme.defaultEffectsSpec()))
-            } else {
-                (slideInHorizontally(animationSpec = motionScheme.defaultSpatialSpec()) { width -> -width } + fadeIn(animationSpec = motionScheme.defaultEffectsSpec()))
-                    .togetherWith(slideOutHorizontally(animationSpec = motionScheme.defaultSpatialSpec()) { width -> width } + fadeOut(animationSpec = motionScheme.defaultEffectsSpec()))
-            }.using(SizeTransform(clip = false))
+            val direction = if (targetState != SettingsSubMenu.NONE) 1 else -1
+            (slideInHorizontally(animationSpec = motionScheme.defaultSpatialSpec()) { width -> direction * width / 4 } + fadeIn(animationSpec = motionScheme.defaultEffectsSpec()))
+                .togetherWith(slideOutHorizontally(animationSpec = motionScheme.defaultSpatialSpec()) { width -> -direction * width / 4 } + fadeOut(animationSpec = motionScheme.defaultEffectsSpec()))
+                .using(SizeTransform(clip = false))
         },
         label = "settings_menu_transition"
     ) { subMenu ->

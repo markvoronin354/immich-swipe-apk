@@ -36,7 +36,7 @@ fun SharedTransitionHost(modifier: Modifier = Modifier, content: @Composable () 
 @Composable
 fun Modifier.sharedAlbumName(albumId: String, listViewport: () -> LayoutCoordinates? = { null }): Modifier {
     val scope = LocalSharedTransitionScope.current ?: return this
-    // Same expressive spring as the page slide, so the name lands with the page.
+    // Same spring as the swipe and duplicates page slide, so the name lands with the page.
     val boundsSpec = MaterialTheme.motionScheme.slowSpatialSpec<Rect>()
     val boundsTransform = remember(boundsSpec) { BoundsTransform { _, _ -> boundsSpec } }
     var coordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
