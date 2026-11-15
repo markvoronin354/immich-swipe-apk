@@ -200,6 +200,10 @@
     <string name="add_to_album_lock_success">Asset locked</string>
     <string name="add_to_album_archive_subtitle">Move asset to archive</string>
     <string name="add_to_album_archive_success">Asset archived</string>
+    <string name="add_to_album_new_title">New album</string>
+    <string name="add_to_album_new_subtitle">Create an album with this asset</string>
+    <string name="add_to_album_new_name_label">Album name</string>
+    <string name="add_to_album_new_create">Create</string>
     <string name="swipe_summary_title">Sorting summary</string>
     <string name="swipe_sync_success">Synced!</string>
     <string name="swipe_sync_success_desc">Your changes are on Immich</string>

@@ -107,6 +107,17 @@ fun SwipeScreenDialogs(
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 }
             },
+            onCreateAlbum = { newAlbumName ->
+                viewModel.createAlbumWithCurrentAsset(newAlbumName) { success, albumName ->
+                    viewModel.dismissAddToAlbumDialog()
+                    val message = if (success) {
+                        successTemplate.format(albumName)
+                    } else {
+                        errorTemplate.format(albumName)
+                    }
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
+            },
             onLockSelect = {
                 viewModel.toggleLock()
                 viewModel.dismissAddToAlbumDialog()

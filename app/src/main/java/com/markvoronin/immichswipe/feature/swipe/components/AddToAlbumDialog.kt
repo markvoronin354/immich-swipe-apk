@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
@@ -27,14 +28,20 @@ import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +49,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -52,6 +61,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -84,11 +94,13 @@ fun AddToAlbumDialog(
     showArchiveButton: Boolean = true,
     baseUrl: String = "",
     onAlbumSelect: (Album) -> Unit,
+    onCreateAlbum: ((String) -> Unit)? = null,
     onLockSelect: (() -> Unit)? = null,
     onArchiveSelect: (() -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    var showCreateDialog by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
     val filteredAlbums = remember(albums, searchQuery) {
@@ -127,6 +139,16 @@ fun AddToAlbumDialog(
             val q = trimmed.normalizeForSearch()
             archiveTitle.normalizeForSearch().contains(q) || "archive".contains(q)
         }
+    }
+
+    val showCreateInDialog = onCreateAlbum != null
+
+    if (showCreateDialog && onCreateAlbum != null) {
+        NewAlbumNameDialog(
+            initialName = searchQuery.trim(),
+            onConfirm = onCreateAlbum,
+            onDismiss = { showCreateDialog = false }
+        )
     }
 
     val baseUrlClean = baseUrl.removeSuffix("/")
@@ -256,7 +278,7 @@ fun AddToAlbumDialog(
                         isLoading -> {
                             SolidShapeLoadingIndicator(size = 48.dp)
                         }
-                        filteredAlbums.isEmpty() && !showLockInDialog && !showArchiveInDialog -> {
+                        filteredAlbums.isEmpty() && !showLockInDialog && !showArchiveInDialog && !showCreateInDialog -> {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
@@ -284,7 +306,7 @@ fun AddToAlbumDialog(
                                     .verticalFadingEdges(listState, length = 24.dp),
                                 verticalArrangement = Arrangement.spacedBy(AlbumTileGap)
                             ) {
-                                if (showArchiveInDialog || showLockInDialog) {
+                                if (showArchiveInDialog || showLockInDialog || showCreateInDialog) {
                                     item(key = "shortcut_items") {
                                         // Separate tiles: archiving and locking are different actions.
                                         Column(verticalArrangement = Arrangement.spacedBy(AlbumTileGap)) {
@@ -302,6 +324,14 @@ fun AddToAlbumDialog(
                                                     title = lockFolderTitle,
                                                     subtitle = stringResource(R.string.add_to_album_lock_subtitle),
                                                     onClick = onLockSelect
+                                                )
+                                            }
+                                            if (showCreateInDialog) {
+                                                ShortcutSelectionItem(
+                                                    icon = Icons.Default.Add,
+                                                    title = stringResource(R.string.add_to_album_new_title),
+                                                    subtitle = stringResource(R.string.add_to_album_new_subtitle),
+                                                    onClick = { showCreateDialog = true }
                                                 )
                                             }
                                         }
@@ -424,6 +454,77 @@ private fun AlbumSelectionItem(
             )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun NewAlbumNameDialog(
+    initialName: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var name by remember { mutableStateOf(initialName) }
+    // Creating is a network call: lock the dialog after the first tap so it can't create two albums.
+    var submitted by remember { mutableStateOf(false) }
+    val trimmed = name.trim()
+    val canCreate = trimmed.isNotEmpty() && !submitted
+    val create = {
+        submitted = true
+        onConfirm(trimmed)
+    }
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer, MaterialShapes.Cookie9Sided.toShape()),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        },
+        title = {
+            Text(
+                text = stringResource(R.string.add_to_album_new_title),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester),
+                label = { Text(stringResource(R.string.add_to_album_new_name_label)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Words,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(onDone = { if (canCreate) create() })
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { create() }, enabled = canCreate) {
+                Text(stringResource(R.string.add_to_album_new_create))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.common_cancel))
+            }
+        }
+    )
 }
 
 @Composable

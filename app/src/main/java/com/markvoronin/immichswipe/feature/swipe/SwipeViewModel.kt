@@ -553,16 +553,7 @@ class SwipeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val success = albumRepository.addAssetToAlbum(targetAlbum.id, asset.id).isSuccess
-                if (success) {
-                    val config = sessionRepository.sessionConfig.first()
-                    if (config != null) {
-                        assetRepository.deleteAlbumAssets(Album.VIRTUAL_ORPHANS_ID, config.userId, listOf(asset.id))
-                    }
-                    if (_uiState.value.albumId == Album.VIRTUAL_ORPHANS_ID) {
-                        allAssetsFoundFlow.value = allAssetsFoundFlow.value.filter { it.id != asset.id }
-                    }
-                    _uiState.update { it.copy(albumAddSuccessCount = it.albumAddSuccessCount + 1) }
-                }
+                if (success) onAssetAddedToAlbum(asset)
                 onResult(success, targetAlbum.albumName)
             } catch (e: Exception) {
                 e.rethrowIfCancelled()
@@ -570,6 +561,32 @@ class SwipeViewModel @Inject constructor(
                 onResult(false, targetAlbum.albumName)
             }
         }
+    }
+
+    fun createAlbumWithCurrentAsset(albumName: String, onResult: (Boolean, String) -> Unit) {
+        val asset = _uiState.value.currentAsset ?: return
+        viewModelScope.launch {
+            try {
+                val success = albumRepository.createAlbum(albumName, listOf(asset.id)).isSuccess
+                if (success) onAssetAddedToAlbum(asset)
+                onResult(success, albumName)
+            } catch (e: Exception) {
+                e.rethrowIfCancelled()
+                AppLogger.e("SwipeViewModel", "Error creating album $albumName", e)
+                onResult(false, albumName)
+            }
+        }
+    }
+
+    private suspend fun onAssetAddedToAlbum(asset: Asset) {
+        val config = sessionRepository.sessionConfig.first()
+        if (config != null) {
+            assetRepository.deleteAlbumAssets(Album.VIRTUAL_ORPHANS_ID, config.userId, listOf(asset.id))
+        }
+        if (_uiState.value.albumId == Album.VIRTUAL_ORPHANS_ID) {
+            allAssetsFoundFlow.value = allAssetsFoundFlow.value.filter { it.id != asset.id }
+        }
+        _uiState.update { it.copy(albumAddSuccessCount = it.albumAddSuccessCount + 1) }
     }
     private val assetsEditedThisSession = mutableSetOf<String>()
 

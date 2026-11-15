@@ -196,6 +196,10 @@
     <string name="add_to_album_lock_success">Élément verrouillé</string>
     <string name="add_to_album_archive_subtitle">Placer dans les archives</string>
     <string name="add_to_album_archive_success">Élément archivé</string>
+    <string name="add_to_album_new_title">Nouvel album</string>
+    <string name="add_to_album_new_subtitle">Créer un album avec cet élément</string>
+    <string name="add_to_album_new_name_label">Nom de l\'album</string>
+    <string name="add_to_album_new_create">Créer</string>
     <string name="swipe_locked">Verrouiller</string>
     <string name="swipe_undo">Annuler</string>
     <string name="swipe_undo_upper">ANNULER</string>
