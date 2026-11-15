@@ -7,7 +7,7 @@ import com.markvoronin.immichswipe.core.SessionConfig
 import com.markvoronin.immichswipe.core.SessionManager
 import com.markvoronin.immichswipe.core.SortOrder
 import com.markvoronin.immichswipe.data.local.dao.AlbumDecisionCount
-import com.markvoronin.immichswipe.data.local.dao.UnsyncedDecisionCounts
+import com.markvoronin.immichswipe.data.local.dao.DecisionCounts
 import com.markvoronin.immichswipe.data.local.entity.SyncHistoryEntity
 import com.markvoronin.immichswipe.data.local.entity.UserAccountEntity
 import com.markvoronin.immichswipe.data.repository.AccountRepository
@@ -60,7 +60,7 @@ class HomeViewModelTest {
     private val unsyncedCount = MutableStateFlow(0)
     private val albumCounts = MutableStateFlow<List<AlbumDecisionCount>>(emptyList())
     private val history = MutableStateFlow<List<SyncHistoryEntity>>(emptyList())
-    private val unsyncedDecisions = MutableStateFlow(UnsyncedDecisionCounts(0, 0))
+    private val decisionCounts = MutableStateFlow(DecisionCounts(0, 0))
 
     private val sessionRepository = mockk<SessionRepository>(relaxed = true) {
         every { playbackBehavior } returns flowOf(PlaybackBehavior.IGNORE)
@@ -79,7 +79,7 @@ class HomeViewModelTest {
         every { getGlobalUnsyncedCount("u1") } returns unsyncedCount
         every { getAllAlbumDecisionCounts("u1") } returns albumCounts
         every { getSyncHistory("u1") } returns history
-        every { getUnsyncedDecisionCounts("u1") } returns unsyncedDecisions
+        every { getDecisionCounts("u1") } returns decisionCounts
     }
     private val assetRepository = mockk<AssetRepository>(relaxed = true) {
         coEvery { getTotalAssetCount(any()) } returns Result.success(100)
@@ -231,11 +231,11 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `stats add up the sync history and the pending decisions`() {
+    fun `stats take deleted and locked from the history and kept and archived from the decisions`() {
         val vm = createViewModel()
         val now = System.currentTimeMillis()
         val twoWeeksAgo = now - 14 * 24 * 60 * 60 * 1000L
-        unsyncedDecisions.value = UnsyncedDecisionCounts(keptCount = 3, archivedCount = 1)
+        decisionCounts.value = DecisionCounts(keptCount = 3, archivedCount = 1)
         history.value = listOf(
             syncEntry(now, deleted = 2, bytes = 1000, kept = 4, archived = 1, locked = 1),
             syncEntry(twoWeeksAgo, deleted = 5, bytes = 9000, kept = 6)
@@ -244,9 +244,10 @@ class HomeViewModelTest {
         val stats = vm.uiState.value.stats
         assertEquals(7, stats.totalDeleted)
         assertEquals(10_000L, stats.totalBytesSaved)
-        assertEquals(13, stats.totalKept)
-        assertEquals(2, stats.totalArchived)
+        assertEquals(3, stats.totalKept)
+        assertEquals(1, stats.totalArchived)
         assertEquals(1, stats.totalLocked)
+        assertEquals(12, stats.totalSwiped)
         assertEquals(2, stats.weeklyDeleted)
         assertEquals(1000L, stats.weeklyBytesSaved)
     }

@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.SessionManager
 import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
-import com.markvoronin.immichswipe.data.local.dao.UnsyncedDecisionCounts
+import com.markvoronin.immichswipe.data.local.dao.DecisionCounts
 import com.markvoronin.immichswipe.data.repository.AccountRepository
 import com.markvoronin.immichswipe.data.repository.AlbumRepository
 import com.markvoronin.immichswipe.data.repository.AssetRepository
@@ -144,14 +144,14 @@ class HomeViewModel @Inject constructor(
                 .map { it?.userId ?: "" }
                 .distinctUntilChanged()
                 .flatMapLatest { userId ->
-                    if (userId.isEmpty()) flowOf(Pair(emptyList(), UnsyncedDecisionCounts(0, 0)))
+                    if (userId.isEmpty()) flowOf(Pair(emptyList(), DecisionCounts(0, 0)))
                     else combine(
                         swipeDecisionRepository.getSyncHistory(userId),
-                        swipeDecisionRepository.getUnsyncedDecisionCounts(userId)
-                    ) { history, unsyncedCounts ->
-                        Pair(history, unsyncedCounts)
+                        swipeDecisionRepository.getDecisionCounts(userId)
+                    ) { history, decisionCounts ->
+                        Pair(history, decisionCounts)
                     }
-                }.collect { (history, unsyncedCounts) ->
+                }.collect { (history, decisionCounts) ->
                     val albums = _uiState.value.albums
                     val treatedCounts = _uiState.value.albumTreatedCounts
                     val now = System.currentTimeMillis()
@@ -163,8 +163,10 @@ class HomeViewModel @Inject constructor(
                     val totalBytes = history.sumOf { it.bytesSaved }
                     val totalLocked = history.sumOf { it.lockedCount }
                     
-                    val totalKept = history.sumOf { it.keptCount } + unsyncedCounts.keptCount
-                    val totalArchived = history.sumOf { it.archivedCount } + unsyncedCounts.archivedCount
+                    // Kept and archived assets keep their decision row after a sync, so the rows are the
+                    // source of truth; summing the per-sync history counted them again on every sync.
+                    val totalKept = decisionCounts.keptCount
+                    val totalArchived = decisionCounts.archivedCount
                     
                     val weeklyDeleted = weeklyHistory.sumOf { it.deletedCount }
                     val weeklyBytes = weeklyHistory.sumOf { it.bytesSaved }

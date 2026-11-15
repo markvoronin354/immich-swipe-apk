@@ -83,12 +83,15 @@ interface SwipeDecisionDao {
 
     @Query("""
         SELECT 
-            COUNT(CASE WHEN decision = 'KEEP' AND isSynced = 0 THEN 1 END) as keptCount,
-            COUNT(CASE WHEN decision = 'ARCHIVE' AND isSynced = 0 THEN 1 END) as archivedCount
+            COUNT(CASE WHEN decision = 'KEEP' THEN 1 END) as keptCount,
+            COUNT(CASE WHEN decision = 'ARCHIVE' THEN 1 END) as archivedCount
         FROM swipe_decisions 
         WHERE userId = :userId
     """)
-    fun getUnsyncedDecisionCounts(userId: String): Flow<UnsyncedDecisionCounts>
+    fun getDecisionCounts(userId: String): Flow<DecisionCounts>
+
+    @Query("SELECT assetId FROM swipe_decisions WHERE userId = :userId AND isSynced = 0")
+    suspend fun getUnsyncedAssetIds(userId: String): List<String>
 
     @Query("SELECT * FROM swipe_decisions WHERE userId = :userId")
     fun getAllDecisionsForUser(userId: String): Flow<List<SwipeDecisionEntity>>
@@ -159,7 +162,7 @@ data class AlbumDecisionCount(
 )
 
 
-data class UnsyncedDecisionCounts(
+data class DecisionCounts(
     val keptCount: Int,
     val archivedCount: Int
 )

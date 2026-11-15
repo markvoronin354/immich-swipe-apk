@@ -1,8 +1,8 @@
 package com.markvoronin.immichswipe.data.repository
 
 import com.markvoronin.immichswipe.data.local.dao.AlbumDecisionCount
+import com.markvoronin.immichswipe.data.local.dao.DecisionCounts
 import com.markvoronin.immichswipe.data.local.dao.SwipeDecisionDao
-import com.markvoronin.immichswipe.data.local.dao.UnsyncedDecisionCounts
 import com.markvoronin.immichswipe.data.local.entity.SwipeDecisionEntity
 import com.markvoronin.immichswipe.data.local.entity.SyncHistoryEntity
 import kotlinx.coroutines.flow.Flow
@@ -27,8 +27,12 @@ class SwipeDecisionRepository @Inject constructor(
         return swipeDecisionDao.getGlobalUnsyncedCount(userId)
     }
 
-    fun getUnsyncedDecisionCounts(userId: String): Flow<UnsyncedDecisionCounts> {
-        return swipeDecisionDao.getUnsyncedDecisionCounts(userId)
+    fun getDecisionCounts(userId: String): Flow<DecisionCounts> {
+        return swipeDecisionDao.getDecisionCounts(userId)
+    }
+
+    suspend fun getUnsyncedAssetIds(userId: String): List<String> {
+        return swipeDecisionDao.getUnsyncedAssetIds(userId)
     }
 
     fun getAllDecisionsForUser(userId: String): Flow<List<SwipeDecisionEntity>> {
