@@ -23,18 +23,20 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
         assetsEditedThisSession: Set<String>,
         deletedCount: Int,
         deletedSize: Long,
-        keptCount: Int,
-        archiveCount: Int,
         lockedCount: Int
     ): ApplyResult = withContext(Dispatchers.IO) {
+        // The screen keeps already synced KEEP and ARCHIVE decisions, so only the pending ones are
+        // sent and counted; otherwise every sync would count them again.
+        val pendingIds = swipeDecisionRepository.getUnsyncedAssetIds(userId).toHashSet()
         val toDelete = decisions.filter { it.value == SwipeDecision.DELETE }.keys.toList()
-        val toArchive = decisions.filter { it.value == SwipeDecision.ARCHIVE }.keys.toList()
+        val toArchive = decisions.filter { it.value == SwipeDecision.ARCHIVE && it.key in pendingIds }.keys.toList()
         val toLock = decisions.filter { it.value == SwipeDecision.LOCK }.keys.toList()
+        val keptCount = decisions.count { it.value == SwipeDecision.KEEP && it.key in pendingIds }
         val allSwipedIds = decisions.keys.toList()
 
         AppLogger.i(
             "ApplySwipeDecisionsUseCase",
-            "Applying changes: ${toDelete.size} to delete, $keptCount kept, $archiveCount archive, $lockedCount locked"
+            "Applying changes: ${toDelete.size} to delete, $keptCount kept, ${toArchive.size} archive, $lockedCount locked"
         )
 
         val failedSteps = linkedSetOf<SyncStep>()
@@ -90,8 +92,13 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
             }
         }
 
-        // 2. Mark decisions as synced only when their server step succeeded (KEEP, ARCHIVE)
-        val toMarkSynced = allSwipedIds.filter { it !in toDelete && it !in toLock && it !in failedIds }
+        // 2. Mark decisions as synced only when their server step succeeded (KEEP, ARCHIVE). Kept items
+        // have no server step, so they wait until everything succeeded and are counted by the retry.
+        val allServerStepsOk = deleteOk && archiveOk && lockOk
+        val toMarkSynced = allSwipedIds.filter {
+            it !in toDelete && it !in toLock && it !in failedIds &&
+                (allServerStepsOk || decisions[it] != SwipeDecision.KEEP)
+        }
         if (toMarkSynced.isNotEmpty()) {
             swipeDecisionRepository.markAsSynced(toMarkSynced, userId)
         }
@@ -119,10 +126,8 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
             }
         ) failedFavorites += favsToRemove
 
-        // 3. Save sync history, counting only what was really applied on the server. Kept items have
-        // no server step, so they are only counted once everything succeeded; otherwise the retry
-        // of this apply would count them a second time.
-        val allServerStepsOk = deleteOk && archiveOk && lockOk
+        // 3. Save sync history, counting only what was really applied on the server. Kept items are
+        // only counted once everything succeeded, matching when they are marked synced.
         val keptForHistory = if (allServerStepsOk) keptCount else 0
         val anyApplied = (toDelete.isNotEmpty() && deleteOk) || (toLock.isNotEmpty() && lockOk) ||
             (toArchive.isNotEmpty() && archiveOk) || keptForHistory > 0
@@ -132,7 +137,7 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
                 deletedCount = if (deleteOk) deletedCount else 0,
                 bytesSaved = if (deleteOk) deletedSize else 0,
                 keptCount = keptForHistory,
-                archivedCount = if (archiveOk) archiveCount else 0,
+                archivedCount = if (archiveOk) toArchive.size else 0,
                 lockedCount = if (lockOk) lockedCount else 0
             )
         }

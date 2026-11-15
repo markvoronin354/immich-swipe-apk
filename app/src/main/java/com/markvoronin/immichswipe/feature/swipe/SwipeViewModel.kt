@@ -696,8 +696,6 @@ class SwipeViewModel @Inject constructor(
                     assetsEditedThisSession = assetsEditedThisSession,
                     deletedCount = currentState.deletedCount,
                     deletedSize = currentState.deletedSize,
-                    keptCount = currentState.keptCount,
-                    archiveCount = currentState.archiveCount,
                     lockedCount = currentState.lockedCount
                 )
 

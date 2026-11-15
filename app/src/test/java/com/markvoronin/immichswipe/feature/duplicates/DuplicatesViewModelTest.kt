@@ -564,6 +564,7 @@ class DuplicatesViewModelTest {
 
     @Test
     fun `syncing deletes the marked assets, records the history and reloads`() {
+        coEvery { swipeDecisionRepository.getUnsyncedAssetIds("u1") } returns listOf("large", "small", "medium")
         val vm = createViewModel()
         vm.toggleDecision("large")            // KEEP
         vm.toggleDecision("small")
@@ -585,6 +586,24 @@ class DuplicatesViewModelTest {
         coVerify(exactly = 2) { api.getDuplicates() }
         assertFalse(vm.uiState.value.isSyncing)
         assertNull(vm.uiState.value.error)
+    }
+
+    @Test
+    fun `already synced kept assets are not counted again`() {
+        coEvery { swipeDecisionRepository.getUnsyncedAssetIds("u1") } returns listOf("small", "medium")
+        val vm = createViewModel()
+        vm.toggleDecision("large")            // KEEP, synced by an earlier sync
+        vm.toggleDecision("small")
+        vm.toggleDecision("small")            // DELETE
+
+        vm.syncDeletions()
+
+        coVerify {
+            swipeDecisionRepository.saveSyncHistory(
+                userId = "u1", deletedCount = 1, bytesSaved = any(),
+                keptCount = 0, archivedCount = 0, lockedCount = 0
+            )
+        }
     }
 
     @Test

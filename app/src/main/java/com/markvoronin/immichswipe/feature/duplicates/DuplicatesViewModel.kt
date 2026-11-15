@@ -353,6 +353,10 @@ class DuplicatesViewModel @Inject constructor(
                         // Remove deleted assets from decisions DB
                         swipeDecisionRepository.removeDecisions(toDeleteSet.toList(), userId)
 
+                        // Decisions cover every album and stay after a sync: count only the kept ones still pending
+                        val pendingIds = swipeDecisionRepository.getUnsyncedAssetIds(userId).toHashSet()
+                        val newKeptCount = toKeepSet.count { it in pendingIds }
+
                         // Mark kept assets as synced
                         if (toKeepSet.isNotEmpty()) {
                             swipeDecisionRepository.markAsSynced(toKeepSet.toList(), userId)
@@ -363,7 +367,7 @@ class DuplicatesViewModel @Inject constructor(
                             userId = userId,
                             deletedCount = deletedCount,
                             bytesSaved = bytesSaved,
-                            keptCount = toKeepSet.size,
+                            keptCount = newKeptCount,
                             archivedCount = 0,
                             lockedCount = 0
                         )

@@ -618,7 +618,7 @@ class SwipeViewModelTest {
 
     private fun stubApply(result: ApplyResult) = slot<Map<String, SwipeDecision>>().also { decisions ->
         coEvery {
-            applyUseCase(any(), any(), capture(decisions), any(), any(), any(), any(), any(), any(), any(), any())
+            applyUseCase(any(), any(), capture(decisions), any(), any(), any(), any(), any(), any())
         } returns result
     }
 
@@ -705,7 +705,7 @@ class SwipeViewModelTest {
     fun `a crash while applying is reported and stops the spinner`() {
         val vm = openAlbum()
         coEvery {
-            applyUseCase(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
+            applyUseCase(any(), any(), any(), any(), any(), any(), any(), any(), any())
         } throws IOException("server down")
 
         vm.applyChanges()

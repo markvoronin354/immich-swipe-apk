@@ -1,6 +1,7 @@
 package com.markvoronin.immichswipe.domain.usecase
 
 import com.markvoronin.immichswipe.data.api.ImmichApi
+import com.markvoronin.immichswipe.data.api.UpdateAssetsRequest
 import com.markvoronin.immichswipe.data.local.dao.AlbumAssetDao
 import com.markvoronin.immichswipe.data.local.dao.SwipeDecisionDao
 import com.markvoronin.immichswipe.data.local.entity.SyncHistoryEntity
@@ -32,6 +33,9 @@ class ApplySwipeDecisionsUseCaseTest {
         val decisionDao = mutableListOf<RecordedCall>()
         val albumAssetDao = mutableListOf<RecordedCall>()
 
+        /** What the database reports as not yet synced; the tests set it before applying. */
+        var unsyncedIds: List<String> = emptyList()
+
         val useCase: ApplySwipeDecisionsUseCase
 
         init {
@@ -44,7 +48,11 @@ class ApplySwipeDecisionsUseCaseTest {
             val sessionManager = testSessionManager()
             val assets = AssetRepository(sessionManager, fakeApi, fake<AlbumAssetDao>(albumAssetDao))
             val decisions = SwipeDecisionRepository(fake<SwipeDecisionDao>(decisionDao) { name, _ ->
-                if (name in failingDecisionDao) throw RuntimeException("$name failed") else Unit
+                when (name) {
+                    in failingDecisionDao -> throw RuntimeException("$name failed")
+                    "getUnsyncedAssetIds" -> unsyncedIds
+                    else -> Unit
+                }
             })
             useCase = ApplySwipeDecisionsUseCase(assets, decisions)
         }
@@ -59,8 +67,10 @@ class ApplySwipeDecisionsUseCaseTest {
         env: Env,
         decisions: Map<String, SwipeDecision>,
         favorites: Map<String, Boolean> = emptyMap(),
-        assets: List<Asset> = decisions.keys.map(::asset)
+        assets: List<Asset> = decisions.keys.map(::asset),
+        unsyncedIds: List<String> = decisions.keys.toList()
     ) = runBlocking {
+        env.unsyncedIds = unsyncedIds
         env.useCase(
             userId = "u",
             currentAssets = assets,
@@ -70,8 +80,6 @@ class ApplySwipeDecisionsUseCaseTest {
             assetsEditedThisSession = emptySet(),
             deletedCount = decisions.values.count { it == SwipeDecision.DELETE },
             deletedSize = 1000L,
-            keptCount = decisions.values.count { it == SwipeDecision.KEEP },
-            archiveCount = decisions.values.count { it == SwipeDecision.ARCHIVE },
             lockedCount = decisions.values.count { it == SwipeDecision.LOCK }
         )
     }
@@ -143,12 +151,41 @@ class ApplySwipeDecisionsUseCaseTest {
 
         assertTrue(SyncStep.ARCHIVE in result.failedSteps)
         assertFalse("arc" in env.syncedIds())
-        assertTrue("keep" in env.syncedIds())
-        // Deleted fine, so it is recorded; kept is deferred until the retry.
+        assertFalse("keep" in env.syncedIds())
+        // Deleted fine, so it is recorded; kept stays pending so the retry counts it.
         val history = env.history()
         assertEquals(1, history.deletedCount)
         assertEquals(0, history.archivedCount)
         assertEquals(0, history.keptCount)
+    }
+
+    @Test
+    fun `already synced keep and archive decisions are neither sent nor counted again`() {
+        val env = Env()
+        val decisions = mapOf(
+            "arcOld" to SwipeDecision.ARCHIVE,
+            "keepOld" to SwipeDecision.KEEP,
+            "arcNew" to SwipeDecision.ARCHIVE,
+            "keepNew" to SwipeDecision.KEEP,
+            "del" to SwipeDecision.DELETE
+        )
+        apply(env, decisions, unsyncedIds = listOf("arcNew", "keepNew", "del"))
+
+        val archived = (env.apiCalls("updateAssets").single().args[0] as UpdateAssetsRequest).ids
+        assertEquals(listOf("arcNew"), archived)
+        val history = env.history()
+        assertEquals(1, history.archivedCount)
+        assertEquals(1, history.keptCount)
+        assertEquals(1, history.deletedCount)
+    }
+
+    @Test
+    fun `a sync with nothing pending writes no history`() {
+        val env = Env()
+        apply(env, mapOf("arcOld" to SwipeDecision.ARCHIVE, "keepOld" to SwipeDecision.KEEP), unsyncedIds = emptyList())
+
+        assertTrue(env.apiCalls("updateAssets").isEmpty())
+        assertTrue(env.daoCalls("insertSyncHistory").isEmpty())
     }
 
     @Test
