@@ -42,14 +42,18 @@ import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -83,6 +87,7 @@ fun AlbumGrid(
     val state = rememberLazyGridState()
     val sectionExpansions = rememberSectionExpansions(collapsedCategories)
     val animatedRowLimit = rememberAnimatedRowLimit(itemsPerRow = 3)
+    var gridCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
 
     Box(modifier = modifier.fillMaxSize()) {
         ExpressivePullToRefresh(
@@ -95,7 +100,8 @@ fun AlbumGrid(
                 columns = GridCells.Fixed(3),
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalFadingEdges(state, length = 32.dp),
+                    .verticalFadingEdges(state, length = 32.dp)
+                    .onPlaced { gridCoordinates = it },
                 contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 85.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -152,6 +158,7 @@ fun AlbumGrid(
                                     unsyncedCount = unsyncedChanges[album.id] ?: 0,
                                     baseUrl = baseUrl,
                                     onClick = { onAlbumClick(album) },
+                                    nameViewport = { gridCoordinates },
                                     modifier = Modifier
                                         .animateItem(placementSpec = null)
                                         .expandFraction { expansion.progress.value }
@@ -228,6 +235,7 @@ fun AlbumGridItem(
     treatedCount: Int,
     unsyncedCount: Int,
     onClick: () -> Unit,
+    nameViewport: () -> LayoutCoordinates?,
     modifier: Modifier = Modifier,
     baseUrl: String = "",
 ) {
@@ -383,7 +391,7 @@ fun AlbumGridItem(
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.sharedAlbumName(album.id)
+                    modifier = Modifier.sharedAlbumName(album.id, nameViewport)
                 )
                 Text(
                     text = "%,d / %,d".format(effectiveTreatedCount, album.assetCount),

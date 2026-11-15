@@ -46,8 +46,10 @@ import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +58,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -92,6 +96,7 @@ fun AlbumList(
     val state = rememberLazyListState()
     val sectionExpansions = rememberSectionExpansions(collapsedCategories)
     val animatedRowLimit = rememberAnimatedRowLimit()
+    var listCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
 
     Box(modifier = modifier.fillMaxSize()) {
         ExpressivePullToRefresh(
@@ -103,7 +108,8 @@ fun AlbumList(
                 state = state,
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalFadingEdges(state, length = 32.dp),
+                    .verticalFadingEdges(state, length = 32.dp)
+                    .onPlaced { listCoordinates = it },
                 contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 85.dp)
             ) {
                 val statusOrder = listOf(
@@ -157,6 +163,7 @@ fun AlbumList(
                                     baseUrl = baseUrl,
                                     onClick = { onAlbumClick(album) },
                                     shapes = albumRowShapes(index = index + 1, count = albumsInStatus.size + 1),
+                                    nameViewport = { listCoordinates },
                                     modifier = Modifier
                                         .animateItem(placementSpec = null)
                                         .expandFraction { expansion.progress.value }
@@ -234,6 +241,7 @@ fun AlbumItem(
     unsyncedCount: Int,
     onClick: () -> Unit,
     shapes: ListItemShapes,
+    nameViewport: () -> LayoutCoordinates?,
     modifier: Modifier = Modifier,
     baseUrl: String = "",
 ) {
@@ -376,7 +384,7 @@ fun AlbumItem(
                 maxLines = 1,
                 modifier = Modifier
                     .weight(1f, fill = false)
-                    .sharedAlbumName(album.id)
+                    .sharedAlbumName(album.id, nameViewport)
             )
             if (isCompleted) {
                 Spacer(Modifier.width(8.dp))
