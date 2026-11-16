@@ -14,6 +14,7 @@ import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.ReminderInterval
 import com.markvoronin.immichswipe.core.SessionConfig
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.core.SwipeBehavior
 import com.markvoronin.immichswipe.core.SwipeSettings
 import com.markvoronin.immichswipe.core.ToolbarButton
@@ -179,6 +180,16 @@ class SessionRepository @Inject constructor(
     val doubleTapAction: Flow<DoubleTapAction> = dataStore.getDoubleTapAction().map {
         it?.let { try { DoubleTapAction.valueOf(it) } catch(_: Exception) { DoubleTapAction.FULLSCREEN } } ?: DoubleTapAction.FULLSCREEN
     }
+    val swipeLeftAction: Flow<SwipeAction> = dataStore.getSwipeLeftAction().map { name ->
+        SwipeAction.entries.find { it.name == name } ?: SwipeAction.DELETE
+    }
+    val swipeRightAction: Flow<SwipeAction> = dataStore.getSwipeRightAction().map { name ->
+        SwipeAction.entries.find { it.name == name } ?: SwipeAction.KEEP
+    }
+    val swipeDownAction: Flow<SwipeAction> = dataStore.getSwipeDownAction().map { name ->
+        SwipeAction.entries.find { it.name == name } ?: SwipeAction.UNDO
+    }
+    val fullscreenSwipeDownUsesAction: Flow<Boolean> = dataStore.isFullscreenSwipeDownUsesAction()
     
     val sortOrder: Flow<SortOrder> = dataStore.getSortOrder().map {
         it?.let { try { SortOrder.valueOf(it) } catch(_: Exception) { SortOrder.CHRONOLOGICAL_DESC } } ?: SortOrder.CHRONOLOGICAL_DESC
@@ -258,6 +269,7 @@ class SessionRepository @Inject constructor(
     }
 
     suspend fun resetActionButtons() { dataStore.resetActionButtons() }
+    suspend fun resetInteractions() { dataStore.resetInteractions() }
 
     suspend fun saveShowFullscreenButton(show: Boolean) { dataStore.saveShowFullscreenIcon(show) }
     suspend fun saveShowImmichButton(show: Boolean) { dataStore.saveShowImmichIcon(show) }
@@ -288,6 +300,9 @@ class SessionRepository @Inject constructor(
     suspend fun saveTapToSwipeEnabled(enabled: Boolean) { dataStore.saveTapToSwipeEnabled(enabled) }
     suspend fun saveDoubleTapEnabled(enabled: Boolean) { dataStore.saveDoubleTapEnabled(enabled) }
     suspend fun saveDoubleTapAction(action: DoubleTapAction) { dataStore.saveDoubleTapAction(action.name) }
+    suspend fun saveSwipeActions(left: SwipeAction, right: SwipeAction) { dataStore.saveSwipeActions(left.name, right.name) }
+    suspend fun saveSwipeDownAction(action: SwipeAction) { dataStore.saveSwipeDownAction(action.name) }
+    suspend fun saveFullscreenSwipeDownUsesAction(enabled: Boolean) { dataStore.saveFullscreenSwipeDownUsesAction(enabled) }
     suspend fun saveSortOrder(order: SortOrder) { dataStore.saveSortOrder(order.name) }
 
     suspend fun saveReminderEnabled(enabled: Boolean) { dataStore.saveReminderEnabled(enabled) }

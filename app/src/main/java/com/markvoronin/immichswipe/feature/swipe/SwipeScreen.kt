@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -68,6 +69,7 @@ import com.markvoronin.immichswipe.feature.common.ResetActionButton
 import com.markvoronin.immichswipe.feature.home.components.sharedAlbumName
 import com.markvoronin.immichswipe.feature.swipe.components.SwipeScreenContent
 import com.markvoronin.immichswipe.feature.swipe.components.SwipeScreenDialogs
+import com.markvoronin.immichswipe.feature.swipe.utils.labelRes
 import com.markvoronin.immichswipe.feature.tutorial.GestureAnimationType
 import com.markvoronin.immichswipe.feature.tutorial.LocalTutorialController
 import com.markvoronin.immichswipe.feature.tutorial.TooltipPlacement
@@ -113,12 +115,17 @@ fun SwipeScreen(
     val uiState = if (hasEntered) viewModelState else viewModelState.copy(isLoading = true, assets = emptyList())
     val tutorialController = LocalTutorialController.current ?: rememberTutorialController()
 
-    val swipeTutorialSteps = remember {
+    // The gestures step names what each swipe does, so it follows the swipe settings.
+    val rightLabel = stringResource(uiState.swipeRightAction.labelRes).uppercase()
+    val leftLabel = stringResource(uiState.swipeLeftAction.labelRes).uppercase()
+    val downLabel = stringResource(uiState.swipeDownAction.labelRes).uppercase()
+    val swipeTutorialSteps = remember(rightLabel, leftLabel, downLabel) {
         listOf(
             TutorialStep(
                 id = "gestures",
                 titleRes = R.string.tutorial_swipe_gestures_title,
                 descriptionRes = R.string.tutorial_swipe_gestures_desc,
+                descriptionArgs = listOf(rightLabel, leftLabel, downLabel),
                 targetKey = "swipe_deck",
                 placement = TooltipPlacement.TOP,
                 gestureAnimation = GestureAnimationType.NONE,

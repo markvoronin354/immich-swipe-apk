@@ -6,6 +6,7 @@ import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.SessionManager
 import com.markvoronin.immichswipe.core.SortCategory
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.core.SwipeSettings
 import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
 import com.markvoronin.immichswipe.data.repository.AlbumRepository
@@ -160,6 +161,26 @@ class SwipeViewModel @Inject constructor(
         viewModelScope.launch {
             sessionRepository.doubleTapAction.collect { action ->
                 _uiState.update { it.copy(doubleTapAction = action) }
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.swipeLeftAction.collect { action ->
+                _uiState.update { it.copy(swipeLeftAction = action) }
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.swipeRightAction.collect { action ->
+                _uiState.update { it.copy(swipeRightAction = action) }
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.swipeDownAction.collect { action ->
+                _uiState.update { it.copy(swipeDownAction = action) }
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.fullscreenSwipeDownUsesAction.collect { usesAction ->
+                _uiState.update { it.copy(fullscreenSwipeDownUsesAction = usesAction) }
             }
         }
     }
@@ -418,12 +439,22 @@ class SwipeViewModel @Inject constructor(
         }
     }
 
+    // Assets a favorite swipe favorited, with the local favorite flag they had before it (null: none), so undoing the swipe can put it back.
+    private val swipeFavorites = mutableMapOf<String, Boolean?>()
+
+    private fun favoritesAfterUndoing(favorites: Map<String, Boolean>, assetId: String): Map<String, Boolean> {
+        if (assetId !in swipeFavorites) return favorites
+        val before = swipeFavorites[assetId]
+        return if (before == null) favorites - assetId else favorites + (assetId to before)
+    }
+
     fun onSwipe(decision: SwipeDecision) {
         pendingJumpToFirstUnprocessed = false
         val currentState = _uiState.value
         val currentAsset = currentState.currentAsset ?: return
         
         AppLogger.d("SwipeViewModel", "Swiped asset ${currentAsset.id}: $decision")
+        swipeFavorites.remove(currentAsset.id)
 
         val newDecisions = currentState.decisions.toMutableMap()
         newDecisions[currentAsset.id] = decision
@@ -451,6 +482,27 @@ class SwipeViewModel @Inject constructor(
         }
     }
 
+    fun performSwipeAction(action: SwipeAction) {
+        when (action) {
+            SwipeAction.KEEP -> onSwipe(SwipeDecision.KEEP)
+            SwipeAction.DELETE -> onSwipe(SwipeDecision.DELETE)
+            SwipeAction.ARCHIVE -> onSwipe(SwipeDecision.ARCHIVE)
+            SwipeAction.LOCK -> onSwipe(SwipeDecision.LOCK)
+            SwipeAction.UNDO -> undo()
+            SwipeAction.FAVORITE -> {
+                val state = _uiState.value
+                val asset = state.currentAsset ?: return
+                // Sets rather than toggles, so swiping an asset that is already a favorite doesn't un-favorite it.
+                val newlyFavorited = !state.isFavorite(asset.id)
+                if (newlyFavorited) {
+                    _uiState.update { it.copy(localFavorites = it.localFavorites + (asset.id to true)) }
+                }
+                onSwipe(SwipeDecision.KEEP)
+                if (newlyFavorited) swipeFavorites[asset.id] = state.localFavorites[asset.id]
+            }
+        }
+    }
+
     fun undo() {
         val currentState = _uiState.value
         val lastAssetId = currentState.history.lastOrNull() ?: return
@@ -466,8 +518,10 @@ class SwipeViewModel @Inject constructor(
             currentIndex = if (prevIndex != -1) prevIndex else it.currentIndex,
             history = newHistory,
             decisions = newDecisions,
+            localFavorites = favoritesAfterUndoing(it.localFavorites, lastAssetId),
             isFullResolution = it.isFullResolution && it.keepFullResolution
         )}
+        swipeFavorites.remove(lastAssetId)
 
         viewModelScope.launch {
             val config = sessionRepository.sessionConfig.first() ?: return@launch
@@ -485,8 +539,13 @@ class SwipeViewModel @Inject constructor(
                 newHistory.remove(assetId)
                 val newDecisions = state.decisions.toMutableMap()
                 newDecisions.remove(assetId)
-                state.copy(history = newHistory, decisions = newDecisions)
+                state.copy(
+                    history = newHistory,
+                    decisions = newDecisions,
+                    localFavorites = favoritesAfterUndoing(state.localFavorites, assetId)
+                )
             }
+            swipeFavorites.remove(assetId)
         }
     }
 
@@ -653,6 +712,7 @@ class SwipeViewModel @Inject constructor(
                 val config = sessionRepository.sessionConfig.first() ?: return@launch
                 
                 swipeDecisionRepository.deleteDecisionsForAlbum(_uiState.value.albumId, config.userId)
+                swipeFavorites.clear()
                 
                 val currentIds = masterWorkPile.map { it.id }
                 if (currentIds.isNotEmpty()) {
@@ -779,6 +839,7 @@ class SwipeViewModel @Inject constructor(
                 }
 
                 val remainingDecisions = currentState.decisions.filterKeys { id -> id !in toRemoveFromWorkPile }
+                swipeFavorites.clear()
                 _uiState.update { it.copy(
                     decisions = remainingDecisions,
                     history = emptyList(),

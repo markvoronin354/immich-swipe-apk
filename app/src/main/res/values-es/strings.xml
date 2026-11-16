@@ -118,6 +118,10 @@
     <string name="settings_interactions_label">Interacciones</string>
     <string name="settings_interactions_desc">Acciones de la barra de clasificación, avance automático, gestos táctiles y línea de tiempo</string>
     <string name="settings_interactions_dialog_title">Interacciones</string>
+    <string name="settings_interactions_reset_label">Restablecer valores predeterminados</string>
+    <string name="settings_interactions_reset_title">¿Restablecer interacciones?</string>
+    <string name="settings_interactions_reset_msg">La barra de herramientas, las acciones de deslizamiento, los gestos táctiles y la línea de tiempo volverán a sus valores predeterminados.</string>
+    <string name="settings_interactions_reset_confirm">Restablecer</string>
     <string name="settings_toolbar_preview">Vista previa de la barra</string>
     <string name="settings_toolbar_reorder_hint">Mantén pulsado y arrastra para reordenar los botones</string>
     <string name="settings_section_toolbar">Barra de herramientas</string>
@@ -154,6 +158,12 @@
     <string name="settings_double_tap_label">Doble toque</string>
     <string name="settings_double_tap_fullscreen">Pantalla completa</string>
     <string name="settings_double_tap_favorite">Favorita</string>
+    <string name="settings_section_swipe_actions">Acciones de deslizamiento</string>
+    <string name="settings_swipe_left_label">Deslizar a la izquierda</string>
+    <string name="settings_swipe_right_label">Deslizar a la derecha</string>
+    <string name="settings_swipe_down_label">Deslizar hacia abajo</string>
+    <string name="settings_fullscreen_swipe_down_label">Usar la acción de deslizar hacia abajo en pantalla completa</string>
+    <string name="settings_fullscreen_swipe_down_desc">Desactivado: deslizar hacia abajo cierra el visor. Activado: hace lo mismo que Deslizar hacia abajo en la tarjeta. Deslizar hacia arriba siempre lo cierra.</string>
     <string name="settings_section_account">Cuenta</string>
     <string name="settings_pos_top_left">Arriba a la izquierda</string>
     <string name="settings_pos_top_right">Arriba a la derecha</string>
@@ -181,6 +191,9 @@
     <string name="swipe_keep_upper">CONSERVAR</string>
     <string name="swipe_delete">Eliminar</string>
     <string name="swipe_delete_upper">ELIMINAR</string>
+    <string name="swipe_archive_upper">ARCHIVAR</string>
+    <string name="swipe_locked_upper">BLOQUEAR</string>
+    <string name="swipe_favorite_upper">FAVORITO</string>
     <string name="swipe_remaining_left">%1$,d restantes</string>
     <string name="swipe_favorite">Favoritos</string>
     <string name="swipe_archive">Archivar</string>
@@ -348,7 +361,7 @@
     <string name="settings_clear_cache_confirm_title">¿Borrar caché?</string>
     <string name="settings_clear_cache_confirm_msg">Esto eliminará todos los archivos temporales e imágenes en caché. Se volverán a descargar del servidor según sea necesario. ¿Desea continuar?</string>
     <string name="settings_tap_to_swipe_label">Tocar para clasificar</string>
-    <string name="settings_tap_to_swipe_desc">Toca el tercio izquierdo para eliminar y el tercio derecho para conservar. El tercio central permanece para los controles.</string>
+    <string name="settings_tap_to_swipe_desc">Toca el tercio izquierdo para deslizar a la izquierda y el tercio derecho para deslizar a la derecha. El tercio central permanece para los controles.</string>
     <string name="settings_privacy_policy_label">Política de privacidad</string>
     <string name="settings_privacy_policy_desc">Lea nuestra política de privacidad sobre datos y permisos</string>
     <string name="settings_section_about">Acerca de y Legal</string>
@@ -368,7 +381,7 @@
     <string name="tutorial_replay_toast">¡Tutoriales reiniciados! Abre Deslizar o Duplicados para verlos.</string>
 
     <string name="tutorial_swipe_gestures_title">Gestos y Detalles</string>
-    <string name="tutorial_swipe_gestures_desc">¡Desliza a la DERECHA para CONSERVAR, a la IZQUIERDA para ELIMINAR, hacia ABAJO para volver a la tarjeta anterior, o arrastra hacia ARRIBA para ver los detalles EXIF!</string>
+    <string name="tutorial_swipe_gestures_desc">¡Desliza a la DERECHA (%1$s), a la IZQUIERDA (%2$s) o hacia ABAJO (%3$s), o arrastra hacia ARRIBA para ver los detalles EXIF!</string>
     <string name="tutorial_swipe_header_title">Seguimiento del progreso</string>
     <string name="tutorial_swipe_header_desc">Revisa tu progreso. Toca la barra de progreso en cualquier momento para ver el resumen y sincronizar con Immich.</string>
     <string name="tutorial_swipe_actions_title">Barra de acciones rápidas</string>

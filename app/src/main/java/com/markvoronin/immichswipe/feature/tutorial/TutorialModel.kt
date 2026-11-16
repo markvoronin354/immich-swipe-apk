@@ -22,6 +22,7 @@ data class TutorialStep(
     val id: String,
     @param:StringRes val titleRes: Int,
     @param:StringRes val descriptionRes: Int,
+    val descriptionArgs: List<Any> = emptyList(),
     val targetKey: String? = null,
     val placement: TooltipPlacement = TooltipPlacement.AUTO,
     val gestureAnimation: GestureAnimationType = GestureAnimationType.NONE,

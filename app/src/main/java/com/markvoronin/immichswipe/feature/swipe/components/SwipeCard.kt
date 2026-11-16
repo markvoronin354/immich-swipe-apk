@@ -62,6 +62,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -86,17 +87,17 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.PlaybackBehavior
+import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.core.cache.VideoCache
 import com.markvoronin.immichswipe.core.player.PlayerLoadControlFactory
 import com.markvoronin.immichswipe.domain.model.Asset
-import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardActions
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardConfig
-import com.markvoronin.immichswipe.feature.swipe.utils.KeepGreen
-import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 import com.markvoronin.immichswipe.feature.swipe.utils.fullResolutionRequest
+import com.markvoronin.immichswipe.feature.swipe.utils.indicatorColor
+import com.markvoronin.immichswipe.feature.swipe.utils.indicatorLabelRes
 import com.markvoronin.immichswipe.feature.swipe.utils.rotateLayout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -180,6 +181,11 @@ fun SwipeCard(
     var wasHoldDetected by remember(asset.id) { mutableStateOf(value = false) }
     val currentIsHolding by rememberUpdatedState(isHoldingByPress || wasHoldDetected)
     val currentCanUndo by rememberUpdatedState(config.canUndo)
+    val currentSwipeLeft by rememberUpdatedState(config.swipeLeftAction)
+    val currentSwipeRight by rememberUpdatedState(config.swipeRightAction)
+    val currentSwipeDown by rememberUpdatedState(config.swipeDownAction)
+    // Far enough that a card pulled down leaves the window, wherever the card sits in it.
+    val currentWindowHeight by rememberUpdatedState(LocalWindowInfo.current.containerSize.height.toFloat())
     var ignoreNextTap by remember(asset.id) { mutableStateOf(value = false) }
     val currentControlsHidden by rememberUpdatedState(controlsHidden)
     var topStartButtons by remember { mutableStateOf(IntSize.Zero) }
@@ -275,7 +281,9 @@ fun SwipeCard(
     LaunchedEffect(isNext) {
         if (!isNext) {
             snapshotFlow {
-                offsetX.value
+                // A card pulled down to swipe, not to undo, moves the cards around it like a sideways swipe does.
+                if (currentSwipeDown != SwipeAction.UNDO && !isEnteringFromBelow && offsetY.value > abs(offsetX.value)) offsetY.value
+                else offsetX.value
             }.collect { offset ->
                 actions.onSwipeOffsetChanged(offset)
             }
@@ -310,8 +318,8 @@ fun SwipeCard(
         } else if (!ignoreNextTap) {
             val width = size.width.toFloat()
             when {
-                config.tapToSwipeEnabled && offset.x < width * 0.3f -> actions.onSwipe(SwipeDecision.DELETE)
-                config.tapToSwipeEnabled && offset.x > width * 0.7f -> actions.onSwipe(SwipeDecision.KEEP)
+                config.tapToSwipeEnabled && offset.x < width * 0.3f -> actions.onSwipe(config.swipeLeftAction)
+                config.tapToSwipeEnabled && offset.x > width * 0.7f -> actions.onSwipe(config.swipeRightAction)
             }
         }
         ignoreNextTap = false
@@ -338,12 +346,12 @@ fun SwipeCard(
                 }
 
                 config.tapToSwipeEnabled && offset.x < width * 0.3f -> {
-                    actions.onSwipe(SwipeDecision.DELETE)
+                    actions.onSwipe(config.swipeLeftAction)
                     ignoreNextTap = true
                 }
 
                 config.tapToSwipeEnabled && offset.x > width * 0.7f -> {
-                    actions.onSwipe(SwipeDecision.KEEP)
+                    actions.onSwipe(config.swipeRightAction)
                     ignoreNextTap = true
                 }
             }
@@ -405,7 +413,10 @@ fun SwipeCard(
                                     val isFlickLeft = velocityX < -1000f && currentX <= 50f
                                     val isFlickDown = velocityY > 1000f
                                     val isPullDown = currentY > abs(currentX) && (currentY > 250 || isFlickDown)
-                                    if (currentCanUndo && isPullDown) {
+                                    if (isPullDown && currentSwipeDown != SwipeAction.UNDO) {
+                                        offsetY.animateTo(currentWindowHeight, tween(150))
+                                        actions.onSwipe(currentSwipeDown)
+                                    } else if (currentCanUndo && isPullDown) {
                                         offsetY.animateTo(1500f, tween(150))
                                         actions.onUndo()
                                         // The deck drops this card (cancelling this scope) once undo takes effect; only reset if it is still here.
@@ -414,10 +425,10 @@ fun SwipeCard(
                                         offsetY.snapTo(0f)
                                     } else if (currentX > 250 || isFlickRight) {
                                         offsetX.animateTo(1500f, tween(150))
-                                        actions.onSwipe(SwipeDecision.KEEP)
+                                        actions.onSwipe(currentSwipeRight)
                                     } else if (currentX < -250 || isFlickLeft) {
                                         offsetX.animateTo(-1500f, tween(150))
-                                        actions.onSwipe(SwipeDecision.DELETE)
+                                        actions.onSwipe(currentSwipeLeft)
                                     } else {
                                         launch { offsetY.animateTo(0f, motionScheme.fastSpatialSpec()) }
                                         offsetX.animateTo(0f, motionScheme.fastSpatialSpec())
@@ -516,8 +527,10 @@ fun SwipeCard(
                             val accumulatedDX = abs(totalDX)
                             val accumulatedDY = abs(totalDY)
 
-                            // Cards only travel downwards. With nothing to undo the card resists the pull instead of following the finger.
-                            val dragY = (if (currentCanUndo) totalDY else totalDY * 0.2f).coerceAtLeast(0f)
+                            // Cards only travel downwards. With nothing to undo the card resists the pull instead of following
+                            // the finger, unless pulling down is a swipe of its own.
+                            val followsPull = currentCanUndo || currentSwipeDown != SwipeAction.UNDO
+                            val dragY = (if (followsPull) totalDY else totalDY * 0.2f).coerceAtLeast(0f)
 
                             if (dragDirection == 0) {
                                 // Decision threshold: 12 pixels of movement
@@ -888,22 +901,22 @@ fun SwipeCard(
                     val currentX = offsetX.value
                     val currentY = offsetY.value
 
-                    if (config.canUndo && !isEnteringFromBelow && currentY > abs(currentX)) {
+                    if ((config.canUndo || config.swipeDownAction != SwipeAction.UNDO) && !isEnteringFromBelow && currentY > abs(currentX)) {
                         IndicatorBadge(
-                            stringResource(R.string.swipe_undo_upper),
-                            MaterialTheme.colorScheme.primary,
+                            stringResource(config.swipeDownAction.indicatorLabelRes),
+                            config.swipeDownAction.indicatorColor(),
                             Alignment.TopCenter
                         ) { (currentY / 200f).coerceIn(0f, 1f) * 0.9f }
                     } else if (currentX > 0f) {
                         IndicatorBadge(
-                            stringResource(R.string.swipe_keep_upper),
-                            KeepGreen,
+                            stringResource(config.swipeRightAction.indicatorLabelRes),
+                            config.swipeRightAction.indicatorColor(),
                             Alignment.TopStart
                         ) { (currentX / 200f).coerceIn(0f, 1f) * 0.9f }
                     } else if (currentX < 0f) {
                         IndicatorBadge(
-                            stringResource(R.string.swipe_delete_upper),
-                            MaterialRed,
+                            stringResource(config.swipeLeftAction.indicatorLabelRes),
+                            config.swipeLeftAction.indicatorColor(),
                             Alignment.TopEnd
                         ) { (-currentX / 200f).coerceIn(0f, 1f) * 0.9f }
                     }

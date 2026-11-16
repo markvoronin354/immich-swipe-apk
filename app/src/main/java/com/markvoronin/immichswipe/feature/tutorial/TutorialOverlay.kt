@@ -342,7 +342,11 @@ fun TooltipCard(
 
             // Description
             Text(
-                text = stringResource(step.descriptionRes),
+                text = if (step.descriptionArgs.isEmpty()) {
+                    stringResource(step.descriptionRes)
+                } else {
+                    stringResource(step.descriptionRes, *step.descriptionArgs.toTypedArray())
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

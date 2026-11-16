@@ -51,6 +51,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -75,15 +76,15 @@ import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
+import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.common.WavyLoadingIndicator
 import com.markvoronin.immichswipe.feature.duplicates.components.RoundRectClip
 import com.markvoronin.immichswipe.feature.duplicates.components.fitRect
 import com.markvoronin.immichswipe.feature.duplicates.components.rectAround
 import com.markvoronin.immichswipe.feature.duplicates.components.withoutBounce
-import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
-import com.markvoronin.immichswipe.feature.swipe.utils.KeepGreen
-import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
+import com.markvoronin.immichswipe.feature.swipe.utils.indicatorColor
+import com.markvoronin.immichswipe.feature.swipe.utils.indicatorLabelRes
 import com.markvoronin.immichswipe.feature.swipe.utils.findActivity
 import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 import com.markvoronin.immichswipe.feature.swipe.utils.parseDurationMs
@@ -125,12 +126,17 @@ fun FullscreenViewer(
     nextAsset: Asset? = null,
     isFavorite: Boolean,
     isNextFavorite: Boolean = false,
-    onSwipe: (SwipeDecision) -> Unit,
+    onSwipe: (SwipeAction) -> Unit,
     onUndo: () -> Unit,
     onToggleFavorite: () -> Unit = {},
     onToggleFavoriteNext: () -> Unit = {},
     onClose: () -> Unit,
     tapToSwipeEnabled: Boolean = false,
+    swipeLeftAction: SwipeAction = SwipeAction.DELETE,
+    swipeRightAction: SwipeAction = SwipeAction.KEEP,
+    swipeDownAction: SwipeAction = SwipeAction.UNDO,
+    // Off, a swipe down closes the viewer; on, it does what the swipe down action does on the card.
+    swipeDownUsesAction: Boolean = false,
     providedPlayer: ExoPlayer? = null,
     showSizeIndicator: Boolean = false,
     isMuted: Boolean = false,
@@ -164,15 +170,57 @@ fun FullscreenViewer(
 
     val currentOnSwipe by rememberUpdatedState(onSwipe)
 
-    val performSwipe: (SwipeDecision) -> Unit = { decision ->
+    val currentSwipeLeft by rememberUpdatedState(swipeLeftAction)
+    val currentSwipeRight by rememberUpdatedState(swipeRightAction)
+
+    val performSwipe: (toRight: Boolean) -> Unit = { toRight ->
         scope.launch {
             if (currentIsHolding) return@launch
-            val targetX = if (decision == SwipeDecision.KEEP) 2000f else -2000f
+            val targetX = if (toRight) 2000f else -2000f
             launch { swipeY.animateTo(0f, tween(180)) }
             swipeX.animateTo(targetX, tween(180))
-            currentOnSwipe(decision)
+            currentOnSwipe(if (toRight) currentSwipeRight else currentSwipeLeft)
             swipeX.snapTo(0f)
             swipeY.snapTo(0f)
+        }
+    }
+
+    val currentSwipeDown by rememberUpdatedState(swipeDownAction)
+    val currentSwipeDownUsesAction by rememberUpdatedState(swipeDownUsesAction)
+    val currentCanUndo by rememberUpdatedState(canUndo)
+    val currentOnUndo by rememberUpdatedState(onUndo)
+    // Far enough that the media leaves the window.
+    val currentWindowHeight by rememberUpdatedState(LocalWindowInfo.current.containerSize.height.toFloat())
+    // While the restored photo rises after an undo, a new asset must not reset the offset it rises from.
+    var isRisingFromUndo by remember { mutableStateOf(false) }
+
+    val performSwipeDown: () -> Unit = {
+        scope.launch {
+            if (currentIsHolding) return@launch
+            if (currentSwipeDown == SwipeAction.UNDO) {
+                if (currentCanUndo) {
+                    // Like the card's undo, the viewer stays open: this photo drops away and the restored one rises in from below.
+                    launch { swipeX.animateTo(0f, tween(180)) }
+                    swipeY.animateTo(currentWindowHeight, tween(180))
+                    isRisingFromUndo = true
+                    try {
+                        currentOnUndo()
+                        swipeX.snapTo(0f)
+                        swipeY.animateTo(0f, motionScheme.defaultSpatialSpec())
+                    } finally {
+                        isRisingFromUndo = false
+                    }
+                } else {
+                    launch { swipeX.animateTo(0f, motionScheme.fastSpatialSpec()) }
+                    swipeY.animateTo(0f, motionScheme.fastSpatialSpec())
+                }
+            } else {
+                launch { swipeX.animateTo(0f, tween(180)) }
+                swipeY.animateTo(currentWindowHeight, tween(180))
+                currentOnSwipe(currentSwipeDown)
+                swipeX.snapTo(0f)
+                swipeY.snapTo(0f)
+            }
         }
     }
 
@@ -236,7 +284,7 @@ fun FullscreenViewer(
 
     LaunchedEffect(asset.id) {
         swipeX.snapTo(0f)
-        swipeY.snapTo(0f)
+        if (!isRisingFromUndo) swipeY.snapTo(0f)
         val isSameAssetAndReady = (exoPlayer?.currentMediaItem?.mediaId == asset.id) && (exoPlayer.playbackState == Player.STATE_READY)
         if (!isSameAssetAndReady) {
             isVideoReady = false
@@ -319,8 +367,8 @@ fun FullscreenViewer(
             val width = size.width.toFloat()
             if (tapToSwipeEnabled && !isZoomedIn && (offset.x < width * 0.3f || offset.x > width * 0.7f)) {
                 when {
-                    offset.x < width * 0.3f -> performSwipe(SwipeDecision.DELETE)
-                    offset.x > width * 0.7f -> performSwipe(SwipeDecision.KEEP)
+                    offset.x < width * 0.3f -> performSwipe(false)
+                    offset.x > width * 0.7f -> performSwipe(true)
                 }
             } else {
                 controlsVisible = !controlsVisible
@@ -340,12 +388,12 @@ fun FullscreenViewer(
             if (tapToSwipeEnabled && !isZoomedIn && (offset.x < width * 0.3f || offset.x > width * 0.7f)) {
                 when {
                     offset.x < width * 0.3f -> {
-                        performSwipe(SwipeDecision.DELETE)
+                        performSwipe(false)
                         ignoreNextTap = true
                     }
 
                     offset.x > width * 0.7f -> {
-                        performSwipe(SwipeDecision.KEEP)
+                        performSwipe(true)
                         ignoreNextTap = true
                     }
                 }
@@ -397,7 +445,9 @@ fun FullscreenViewer(
             }
         }
 
-        val fadeAlpha = (1f - (swipeY.value / 1000f)).coerceIn(0f, 1f)
+        // Dims as the media is pulled towards closing: up always, down unless pulling down is a swipe action.
+        val closingPull = if (swipeDownUsesAction) -swipeY.value else abs(swipeY.value)
+        val fadeAlpha = (1f - closingPull / 1000f).coerceIn(0f, 1f)
         // Live copies of the media for the glass buttons to refract; black is drawn first so empty pixels don't smear.
         val mediaBackdrop = rememberLayerBackdrop {
             drawRect(Color.Black)
@@ -414,7 +464,13 @@ fun FullscreenViewer(
                 .drawBehind { drawRect(Color.Black, alpha = fadeAlpha * presence.value.coerceIn(0f, 1f)) }
         ) {
             if (nextAsset != null) {
-                val swipeProgress = (abs(swipeX.value) / 500f).coerceIn(0f, 1f)
+                // A pull that swipes, rather than closes or undoes, brings the next photo up like a sideways swipe does.
+                val swipePull = if (swipeDownUsesAction && swipeDownAction != SwipeAction.UNDO) {
+                    max(abs(swipeX.value), swipeY.value)
+                } else {
+                    abs(swipeX.value)
+                }
+                val swipeProgress = (swipePull / 500f).coerceIn(0f, 1f)
                 val nextScale = 0.85f + (0.15f * swipeProgress)
                 val nextAlpha = (0.6f + (0.4f * swipeProgress)) * fadeAlpha
 
@@ -529,11 +585,13 @@ fun FullscreenViewer(
                                     val currentY = swipeY.value
 
                                     if (currentY > 120 && abs(currentX) < 100) {
+                                        if (currentSwipeDownUsesAction) performSwipeDown() else close()
+                                    } else if (currentY < -120 && abs(currentX) < 100) {
                                         close()
                                     } else if (currentX > 150) {
-                                        performSwipe(SwipeDecision.KEEP)
+                                        performSwipe(true)
                                     } else if (currentX < -150) {
-                                        performSwipe(SwipeDecision.DELETE)
+                                        performSwipe(false)
                                     } else {
                                         launch { swipeY.animateTo(0f) }
                                         launch { swipeX.animateTo(0f, motionScheme.fastSpatialSpec()) }
@@ -554,7 +612,10 @@ fun FullscreenViewer(
                                     return@detectDragGestures
                                 }
                                 scope.launch {
-                                    swipeY.snapTo((swipeY.value + dragAmount.y).coerceAtLeast(0f))
+                                    // With nothing to undo, a downward pull that would undo resists instead of following the finger.
+                                    val resists = currentSwipeDownUsesAction && currentSwipeDown == SwipeAction.UNDO && !currentCanUndo
+                                    val pullY = if (resists && swipeY.value >= 0f && dragAmount.y > 0f) dragAmount.y * 0.2f else dragAmount.y
+                                    swipeY.snapTo(swipeY.value + pullY)
                                     swipeX.snapTo(swipeX.value + dragAmount.x)
                                 }
                             }
@@ -740,15 +801,21 @@ fun FullscreenViewer(
                 )
             }
 
-            if (swipeX.value > 0f) IndicatorBadge(
-                stringResource(R.string.swipe_keep_upper),
-                KeepGreen,
+            if (swipeDownUsesAction && (canUndo || swipeDownAction != SwipeAction.UNDO) && swipeY.value > abs(swipeX.value)) IndicatorBadge(
+                stringResource(swipeDownAction.indicatorLabelRes),
+                swipeDownAction.indicatorColor(),
+                Alignment.TopCenter,
+                topPadding = FullscreenBadgeTopPadding
+            ) { (swipeY.value / 200f).coerceIn(0f, 1f) * 0.9f }
+            else if (swipeX.value > 0f) IndicatorBadge(
+                stringResource(swipeRightAction.indicatorLabelRes),
+                swipeRightAction.indicatorColor(),
                 Alignment.TopStart,
                 topPadding = FullscreenBadgeTopPadding
             ) { (swipeX.value / 200f).coerceIn(0f, 1f) * 0.9f }
             else if (swipeX.value < 0f) IndicatorBadge(
-                stringResource(R.string.swipe_delete_upper),
-                MaterialRed,
+                stringResource(swipeLeftAction.indicatorLabelRes),
+                swipeLeftAction.indicatorColor(),
                 Alignment.TopEnd,
                 topPadding = FullscreenBadgeTopPadding
             ) { (-swipeX.value / 200f).coerceIn(0f, 1f) * 0.9f }

@@ -10,6 +10,7 @@ import com.markvoronin.immichswipe.core.ImmichOpenMode
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.ReminderInterval
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.core.ToolbarButton
 
 enum class DatabaseScope {
@@ -66,6 +67,10 @@ data class SettingsUiState(
     val tapToSwipeEnabled: Boolean = false,
     val doubleTapEnabled: Boolean = true,
     val doubleTapAction: DoubleTapAction = DoubleTapAction.FULLSCREEN,
+    val swipeLeftAction: SwipeAction = SwipeAction.DELETE,
+    val swipeRightAction: SwipeAction = SwipeAction.KEEP,
+    val swipeDownAction: SwipeAction = SwipeAction.UNDO,
+    val fullscreenSwipeDownUsesAction: Boolean = false,
     val showActionButtonsDialog: Boolean = false,
     val showInteractionsDialog: Boolean = false,
     val showCustomPaletteEditor: Boolean = false,

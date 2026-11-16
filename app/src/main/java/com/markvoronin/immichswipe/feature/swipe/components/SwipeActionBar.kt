@@ -75,6 +75,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -90,15 +91,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.core.ToolbarButton
 import com.markvoronin.immichswipe.feature.common.FavoriteIcon
 import com.markvoronin.immichswipe.feature.common.LockIcon
 import com.markvoronin.immichswipe.feature.common.bounce
-import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.swipe.SwipeUiState
 import com.markvoronin.immichswipe.feature.swipe.SwipeViewModel
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
+import com.markvoronin.immichswipe.feature.swipe.utils.icon
+import com.markvoronin.immichswipe.feature.swipe.utils.labelRes
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -265,16 +268,18 @@ fun SwipeActionBarLayout(
     isSortMenuOpen: Boolean = false,
     isBulkDeleteMode: Boolean = false,
     isBulkKeepMode: Boolean = false,
-    onDelete: () -> Unit = {},
-    onKeep: () -> Unit = {},
+    swipeLeftAction: SwipeAction = SwipeAction.DELETE,
+    swipeRightAction: SwipeAction = SwipeAction.KEEP,
+    onSwipeLeft: () -> Unit = {},
+    onSwipeRight: () -> Unit = {},
     onUndo: () -> Unit = {},
     onArchive: () -> Unit = {},
     onFavorite: () -> Unit = {},
     onAddToAlbum: () -> Unit = {},
     onLock: () -> Unit = {},
     onSort: () -> Unit = {},
-    deleteButtonModifier: Modifier = Modifier,
-    keepButtonModifier: Modifier = Modifier,
+    leftButtonModifier: Modifier = Modifier,
+    rightButtonModifier: Modifier = Modifier,
     sortMenu: @Composable () -> Unit = {}
 ) {
     val horizontalPadding = toolbarHorizontalPadding(showSwipeButtons)
@@ -294,20 +299,12 @@ fun SwipeActionBarLayout(
                 scaleOut(MaterialTheme.motionScheme.defaultSpatialSpec(), targetScale = 0f, transformOrigin = TransformOrigin(0f, 0.5f))
         ) {
             Box(Modifier.padding(end = 12.dp)) {
-                FloatingActionButton(
-                    onClick = onDelete,
-                    containerColor = if (isBulkDeleteMode) MaterialRed else MaterialTheme.colorScheme.errorContainer,
-                    contentColor = if (isBulkDeleteMode) Color.White else MaterialTheme.colorScheme.onErrorContainer,
-                    shape = CircleShape,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .then(deleteButtonModifier)
-                ) {
-                    Icon(
-                        imageVector = if (isBulkDeleteMode) Icons.Default.DeleteSweep else Icons.Default.Delete,
-                        contentDescription = stringResource(R.string.swipe_delete)
-                    )
-                }
+                SwipeFab(
+                    action = swipeLeftAction,
+                    bulk = swipeLeftAction.isBulk(isBulkDeleteMode, isBulkKeepMode),
+                    onClick = onSwipeLeft,
+                    modifier = leftButtonModifier
+                )
                 if (onReorder != null) Box(Modifier.matchParentSize().blockTouches())
             }
         }
@@ -698,20 +695,12 @@ fun SwipeActionBarLayout(
                 scaleOut(MaterialTheme.motionScheme.defaultSpatialSpec(), targetScale = 0f, transformOrigin = TransformOrigin(1f, 0.5f))
         ) {
             Box(Modifier.padding(start = 12.dp)) {
-                FloatingActionButton(
-                    onClick = onKeep,
-                    containerColor = if (isBulkKeepMode) MaterialGreen else MaterialGreen,
-                    contentColor = Color.White,
-                    shape = CircleShape,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .then(keepButtonModifier)
-                ) {
-                    Icon(
-                        imageVector = if (isBulkKeepMode) Icons.Default.DoneAll else Icons.Default.Check,
-                        contentDescription = stringResource(R.string.swipe_keep)
-                    )
-                }
+                SwipeFab(
+                    action = swipeRightAction,
+                    bulk = swipeRightAction.isBulk(isBulkDeleteMode, isBulkKeepMode),
+                    onClick = onSwipeRight,
+                    modifier = rightButtonModifier
+                )
                 if (onReorder != null) Box(Modifier.matchParentSize().blockTouches())
             }
         }
@@ -719,6 +708,49 @@ fun SwipeActionBarLayout(
 }
 
 private data class FavoriteToggles(val count: Int, val toggledOn: Boolean)
+
+// Only keep and delete have a bulk mode.
+private fun SwipeAction.isBulk(deleteMode: Boolean, keepMode: Boolean) = when (this) {
+    SwipeAction.DELETE -> deleteMode
+    SwipeAction.KEEP -> keepMode
+    else -> false
+}
+
+/** The round button at either end of the toolbar; it looks like the action it triggers. */
+@Composable
+private fun SwipeFab(action: SwipeAction, bulk: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    val containerColor: Color
+    val contentColor: Color
+    val icon: ImageVector
+    when (action) {
+        SwipeAction.KEEP -> {
+            containerColor = MaterialGreen
+            contentColor = Color.White
+            icon = if (bulk) Icons.Default.DoneAll else Icons.Default.Check
+        }
+        SwipeAction.DELETE -> {
+            containerColor = if (bulk) MaterialRed else MaterialTheme.colorScheme.errorContainer
+            contentColor = if (bulk) Color.White else MaterialTheme.colorScheme.onErrorContainer
+            icon = if (bulk) Icons.Default.DeleteSweep else Icons.Default.Delete
+        }
+        else -> {
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            icon = action.icon
+        }
+    }
+    FloatingActionButton(
+        onClick = onClick,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        shape = CircleShape,
+        modifier = Modifier
+            .size(48.dp)
+            .then(modifier)
+    ) {
+        Icon(imageVector = icon, contentDescription = stringResource(action.labelRes))
+    }
+}
 
 /** One tile icon fading and scaling out as the next fades and scales in. */
 private fun iconSwap(motionScheme: MotionScheme): ContentTransform =
@@ -732,8 +764,9 @@ private fun Modifier.bulkDragSelect(
     haptic: HapticFeedback,
     uiState: () -> SwipeUiState,
     viewModel: SwipeViewModel,
-    isDelete: Boolean
-): Modifier = pointerInput(Unit) {
+    isDelete: Boolean,
+    fromLeft: Boolean
+): Modifier = pointerInput(isDelete, fromLeft) {
     var isLongPressActive = false
     var dragStartedX = 0f
     val stepPx = 36.dp.toPx()
@@ -756,7 +789,7 @@ private fun Modifier.bulkDragSelect(
             change.consume()
             if (isLongPressActive) {
                 val state = uiState()
-                val totalDrag = if (isDelete) change.position.x - dragStartedX else dragStartedX - change.position.x
+                val totalDrag = if (fromLeft) change.position.x - dragStartedX else dragStartedX - change.position.x
                 if (totalDrag > 0) {
                     val itemsToSelect = (totalDrag / stepPx).toInt()
                     val selection = mutableSetOf<String>()
@@ -790,6 +823,12 @@ fun SwipeActionBar(
     val notBulk = !uiState.isBulkDeleteMode && !uiState.isBulkKeepMode
     val haptic = LocalHapticFeedback.current
     val currentUiState by rememberUpdatedState(uiState)
+    // Only keep and delete have a bulk mode, so the other actions' buttons act on the current asset only.
+    fun bulkModifier(action: SwipeAction, fromLeft: Boolean): Modifier = when (action) {
+        SwipeAction.DELETE -> Modifier.bulkDragSelect(haptic, { currentUiState }, viewModel, isDelete = true, fromLeft = fromLeft)
+        SwipeAction.KEEP -> Modifier.bulkDragSelect(haptic, { currentUiState }, viewModel, isDelete = false, fromLeft = fromLeft)
+        else -> Modifier
+    }
     // Every favourite toggle lands in localFavorites, whoever made it (the toolbar, a double-tap on the card), and even
     // when auto-next has already moved on to the next asset; diffing it tells the heart when and which way to animate.
     var favoriteToggles by remember { mutableStateOf(FavoriteToggles(0, false)) }
@@ -817,16 +856,18 @@ fun SwipeActionBar(
         isSortMenuOpen = showSortMenu,
         isBulkDeleteMode = uiState.isBulkDeleteMode,
         isBulkKeepMode = uiState.isBulkKeepMode,
-        onDelete = { if (notBulk) viewModel.onSwipe(SwipeDecision.DELETE) },
-        onKeep = { if (notBulk) viewModel.onSwipe(SwipeDecision.KEEP) },
+        swipeLeftAction = uiState.swipeLeftAction,
+        swipeRightAction = uiState.swipeRightAction,
+        onSwipeLeft = { if (notBulk) viewModel.performSwipeAction(uiState.swipeLeftAction) },
+        onSwipeRight = { if (notBulk) viewModel.performSwipeAction(uiState.swipeRightAction) },
         onUndo = viewModel::undo,
         onArchive = viewModel::toggleArchive,
         onFavorite = viewModel::toggleFavorite,
         onAddToAlbum = viewModel::openAddToAlbumDialog,
         onLock = viewModel::toggleLock,
         onSort = { onSortMenuToggle(true) },
-        deleteButtonModifier = Modifier.bulkDragSelect(haptic, { currentUiState }, viewModel, isDelete = true),
-        keepButtonModifier = Modifier.bulkDragSelect(haptic, { currentUiState }, viewModel, isDelete = false),
+        leftButtonModifier = bulkModifier(uiState.swipeLeftAction, fromLeft = true),
+        rightButtonModifier = bulkModifier(uiState.swipeRightAction, fromLeft = false),
         sortMenu = {
             if (showSortMenu) {
                 SortOrderPopupMenu(

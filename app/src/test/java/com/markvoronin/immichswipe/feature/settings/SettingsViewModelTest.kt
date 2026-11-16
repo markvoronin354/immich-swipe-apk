@@ -8,6 +8,7 @@ import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ReminderInterval
 import com.markvoronin.immichswipe.core.SessionManager
+import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.core.cache.CacheManager
 import com.markvoronin.immichswipe.core.reminder.ReminderScheduler
 import com.markvoronin.immichswipe.data.local.entity.SwipeDecisionEntity
@@ -144,6 +145,53 @@ class SettingsViewModelTest {
         coVerify { sessionRepository.saveFullscreenButtonPosition(IconPosition.BOTTOM_LEFT) }
         coVerify { sessionRepository.saveShowMuteButton(true) }
         coVerify { sessionRepository.resetTutorials() }
+    }
+
+    @Test
+    fun `a swipe action is saved together with the other side's`() {
+        val vm = createViewModel()
+
+        vm.setSwipeLeftAction(SwipeAction.ARCHIVE)
+        vm.setSwipeRightAction(SwipeAction.FAVORITE)
+
+        coVerify { sessionRepository.saveSwipeActions(SwipeAction.ARCHIVE, SwipeAction.KEEP) }
+        coVerify { sessionRepository.saveSwipeActions(SwipeAction.DELETE, SwipeAction.FAVORITE) }
+    }
+
+    @Test
+    fun `picking the other side's action swaps the two sides`() {
+        val vm = createViewModel()
+
+        vm.setSwipeLeftAction(SwipeAction.KEEP)
+        vm.setSwipeRightAction(SwipeAction.DELETE)
+
+        // From the defaults (delete left, keep right), either pick ends with the two sides exchanged.
+        coVerify(exactly = 2) { sessionRepository.saveSwipeActions(SwipeAction.KEEP, SwipeAction.DELETE) }
+    }
+
+    @Test
+    fun `swipe down is saved on its own and may repeat a side's action`() {
+        val vm = createViewModel()
+
+        vm.setSwipeDownAction(SwipeAction.DELETE)
+
+        coVerify { sessionRepository.saveSwipeDownAction(SwipeAction.DELETE) }
+        coVerify(exactly = 0) { sessionRepository.saveSwipeActions(any(), any()) }
+    }
+
+    @Test
+    fun `the fullscreen swipe down option is saved on its own`() {
+        createViewModel().setFullscreenSwipeDownUsesAction(true)
+
+        coVerify { sessionRepository.saveFullscreenSwipeDownUsesAction(true) }
+        coVerify(exactly = 0) { sessionRepository.saveSwipeDownAction(any()) }
+    }
+
+    @Test
+    fun `resetting the interactions clears them through the session repository`() {
+        createViewModel().resetInteractions()
+
+        coVerify { sessionRepository.resetInteractions() }
     }
 
     @Test

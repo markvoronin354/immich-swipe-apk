@@ -119,6 +119,10 @@
     <string name="settings_interactions_label">Interactions</string>
     <string name="settings_interactions_desc">Actions de la barre de tri, défilement auto, gestes tactiles et frise</string>
     <string name="settings_interactions_dialog_title">Interactions</string>
+    <string name="settings_interactions_reset_label">Rétablir les valeurs par défaut</string>
+    <string name="settings_interactions_reset_title">Réinitialiser les interactions ?</string>
+    <string name="settings_interactions_reset_msg">La barre d\'outils, les actions de swipe, les gestes tactiles et la frise des médias reviendront à leurs valeurs par défaut.</string>
+    <string name="settings_interactions_reset_confirm">Réinitialiser</string>
     <string name="settings_toolbar_preview">Aperçu de la barre</string>
     <string name="settings_toolbar_reorder_hint">Appuyez longuement et faites glisser pour réorganiser les boutons</string>
     <string name="settings_section_toolbar">Barre d\'outils</string>
@@ -155,6 +159,12 @@
     <string name="settings_double_tap_label">Double appui</string>
     <string name="settings_double_tap_fullscreen">Plein écran</string>
     <string name="settings_double_tap_favorite">Favoris</string>
+    <string name="settings_section_swipe_actions">Actions de swipe</string>
+    <string name="settings_swipe_left_label">Swipe à gauche</string>
+    <string name="settings_swipe_right_label">Swipe à droite</string>
+    <string name="settings_swipe_down_label">Swipe vers le bas</string>
+    <string name="settings_fullscreen_swipe_down_label">Utiliser l\'action de swipe vers le bas en plein écran</string>
+    <string name="settings_fullscreen_swipe_down_desc">Désactivé : glisser vers le bas ferme la visionneuse. Activé : cela fait la même chose que Swipe vers le bas sur la carte. Glisser vers le haut la ferme toujours.</string>
     <string name="settings_section_account">Compte</string>
     <string name="settings_pos_top_left">Haut-Gauche</string>
     <string name="settings_pos_top_right">Haut-Droite</string>
@@ -182,6 +192,9 @@
     <string name="swipe_keep_upper">KEEP</string>
     <string name="swipe_delete">Supprimer</string>
     <string name="swipe_delete_upper">DELETE</string>
+    <string name="swipe_archive_upper">ARCHIVER</string>
+    <string name="swipe_locked_upper">VERROUILLER</string>
+    <string name="swipe_favorite_upper">FAVORI</string>
     <string name="swipe_remaining_left">%1$,d restants</string>
     <string name="swipe_favorite">Favoris</string>
     <string name="swipe_archive">Archiver</string>
@@ -349,7 +362,7 @@
     <string name="settings_clear_cache_confirm_title">Vider le cache ?</string>
     <string name="settings_clear_cache_confirm_msg">Cela supprimera tous les fichiers temporaires et les images en cache. Ils seront re-téléchargés depuis le serveur si nécessaire. Voulez-vous continuer ?</string>
     <string name="settings_tap_to_swipe_label">Appuyer pour trier</string>
-    <string name="settings_tap_to_swipe_desc">Appuyez sur le tiers gauche pour supprimer, et le tiers droit pour garder. Le tiers central reste pour les contrôles.</string>
+    <string name="settings_tap_to_swipe_desc">Appuyez sur le tiers gauche pour swiper à gauche, et le tiers droit pour swiper à droite. Le tiers central reste pour les contrôles.</string>
     <string name="settings_privacy_policy_label">Politique de confidentialité</string>
     <string name="settings_privacy_policy_desc">Lire notre politique de confidentialité concernant les données et permissions</string>
     <string name="settings_section_about">À propos et Légal</string>
@@ -369,7 +382,7 @@
     <string name="tutorial_replay_toast">Tutoriels réinitialisés ! Ouvrez le Tri ou les Doublons pour les afficher.</string>
 
     <string name="tutorial_swipe_gestures_title">Gestes &amp; Détails</string>
-    <string name="tutorial_swipe_gestures_desc">Glissez à DROITE pour GARDER, à GAUCHE pour SUPPRIMER, vers le BAS pour revenir à la carte précédente, ou vers le HAUT pour afficher les détails EXIF de la photo !</string>
+    <string name="tutorial_swipe_gestures_desc">Glissez à DROITE (%1$s), à GAUCHE (%2$s) ou vers le BAS (%3$s), ou vers le HAUT pour afficher les détails EXIF de la photo !</string>
     <string name="tutorial_swipe_header_title">Suivi de progression</string>
     <string name="tutorial_swipe_header_desc">Suivez votre avancement en direct. Appuyez sur la barre de progression pour ouvrir le résumé et synchroniser vos choix avec Immich !</string>
     <string name="tutorial_swipe_actions_title">Barre d\'actions rapides</string>

@@ -6,6 +6,7 @@ import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichOpenMode
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.core.ToolbarButton
 import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.domain.model.Asset
@@ -83,6 +84,10 @@ data class SwipeUiState(
     val tapToSwipeEnabled: Boolean = false,
     val doubleTapEnabled: Boolean = true,
     val doubleTapAction: DoubleTapAction = DoubleTapAction.FULLSCREEN,
+    val swipeLeftAction: SwipeAction = SwipeAction.DELETE,
+    val swipeRightAction: SwipeAction = SwipeAction.KEEP,
+    val swipeDownAction: SwipeAction = SwipeAction.UNDO,
+    val fullscreenSwipeDownUsesAction: Boolean = false,
     val localDeletePendingIntent: android.app.PendingIntent? = null,
     val userQuotaBytes: Long? = null,
     val albumId: String = "",

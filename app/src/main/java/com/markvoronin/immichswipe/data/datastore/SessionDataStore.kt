@@ -63,6 +63,10 @@ class SessionDataStore(private val context: Context) {
         private val KEY_TAP_TO_SWIPE = booleanPreferencesKey("tap_to_swipe")
         private val KEY_DOUBLE_TAP_ENABLED = booleanPreferencesKey("double_tap_enabled")
         private val KEY_DOUBLE_TAP_ACTION = stringPreferencesKey("double_tap_action")
+        private val KEY_SWIPE_LEFT_ACTION = stringPreferencesKey("swipe_left_action")
+        private val KEY_SWIPE_RIGHT_ACTION = stringPreferencesKey("swipe_right_action")
+        private val KEY_SWIPE_DOWN_ACTION = stringPreferencesKey("swipe_down_action")
+        private val KEY_FULLSCREEN_SWIPE_DOWN_USES_ACTION = booleanPreferencesKey("fullscreen_swipe_down_uses_action")
         private val KEY_REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
         private val KEY_REMINDER_INTERVAL = stringPreferencesKey("reminder_interval")
         private val KEY_REMINDER_CUSTOM_MIN_DAYS = androidx.datastore.preferences.core.longPreferencesKey("reminder_custom_min_days")
@@ -241,6 +245,28 @@ class SessionDataStore(private val context: Context) {
         }
     }
 
+    /** Clears everything the Interactions screen edits so the flows fall back to their defaults. */
+    suspend fun resetInteractions() {
+        context.dataStore.edit {
+            it.remove(KEY_SHOW_TOOLBAR_LABELS)
+            it.remove(KEY_SHOW_ADD_TO_ALBUM)
+            it.remove(KEY_SHOW_SWIPE_BUTTONS)
+            it.remove(KEY_SHOW_ARCHIVE)
+            it.remove(KEY_SHOW_LOCK)
+            it.remove(KEY_SHOW_FAVORITE)
+            it.remove(KEY_AUTO_NEXT_ON_FAV)
+            it.remove(KEY_TOOLBAR_BUTTON_ORDER)
+            it.remove(KEY_SWIPE_LEFT_ACTION)
+            it.remove(KEY_SWIPE_RIGHT_ACTION)
+            it.remove(KEY_SWIPE_DOWN_ACTION)
+            it.remove(KEY_FULLSCREEN_SWIPE_DOWN_USES_ACTION)
+            it.remove(KEY_TAP_TO_SWIPE)
+            it.remove(KEY_DOUBLE_TAP_ENABLED)
+            it.remove(KEY_DOUBLE_TAP_ACTION)
+            it.remove(KEY_SHOW_TIMELINE)
+        }
+    }
+
     fun isShowFullscreenIcon(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_FULLSCREEN_ICON] ?: true }
     suspend fun saveShowFullscreenIcon(show: Boolean) { context.dataStore.edit { it[KEY_SHOW_FULLSCREEN_ICON] = show } }
 
@@ -320,6 +346,20 @@ class SessionDataStore(private val context: Context) {
 
     fun getDoubleTapAction(): Flow<String?> = context.dataStore.data.map { it[KEY_DOUBLE_TAP_ACTION] }
     suspend fun saveDoubleTapAction(action: String) { context.dataStore.edit { it[KEY_DOUBLE_TAP_ACTION] = action } }
+
+    fun getSwipeLeftAction(): Flow<String?> = context.dataStore.data.map { it[KEY_SWIPE_LEFT_ACTION] }
+    fun getSwipeRightAction(): Flow<String?> = context.dataStore.data.map { it[KEY_SWIPE_RIGHT_ACTION] }
+    fun getSwipeDownAction(): Flow<String?> = context.dataStore.data.map { it[KEY_SWIPE_DOWN_ACTION] }
+    suspend fun saveSwipeDownAction(action: String) { context.dataStore.edit { it[KEY_SWIPE_DOWN_ACTION] = action } }
+
+    fun isFullscreenSwipeDownUsesAction(): Flow<Boolean> = context.dataStore.data.map { it[KEY_FULLSCREEN_SWIPE_DOWN_USES_ACTION] ?: false }
+    suspend fun saveFullscreenSwipeDownUsesAction(enabled: Boolean) { context.dataStore.edit { it[KEY_FULLSCREEN_SWIPE_DOWN_USES_ACTION] = enabled } }
+    suspend fun saveSwipeActions(left: String, right: String) {
+        context.dataStore.edit {
+            it[KEY_SWIPE_LEFT_ACTION] = left
+            it[KEY_SWIPE_RIGHT_ACTION] = right
+        }
+    }
 
     suspend fun initializeTutorialStateForInstallOrUpgrade() {
         context.dataStore.edit { prefs ->

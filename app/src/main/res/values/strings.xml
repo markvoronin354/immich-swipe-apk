@@ -117,6 +117,10 @@
     <string name="settings_interactions_label">Interactions</string>
     <string name="settings_interactions_desc">Sorting bar actions, auto-advance, tap gestures, and timeline</string>
     <string name="settings_interactions_dialog_title">Interactions</string>
+    <string name="settings_interactions_reset_label">Reset to defaults</string>
+    <string name="settings_interactions_reset_title">Reset Interactions?</string>
+    <string name="settings_interactions_reset_msg">The toolbar, swipe actions, tap gestures and timeline will go back to their defaults.</string>
+    <string name="settings_interactions_reset_confirm">Reset</string>
     <string name="settings_toolbar_preview">Toolbar preview</string>
     <string name="settings_toolbar_reorder_hint">Long-press and drag to rearrange buttons</string>
     <string name="settings_section_toolbar">Toolbar</string>
@@ -153,6 +157,12 @@
     <string name="settings_double_tap_label">Double tap</string>
     <string name="settings_double_tap_fullscreen">Fullscreen</string>
     <string name="settings_double_tap_favorite">Favorite</string>
+    <string name="settings_section_swipe_actions">Swipe actions</string>
+    <string name="settings_swipe_left_label">Swipe left</string>
+    <string name="settings_swipe_right_label">Swipe right</string>
+    <string name="settings_swipe_down_label">Swipe down</string>
+    <string name="settings_fullscreen_swipe_down_label">Use swipe down action in fullscreen</string>
+    <string name="settings_fullscreen_swipe_down_desc">Off: swiping down closes the viewer. On: it does what Swipe down does on the card. Swiping up always closes it.</string>
     <string name="settings_section_account">Account</string>
     <string name="settings_pos_top_left">Top-Left</string>
     <string name="settings_pos_top_right">Top-Right</string>
@@ -180,6 +190,9 @@
     <string name="swipe_keep_upper">KEEP</string>
     <string name="swipe_delete">Delete</string>
     <string name="swipe_delete_upper">DELETE</string>
+    <string name="swipe_archive_upper">ARCHIVE</string>
+    <string name="swipe_locked_upper">LOCK</string>
+    <string name="swipe_favorite_upper">FAVORITE</string>
     <string name="swipe_remaining_left">%1$,d left</string>
     <string name="swipe_favorite">Favorites</string>
     <string name="swipe_archive">Archive</string>
@@ -344,7 +357,7 @@
     <string name="settings_clear_cache_confirm_title">Clear App Cache?</string>
     <string name="settings_clear_cache_confirm_msg">This will delete all temporary files and cached images. They will be re-downloaded from the server as needed. Do you want to proceed?</string>
     <string name="settings_tap_to_swipe_label">Tap to swipe</string>
-    <string name="settings_tap_to_swipe_desc">Tap the left ⅓ of the card to delete, and the right ⅓ to keep. Middle ⅓ remains for controls.</string>
+    <string name="settings_tap_to_swipe_desc">Tap the left ⅓ of the card to swipe left, and the right ⅓ to swipe right. Middle ⅓ remains for controls.</string>
     <string name="settings_privacy_policy_label">Privacy Policy</string>
     <string name="settings_privacy_policy_desc">Read our privacy policy regarding data and permissions</string>
     <string name="settings_section_about">About &amp; Legal</string>
@@ -364,7 +377,7 @@
     <string name="tutorial_replay_toast">Tutorials reset! Open Swipe or Duplicates to view.</string>
 
     <string name="tutorial_swipe_gestures_title">Swipe Gestures &amp; Details</string>
-    <string name="tutorial_swipe_gestures_desc">Swipe RIGHT to KEEP, Swipe LEFT to DELETE, swipe DOWN to go back to the previous card, or drag UP to view full photo EXIF details!</string>
+    <string name="tutorial_swipe_gestures_desc">Swipe RIGHT to %1$s, swipe LEFT to %2$s, swipe DOWN to %3$s, or drag UP to view full photo EXIF details!</string>
     <string name="tutorial_swipe_header_title">Progress Tracking</string>
     <string name="tutorial_swipe_header_desc">Monitor your sorting progress and counts at a glance. Tap the progress bar anytime to open the summary and sync changes to Immich!</string>
     <string name="tutorial_swipe_actions_title">Quick Action Bar</string>

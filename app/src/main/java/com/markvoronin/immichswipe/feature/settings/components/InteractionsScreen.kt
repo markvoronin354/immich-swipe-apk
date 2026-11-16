@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -25,24 +28,44 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.SwipeDown
+import androidx.compose.material.icons.filled.SwipeLeft
+import androidx.compose.material.icons.filled.SwipeRight
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.ViewCarousel
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.DoubleTapAction
+import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.feature.settings.SettingsUiState
 import com.markvoronin.immichswipe.feature.settings.SettingsViewModel
 import com.markvoronin.immichswipe.feature.swipe.components.SwipeActionBarLayout
+import com.markvoronin.immichswipe.feature.swipe.utils.icon
+import com.markvoronin.immichswipe.feature.swipe.utils.labelRes
 
 @Composable
 fun InteractionsScreen(
@@ -56,6 +79,17 @@ fun InteractionsScreen(
     }
 
     val scrollState = rememberScrollState()
+    var showResetDialog by remember { mutableStateOf(false) }
+
+    if (showResetDialog) {
+        ResetInteractionsDialog(
+            onConfirm = {
+                showResetDialog = false
+                viewModel.resetInteractions()
+            },
+            onDismiss = { showResetDialog = false }
+        )
+    }
 
     Column(
         modifier = modifier
@@ -83,6 +117,8 @@ fun InteractionsScreen(
                 ) {
                     SwipeActionBarLayout(
                         showSwipeButtons = uiState.showSwipeButtons,
+                        swipeLeftAction = uiState.swipeLeftAction,
+                        swipeRightAction = uiState.swipeRightAction,
                         showArchiveButton = uiState.showArchiveButton,
                         showFavoriteButton = uiState.showFavoriteButton,
                         showAddToAlbumButton = uiState.showAddToAlbumButton,
@@ -181,6 +217,50 @@ fun InteractionsScreen(
 
         Spacer(Modifier.height(16.dp))
 
+        SettingsSection(title = stringResource(R.string.settings_section_swipe_actions)) {
+            Column {
+                SwipeActionItem(
+                    title = stringResource(R.string.settings_swipe_left_label),
+                    icon = Icons.Default.SwipeLeft,
+                    actions = SideSwipeActions,
+                    selected = uiState.swipeLeftAction,
+                    onSelect = viewModel::setSwipeLeftAction
+                )
+
+                SettingsItemGap()
+
+                SwipeActionItem(
+                    title = stringResource(R.string.settings_swipe_right_label),
+                    icon = Icons.Default.SwipeRight,
+                    actions = SideSwipeActions,
+                    selected = uiState.swipeRightAction,
+                    onSelect = viewModel::setSwipeRightAction
+                )
+
+                SettingsItemGap()
+
+                SwipeActionItem(
+                    title = stringResource(R.string.settings_swipe_down_label),
+                    icon = Icons.Default.SwipeDown,
+                    actions = SwipeDownActions,
+                    selected = uiState.swipeDownAction,
+                    onSelect = viewModel::setSwipeDownAction
+                )
+
+                SettingsItemGap()
+
+                SettingsToggleItemSmall(
+                    title = stringResource(R.string.settings_fullscreen_swipe_down_label),
+                    checked = uiState.fullscreenSwipeDownUsesAction,
+                    onCheckedChange = { viewModel.setFullscreenSwipeDownUsesAction(it) },
+                    icon = Icons.Default.Fullscreen,
+                    description = stringResource(R.string.settings_fullscreen_swipe_down_desc)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
         SettingsSection(
             title = stringResource(R.string.settings_section_actions)
         ) {
@@ -249,6 +329,115 @@ fun InteractionsScreen(
             )
         }
 
+        Spacer(Modifier.height(16.dp))
+
+        OutlinedButton(
+            onClick = { showResetDialog = true },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.settings_interactions_reset_label))
+        }
+
         Spacer(Modifier.navigationBarsPadding().height(24.dp))
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun ResetInteractionsDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(MaterialTheme.colorScheme.primary, MaterialShapes.Gem.toShape()),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.RestartAlt,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+        },
+        title = {
+            Text(
+                text = stringResource(R.string.settings_interactions_reset_title),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        text = { Text(stringResource(R.string.settings_interactions_reset_msg)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.settings_interactions_reset_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.common_cancel))
+            }
+        }
+    )
+}
+
+// Undo is left out: it only makes sense for a swipe down.
+private val SideSwipeActions = listOf(
+    SwipeAction.KEEP, SwipeAction.DELETE, SwipeAction.FAVORITE, SwipeAction.ARCHIVE, SwipeAction.LOCK
+)
+
+// The same top row as the sides, with Undo between Archive and Lock below it.
+private val SwipeDownActions = listOf(
+    SwipeAction.KEEP, SwipeAction.DELETE, SwipeAction.FAVORITE, SwipeAction.ARCHIVE, SwipeAction.UNDO, SwipeAction.LOCK
+)
+
+@Composable
+private fun SwipeActionItem(
+    title: String,
+    icon: ImageVector,
+    actions: List<SwipeAction>,
+    selected: SwipeAction,
+    onSelect: (SwipeAction) -> Unit,
+) {
+    SettingsExpandableItem(
+        title = title,
+        subtitle = stringResource(selected.labelRes),
+        icon = icon
+    ) {
+        // Rows of three: more labels don't fit one row on a phone.
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            actions.chunked(3).forEach { SwipeActionRow(it, selected, onSelect) }
+        }
+    }
+}
+
+@Composable
+private fun SwipeActionRow(
+    actions: List<SwipeAction>,
+    selected: SwipeAction,
+    onSelect: (SwipeAction) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        actions.forEachIndexed { index, action ->
+            ThemeModeButton(
+                text = stringResource(action.labelRes),
+                icon = action.icon,
+                selected = selected == action,
+                onClick = { onSelect(action) },
+                modifier = Modifier.weight(1f),
+                index = index, count = actions.size
+            )
+        }
     }
 }

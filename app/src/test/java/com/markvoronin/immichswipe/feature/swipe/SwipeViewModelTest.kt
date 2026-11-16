@@ -11,6 +11,7 @@ import com.markvoronin.immichswipe.core.SessionConfig
 import com.markvoronin.immichswipe.core.SessionManager
 import com.markvoronin.immichswipe.core.SortCategory
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.core.SwipeBehavior
 import com.markvoronin.immichswipe.core.SwipeSettings
 import com.markvoronin.immichswipe.data.local.entity.SwipeDecisionEntity
@@ -392,6 +393,120 @@ class SwipeViewModelTest {
         vm.toggleFavoriteFor("a3")
 
         assertTrue(vm.decisions().isEmpty())
+    }
+
+    @Test
+    fun `a swipe action records the decision it stands for`() {
+        val vm = openAlbum()
+        vm.performSwipeAction(SwipeAction.KEEP)
+        vm.performSwipeAction(SwipeAction.DELETE)
+        vm.performSwipeAction(SwipeAction.ARCHIVE)
+        vm.performSwipeAction(SwipeAction.LOCK)
+
+        assertEquals(
+            mapOf(
+                "a1" to SwipeDecision.KEEP, "a2" to SwipeDecision.DELETE,
+                "a3" to SwipeDecision.ARCHIVE, "a4" to SwipeDecision.LOCK
+            ),
+            vm.decisions()
+        )
+    }
+
+    @Test
+    fun `the undo swipe action takes back the last decision`() {
+        val vm = openAlbum()
+        vm.performSwipeAction(SwipeAction.KEEP)
+
+        vm.performSwipeAction(SwipeAction.UNDO)
+
+        assertTrue(vm.decisions().isEmpty())
+        assertEquals(0, vm.uiState.value.currentIndex)
+    }
+
+    @Test
+    fun `the favorite swipe action favorites the current asset and keeps it`() {
+        val vm = openAlbum()
+
+        vm.performSwipeAction(SwipeAction.FAVORITE)
+
+        assertTrue(vm.uiState.value.isFavorite("a1"))
+        assertEquals(SwipeDecision.KEEP, vm.decisions()["a1"])
+        assertEquals(1, vm.uiState.value.currentIndex)
+    }
+
+    @Test
+    fun `the favorite swipe action does not un-favorite an asset that already is one`() {
+        assets = listOf(a1.copy(isFavorite = true), a2, a3, a4)
+        val vm = openAlbum()
+
+        vm.performSwipeAction(SwipeAction.FAVORITE)
+
+        assertTrue(vm.uiState.value.isFavorite("a1"))
+        assertTrue(vm.uiState.value.localFavorites.isEmpty())
+        assertEquals(SwipeDecision.KEEP, vm.decisions()["a1"])
+    }
+
+    @Test
+    fun `undoing a favorite swipe takes the favorite back`() {
+        val vm = openAlbum()
+        vm.performSwipeAction(SwipeAction.FAVORITE)
+
+        vm.undo()
+
+        assertFalse(vm.uiState.value.isFavorite("a1"))
+        assertTrue(vm.uiState.value.localFavorites.isEmpty())
+        assertTrue(vm.decisions().isEmpty())
+        assertEquals(0, vm.uiState.value.currentIndex)
+    }
+
+    @Test
+    fun `undoing a favorite swipe restores a favorite that had been switched off`() {
+        assets = listOf(a1.copy(isFavorite = true), a2, a3, a4)
+        val vm = openAlbum()
+        vm.toggleFavorite()
+        vm.performSwipeAction(SwipeAction.FAVORITE)
+        assertTrue(vm.uiState.value.isFavorite("a1"))
+
+        vm.undo()
+
+        assertFalse(vm.uiState.value.isFavorite("a1"))
+        assertEquals(mapOf("a1" to false), vm.uiState.value.localFavorites)
+    }
+
+    @Test
+    fun `undoing a favorite swipe leaves an asset that already was a favorite alone`() {
+        assets = listOf(a1.copy(isFavorite = true), a2, a3, a4)
+        val vm = openAlbum()
+        vm.performSwipeAction(SwipeAction.FAVORITE)
+
+        vm.undo()
+
+        assertTrue(vm.uiState.value.isFavorite("a1"))
+        assertTrue(vm.uiState.value.localFavorites.isEmpty())
+    }
+
+    @Test
+    fun `undoing a later swipe keeps an earlier swipe's favorite`() {
+        val vm = openAlbum()
+        vm.performSwipeAction(SwipeAction.FAVORITE)
+        vm.performSwipeAction(SwipeAction.KEEP)
+
+        vm.undo()
+
+        assertTrue(vm.uiState.value.isFavorite("a1"))
+        assertEquals(mapOf("a1" to SwipeDecision.KEEP), vm.decisions())
+    }
+
+    @Test
+    fun `undoing a favorite swipe from the summary takes the favorite back too`() {
+        val vm = openAlbum()
+        vm.performSwipeAction(SwipeAction.FAVORITE)
+        vm.performSwipeAction(SwipeAction.KEEP)
+
+        vm.undoSpecificDecision("a1")
+
+        assertFalse(vm.uiState.value.isFavorite("a1"))
+        assertEquals(mapOf("a2" to SwipeDecision.KEEP), vm.decisions())
     }
 
     @Test

@@ -143,13 +143,16 @@ fun SwipeCardDeck(
                             showShareButton = uiState.showShareButton,
                             showFullSizeButton = uiState.showFullSizeButton,
                             tapToSwipeEnabled = uiState.tapToSwipeEnabled,
+                            swipeLeftAction = uiState.swipeLeftAction,
+                            swipeRightAction = uiState.swipeRightAction,
+                            swipeDownAction = uiState.swipeDownAction,
                             canUndo = !isBulk && uiState.history.isNotEmpty(),
                             showSizeIndicator = (uiState.sortOrder == SortOrder.SIZE_DESC) || (uiState.sortOrder == SortOrder.SIZE_ASC),
                             rotationAngle = uiState.getRotation(asset.id),
                             isFullSize = uiState.isFullResolution && !isNextCard && asset.supportsFullResolution
                         ),
                         actions = SwipeCardActions(
-                            onSwipe = { viewModel.onSwipe(it) },
+                            onSwipe = { viewModel.performSwipeAction(it) },
                             onUndo = {
                                 undoneAssetId = uiState.history.lastOrNull()
                                 heldNextIndex = nextUnprocessedIndex

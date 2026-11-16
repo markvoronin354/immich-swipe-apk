@@ -4,8 +4,8 @@ import com.markvoronin.immichswipe.core.ButtonStackOrientation
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichOpenMode
 import com.markvoronin.immichswipe.core.PlaybackBehavior
+import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.domain.model.Asset
-import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 
 data class SwipeCardConfig(
     val baseUrl: String = "",
@@ -28,6 +28,9 @@ data class SwipeCardConfig(
     val immichOpenMode: ImmichOpenMode = ImmichOpenMode.APP,
     val immichLongPressWeb: Boolean = true,
     val tapToSwipeEnabled: Boolean = false,
+    val swipeLeftAction: SwipeAction = SwipeAction.DELETE,
+    val swipeRightAction: SwipeAction = SwipeAction.KEEP,
+    val swipeDownAction: SwipeAction = SwipeAction.UNDO,
     val canUndo: Boolean = false,
     val showSizeIndicator: Boolean = false,
     val rotationAngle: Int = 0,
@@ -35,7 +38,7 @@ data class SwipeCardConfig(
 )
 
 data class SwipeCardActions(
-    val onSwipe: (SwipeDecision) -> Unit,
+    val onSwipe: (SwipeAction) -> Unit,
     val onUndo: () -> Unit = {},
     val onRotateAsset: () -> Unit = {},
     val onDoubleTap: () -> Unit,

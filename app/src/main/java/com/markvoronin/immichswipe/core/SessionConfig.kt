@@ -31,6 +31,19 @@ enum class DoubleTapAction {
     FAVORITE
 }
 
+/**
+ * What a swipe does. FAVORITE favorites the asset, then keeps it so the deck moves on.
+ * UNDO only makes sense for a swipe down, which is what undoes by default.
+ */
+enum class SwipeAction {
+    KEEP,
+    DELETE,
+    ARCHIVE,
+    LOCK,
+    FAVORITE,
+    UNDO
+}
+
 /** The reorderable middle buttons of the swipe toolbar, in their default order. */
 enum class ToolbarButton {
     ARCHIVE,

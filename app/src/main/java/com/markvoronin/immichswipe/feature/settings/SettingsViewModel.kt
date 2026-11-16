@@ -13,6 +13,7 @@ import com.markvoronin.immichswipe.core.ImmichOpenMode
 import com.markvoronin.immichswipe.core.PlaybackBehavior
 import com.markvoronin.immichswipe.core.ReminderInterval
 import com.markvoronin.immichswipe.core.SessionManager
+import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.core.ToolbarButton
 import com.markvoronin.immichswipe.core.cache.CacheManager
 import com.markvoronin.immichswipe.core.reminder.ReminderScheduler
@@ -267,6 +268,26 @@ class SettingsViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            sessionRepository.swipeLeftAction.collect { action ->
+                _uiState.update { it.copy(swipeLeftAction = action) }
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.swipeRightAction.collect { action ->
+                _uiState.update { it.copy(swipeRightAction = action) }
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.swipeDownAction.collect { action ->
+                _uiState.update { it.copy(swipeDownAction = action) }
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.fullscreenSwipeDownUsesAction.collect { usesAction ->
+                _uiState.update { it.copy(fullscreenSwipeDownUsesAction = usesAction) }
+            }
+        }
+        viewModelScope.launch {
             sessionRepository.reminderEnabled.collect { enabled ->
                 _uiState.update { it.copy(reminderEnabled = enabled) }
             }
@@ -330,6 +351,12 @@ class SettingsViewModel @Inject constructor(
     fun resetActionButtons() {
         viewModelScope.launch {
             sessionRepository.resetActionButtons()
+        }
+    }
+
+    fun resetInteractions() {
+        viewModelScope.launch {
+            sessionRepository.resetInteractions()
         }
     }
 
@@ -484,6 +511,36 @@ class SettingsViewModel @Inject constructor(
     fun setDoubleTapAction(action: com.markvoronin.immichswipe.core.DoubleTapAction) {
         viewModelScope.launch {
             sessionRepository.saveDoubleTapAction(action)
+        }
+    }
+
+    // The two sides can't share an action, so picking the other side's action hands it this side's old one.
+    fun setSwipeLeftAction(action: SwipeAction) {
+        val state = _uiState.value
+        saveSwipeActions(action, if (action == state.swipeRightAction) state.swipeLeftAction else state.swipeRightAction)
+    }
+
+    fun setSwipeRightAction(action: SwipeAction) {
+        val state = _uiState.value
+        saveSwipeActions(if (action == state.swipeLeftAction) state.swipeRightAction else state.swipeLeftAction, action)
+    }
+
+    // Swipe down has no toolbar button or tap zone to tell apart from, so it may repeat a side's action.
+    fun setSwipeDownAction(action: SwipeAction) {
+        viewModelScope.launch {
+            sessionRepository.saveSwipeDownAction(action)
+        }
+    }
+
+    fun setFullscreenSwipeDownUsesAction(enabled: Boolean) {
+        viewModelScope.launch {
+            sessionRepository.saveFullscreenSwipeDownUsesAction(enabled)
+        }
+    }
+
+    private fun saveSwipeActions(left: SwipeAction, right: SwipeAction) {
+        viewModelScope.launch {
+            sessionRepository.saveSwipeActions(left, right)
         }
     }
 
