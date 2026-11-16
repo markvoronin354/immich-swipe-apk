@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -131,6 +132,7 @@ fun SharedVideoPlayer(
     controlsOffset: Dp = 0.dp,
     bottomStartObstacle: IntSize = IntSize.Zero,
     bottomEndObstacle: IntSize = IntSize.Zero,
+    onIndicatorsHeightChange: (Int) -> Unit = {},
     // Lets the caller record the video surface (without these controls) into a backdrop it owns.
     backdrop: LayerBackdrop? = null,
     videoSurfaceWrapper: @Composable (surfaceContent: @Composable () -> Unit) -> Unit = { surfaceContent -> surfaceContent() },
@@ -319,6 +321,7 @@ fun SharedVideoPlayer(
                     fileSize = fileSize,
                     bottomStartObstacle = bottomStartObstacle,
                     bottomEndObstacle = bottomEndObstacle,
+                    onIndicatorsHeightChange = onIndicatorsHeightChange,
                     isPlaying = isPlayWhenReady && isCorrectMediaBound,
                     onTogglePlay = { player.togglePlayPause() },
                     onSeek = {
@@ -447,12 +450,14 @@ internal fun VideoControls(
     // The card's bottom corner button groups; the pills move up above any they would overlap.
     bottomStartObstacle: IntSize = IntSize.Zero,
     bottomEndObstacle: IntSize = IntSize.Zero,
+    // How far the controls reach up from the card's bottom edge, past any corner buttons the pill moved clear of.
+    onIndicatorsHeightChange: (Int) -> Unit = {},
 ) {
     AnimatedVisibility(
         visible = visible,
         enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
         exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
-        modifier = modifier
+        modifier = modifier.onSizeChanged { onIndicatorsHeightChange(it.height) }
     ) {
         Column(
             modifier = Modifier

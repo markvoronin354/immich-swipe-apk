@@ -193,6 +193,9 @@ fun SwipeCard(
     var topEndButtons by remember { mutableStateOf(IntSize.Zero) }
     var bottomStartButtons by remember { mutableStateOf(IntSize.Zero) }
     var bottomEndButtons by remember { mutableStateOf(IntSize.Zero) }
+    // How far the size pill reaches down from the card's top edge, and the time pill up from its bottom edge, so the badges stay clear of them.
+    var sizePillHeight by remember { mutableIntStateOf(0) }
+    var timePillHeight by remember { mutableIntStateOf(0) }
 
     var isVideoReady by remember(asset.id) { mutableStateOf(value = false) }
     var showLoadingIndicator by remember(asset.id, providedPlayer) {
@@ -671,6 +674,7 @@ fun SwipeCard(
                             backdrop = glassBackdrop,
                             bottomStartObstacle = bottomStartButtons,
                             bottomEndObstacle = bottomEndButtons,
+                            onIndicatorsHeightChange = { timePillHeight = it },
                             videoSurfaceWrapper = { surface ->
                                 ZoomableBox(
                                     modifier = Modifier.fillMaxSize(),
@@ -776,7 +780,10 @@ fun SwipeCard(
                             visible = !controlsHidden,
                             enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
                             exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
-                            modifier = Modifier.clearOfCornerButtons(topStartButtons, topEndButtons, fromTop = true)
+                            // First, so it measures the pill together with the shift past the corner buttons.
+                            modifier = Modifier
+                                .onSizeChanged { sizePillHeight = it.height }
+                                .clearOfCornerButtons(topStartButtons, topEndButtons, fromTop = true)
                         ) {
                             GlassPill(formatSize(asset.exifInfo?.fileSizeInBytes ?: 0L), glassBackdrop)
                         }
@@ -915,30 +922,38 @@ fun SwipeCard(
                     val currentX = offsetX.value
                     val currentY = offsetY.value
 
+                    // Each badge keeps its usual spot unless a pill, pushed in by a row of corner buttons, reaches it: then 12dp past the pill.
+                    val sizePillBottom = if (config.showSizeIndicator && !controlsHidden) 8.dp + with(density) { sizePillHeight.toDp() } else 0.dp
+                    val badgeTop = maxOf(60.dp, sizePillBottom + 12.dp)
+                    val badgeBottom = maxOf(72.dp, with(density) { timePillHeight.toDp() } + 12.dp)
+
                     if ((config.canUndo || config.swipeDownAction != SwipeAction.UNDO) && !isEnteringFromBelow && currentY > abs(currentX)) {
                         IndicatorBadge(
                             stringResource(config.swipeDownAction.indicatorLabelRes),
                             config.swipeDownAction.indicatorColor(),
-                            Alignment.TopCenter
+                            Alignment.TopCenter,
+                            topPadding = badgeTop
                         ) { (currentY / 200f).coerceIn(0f, 1f) * 0.9f }
                     } else if (currentSwipeUp != SwipeAction.DETAILS && -currentY > abs(currentX)) {
                         IndicatorBadge(
                             stringResource(config.swipeUpAction.indicatorLabelRes),
                             config.swipeUpAction.indicatorColor(),
                             Alignment.BottomCenter,
-                            bottomPadding = 72.dp
+                            bottomPadding = badgeBottom
                         ) { (-currentY / 200f).coerceIn(0f, 1f) * 0.9f }
                     } else if (currentX > 0f) {
                         IndicatorBadge(
                             stringResource(config.swipeRightAction.indicatorLabelRes),
                             config.swipeRightAction.indicatorColor(),
-                            Alignment.TopStart
+                            Alignment.TopStart,
+                            topPadding = badgeTop
                         ) { (currentX / 200f).coerceIn(0f, 1f) * 0.9f }
                     } else if (currentX < 0f) {
                         IndicatorBadge(
                             stringResource(config.swipeLeftAction.indicatorLabelRes),
                             config.swipeLeftAction.indicatorColor(),
-                            Alignment.TopEnd
+                            Alignment.TopEnd,
+                            topPadding = badgeTop
                         ) { (-currentX / 200f).coerceIn(0f, 1f) * 0.9f }
                     }
                 }
