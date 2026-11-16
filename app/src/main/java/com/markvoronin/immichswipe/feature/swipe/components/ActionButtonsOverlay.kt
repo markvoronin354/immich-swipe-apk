@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.outlined.Hd
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -35,6 +37,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
@@ -74,15 +77,8 @@ fun ActionButtonsOverlay(
         exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
         modifier = Modifier.fillMaxSize()
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            IconPosition.entries.forEach { pos ->
-                val alignment = when (pos) {
-                    IconPosition.TOP_LEFT -> Alignment.TopStart
-                    IconPosition.TOP_RIGHT -> Alignment.TopEnd
-                    IconPosition.BOTTOM_LEFT -> Alignment.BottomStart
-                    IconPosition.BOTTOM_RIGHT -> Alignment.BottomEnd
-                }
-
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val cornerButtons = IconPosition.entries.associateWith { pos ->
                 val buttons = mutableListOf<@Composable () -> Unit>()
 
                 if (config.showFullscreenButton && config.fullscreenButtonPosition == pos) {
@@ -207,6 +203,20 @@ fun ActionButtonsOverlay(
                     }
                 }
 
+                buttons
+            }
+
+            val horizontal = config.buttonStackOrientation == ButtonStackOrientation.HORIZONTAL
+            val buttonSize = fittingButtonSize(cornerButtons.mapValues { it.value.size }, horizontal, maxWidth, maxHeight)
+
+            cornerButtons.forEach { (pos, buttons) ->
+                val alignment = when (pos) {
+                    IconPosition.TOP_LEFT -> Alignment.TopStart
+                    IconPosition.TOP_RIGHT -> Alignment.TopEnd
+                    IconPosition.BOTTOM_LEFT -> Alignment.BottomStart
+                    IconPosition.BOTTOM_RIGHT -> Alignment.BottomEnd
+                }
+
                 if (buttons.isEmpty()) {
                     SideEffect { onCornerSizeChanged(pos, IntSize.Zero) }
                 } else {
@@ -216,13 +226,15 @@ fun ActionButtonsOverlay(
                             .onSizeChanged { onCornerSizeChanged(pos, it) }
                             .padding(8.dp)
                     ) {
-                        if (config.buttonStackOrientation == ButtonStackOrientation.HORIZONTAL) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                buttons.forEach { button -> button() }
-                            }
-                        } else {
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                buttons.forEach { button -> button() }
+                        CompositionLocalProvider(LocalSwipeActionButtonSize provides buttonSize) {
+                            if (horizontal) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    buttons.forEach { button -> button() }
+                                }
+                            } else {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    buttons.forEach { button -> button() }
+                                }
                             }
                         }
                     }
@@ -230,6 +242,35 @@ fun ActionButtonsOverlay(
             }
         }
     }
+}
+
+private val ButtonGap = 8.dp
+private val CornerInset = 8.dp
+private val MinButtonSize = 32.dp
+
+// A corner pair per edge, and whether that edge is a row across the card.
+private val CardEdges = listOf(
+    listOf(IconPosition.TOP_LEFT, IconPosition.TOP_RIGHT) to true,
+    listOf(IconPosition.BOTTOM_LEFT, IconPosition.BOTTOM_RIGHT) to true,
+    listOf(IconPosition.TOP_LEFT, IconPosition.BOTTOM_LEFT) to false,
+    listOf(IconPosition.TOP_RIGHT, IconPosition.BOTTOM_RIGHT) to false
+)
+
+/**
+ * The button size at which every edge's corner groups fit the card, which keeps its 8dp gap and 8dp corner inset:
+ * the full 40dp when they fit, otherwise shrunk alike, never below 32dp. `counts` is the number of buttons in each corner.
+ */
+internal fun fittingButtonSize(counts: Map<IconPosition, Int>, horizontal: Boolean, width: Dp, height: Dp): Dp {
+    val fitting = CardEdges.minOf { (corners, isRow) ->
+        val groups = corners.map { counts[it] ?: 0 }.filter { it > 0 }
+        // A stack running along the edge needs all its buttons' length; one across it, a single button's.
+        val alongEdge = isRow == horizontal
+        val buttons = groups.sumOf { if (alongEdge) it else 1 }
+        val gaps = groups.sumOf { if (alongEdge) it - 1 else 0 }
+        val room = (if (isRow) width else height) - CornerInset * 2 * groups.size - ButtonGap * gaps
+        if (buttons == 0) Float.MAX_VALUE else room.value / buttons
+    }
+    return fitting.dp.coerceIn(MinButtonSize, SwipeActionButtonSize)
 }
 
 /** A glass action button whose content squashes and springs back when tapped or long-pressed. */
