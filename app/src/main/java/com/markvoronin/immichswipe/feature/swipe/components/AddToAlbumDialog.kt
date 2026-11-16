@@ -308,30 +308,23 @@ fun AddToAlbumDialog(
                             ) {
                                 if (showArchiveInDialog || showLockInDialog || showCreateInDialog) {
                                     item(key = "shortcut_items") {
-                                        // Separate tiles: archiving and locking are different actions.
+                                        // Archiving and locking stay separate rows: they are different actions.
+                                        val newAlbumTitle = stringResource(R.string.add_to_album_new_title)
+                                        val shortcuts = buildList {
+                                            if (showArchiveInDialog) add(ShortcutAction(Icons.Default.Archive, archiveTitle, onArchiveSelect))
+                                            if (showLockInDialog) add(ShortcutAction(Icons.Default.Lock, lockFolderTitle, onLockSelect))
+                                            if (showCreateInDialog) add(ShortcutAction(Icons.Default.Add, newAlbumTitle) { showCreateDialog = true })
+                                        }
+                                        // Gap-joined like the album tiles below: large corners only at the ends.
                                         Column(verticalArrangement = Arrangement.spacedBy(AlbumTileGap)) {
-                                            if (showArchiveInDialog) {
+                                            shortcuts.forEachIndexed { index, shortcut ->
+                                                val top = if (index == 0) 28.dp else 0.dp
+                                                val bottom = if (index == shortcuts.lastIndex) 28.dp else 0.dp
                                                 ShortcutSelectionItem(
-                                                    icon = Icons.Default.Archive,
-                                                    title = archiveTitle,
-                                                    subtitle = stringResource(R.string.add_to_album_archive_subtitle),
-                                                    onClick = onArchiveSelect
-                                                )
-                                            }
-                                            if (showLockInDialog) {
-                                                ShortcutSelectionItem(
-                                                    icon = Icons.Default.Lock,
-                                                    title = lockFolderTitle,
-                                                    subtitle = stringResource(R.string.add_to_album_lock_subtitle),
-                                                    onClick = onLockSelect
-                                                )
-                                            }
-                                            if (showCreateInDialog) {
-                                                ShortcutSelectionItem(
-                                                    icon = Icons.Default.Add,
-                                                    title = stringResource(R.string.add_to_album_new_title),
-                                                    subtitle = stringResource(R.string.add_to_album_new_subtitle),
-                                                    onClick = { showCreateDialog = true }
+                                                    icon = shortcut.icon,
+                                                    title = shortcut.title,
+                                                    shape = RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom),
+                                                    onClick = shortcut.onClick
                                                 )
                                             }
                                         }
@@ -527,28 +520,30 @@ private fun NewAlbumNameDialog(
     )
 }
 
+private class ShortcutAction(val icon: ImageVector, val title: String, val onClick: () -> Unit)
+
 @Composable
 private fun ShortcutSelectionItem(
     icon: ImageVector,
     title: String,
-    subtitle: String,
+    shape: Shape,
     onClick: () -> Unit
 ) {
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
+        shape = shape,
         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                modifier = Modifier.size(52.dp),
-                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.size(36.dp),
+                shape = RoundedCornerShape(10.dp),
                 color = MaterialTheme.colorScheme.primary
             ) {
                 Box(
@@ -559,27 +554,21 @@ private fun ShortcutSelectionItem(
                         imageVector = icon,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
 
             Spacer(Modifier.width(14.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                modifier = Modifier.weight(1f)
+            )
 
             Icon(
                 imageVector = Icons.Default.ChevronRight,

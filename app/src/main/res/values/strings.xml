@@ -211,12 +211,9 @@
     <string name="add_to_album_error">Error adding to album: %1$s</string>
     <string name="add_to_album_items_count" tools:ignore="PluralsCandidate">%1$,d items</string>
     <string name="add_to_album_lock_folder">Locked folder</string>
-    <string name="add_to_album_lock_subtitle">Move asset to locked folder</string>
     <string name="add_to_album_lock_success">Asset locked</string>
-    <string name="add_to_album_archive_subtitle">Move asset to archive</string>
     <string name="add_to_album_archive_success">Asset archived</string>
     <string name="add_to_album_new_title">New album</string>
-    <string name="add_to_album_new_subtitle">Create an album with this asset</string>
     <string name="add_to_album_new_name_label">Album name</string>
     <string name="add_to_album_new_create">Create</string>
     <string name="swipe_summary_title">Sorting summary</string>
