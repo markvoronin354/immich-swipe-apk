@@ -8,6 +8,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.media3.exoplayer.ExoPlayer
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.feature.swipe.SwipeUiState
 import com.markvoronin.immichswipe.feature.swipe.SwipeViewModel
 import com.markvoronin.immichswipe.feature.swipe.utils.supportsFullResolution
@@ -93,12 +94,13 @@ fun SwipeScreenDialogs(
         val errorTemplate = stringResource(R.string.add_to_album_error)
         val lockSuccessMessage = stringResource(R.string.add_to_album_lock_success)
         val archiveSuccessMessage = stringResource(R.string.add_to_album_archive_success)
+        val swipeActions = listOf(uiState.swipeLeftAction, uiState.swipeRightAction, uiState.swipeUpAction, uiState.swipeDownAction)
 
         AddToAlbumDialog(
             albums = uiState.albumsForAddToAlbum,
             isLoading = uiState.isFetchingAlbumsForDialog,
-            showLockButton = uiState.showLockButton,
-            showArchiveButton = uiState.showArchiveButton,
+            showLockButton = uiState.showLockButton || SwipeAction.LOCK in swipeActions,
+            showArchiveButton = uiState.showArchiveButton || SwipeAction.ARCHIVE in swipeActions,
             baseUrl = uiState.baseUrl,
             onAlbumSelect = { targetAlbum ->
                 viewModel.addCurrentAssetToAlbum(targetAlbum) { success, albumName ->
