@@ -635,7 +635,10 @@ class SwipeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val albums = albumRepository.getAlbumsRaw().filter { !it.isVirtual }
-                _uiState.update { it.copy(albumsForAddToAlbum = albums, isFetchingAlbumsForDialog = false) }
+                val recentRank = sessionRepository.recentAlbumIds.first().withIndex().associate { it.value to it.index }
+                // Stable sort: albums never used keep the server's order below the recent ones.
+                val sorted = albums.sortedBy { recentRank[it.id] ?: Int.MAX_VALUE }
+                _uiState.update { it.copy(albumsForAddToAlbum = sorted, isFetchingAlbumsForDialog = false) }
             } catch (e: Exception) {
                 e.rethrowIfCancelled()
                 AppLogger.e("SwipeViewModel", "Error loading albums for dialog", e)
@@ -653,7 +656,7 @@ class SwipeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val success = albumRepository.addAssetToAlbum(targetAlbum.id, asset.id).isSuccess
-                if (success) onAssetAddedToAlbum(asset)
+                if (success) onAssetAddedToAlbum(asset, targetAlbum.id)
                 onResult(success, targetAlbum.albumName)
             } catch (e: Exception) {
                 e.rethrowIfCancelled()
@@ -667,9 +670,9 @@ class SwipeViewModel @Inject constructor(
         val asset = _uiState.value.currentAsset ?: return
         viewModelScope.launch {
             try {
-                val success = albumRepository.createAlbum(albumName, listOf(asset.id)).isSuccess
-                if (success) onAssetAddedToAlbum(asset)
-                onResult(success, albumName)
+                val created = albumRepository.createAlbum(albumName, listOf(asset.id))
+                created.getOrNull()?.let { onAssetAddedToAlbum(asset, it.id) }
+                onResult(created.isSuccess, albumName)
             } catch (e: Exception) {
                 e.rethrowIfCancelled()
                 AppLogger.e("SwipeViewModel", "Error creating album $albumName", e)
@@ -678,7 +681,8 @@ class SwipeViewModel @Inject constructor(
         }
     }
 
-    private suspend fun onAssetAddedToAlbum(asset: Asset) {
+    private suspend fun onAssetAddedToAlbum(asset: Asset, albumId: String) {
+        sessionRepository.addRecentAlbumId(albumId)
         val config = sessionRepository.sessionConfig.first()
         if (config != null) {
             assetRepository.deleteAlbumAssets(Album.VIRTUAL_ORPHANS_ID, config.userId, listOf(asset.id))

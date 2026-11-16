@@ -75,6 +75,7 @@ class SwipeViewModelTest {
     private val swipeSettings = MutableStateFlow(settings())
     private val sortOrder = MutableStateFlow(SortOrder.CHRONOLOGICAL_DESC)
     private val includeArchived = MutableStateFlow(false)
+    private val recentAlbumIds = MutableStateFlow<List<String>>(emptyList())
     private val storedDecisions = MutableStateFlow<List<SwipeDecisionEntity>>(emptyList())
 
     private val assetRepository = mockk<AssetRepository>(relaxed = true) {
@@ -91,6 +92,7 @@ class SwipeViewModelTest {
         every { swipeSettings } returns this@SwipeViewModelTest.swipeSettings
         every { sortOrder } returns this@SwipeViewModelTest.sortOrder
         every { includeArchived } returns this@SwipeViewModelTest.includeArchived
+        every { recentAlbumIds } returns this@SwipeViewModelTest.recentAlbumIds
     }
     private val swipeDecisionRepository = mockk<SwipeDecisionRepository>(relaxed = true) {
         every { getDecisionsForAlbum(any(), "u1") } returns storedDecisions
@@ -647,6 +649,21 @@ class SwipeViewModelTest {
     }
 
     @Test
+    fun `the add to album dialog puts recently used albums first`() {
+        val pets = Album("r1", "Pets", assetCount = 3, albumThumbnailAssetId = null)
+        val food = Album("r2", "Food", assetCount = 3, albumThumbnailAssetId = null)
+        val trips = Album("r3", "Trips", assetCount = 3, albumThumbnailAssetId = null)
+        val work = Album("r4", "Work", assetCount = 3, albumThumbnailAssetId = null)
+        coEvery { albumRepository.getAlbumsRaw() } returns listOf(pets, food, trips, work)
+        recentAlbumIds.value = listOf("r3", "deleted", "r1")
+        val vm = openAlbum()
+
+        vm.openAddToAlbumDialog()
+
+        assertEquals(listOf(trips, pets, food, work), vm.uiState.value.albumsForAddToAlbum)
+    }
+
+    @Test
     fun `the add to album dialog survives a failing album request`() {
         coEvery { albumRepository.getAlbumsRaw() } throws IOException("offline")
         val vm = openAlbum()
@@ -693,6 +710,41 @@ class SwipeViewModelTest {
         vm.addCurrentAssetToAlbum(target) { ok, name -> result = ok to name }
 
         assertEquals(false to "Pets", result)
+    }
+
+    @Test
+    fun `a successful album add is remembered as recently used`() {
+        val target = Album("r1", "Pets", assetCount = 3, albumThumbnailAssetId = null)
+        coEvery { albumRepository.addAssetToAlbum("r1", "a1") } returns Result.success(Unit)
+        val vm = openAlbum()
+
+        vm.addCurrentAssetToAlbum(target) { _, _ -> }
+
+        coVerify { sessionRepository.addRecentAlbumId("r1") }
+    }
+
+    @Test
+    fun `a rejected album add is not remembered as recently used`() {
+        val target = Album("r1", "Pets", assetCount = 3, albumThumbnailAssetId = null)
+        coEvery { albumRepository.addAssetToAlbum(any(), any()) } returns Result.failure(IOException("403"))
+        val vm = openAlbum()
+
+        vm.addCurrentAssetToAlbum(target) { _, _ -> }
+
+        coVerify(exactly = 0) { sessionRepository.addRecentAlbumId(any()) }
+    }
+
+    @Test
+    fun `a newly created album is remembered as recently used`() {
+        val created = Album("n1", "Fresh", assetCount = 1, albumThumbnailAssetId = null)
+        coEvery { albumRepository.createAlbum("Fresh", listOf("a1")) } returns Result.success(created)
+        val vm = openAlbum()
+        var result: Pair<Boolean, String>? = null
+
+        vm.createAlbumWithCurrentAsset("Fresh") { ok, name -> result = ok to name }
+
+        assertEquals(true to "Fresh", result)
+        coVerify { sessionRepository.addRecentAlbumId("n1") }
     }
 
     @Test

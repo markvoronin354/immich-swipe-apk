@@ -59,6 +59,8 @@ class SessionDataStore(private val context: Context) {
         private val KEY_SHOW_TOOLBAR_LABELS = booleanPreferencesKey("show_toolbar_labels")
         private val KEY_SHOW_TIMELINE = booleanPreferencesKey("show_timeline")
         private val KEY_TOOLBAR_BUTTON_ORDER = stringPreferencesKey("toolbar_button_order")
+        private val KEY_RECENT_ALBUM_IDS = stringPreferencesKey("recent_album_ids")
+        private const val MAX_RECENT_ALBUMS = 50
         private val KEY_BACKUP_WARNING_SHOWN = booleanPreferencesKey("backup_warning_shown")
         private val KEY_SYNC_LOCAL_DELETION = booleanPreferencesKey("sync_local_deletion")
         private val KEY_TRASH_LOCAL_DELETION = booleanPreferencesKey("trash_local_deletion")
@@ -344,6 +346,14 @@ class SessionDataStore(private val context: Context) {
 
     fun getToolbarButtonOrder(): Flow<String?> = context.dataStore.data.map { it[KEY_TOOLBAR_BUTTON_ORDER] }
     suspend fun saveToolbarButtonOrder(order: String) { context.dataStore.edit { it[KEY_TOOLBAR_BUTTON_ORDER] = order } }
+
+    fun getRecentAlbumIds(): Flow<String?> = context.dataStore.data.map { it[KEY_RECENT_ALBUM_IDS] }
+    suspend fun addRecentAlbumId(albumId: String) {
+        context.dataStore.edit { prefs ->
+            val others = prefs[KEY_RECENT_ALBUM_IDS].orEmpty().split(",").filter { it.isNotEmpty() && it != albumId }
+            prefs[KEY_RECENT_ALBUM_IDS] = (listOf(albumId) + others).take(MAX_RECENT_ALBUMS).joinToString(",")
+        }
+    }
 
     fun isBackupWarningShown(): Flow<Boolean> = context.dataStore.data.map { it[KEY_BACKUP_WARNING_SHOWN] ?: false }
     suspend fun saveBackupWarningShown(shown: Boolean) { context.dataStore.edit { it[KEY_BACKUP_WARNING_SHOWN] = shown } }

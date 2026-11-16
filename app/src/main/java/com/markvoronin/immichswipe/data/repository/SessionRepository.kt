@@ -176,6 +176,10 @@ class SessionRepository @Inject constructor(
         val parsed = saved.orEmpty().split(",").mapNotNull { name -> ToolbarButton.entries.find { it.name == name } }
         (parsed + ToolbarButton.entries).distinct()
     }
+    /** Album ids the user last added assets to, most recent first. */
+    val recentAlbumIds: Flow<List<String>> = dataStore.getRecentAlbumIds().map { saved ->
+        saved.orEmpty().split(",").filter { it.isNotEmpty() }
+    }
     val backupWarningShown: Flow<Boolean> = dataStore.isBackupWarningShown()
     val syncLocalDeletion: Flow<Boolean> = dataStore.isSyncLocalDeletion()
     val trashLocalDeletion: Flow<Boolean> = dataStore.isTrashLocalDeletion()
@@ -308,6 +312,7 @@ class SessionRepository @Inject constructor(
     suspend fun saveShowToolbarLabels(show: Boolean) { dataStore.saveShowToolbarLabels(show) }
     suspend fun saveShowTimeline(show: Boolean) { dataStore.saveShowTimeline(show) }
     suspend fun saveToolbarButtonOrder(order: List<ToolbarButton>) { dataStore.saveToolbarButtonOrder(order.joinToString(",") { it.name }) }
+    suspend fun addRecentAlbumId(albumId: String) { dataStore.addRecentAlbumId(albumId) }
     suspend fun saveBackupWarningShown(shown: Boolean) { dataStore.saveBackupWarningShown(shown) }
     suspend fun saveSyncLocalDeletion(sync: Boolean) { dataStore.saveSyncLocalDeletion(sync) }
     suspend fun saveTapToSwipeEnabled(enabled: Boolean) { dataStore.saveTapToSwipeEnabled(enabled) }
