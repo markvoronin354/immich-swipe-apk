@@ -42,6 +42,7 @@ fun IndicatorBadge(
     color: Color,
     align: Alignment,
     topPadding: Dp = 60.dp,
+    bottomPadding: Dp = 28.dp,
     alpha: () -> Float
 ) {
     // Springs in on appearance and pops slightly once the drag is far enough to commit.
@@ -71,7 +72,7 @@ fun IndicatorBadge(
             .fillMaxSize()
             .graphicsLayer { this.alpha = alpha() }
             .padding(horizontal = 60.dp)
-            .padding(top = topPadding, bottom = 28.dp),
+            .padding(top = topPadding, bottom = bottomPadding),
         contentAlignment = align
     ) {
         // Text takes a single shadow, so the dark drop shadow sits on a copy underneath the glowing label.

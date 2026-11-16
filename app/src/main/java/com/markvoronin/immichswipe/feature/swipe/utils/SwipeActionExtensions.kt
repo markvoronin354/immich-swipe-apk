@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -23,6 +24,7 @@ val SwipeAction.icon: ImageVector
         SwipeAction.LOCK -> Icons.Default.Lock
         SwipeAction.FAVORITE -> Icons.Default.Favorite
         SwipeAction.UNDO -> Icons.AutoMirrored.Filled.Undo
+        SwipeAction.DETAILS -> Icons.Default.Info
     }
 
 @get:StringRes
@@ -34,6 +36,7 @@ val SwipeAction.labelRes: Int
         SwipeAction.LOCK -> R.string.swipe_locked
         SwipeAction.FAVORITE -> R.string.swipe_label_favorite
         SwipeAction.UNDO -> R.string.swipe_undo
+        SwipeAction.DETAILS -> R.string.swipe_details
     }
 
 /** The label shown over the card while it is dragged towards this action. */
@@ -46,6 +49,7 @@ val SwipeAction.indicatorLabelRes: Int
         SwipeAction.LOCK -> R.string.swipe_locked_upper
         SwipeAction.FAVORITE -> R.string.swipe_favorite_upper
         SwipeAction.UNDO -> R.string.swipe_undo_upper
+        SwipeAction.DETAILS -> R.string.swipe_details // opens a panel, so it is never shown as a badge
     }
 
 @Composable
@@ -56,4 +60,5 @@ fun SwipeAction.indicatorColor(): Color = when (this) {
     SwipeAction.LOCK -> MaterialTheme.colorScheme.tertiary
     SwipeAction.FAVORITE -> Color.Red
     SwipeAction.UNDO -> MaterialTheme.colorScheme.primary
+    SwipeAction.DETAILS -> MaterialTheme.colorScheme.primary
 }

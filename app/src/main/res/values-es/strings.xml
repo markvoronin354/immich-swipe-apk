@@ -161,6 +161,7 @@
     <string name="settings_section_swipe_actions">Acciones de deslizamiento</string>
     <string name="settings_swipe_left_label">Deslizar a la izquierda</string>
     <string name="settings_swipe_right_label">Deslizar a la derecha</string>
+    <string name="settings_swipe_up_label">Deslizar hacia arriba</string>
     <string name="settings_swipe_down_label">Deslizar hacia abajo</string>
     <string name="settings_fullscreen_swipe_down_label">Usar la acción de deslizar hacia abajo en pantalla completa</string>
     <string name="settings_fullscreen_swipe_down_desc">Desactivado: deslizar hacia abajo cierra el visor. Activado: hace lo mismo que Deslizar hacia abajo en la tarjeta. Deslizar hacia arriba siempre lo cierra.</string>
@@ -215,6 +216,7 @@
     <string name="swipe_locked">Bloquear</string>
     <string name="swipe_undo">Deshacer</string>
     <string name="swipe_undo_upper">DESHACER</string>
+    <string name="swipe_details">Detalles</string>
     <string name="swipe_label_favorite">Favorito</string>
     <string name="swipe_label_album">Álbum</string>
     <string name="swipe_label_sort">Ordenar</string>
@@ -382,6 +384,7 @@
 
     <string name="tutorial_swipe_gestures_title">Gestos y Detalles</string>
     <string name="tutorial_swipe_gestures_desc">¡Desliza a la DERECHA (%1$s), a la IZQUIERDA (%2$s) o hacia ABAJO (%3$s), o arrastra hacia ARRIBA para ver los detalles EXIF!</string>
+    <string name="tutorial_swipe_gestures_desc_up_action">¡Desliza a la DERECHA (%1$s), a la IZQUIERDA (%2$s), hacia ABAJO (%3$s) o hacia ARRIBA (%4$s)!</string>
     <string name="tutorial_swipe_header_title">Seguimiento del progreso</string>
     <string name="tutorial_swipe_header_desc">Revisa tu progreso. Toca la barra de progreso en cualquier momento para ver el resumen y sincronizar con Immich.</string>
     <string name="tutorial_swipe_actions_title">Barra de acciones rápidas</string>

@@ -137,6 +137,10 @@ class SessionRepository @Inject constructor(
         it?.let { try { IconPosition.valueOf(it) } catch(_: Exception) { IconPosition.BOTTOM_RIGHT } } ?: IconPosition.BOTTOM_RIGHT
     }
 
+    val infoButtonPosition: Flow<IconPosition> = dataStore.getInfoIconPosition().map {
+        it?.let { try { IconPosition.valueOf(it) } catch(_: Exception) { IconPosition.BOTTOM_LEFT } } ?: IconPosition.BOTTOM_LEFT
+    }
+
     val fullSizeButtonPosition: Flow<IconPosition> = dataStore.getFullSizeIconPosition().map {
         it?.let { try { IconPosition.valueOf(it) } catch(_: Exception) { IconPosition.BOTTOM_RIGHT } } ?: IconPosition.BOTTOM_RIGHT
     }
@@ -152,6 +156,7 @@ class SessionRepository @Inject constructor(
     val showMuteButton: Flow<Boolean> = dataStore.isShowMuteIcon()
     val showDownloadButton: Flow<Boolean> = dataStore.isShowDownloadIcon()
     val showShareButton: Flow<Boolean> = dataStore.isShowShareIcon()
+    val showInfoButton: Flow<Boolean> = dataStore.isShowInfoIcon()
     val showFullSizeButton: Flow<Boolean> = dataStore.isShowFullSizeIcon()
     val keepFullResolution: Flow<Boolean> = dataStore.isKeepFullResolution()
 
@@ -188,6 +193,9 @@ class SessionRepository @Inject constructor(
     }
     val swipeDownAction: Flow<SwipeAction> = dataStore.getSwipeDownAction().map { name ->
         SwipeAction.entries.find { it.name == name } ?: SwipeAction.UNDO
+    }
+    val swipeUpAction: Flow<SwipeAction> = dataStore.getSwipeUpAction().map { name ->
+        SwipeAction.entries.find { it.name == name } ?: SwipeAction.DETAILS
     }
     val fullscreenSwipeDownUsesAction: Flow<Boolean> = dataStore.isFullscreenSwipeDownUsesAction()
     
@@ -260,6 +268,10 @@ class SessionRepository @Inject constructor(
         dataStore.saveShareIconPosition(pos.name)
     }
 
+    suspend fun saveInfoButtonPosition(pos: IconPosition) {
+        dataStore.saveInfoIconPosition(pos.name)
+    }
+
     suspend fun saveFullSizeButtonPosition(pos: IconPosition) {
         dataStore.saveFullSizeIconPosition(pos.name)
     }
@@ -277,6 +289,7 @@ class SessionRepository @Inject constructor(
     suspend fun saveShowMuteButton(show: Boolean) { dataStore.saveShowMuteIcon(show) }
     suspend fun saveShowDownloadButton(show: Boolean) { dataStore.saveShowDownloadIcon(show) }
     suspend fun saveShowShareButton(show: Boolean) { dataStore.saveShowShareIcon(show) }
+    suspend fun saveShowInfoButton(show: Boolean) { dataStore.saveShowInfoIcon(show) }
     suspend fun saveShowFullSizeButton(show: Boolean) { dataStore.saveShowFullSizeIcon(show) }
     suspend fun saveKeepFullResolution(keep: Boolean) { dataStore.saveKeepFullResolution(keep) }
 
@@ -302,6 +315,7 @@ class SessionRepository @Inject constructor(
     suspend fun saveDoubleTapAction(action: DoubleTapAction) { dataStore.saveDoubleTapAction(action.name) }
     suspend fun saveSwipeActions(left: SwipeAction, right: SwipeAction) { dataStore.saveSwipeActions(left.name, right.name) }
     suspend fun saveSwipeDownAction(action: SwipeAction) { dataStore.saveSwipeDownAction(action.name) }
+    suspend fun saveSwipeUpAction(action: SwipeAction) { dataStore.saveSwipeUpAction(action.name) }
     suspend fun saveFullscreenSwipeDownUsesAction(enabled: Boolean) { dataStore.saveFullscreenSwipeDownUsesAction(enabled) }
     suspend fun saveSortOrder(order: SortOrder) { dataStore.saveSortOrder(order.name) }
 

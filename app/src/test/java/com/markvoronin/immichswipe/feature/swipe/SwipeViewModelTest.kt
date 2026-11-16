@@ -424,6 +424,16 @@ class SwipeViewModelTest {
     }
 
     @Test
+    fun `the details swipe action leaves the deck alone`() {
+        val vm = openAlbum()
+
+        vm.performSwipeAction(SwipeAction.DETAILS)
+
+        assertTrue(vm.decisions().isEmpty())
+        assertEquals(0, vm.uiState.value.currentIndex)
+    }
+
+    @Test
     fun `the favorite swipe action favorites the current asset and keeps it`() {
         val vm = openAlbum()
 

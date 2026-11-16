@@ -160,6 +160,7 @@
     <string name="settings_section_swipe_actions">Swipe actions</string>
     <string name="settings_swipe_left_label">Swipe left</string>
     <string name="settings_swipe_right_label">Swipe right</string>
+    <string name="settings_swipe_up_label">Swipe up</string>
     <string name="settings_swipe_down_label">Swipe down</string>
     <string name="settings_fullscreen_swipe_down_label">Use swipe down action in fullscreen</string>
     <string name="settings_fullscreen_swipe_down_desc">Off: swiping down closes the viewer. On: it does what Swipe down does on the card. Swiping up always closes it.</string>
@@ -199,6 +200,7 @@
     <string name="swipe_locked">Lock</string>
     <string name="swipe_undo">Undo</string>
     <string name="swipe_undo_upper">UNDO</string>
+    <string name="swipe_details">Details</string>
     <string name="swipe_label_favorite">Favorite</string>
     <string name="swipe_label_album">Album</string>
     <string name="swipe_label_sort">Sort</string>
@@ -378,6 +380,7 @@
 
     <string name="tutorial_swipe_gestures_title">Swipe Gestures &amp; Details</string>
     <string name="tutorial_swipe_gestures_desc">Swipe RIGHT to %1$s, swipe LEFT to %2$s, swipe DOWN to %3$s, or drag UP to view full photo EXIF details!</string>
+    <string name="tutorial_swipe_gestures_desc_up_action">Swipe RIGHT to %1$s, swipe LEFT to %2$s, swipe DOWN to %3$s, or swipe UP to %4$s!</string>
     <string name="tutorial_swipe_header_title">Progress Tracking</string>
     <string name="tutorial_swipe_header_desc">Monitor your sorting progress and counts at a glance. Tap the progress bar anytime to open the summary and sync changes to Immich!</string>
     <string name="tutorial_swipe_actions_title">Quick Action Bar</string>

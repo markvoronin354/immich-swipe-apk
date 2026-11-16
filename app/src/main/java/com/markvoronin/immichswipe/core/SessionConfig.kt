@@ -34,6 +34,7 @@ enum class DoubleTapAction {
 /**
  * What a swipe does. FAVORITE favorites the asset, then keeps it so the deck moves on.
  * UNDO only makes sense for a swipe down, which is what undoes by default.
+ * DETAILS only makes sense for a swipe up, which is what opens the metadata panel by default.
  */
 enum class SwipeAction {
     KEEP,
@@ -41,7 +42,8 @@ enum class SwipeAction {
     ARCHIVE,
     LOCK,
     FAVORITE,
-    UNDO
+    UNDO,
+    DETAILS
 }
 
 /** The reorderable middle buttons of the swipe toolbar, in their default order. */

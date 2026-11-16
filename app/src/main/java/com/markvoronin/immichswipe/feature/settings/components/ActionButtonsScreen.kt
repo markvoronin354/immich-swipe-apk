@@ -32,6 +32,7 @@ import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Hd
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.NorthEast
 import androidx.compose.material.icons.filled.NorthWest
@@ -159,6 +160,15 @@ fun ActionButtonsScreen(
                 onPositionSelected = { viewModel.setFullscreenButtonPosition(it) },
                 showIcon = uiState.showFullscreenButton,
                 onShowIconChange = { viewModel.setShowFullscreenButton(it) }
+            )
+
+            IconPositionPickerCard(
+                title = stringResource(R.string.swipe_details),
+                icon = Icons.Default.Info,
+                selectedPosition = uiState.infoButtonPosition,
+                onPositionSelected = { viewModel.setInfoButtonPosition(it) },
+                showIcon = uiState.showInfoButton,
+                onShowIconChange = { viewModel.setShowInfoButton(it) }
             )
 
             IconPositionPickerCard(

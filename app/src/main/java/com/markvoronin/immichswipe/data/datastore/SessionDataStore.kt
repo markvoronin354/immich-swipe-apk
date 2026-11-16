@@ -35,6 +35,7 @@ class SessionDataStore(private val context: Context) {
         private val KEY_MUTE_ICON_POS = stringPreferencesKey("mute_icon_pos")
         private val KEY_DOWNLOAD_ICON_POS = stringPreferencesKey("download_icon_pos")
         private val KEY_SHARE_ICON_POS = stringPreferencesKey("share_icon_pos")
+        private val KEY_INFO_ICON_POS = stringPreferencesKey("info_icon_pos")
         private val KEY_FULL_SIZE_ICON_POS = stringPreferencesKey("full_size_icon_pos")
         private val KEY_BUTTON_STACK_ORIENTATION = stringPreferencesKey("button_stack_orientation")
         private val KEY_SHOW_FULLSCREEN_ICON = booleanPreferencesKey("show_fullscreen_icon")
@@ -43,6 +44,7 @@ class SessionDataStore(private val context: Context) {
         private val KEY_SHOW_MUTE_ICON = booleanPreferencesKey("show_mute_icon")
         private val KEY_SHOW_DOWNLOAD_ICON = booleanPreferencesKey("show_download_icon")
         private val KEY_SHOW_SHARE_ICON = booleanPreferencesKey("show_share_icon")
+        private val KEY_SHOW_INFO_ICON = booleanPreferencesKey("show_info_icon")
         private val KEY_SHOW_FULL_SIZE_ICON = booleanPreferencesKey("show_full_size_icon")
         private val KEY_KEEP_FULL_RESOLUTION = booleanPreferencesKey("keep_full_resolution")
         private val KEY_DEFAULT_LAYOUT_GRID = booleanPreferencesKey("default_layout_grid")
@@ -66,6 +68,7 @@ class SessionDataStore(private val context: Context) {
         private val KEY_SWIPE_LEFT_ACTION = stringPreferencesKey("swipe_left_action")
         private val KEY_SWIPE_RIGHT_ACTION = stringPreferencesKey("swipe_right_action")
         private val KEY_SWIPE_DOWN_ACTION = stringPreferencesKey("swipe_down_action")
+        private val KEY_SWIPE_UP_ACTION = stringPreferencesKey("swipe_up_action")
         private val KEY_FULLSCREEN_SWIPE_DOWN_USES_ACTION = booleanPreferencesKey("fullscreen_swipe_down_uses_action")
         private val KEY_REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
         private val KEY_REMINDER_INTERVAL = stringPreferencesKey("reminder_interval")
@@ -210,6 +213,12 @@ class SessionDataStore(private val context: Context) {
         context.dataStore.edit { it[KEY_SHARE_ICON_POS] = pos }
     }
 
+    fun getInfoIconPosition(): Flow<String?> = context.dataStore.data.map { it[KEY_INFO_ICON_POS] }
+
+    suspend fun saveInfoIconPosition(pos: String) {
+        context.dataStore.edit { it[KEY_INFO_ICON_POS] = pos }
+    }
+
     fun getFullSizeIconPosition(): Flow<String?> = context.dataStore.data.map { it[KEY_FULL_SIZE_ICON_POS] }
 
     suspend fun saveFullSizeIconPosition(pos: String) {
@@ -231,6 +240,7 @@ class SessionDataStore(private val context: Context) {
             it.remove(KEY_MUTE_ICON_POS)
             it.remove(KEY_DOWNLOAD_ICON_POS)
             it.remove(KEY_SHARE_ICON_POS)
+            it.remove(KEY_INFO_ICON_POS)
             it.remove(KEY_FULL_SIZE_ICON_POS)
             it.remove(KEY_BUTTON_STACK_ORIENTATION)
             it.remove(KEY_SHOW_FULLSCREEN_ICON)
@@ -239,6 +249,7 @@ class SessionDataStore(private val context: Context) {
             it.remove(KEY_SHOW_MUTE_ICON)
             it.remove(KEY_SHOW_DOWNLOAD_ICON)
             it.remove(KEY_SHOW_SHARE_ICON)
+            it.remove(KEY_SHOW_INFO_ICON)
             it.remove(KEY_SHOW_FULL_SIZE_ICON)
             it.remove(KEY_KEEP_FULL_RESOLUTION)
             it.remove(KEY_IMMICH_OPEN_MODE)
@@ -259,6 +270,7 @@ class SessionDataStore(private val context: Context) {
             it.remove(KEY_SWIPE_LEFT_ACTION)
             it.remove(KEY_SWIPE_RIGHT_ACTION)
             it.remove(KEY_SWIPE_DOWN_ACTION)
+            it.remove(KEY_SWIPE_UP_ACTION)
             it.remove(KEY_FULLSCREEN_SWIPE_DOWN_USES_ACTION)
             it.remove(KEY_TAP_TO_SWIPE)
             it.remove(KEY_DOUBLE_TAP_ENABLED)
@@ -284,6 +296,9 @@ class SessionDataStore(private val context: Context) {
 
     fun isShowShareIcon(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_SHARE_ICON] ?: false }
     suspend fun saveShowShareIcon(show: Boolean) { context.dataStore.edit { it[KEY_SHOW_SHARE_ICON] = show } }
+
+    fun isShowInfoIcon(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_INFO_ICON] ?: false }
+    suspend fun saveShowInfoIcon(show: Boolean) { context.dataStore.edit { it[KEY_SHOW_INFO_ICON] = show } }
 
     fun isShowFullSizeIcon(): Flow<Boolean> = context.dataStore.data.map { it[KEY_SHOW_FULL_SIZE_ICON] ?: true }
     suspend fun saveShowFullSizeIcon(show: Boolean) { context.dataStore.edit { it[KEY_SHOW_FULL_SIZE_ICON] = show } }
@@ -351,6 +366,8 @@ class SessionDataStore(private val context: Context) {
     fun getSwipeRightAction(): Flow<String?> = context.dataStore.data.map { it[KEY_SWIPE_RIGHT_ACTION] }
     fun getSwipeDownAction(): Flow<String?> = context.dataStore.data.map { it[KEY_SWIPE_DOWN_ACTION] }
     suspend fun saveSwipeDownAction(action: String) { context.dataStore.edit { it[KEY_SWIPE_DOWN_ACTION] = action } }
+    fun getSwipeUpAction(): Flow<String?> = context.dataStore.data.map { it[KEY_SWIPE_UP_ACTION] }
+    suspend fun saveSwipeUpAction(action: String) { context.dataStore.edit { it[KEY_SWIPE_UP_ACTION] = action } }
 
     fun isFullscreenSwipeDownUsesAction(): Flow<Boolean> = context.dataStore.data.map { it[KEY_FULLSCREEN_SWIPE_DOWN_USES_ACTION] ?: false }
     suspend fun saveFullscreenSwipeDownUsesAction(enabled: Boolean) { context.dataStore.edit { it[KEY_FULLSCREEN_SWIPE_DOWN_USES_ACTION] = enabled } }

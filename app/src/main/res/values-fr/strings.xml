@@ -162,6 +162,7 @@
     <string name="settings_section_swipe_actions">Actions de swipe</string>
     <string name="settings_swipe_left_label">Swipe à gauche</string>
     <string name="settings_swipe_right_label">Swipe à droite</string>
+    <string name="settings_swipe_up_label">Swipe vers le haut</string>
     <string name="settings_swipe_down_label">Swipe vers le bas</string>
     <string name="settings_fullscreen_swipe_down_label">Utiliser l\'action de swipe vers le bas en plein écran</string>
     <string name="settings_fullscreen_swipe_down_desc">Désactivé : glisser vers le bas ferme la visionneuse. Activé : cela fait la même chose que Swipe vers le bas sur la carte. Glisser vers le haut la ferme toujours.</string>
@@ -216,6 +217,7 @@
     <string name="swipe_locked">Verrouiller</string>
     <string name="swipe_undo">Annuler</string>
     <string name="swipe_undo_upper">ANNULER</string>
+    <string name="swipe_details">Détails</string>
     <string name="swipe_label_favorite">Favori</string>
     <string name="swipe_label_album">Album</string>
     <string name="swipe_label_sort">Trier</string>
@@ -383,6 +385,7 @@
 
     <string name="tutorial_swipe_gestures_title">Gestes &amp; Détails</string>
     <string name="tutorial_swipe_gestures_desc">Glissez à DROITE (%1$s), à GAUCHE (%2$s) ou vers le BAS (%3$s), ou vers le HAUT pour afficher les détails EXIF de la photo !</string>
+    <string name="tutorial_swipe_gestures_desc_up_action">Glissez à DROITE (%1$s), à GAUCHE (%2$s), vers le BAS (%3$s) ou vers le HAUT (%4$s) !</string>
     <string name="tutorial_swipe_header_title">Suivi de progression</string>
     <string name="tutorial_swipe_header_desc">Suivez votre avancement en direct. Appuyez sur la barre de progression pour ouvrir le résumé et synchroniser vos choix avec Immich !</string>
     <string name="tutorial_swipe_actions_title">Barre d\'actions rapides</string>

@@ -57,6 +57,7 @@ import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.ConnectionLevel
 import com.markvoronin.immichswipe.core.PlaybackBehavior
+import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.core.cache.VideoCache
 import com.markvoronin.immichswipe.core.cache.VideoPreloader
 import com.markvoronin.immichswipe.core.net.MediaHttp
@@ -119,13 +120,15 @@ fun SwipeScreen(
     val rightLabel = stringResource(uiState.swipeRightAction.labelRes).uppercase()
     val leftLabel = stringResource(uiState.swipeLeftAction.labelRes).uppercase()
     val downLabel = stringResource(uiState.swipeDownAction.labelRes).uppercase()
-    val swipeTutorialSteps = remember(rightLabel, leftLabel, downLabel) {
+    val upLabel = stringResource(uiState.swipeUpAction.labelRes).uppercase()
+    val upIsAction = uiState.swipeUpAction != SwipeAction.DETAILS
+    val swipeTutorialSteps = remember(rightLabel, leftLabel, downLabel, upLabel, upIsAction) {
         listOf(
             TutorialStep(
                 id = "gestures",
                 titleRes = R.string.tutorial_swipe_gestures_title,
-                descriptionRes = R.string.tutorial_swipe_gestures_desc,
-                descriptionArgs = listOf(rightLabel, leftLabel, downLabel),
+                descriptionRes = if (upIsAction) R.string.tutorial_swipe_gestures_desc_up_action else R.string.tutorial_swipe_gestures_desc,
+                descriptionArgs = listOf(rightLabel, leftLabel, downLabel) + listOfNotNull(upLabel.takeIf { upIsAction }),
                 targetKey = "swipe_deck",
                 placement = TooltipPlacement.TOP,
                 gestureAnimation = GestureAnimationType.NONE,

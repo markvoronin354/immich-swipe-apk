@@ -180,6 +180,32 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `moving swipe up off details turns on the info button`() {
+        createViewModel().setSwipeUpAction(SwipeAction.DELETE)
+
+        coVerify { sessionRepository.saveSwipeUpAction(SwipeAction.DELETE) }
+        coVerify { sessionRepository.saveShowInfoButton(true) }
+    }
+
+    @Test
+    fun `swipe up on details leaves the info button alone`() {
+        createViewModel().setSwipeUpAction(SwipeAction.DETAILS)
+
+        coVerify { sessionRepository.saveSwipeUpAction(SwipeAction.DETAILS) }
+        coVerify(exactly = 0) { sessionRepository.saveShowInfoButton(any()) }
+    }
+
+    @Test
+    fun `moving swipe up off details leaves an info button that is already on`() {
+        every { sessionRepository.showInfoButton } returns MutableStateFlow(true)
+
+        createViewModel().setSwipeUpAction(SwipeAction.ARCHIVE)
+
+        coVerify { sessionRepository.saveSwipeUpAction(SwipeAction.ARCHIVE) }
+        coVerify(exactly = 0) { sessionRepository.saveShowInfoButton(any()) }
+    }
+
+    @Test
     fun `the fullscreen swipe down option is saved on its own`() {
         createViewModel().setFullscreenSwipeDownUsesAction(true)
 

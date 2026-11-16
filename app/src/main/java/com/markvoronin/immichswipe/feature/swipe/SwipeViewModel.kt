@@ -174,6 +174,21 @@ class SwipeViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            sessionRepository.swipeUpAction.collect { action ->
+                _uiState.update { it.copy(swipeUpAction = action) }
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.infoButtonPosition.collect { pos ->
+                _uiState.update { it.copy(infoButtonPosition = pos) }
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.showInfoButton.collect { show ->
+                _uiState.update { it.copy(showInfoButton = show) }
+            }
+        }
+        viewModelScope.launch {
             sessionRepository.swipeDownAction.collect { action ->
                 _uiState.update { it.copy(swipeDownAction = action) }
             }
@@ -489,6 +504,8 @@ class SwipeViewModel @Inject constructor(
             SwipeAction.ARCHIVE -> onSwipe(SwipeDecision.ARCHIVE)
             SwipeAction.LOCK -> onSwipe(SwipeDecision.LOCK)
             SwipeAction.UNDO -> undo()
+            // The details panel lives in the card, which opens it itself.
+            SwipeAction.DETAILS -> Unit
             SwipeAction.FAVORITE -> {
                 val state = _uiState.value
                 val asset = state.currentAsset ?: return

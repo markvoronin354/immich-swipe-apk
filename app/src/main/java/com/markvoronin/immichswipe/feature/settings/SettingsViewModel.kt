@@ -138,6 +138,11 @@ class SettingsViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            sessionRepository.infoButtonPosition.collect { pos ->
+                _uiState.value = _uiState.value.copy(infoButtonPosition = pos)
+            }
+        }
+        viewModelScope.launch {
             sessionRepository.fullSizeButtonPosition.collect { pos ->
                 _uiState.value = _uiState.value.copy(fullSizeButtonPosition = pos)
             }
@@ -175,6 +180,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             sessionRepository.showShareButton.collect { show ->
                 _uiState.value = _uiState.value.copy(showShareButton = show)
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.showInfoButton.collect { show ->
+                _uiState.value = _uiState.value.copy(showInfoButton = show)
             }
         }
         viewModelScope.launch {
@@ -275,6 +285,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             sessionRepository.swipeRightAction.collect { action ->
                 _uiState.update { it.copy(swipeRightAction = action) }
+            }
+        }
+        viewModelScope.launch {
+            sessionRepository.swipeUpAction.collect { action ->
+                _uiState.update { it.copy(swipeUpAction = action) }
             }
         }
         viewModelScope.launch {
@@ -396,6 +411,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setInfoButtonPosition(pos: IconPosition) {
+        viewModelScope.launch {
+            sessionRepository.saveInfoButtonPosition(pos)
+        }
+    }
+
     fun setFullSizeButtonPosition(pos: IconPosition) {
         viewModelScope.launch {
             sessionRepository.saveFullSizeButtonPosition(pos)
@@ -424,6 +445,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setShowShareButton(show: Boolean) {
         viewModelScope.launch { sessionRepository.saveShowShareButton(show) }
+    }
+
+    fun setShowInfoButton(show: Boolean) {
+        viewModelScope.launch { sessionRepository.saveShowInfoButton(show) }
     }
 
     fun setShowFullSizeButton(show: Boolean) {
@@ -529,6 +554,16 @@ class SettingsViewModel @Inject constructor(
     fun setSwipeDownAction(action: SwipeAction) {
         viewModelScope.launch {
             sessionRepository.saveSwipeDownAction(action)
+        }
+    }
+
+    // Swipe up is the only way into the details panel, so moving it off Details turns on the Info button.
+    fun setSwipeUpAction(action: SwipeAction) {
+        viewModelScope.launch {
+            sessionRepository.saveSwipeUpAction(action)
+            if (action != SwipeAction.DETAILS && !_uiState.value.showInfoButton) {
+                sessionRepository.saveShowInfoButton(true)
+            }
         }
     }
 

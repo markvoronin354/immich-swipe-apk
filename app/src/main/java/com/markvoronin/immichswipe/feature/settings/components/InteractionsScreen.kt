@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.SwipeDown
 import androidx.compose.material.icons.filled.SwipeLeft
 import androidx.compose.material.icons.filled.SwipeRight
+import androidx.compose.material.icons.filled.SwipeUp
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material3.AlertDialog
@@ -240,6 +241,16 @@ fun InteractionsScreen(
                 SettingsItemGap()
 
                 SwipeActionItem(
+                    title = stringResource(R.string.settings_swipe_up_label),
+                    icon = Icons.Default.SwipeUp,
+                    actions = SwipeUpActions,
+                    selected = uiState.swipeUpAction,
+                    onSelect = viewModel::setSwipeUpAction
+                )
+
+                SettingsItemGap()
+
+                SwipeActionItem(
                     title = stringResource(R.string.settings_swipe_down_label),
                     icon = Icons.Default.SwipeDown,
                     actions = SwipeDownActions,
@@ -384,7 +395,7 @@ private fun ResetInteractionsDialog(onConfirm: () -> Unit, onDismiss: () -> Unit
     )
 }
 
-// Undo is left out: it only makes sense for a swipe down.
+// Undo and Details are left out: they only make sense for a swipe down and a swipe up.
 private val SideSwipeActions = listOf(
     SwipeAction.KEEP, SwipeAction.DELETE, SwipeAction.FAVORITE, SwipeAction.ARCHIVE, SwipeAction.LOCK
 )
@@ -392,6 +403,11 @@ private val SideSwipeActions = listOf(
 // The same top row as the sides, with Undo between Archive and Lock below it.
 private val SwipeDownActions = listOf(
     SwipeAction.KEEP, SwipeAction.DELETE, SwipeAction.FAVORITE, SwipeAction.ARCHIVE, SwipeAction.UNDO, SwipeAction.LOCK
+)
+
+// Likewise, with Details in Undo's place.
+private val SwipeUpActions = listOf(
+    SwipeAction.KEEP, SwipeAction.DELETE, SwipeAction.FAVORITE, SwipeAction.ARCHIVE, SwipeAction.DETAILS, SwipeAction.LOCK
 )
 
 @Composable

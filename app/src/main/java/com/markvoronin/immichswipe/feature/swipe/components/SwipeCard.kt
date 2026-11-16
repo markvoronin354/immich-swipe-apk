@@ -183,8 +183,9 @@ fun SwipeCard(
     val currentCanUndo by rememberUpdatedState(config.canUndo)
     val currentSwipeLeft by rememberUpdatedState(config.swipeLeftAction)
     val currentSwipeRight by rememberUpdatedState(config.swipeRightAction)
+    val currentSwipeUp by rememberUpdatedState(config.swipeUpAction)
     val currentSwipeDown by rememberUpdatedState(config.swipeDownAction)
-    // Far enough that a card pulled down leaves the window, wherever the card sits in it.
+    // Far enough that a card pulled down or up leaves the window, wherever the card sits in it.
     val currentWindowHeight by rememberUpdatedState(LocalWindowInfo.current.containerSize.height.toFloat())
     var ignoreNextTap by remember(asset.id) { mutableStateOf(value = false) }
     val currentControlsHidden by rememberUpdatedState(controlsHidden)
@@ -281,9 +282,11 @@ fun SwipeCard(
     LaunchedEffect(isNext) {
         if (!isNext) {
             snapshotFlow {
-                // A card pulled down to swipe, not to undo, moves the cards around it like a sideways swipe does.
-                if (currentSwipeDown != SwipeAction.UNDO && !isEnteringFromBelow && offsetY.value > abs(offsetX.value)) offsetY.value
-                else offsetX.value
+                // A card pulled down to swipe, not to undo, or up to swipe, not to show details, moves the cards around
+                // it like a sideways swipe does.
+                val pulledDown = currentSwipeDown != SwipeAction.UNDO && !isEnteringFromBelow && offsetY.value > abs(offsetX.value)
+                val pulledUp = currentSwipeUp != SwipeAction.DETAILS && -offsetY.value > abs(offsetX.value)
+                if (pulledDown || pulledUp) offsetY.value else offsetX.value
             }.collect { offset ->
                 actions.onSwipeOffsetChanged(offset)
             }
@@ -413,6 +416,8 @@ fun SwipeCard(
                                     val isFlickLeft = velocityX < -1000f && currentX <= 50f
                                     val isFlickDown = velocityY > 1000f
                                     val isPullDown = currentY > abs(currentX) && (currentY > 250 || isFlickDown)
+                                    val isFlickUp = velocityY < -1000f
+                                    val isPullUp = currentSwipeUp != SwipeAction.DETAILS && -currentY > abs(currentX) && (currentY < -250 || isFlickUp)
                                     if (isPullDown && currentSwipeDown != SwipeAction.UNDO) {
                                         offsetY.animateTo(currentWindowHeight, tween(150))
                                         actions.onSwipe(currentSwipeDown)
@@ -423,6 +428,9 @@ fun SwipeCard(
                                         delay(500.milliseconds)
                                         offsetX.snapTo(0f)
                                         offsetY.snapTo(0f)
+                                    } else if (isPullUp) {
+                                        offsetY.animateTo(-currentWindowHeight, tween(150))
+                                        actions.onSwipe(currentSwipeUp)
                                     } else if (currentX > 250 || isFlickRight) {
                                         offsetX.animateTo(1500f, tween(150))
                                         actions.onSwipe(currentSwipeRight)
@@ -527,17 +535,18 @@ fun SwipeCard(
                             val accumulatedDX = abs(totalDX)
                             val accumulatedDY = abs(totalDY)
 
-                            // Cards only travel downwards. With nothing to undo the card resists the pull instead of following
-                            // the finger, unless pulling down is a swipe of its own.
+                            // Cards travel downwards, and upwards when swipe up is an action. With nothing to undo the card
+                            // resists the pull instead of following the finger, unless pulling down is a swipe of its own.
                             val followsPull = currentCanUndo || currentSwipeDown != SwipeAction.UNDO
-                            val dragY = (if (followsPull) totalDY else totalDY * 0.2f).coerceAtLeast(0f)
+                            val dragY = if (currentSwipeUp != SwipeAction.DETAILS && totalDY < 0) totalDY
+                            else (if (followsPull) totalDY else totalDY * 0.2f).coerceAtLeast(0f)
 
                             if (dragDirection == 0) {
                                 // Decision threshold: 12 pixels of movement
                                 if (accumulatedDX > 12f || accumulatedDY > 12f) {
                                     dragDirection = if (startProgress > 0.1f && accumulatedDY > 5f) {
                                         2
-                                    } else if (accumulatedDY > accumulatedDX && totalDY < 0) {
+                                    } else if (accumulatedDY > accumulatedDX && totalDY < 0 && currentSwipeUp == SwipeAction.DETAILS) {
                                         2 // up (metadata)
                                     } else {
                                         1
@@ -788,6 +797,11 @@ fun SwipeCard(
                         actions.onToggleMute()
                         showMuteIndicator = true
                     },
+                    onOpenDetails = {
+                        scope.launch {
+                            panelProgress.animateTo(if (panelProgress.value > 0.5f) 0f else 1f, motionScheme.fastSpatialSpec())
+                        }
+                    },
                     onCornerSizeChanged = { pos, size ->
                         when (pos) {
                             IconPosition.TOP_LEFT -> topStartButtons = size
@@ -907,6 +921,13 @@ fun SwipeCard(
                             config.swipeDownAction.indicatorColor(),
                             Alignment.TopCenter
                         ) { (currentY / 200f).coerceIn(0f, 1f) * 0.9f }
+                    } else if (currentSwipeUp != SwipeAction.DETAILS && -currentY > abs(currentX)) {
+                        IndicatorBadge(
+                            stringResource(config.swipeUpAction.indicatorLabelRes),
+                            config.swipeUpAction.indicatorColor(),
+                            Alignment.BottomCenter,
+                            bottomPadding = 72.dp
+                        ) { (-currentY / 200f).coerceIn(0f, 1f) * 0.9f }
                     } else if (currentX > 0f) {
                         IndicatorBadge(
                             stringResource(config.swipeRightAction.indicatorLabelRes),

@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Hd
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Hd
 import androidx.compose.material3.Icon
@@ -63,6 +64,7 @@ fun ActionButtonsOverlay(
     context: Context,
     backdrop: Backdrop,
     onToggleMuteWithIndicator: () -> Unit,
+    onOpenDetails: () -> Unit,
     // Size of each corner's button group (zero when empty), so the video time pill can move out of their way.
     onCornerSizeChanged: (IconPosition, IntSize) -> Unit = { _, _ -> }
 ) {
@@ -87,6 +89,13 @@ fun ActionButtonsOverlay(
                     buttons.add {
                         BouncingActionButton(backdrop = backdrop, enabled = !isNext, onClick = actions.onOpenFullscreen) {
                             ActionIcon(Icons.Default.Fullscreen, stringResource(R.string.settings_fullscreen_pos_label))
+                        }
+                    }
+                }
+                if (config.showInfoButton && config.infoButtonPosition == pos) {
+                    buttons.add {
+                        BouncingActionButton(backdrop = backdrop, enabled = !isNext, onClick = onOpenDetails) {
+                            ActionIcon(Icons.Default.Info, stringResource(R.string.swipe_details))
                         }
                     }
                 }
