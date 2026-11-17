@@ -110,6 +110,18 @@ androidComponents {
     }
 }
 
+// Room's migration test helper reads the exported schemas with kotlinx.serialization 1.8, but the app's own
+// classpath pins the core library to 1.7.3 and the test classpath inherits that, so the helper fails with an
+// AbstractMethodError. Only the instrumented test configurations are lifted.
+configurations.configureEach {
+    if (name.contains("AndroidTest")) {
+        resolutionStrategy.force(
+            "org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1",
+            "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.8.1"
+        )
+    }
+}
+
 detekt {
     buildUponDefaultConfig = true
     config.setFrom(rootProject.file("config/detekt/detekt.yml"))
