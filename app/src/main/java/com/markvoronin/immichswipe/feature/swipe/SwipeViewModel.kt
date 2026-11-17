@@ -292,6 +292,7 @@ class SwipeViewModel @Inject constructor(
                     _uiState.update { it.copy(syncLoadedCount = batch.loadedCount, syncTotalCount = batch.total) }
                     return@collect
                 }
+                if (batch.foreignAssetIds.isNotEmpty()) dropPendingDecisions(batch.foreignAssetIds, userId)
                 _uiState.update { it.copy(
                     remoteTotalCount = if (!batch.isLocalCache || batch.total > it.remoteTotalCount) batch.total else it.remoteTotalCount,
                     syncLoadedCount = batch.assets.size,
@@ -311,6 +312,18 @@ class SwipeViewModel @Inject constructor(
         } finally {
             isAssetsLoadingFlow.value = false
             isFetchingAssetsFlow.value = false
+        }
+    }
+
+    // A decision saved on another user's photo before it was skipped could never sync and would stay pending forever.
+    private suspend fun dropPendingDecisions(assetIds: Set<String>, userId: String) {
+        try {
+            val pending = swipeDecisionRepository.getUnsyncedAssetIds(userId).toHashSet()
+            val stuck = assetIds.filter { it in pending }
+            if (stuck.isNotEmpty()) swipeDecisionRepository.removeDecisions(stuck, userId)
+        } catch (e: Exception) {
+            e.rethrowIfCancelled()
+            AppLogger.w("SwipeViewModel", "Could not drop pending decisions on skipped photos: ${e.message}")
         }
     }
 

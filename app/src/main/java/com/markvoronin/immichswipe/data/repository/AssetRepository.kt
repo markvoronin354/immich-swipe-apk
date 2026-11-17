@@ -37,7 +37,9 @@ data class AssetBatch(
     val isSyncing: Boolean = false,
     // Sync progress only: carries no assets, and the deck keeps what it already shows.
     val isProgressOnly: Boolean = false,
-    val loadedCount: Int = assets.size
+    val loadedCount: Int = assets.size,
+    // Assets left out because another user owns them; set on the batch that ends a load.
+    val foreignAssetIds: Set<String> = emptySet()
 )
 
 // Provided by RepositoryModule (the constructor has optional parameters Dagger cannot satisfy).
@@ -71,6 +73,16 @@ class AssetRepository(
         coroutineContext.job.invokeOnCompletion { activeSyncRemovals -= removedDuringSync }
         fun List<Asset>.withoutRemoved() =
             if (removedDuringSync.isEmpty()) this else filter { it.id !in removedDuringSync }
+
+        // Shared albums and partner libraries can hold other users' assets, which Immich won't let this user change.
+        val foreignIds = HashSet<String>()
+        fun List<Asset>.ownedByUser() = filter { asset ->
+            (asset.ownerId == userId).also { if (!it) foreignIds += asset.id }
+        }
+        fun skippedForeign(): Set<String> {
+            if (foreignIds.isNotEmpty()) AppLogger.i("AssetRepo", "Skipped ${foreignIds.size} assets owned by other users in $albumId")
+            return foreignIds.toSet()
+        }
 
         val cachedEntities = when (sortOrder) {
             SortOrder.CHRONOLOGICAL_DESC -> albumAssetDao.getAssetsChronologicalDesc(albumId, userId, limit = AlbumAssetDao.NO_LIMIT, offset = 0)
@@ -145,9 +157,7 @@ class AssetRepository(
         if (isRealAlbum) {
             try {
                 val albumDetail = api.getAlbumDetail(albumId)
-                val ownedItems = albumDetail.assets.ownedBy(userId)
-                logSkippedForeign(albumId, albumDetail.assets.size - ownedItems.size)
-                val serverItems = ownedItems.withoutRemoved()
+                val serverItems = albumDetail.assets.ownedByUser().withoutRemoved()
                 val finalItems = applySort(serverItems, sortOrder, shuffleSeed)
 
                 withContext(Dispatchers.IO) {
@@ -172,7 +182,7 @@ class AssetRepository(
                     }
                 }
 
-                send(AssetBatch(finalItems, finalItems.size, isLocalCache = false, isSyncing = false))
+                send(AssetBatch(finalItems, finalItems.size, isLocalCache = false, isSyncing = false, foreignAssetIds = skippedForeign()))
                 return@channelFlow
             } catch (e: Exception) {
                 e.rethrowIfCancelled()
@@ -223,10 +233,8 @@ class AssetRepository(
         }
 
         val totalInDb = albumAssetDao.getAssetCountForAlbum(albumId, userId)
-        val page1Owned = firstPageResp.assets.items.ownedBy(userId)
-        val foreignOnPage1 = firstPageResp.assets.items.size - page1Owned.size
-        logSkippedForeign(albumId, foreignOnPage1)
-        val page1ServerItems = page1Owned.withoutRemoved()
+        val foreignOnPage1 = firstPageResp.assets.items.count { it.ownerId != userId }
+        val page1ServerItems = firstPageResp.assets.items.ownedByUser().withoutRemoved()
         val page1ServerIds = page1ServerItems.map { it.id }.toSet()
         val cachedIds = cachedEntities.map { it.assetId }.toSet()
 
@@ -268,7 +276,7 @@ class AssetRepository(
             }
 
             val finalItems = applySort(page1ServerItems, sortOrder, shuffleSeed)
-            send(AssetBatch(finalItems, effectiveTotal, isLocalCache = false, isSyncing = false))
+            send(AssetBatch(finalItems, effectiveTotal, isLocalCache = false, isSyncing = false, foreignAssetIds = skippedForeign()))
             return@channelFlow
         }
 
@@ -301,7 +309,7 @@ class AssetRepository(
             }
             try {
                 val resp = if (nextPage == "1") firstPageResp else api.searchAssets(baseRequest.copy(page = nextPage.toIntOrNull() ?: 1, size = 500))
-                val items = resp.assets.items.ownedBy(userId).withoutRemoved()
+                val items = resp.assets.items.ownedByUser().withoutRemoved()
                 
                 if (items.isNotEmpty()) {
                     allServerFetchedIds.addAll(items.map { it.id })
@@ -402,14 +410,7 @@ class AssetRepository(
             }
         }
         
-        send(AssetBatch(mappedFinal, effectiveTotal, isLocalCache = false, isSyncing = false))
-    }
-
-    // Shared albums and partner libraries can hold other users' assets, which Immich won't let this user change.
-    private fun List<Asset>.ownedBy(userId: String) = filter { it.ownerId == userId }
-
-    private fun logSkippedForeign(albumId: String, count: Int) {
-        if (count > 0) AppLogger.i("AssetRepo", "Skipped $count assets owned by other users in $albumId")
+        send(AssetBatch(mappedFinal, effectiveTotal, isLocalCache = false, isSyncing = false, foreignAssetIds = skippedForeign()))
     }
 
     fun applySort(allAssets: List<Asset>, sortOrder: SortOrder, shuffleSeed: Long?): List<Asset> {

@@ -54,6 +54,7 @@ class AssetRepositorySyncTest {
         val batches = repo.getAssetsByAlbum("shared", userId = "u").toList()
 
         assertEquals(listOf("mine"), batches.last().assets.map { it.id })
+        assertEquals(setOf("theirs"), batches.last().foreignAssetIds)
         assertEquals(listOf("mine"), db.keys.toList())
     }
 
@@ -84,6 +85,7 @@ class AssetRepositorySyncTest {
         val batches = repo.getAssetsByAlbum(Album.VIRTUAL_ALL_ID, userId = "u").toList()
 
         assertEquals(listOf("mine"), batches.last().assets.map { it.id })
+        assertEquals(setOf("partner"), batches.last().foreignAssetIds)
         assertEquals(1, batches.last().total)
         assertEquals(listOf("mine"), db.keys.toList())
     }

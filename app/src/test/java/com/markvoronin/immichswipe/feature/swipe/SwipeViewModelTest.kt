@@ -631,6 +631,21 @@ class SwipeViewModelTest {
         assertTrue(vm.uiState.value.bulkSelection.isEmpty())
     }
 
+    @Test
+    fun `a pending decision on a photo skipped as not owned is dropped`() {
+        // x1 has an unsynced decision from before it was skipped; x2 was only ever synced, so it stays.
+        every { assetRepository.getAssetsByAlbum(any(), any(), any(), any(), any()) } answers {
+            if (firstArg<String>() == "album") {
+                flowOf(AssetBatch(assets = assets, total = assets.size, foreignAssetIds = setOf("x1", "x2")))
+            } else flowOf(AssetBatch(assets = emptyList(), total = 0))
+        }
+        coEvery { swipeDecisionRepository.getUnsyncedAssetIds("u1") } returns listOf("x1", "a1")
+
+        openAlbum()
+
+        coVerify { swipeDecisionRepository.removeDecisions(listOf("x1"), "u1") }
+    }
+
     // --- dialogs and requests ---
 
     @Test
