@@ -204,6 +204,9 @@ fun HomeScreen(
     } + NavDisplay.popTransitionSpec {
         (slideInHorizontally(slowSlideSpec) { -it / 3 } + fadeIn(slowFadeSpec)) togetherWith
             (slideOutHorizontally(slowSlideSpec) { it } + fadeOut(slowFadeSpec))
+    } + NavDisplay.predictivePopTransitionSpec {
+        (slideInHorizontally(slowSlideSpec) { -it / 3 } + fadeIn(slowFadeSpec)) togetherWith
+            (slideOutHorizontally(slowSlideSpec) { it } + fadeOut(slowFadeSpec))
     }
 
     val tutorialController = LocalTutorialController.current
@@ -225,6 +228,10 @@ fun HomeScreen(
                             (slideOutHorizontally(pageSlideSpec) { -it / 4 } + fadeOut(pageFadeSpec))
                     },
                     popTransitionSpec = {
+                        (slideInHorizontally(pageSlideSpec) { -it / 4 } + fadeIn(pageFadeSpec)) togetherWith
+                            (slideOutHorizontally(pageSlideSpec) { it / 4 } + fadeOut(pageFadeSpec))
+                    },
+                    predictivePopTransitionSpec = {
                         (slideInHorizontally(pageSlideSpec) { -it / 4 } + fadeIn(pageFadeSpec)) togetherWith
                             (slideOutHorizontally(pageSlideSpec) { it / 4 } + fadeOut(pageFadeSpec))
                     },
