@@ -16,6 +16,11 @@ enum class SwipeDecision {
     KEEP, DELETE, ARCHIVE, LOCK
 }
 
+/** Why a sync left changes pending, so the screen can say more than "try again". */
+enum class SyncIssue {
+    FAILED, PERMISSION_DENIED
+}
+
 
 data class SwipeUiState(
     val isLoading: Boolean = false,

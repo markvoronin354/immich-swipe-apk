@@ -365,8 +365,12 @@ fun SwipeScreen(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.syncIssueSignal.collect {
-            Toast.makeText(context, R.string.swipe_sync_partial_failure, Toast.LENGTH_LONG).show()
+        viewModel.syncIssueSignal.collect { issue ->
+            val message = when (issue) {
+                SyncIssue.PERMISSION_DENIED -> R.string.swipe_sync_permission_denied
+                SyncIssue.FAILED -> R.string.swipe_sync_partial_failure
+            }
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
         }
     }
 

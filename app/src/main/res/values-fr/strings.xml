@@ -245,6 +245,7 @@
     <string name="swipe_check_before_delete">Vérifiez avant suppression</string>
     <string name="swipe_revert_delete">Restaurer l\'élément</string>
     <string name="swipe_sync_partial_failure">Certaines modifications n\'ont pas pu être synchronisées avec le serveur. Elles restent en attente, réessayez.</string>
+    <string name="swipe_sync_permission_denied">Le serveur a refusé certaines modifications. Vérifiez que votre clé API Immich a toutes les permissions dont Immich Swipe a besoin (voir le README).</string>
     <string name="swipe_asset_error">Impossible de charger le média</string>
     <string name="swipe_asset_error_sub">Format incompatible ou erreur serveur</string>
     <string name="swipe_video_error">Impossible de lire la vidéo</string>

@@ -162,10 +162,12 @@ class SwipeViewModelTest {
         toLock: List<String> = emptyList(),
         deletedAssets: List<Asset> = emptyList(),
         failedFavoriteIds: Set<String> = emptySet(),
-        failed: Set<ApplySwipeDecisionsUseCase.SyncStep> = emptySet()
+        failed: Set<ApplySwipeDecisionsUseCase.SyncStep> = emptySet(),
+        permissionDenied: Boolean = false
     ) = ApplyResult(
         toDelete = toDelete, toLock = toLock,
-        deletedAssets = deletedAssets, failedSteps = failed, failedFavoriteIds = failedFavoriteIds
+        deletedAssets = deletedAssets, failedSteps = failed, failedFavoriteIds = failedFavoriteIds,
+        permissionDenied = permissionDenied
     )
 
     // --- loading ---
@@ -899,7 +901,18 @@ class SwipeViewModelTest {
         vm.applyChanges()
 
         assertFalse(vm.uiState.value.showSuccessAnimation)
-        assertEquals(Unit, runBlocking { withTimeout(5_000.milliseconds) { vm.syncIssueSignal.first() } })
+        assertEquals(SyncIssue.FAILED, runBlocking { withTimeout(5_000.milliseconds) { vm.syncIssueSignal.first() } })
+    }
+
+    @Test
+    fun `a refused apply raises the permission signal`() {
+        val vm = openAlbum()
+        vm.onSwipe(SwipeDecision.ARCHIVE)
+        stubApply(applyResult(failed = setOf(ApplySwipeDecisionsUseCase.SyncStep.entries.first()), permissionDenied = true))
+
+        vm.applyChanges()
+
+        assertEquals(SyncIssue.PERMISSION_DENIED, runBlocking { withTimeout(5_000.milliseconds) { vm.syncIssueSignal.first() } })
     }
 
     @Test

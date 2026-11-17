@@ -8,6 +8,7 @@ import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import retrofit2.HttpException
 import javax.inject.Inject
 
 class ApplySwipeDecisionsUseCase @Inject constructor(
@@ -41,6 +42,8 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
 
         val failedSteps = linkedSetOf<SyncStep>()
         val failedIds = HashSet<String>()
+        // Immich answers 403 when the API key lacks the permission a step needs.
+        var permissionDenied = false
 
         // Runs one server step. On failure the step is recorded, the affected ids are flagged so
         // they stay pending, and the remaining steps still run.
@@ -54,6 +57,7 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
                 AppLogger.e("ApplySwipeDecisionsUseCase", "Sync step $kind failed: ${e.message}", e)
                 failedSteps += kind
                 failedIds += ids
+                if ((e as? HttpException)?.code() == 403) permissionDenied = true
                 false
             }
         }
@@ -150,7 +154,8 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
             toLock = if (lockOk) toLock else emptyList(),
             deletedAssets = deletedAssets,
             failedSteps = failedSteps,
-            failedFavoriteIds = failedFavorites
+            failedFavoriteIds = failedFavorites,
+            permissionDenied = permissionDenied
         )
     }
 
@@ -161,7 +166,8 @@ class ApplySwipeDecisionsUseCase @Inject constructor(
         val toLock: List<String>,
         val deletedAssets: List<Asset> = emptyList(),
         val failedSteps: Set<SyncStep> = emptySet(),
-        val failedFavoriteIds: Set<String> = emptySet()
+        val failedFavoriteIds: Set<String> = emptySet(),
+        val permissionDenied: Boolean = false
     ) {
         val hasFailures: Boolean get() = failedSteps.isNotEmpty()
     }

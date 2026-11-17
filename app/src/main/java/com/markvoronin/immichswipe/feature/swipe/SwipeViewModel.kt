@@ -86,7 +86,7 @@ class SwipeViewModel @Inject constructor(
     private val _shareRequestChannel = Channel<Asset>(Channel.BUFFERED)
     val shareRequestSignal = _shareRequestChannel.receiveAsFlow()
 
-    private val _syncIssueChannel = Channel<Unit>(Channel.BUFFERED)
+    private val _syncIssueChannel = Channel<SyncIssue>(Channel.BUFFERED)
     val syncIssueSignal = _syncIssueChannel.receiveAsFlow()
 
     init {
@@ -897,7 +897,7 @@ class SwipeViewModel @Inject constructor(
                     localDeletePendingIntent = pendingDeleteIntent
                 ) }
                 if (result.hasFailures) {
-                    _syncIssueChannel.trySend(Unit)
+                    _syncIssueChannel.trySend(if (result.permissionDenied) SyncIssue.PERMISSION_DENIED else SyncIssue.FAILED)
                 }
 
                 if (!result.hasFailures) {

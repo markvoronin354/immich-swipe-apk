@@ -14,10 +14,13 @@ import com.markvoronin.immichswipe.testutil.RecordedCall
 import com.markvoronin.immichswipe.testutil.fake
 import com.markvoronin.immichswipe.testutil.testSessionManager
 import kotlinx.coroutines.runBlocking
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import retrofit2.HttpException
+import retrofit2.Response
 
 /**
  * Exercises the use case against fake server and database layers, focusing on what happens when a
@@ -27,7 +30,8 @@ class ApplySwipeDecisionsUseCaseTest {
 
     private class Env(
         failingApi: Set<String> = emptySet(),
-        failingDecisionDao: Set<String> = emptySet()
+        failingDecisionDao: Set<String> = emptySet(),
+        apiError: (String) -> Exception = { RuntimeException("$it failed") }
     ) {
         val api = mutableListOf<RecordedCall>()
         val decisionDao = mutableListOf<RecordedCall>()
@@ -41,7 +45,7 @@ class ApplySwipeDecisionsUseCaseTest {
         init {
             val fakeApi = fake<ImmichApi>(api) { name, _ ->
                 when (name) {
-                    in failingApi -> throw RuntimeException("$name failed")
+                    in failingApi -> throw apiError(name)
                     else -> Unit
                 }
             }
@@ -127,6 +131,30 @@ class ApplySwipeDecisionsUseCaseTest {
         assertFalse("del" in env.syncedIds())
         // Nothing was applied, and kept items are deferred, so no history row is written.
         assertTrue(env.daoCalls("insertSyncHistory").isEmpty())
+    }
+
+    @Test
+    fun `a 403 from the server is reported as a missing permission`() {
+        val env = Env(
+            failingApi = setOf("deleteAssets"),
+            apiError = { HttpException(Response.error<Unit>(403, "".toResponseBody())) }
+        )
+        val result = apply(env, mapOf("del" to SwipeDecision.DELETE))
+
+        assertTrue(result.permissionDenied)
+        assertTrue(result.hasFailures)
+    }
+
+    @Test
+    fun `other failures are not reported as a missing permission`() {
+        val rejected = Env(
+            failingApi = setOf("deleteAssets"),
+            apiError = { HttpException(Response.error<Unit>(400, "".toResponseBody())) }
+        )
+        assertFalse(apply(rejected, mapOf("del" to SwipeDecision.DELETE)).permissionDenied)
+
+        val offline = Env(failingApi = setOf("deleteAssets"))
+        assertFalse(apply(offline, mapOf("del" to SwipeDecision.DELETE)).permissionDenied)
     }
 
     @Test
