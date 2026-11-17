@@ -85,6 +85,7 @@ fun AlbumList(
     groupedAlbums: Map<AlbumStatus, List<Album>>,
     treatedCounts: Map<String, Int>,
     unsyncedChanges: Map<String, Int>,
+    nothingToSortAlbumIds: Set<String>,
     collapsedCategories: Set<AlbumStatus>,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
@@ -160,6 +161,7 @@ fun AlbumList(
                                     album = album,
                                     treatedCount = treatedCounts[album.id] ?: 0,
                                     unsyncedCount = unsyncedChanges[album.id] ?: 0,
+                                    nothingToSort = album.id in nothingToSortAlbumIds,
                                     baseUrl = baseUrl,
                                     onClick = { onAlbumClick(album) },
                                     shapes = albumRowShapes(index = index + 1, count = albumsInStatus.size + 1),
@@ -239,6 +241,7 @@ fun AlbumItem(
     album: Album,
     treatedCount: Int,
     unsyncedCount: Int,
+    nothingToSort: Boolean,
     onClick: () -> Unit,
     shapes: ListItemShapes,
     nameViewport: () -> LayoutCoordinates?,
@@ -250,7 +253,7 @@ fun AlbumItem(
     val effectiveTreatedCount = if (album.assetCount > 0) treatedCount.coerceAtMost(album.assetCount) else treatedCount
     val progress = if (album.assetCount > 0) effectiveTreatedCount.toFloat() / album.assetCount else 0f
     val isCompleted = album.assetCount in 1..effectiveTreatedCount
-    val isNotStarted = effectiveTreatedCount == 0
+    val isNotStarted = effectiveTreatedCount == 0 && !nothingToSort
     val hasUnsyncedChanges = unsyncedCount > 0
 
 
@@ -359,9 +362,17 @@ fun AlbumItem(
                     Text(text = displayDescription, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline, maxLines = 3)
                 }
                 Text(
-                    text = "%,d / %,d".format(effectiveTreatedCount, album.assetCount),
+                    text = if (nothingToSort) {
+                        stringResource(R.string.home_album_nothing_to_sort)
+                    } else {
+                        "%,d / %,d".format(effectiveTreatedCount, album.assetCount)
+                    },
                     style = MaterialTheme.typography.labelMedium,
-                    color = if (isCompleted) Color(0xFF388E3C) else MaterialTheme.colorScheme.primary
+                    color = when {
+                        isCompleted -> Color(0xFF388E3C)
+                        nothingToSort -> MaterialTheme.colorScheme.outline
+                        else -> MaterialTheme.colorScheme.primary
+                    }
                 )
                 if (progress > 0 && !isCompleted) {
                     LinearProgressIndicator(

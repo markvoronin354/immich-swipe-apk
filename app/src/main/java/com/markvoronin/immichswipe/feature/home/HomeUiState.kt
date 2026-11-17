@@ -28,6 +28,8 @@ data class HomeUiState(
     val previousTab: HomeTab = HomeTab.HOME,
     val albumTreatedCounts: Map<String, Int> = emptyMap(),
     val albumUnsyncedChanges: Map<String, Int> = emptyMap(),
+    // Albums in which every photo belongs to someone else.
+    val nothingToSortAlbumIds: Set<String> = emptySet(),
     val isGridView: Boolean = false,
     val searchQuery: String = "",
     val connectionStatus: ConnectionStatus = ConnectionStatus(),
@@ -109,6 +111,10 @@ data class HomeUiState(
             return filtered.groupBy { album ->
                 if (album.isVirtual) {
                     return@groupBy AlbumStatus.VIRTUAL
+                }
+                // Nothing here for you to do, so it shouldn't sit under "Not started".
+                if (album.id in nothingToSortAlbumIds) {
+                    return@groupBy AlbumStatus.COMPLETED
                 }
                 
                 val treated = albumTreatedCounts[album.id] ?: 0

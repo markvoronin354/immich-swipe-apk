@@ -10,6 +10,7 @@ import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.core.SwipeSettings
 import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
 import com.markvoronin.immichswipe.data.repository.AlbumRepository
+import com.markvoronin.immichswipe.data.repository.AssetBatch
 import com.markvoronin.immichswipe.data.repository.AssetRepository
 import com.markvoronin.immichswipe.data.repository.LocalMediaRepository
 import com.markvoronin.immichswipe.data.repository.SessionRepository
@@ -293,6 +294,7 @@ class SwipeViewModel @Inject constructor(
                     return@collect
                 }
                 if (batch.foreignAssetIds.isNotEmpty()) dropPendingDecisions(batch.foreignAssetIds, userId)
+                recordNothingToSort(batch, userId)
                 _uiState.update { it.copy(
                     remoteTotalCount = if (!batch.isLocalCache || batch.total > it.remoteTotalCount) batch.total else it.remoteTotalCount,
                     syncLoadedCount = batch.assets.size,
@@ -324,6 +326,24 @@ class SwipeViewModel @Inject constructor(
         } catch (e: Exception) {
             e.rethrowIfCancelled()
             AppLogger.w("SwipeViewModel", "Could not drop pending decisions on skipped photos: ${e.message}")
+        }
+    }
+
+    // Home lists an album with none of your photos as having nothing to sort. Only a finished load from the
+    // server can say so; a cache batch or a failed fetch leaves the last answer alone.
+    private suspend fun recordNothingToSort(batch: AssetBatch, userId: String) {
+        val album = currentAlbum ?: return
+        if (album.isVirtual || batch.isSyncing) return
+        val nothingToSort = when {
+            batch.assets.isEmpty() && batch.foreignAssetIds.isNotEmpty() -> true
+            batch.assets.isNotEmpty() && !batch.isLocalCache -> false
+            else -> return
+        }
+        try {
+            sessionRepository.setNothingToSort(userId, album.id, nothingToSort)
+        } catch (e: Exception) {
+            e.rethrowIfCancelled()
+            AppLogger.w("SwipeViewModel", "Could not record whether ${album.id} has anything to sort: ${e.message}")
         }
     }
 

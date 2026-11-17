@@ -61,6 +61,7 @@ class SessionDataStore(private val context: Context) {
         private val KEY_TOOLBAR_BUTTON_ORDER = stringPreferencesKey("toolbar_button_order")
         private val KEY_RECENT_ALBUM_IDS = stringPreferencesKey("recent_album_ids")
         private const val MAX_RECENT_ALBUMS = 50
+        private val KEY_NOTHING_TO_SORT_ALBUMS = stringSetPreferencesKey("nothing_to_sort_albums")
         private val KEY_BACKUP_WARNING_SHOWN = booleanPreferencesKey("backup_warning_shown")
         private val KEY_SYNC_LOCAL_DELETION = booleanPreferencesKey("sync_local_deletion")
         private val KEY_TRASH_LOCAL_DELETION = booleanPreferencesKey("trash_local_deletion")
@@ -352,6 +353,15 @@ class SessionDataStore(private val context: Context) {
         context.dataStore.edit { prefs ->
             val others = prefs[KEY_RECENT_ALBUM_IDS].orEmpty().split(",").filter { it.isNotEmpty() && it != albumId }
             prefs[KEY_RECENT_ALBUM_IDS] = (listOf(albumId) + others).take(MAX_RECENT_ALBUMS).joinToString(",")
+        }
+    }
+
+    // "userId:albumId" entries for albums whose photos all belong to someone else.
+    fun getNothingToSortAlbums(): Flow<Set<String>> = context.dataStore.data.map { it[KEY_NOTHING_TO_SORT_ALBUMS] ?: emptySet() }
+    suspend fun setNothingToSortAlbum(entry: String, nothingToSort: Boolean) {
+        context.dataStore.edit { prefs ->
+            val current = prefs[KEY_NOTHING_TO_SORT_ALBUMS] ?: emptySet()
+            prefs[KEY_NOTHING_TO_SORT_ALBUMS] = if (nothingToSort) current + entry else current - entry
         }
     }
 

@@ -648,6 +648,42 @@ class SwipeViewModelTest {
         coVerify { swipeDecisionRepository.removeDecisions(listOf("x1"), "u1") }
     }
 
+    @Test
+    fun `an album with only other users' photos is recorded as having nothing to sort`() {
+        every { assetRepository.getAssetsByAlbum(any(), any(), any(), any(), any()) } answers {
+            if (firstArg<String>() == "album") {
+                flowOf(AssetBatch(assets = emptyList(), total = 0, foreignAssetIds = setOf("x1")))
+            } else flowOf(AssetBatch(assets = emptyList(), total = 0))
+        }
+
+        openAlbum(expectedAssets = 0)
+
+        coVerify { sessionRepository.setNothingToSort("u1", "album", true) }
+    }
+
+    @Test
+    fun `an album with photos of your own is recorded as having something to sort`() {
+        openAlbum()
+
+        coVerify { sessionRepository.setNothingToSort("u1", "album", false) }
+    }
+
+    @Test
+    fun `a cache batch or a failed fetch leaves the nothing to sort record alone`() {
+        // A cache-only batch, then a finished load that returned nothing and skipped nothing (a failed fetch).
+        every { assetRepository.getAssetsByAlbum(any(), any(), any(), any(), any()) } answers {
+            if (firstArg<String>() == "album") {
+                flowOf(AssetBatch(assets = assets, total = assets.size, isLocalCache = true))
+            } else flowOf(AssetBatch(assets = emptyList(), total = 0))
+        }
+        openAlbum()
+        every { assetRepository.getAssetsByAlbum(any(), any(), any(), any(), any()) } returns
+            flowOf(AssetBatch(assets = emptyList(), total = 0))
+        openAlbum(expectedAssets = 0)
+
+        coVerify(exactly = 0) { sessionRepository.setNothingToSort(any(), any(), any()) }
+    }
+
     // --- dialogs and requests ---
 
     @Test

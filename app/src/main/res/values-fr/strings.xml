@@ -38,6 +38,7 @@
     <string name="home_status_completed">Terminés</string>
     <string name="home_status_virtual">Collections spéciales</string>
     <string name="home_album_completed">Terminé</string>
+    <string name="home_album_nothing_to_sort">Rien à trier</string>
     <plurals name="home_unsynced_changes">
         <item quantity="one">%1$,d changement non synchronisé</item>
         <item quantity="many">%1$,d changements non synchronisés</item>

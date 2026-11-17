@@ -180,6 +180,14 @@ class SessionRepository @Inject constructor(
     val recentAlbumIds: Flow<List<String>> = dataStore.getRecentAlbumIds().map { saved ->
         saved.orEmpty().split(",").filter { it.isNotEmpty() }
     }
+
+    /** Albums in which every photo belongs to someone else, so [userId] has nothing to sort there. */
+    fun nothingToSortAlbumIds(userId: String): Flow<Set<String>> {
+        val prefix = "$userId:"
+        return dataStore.getNothingToSortAlbums().map { entries ->
+            entries.filter { it.startsWith(prefix) }.mapTo(HashSet()) { it.removePrefix(prefix) }
+        }
+    }
     val backupWarningShown: Flow<Boolean> = dataStore.isBackupWarningShown()
     val syncLocalDeletion: Flow<Boolean> = dataStore.isSyncLocalDeletion()
     val trashLocalDeletion: Flow<Boolean> = dataStore.isTrashLocalDeletion()
@@ -313,6 +321,9 @@ class SessionRepository @Inject constructor(
     suspend fun saveShowTimeline(show: Boolean) { dataStore.saveShowTimeline(show) }
     suspend fun saveToolbarButtonOrder(order: List<ToolbarButton>) { dataStore.saveToolbarButtonOrder(order.joinToString(",") { it.name }) }
     suspend fun addRecentAlbumId(albumId: String) { dataStore.addRecentAlbumId(albumId) }
+    suspend fun setNothingToSort(userId: String, albumId: String, nothingToSort: Boolean) {
+        dataStore.setNothingToSortAlbum("$userId:$albumId", nothingToSort)
+    }
     suspend fun saveBackupWarningShown(shown: Boolean) { dataStore.saveBackupWarningShown(shown) }
     suspend fun saveSyncLocalDeletion(sync: Boolean) { dataStore.saveSyncLocalDeletion(sync) }
     suspend fun saveTapToSwipeEnabled(enabled: Boolean) { dataStore.saveTapToSwipeEnabled(enabled) }

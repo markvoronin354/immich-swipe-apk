@@ -76,6 +76,7 @@ fun AlbumGrid(
     groupedAlbums: Map<AlbumStatus, List<Album>>,
     treatedCounts: Map<String, Int>,
     unsyncedChanges: Map<String, Int>,
+    nothingToSortAlbumIds: Set<String>,
     collapsedCategories: Set<AlbumStatus>,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
@@ -156,6 +157,7 @@ fun AlbumGrid(
                                     album = album,
                                     treatedCount = treatedCounts[album.id] ?: 0,
                                     unsyncedCount = unsyncedChanges[album.id] ?: 0,
+                                    nothingToSort = album.id in nothingToSortAlbumIds,
                                     baseUrl = baseUrl,
                                     onClick = { onAlbumClick(album) },
                                     nameViewport = { gridCoordinates },
@@ -234,6 +236,7 @@ fun AlbumGridItem(
     album: Album,
     treatedCount: Int,
     unsyncedCount: Int,
+    nothingToSort: Boolean,
     onClick: () -> Unit,
     nameViewport: () -> LayoutCoordinates?,
     modifier: Modifier = Modifier,
@@ -394,7 +397,11 @@ fun AlbumGridItem(
                     modifier = Modifier.sharedAlbumName(album.id, nameViewport)
                 )
                 Text(
-                    text = "%,d / %,d".format(effectiveTreatedCount, album.assetCount),
+                    text = if (nothingToSort) {
+                        stringResource(R.string.home_album_nothing_to_sort)
+                    } else {
+                        "%,d / %,d".format(effectiveTreatedCount, album.assetCount)
+                    },
                     color = labelColor.copy(alpha = if (isVirtualCollection) 0.7f else 0.8f),
                     style = MaterialTheme.typography.labelMedium
                 )

@@ -37,6 +37,7 @@
     <string name="home_status_completed">Completado</string>
     <string name="home_status_virtual">Colecciones especiales</string>
     <string name="home_album_completed">Completado</string>
+    <string name="home_album_nothing_to_sort">Nada que ordenar</string>
     <plurals name="home_unsynced_changes">
         <item quantity="one">%1$,d cambio sin sincronizar</item>
         <item quantity="many">%1$,d cambios sin sincronizar</item>

@@ -144,6 +144,18 @@ class HomeViewModel @Inject constructor(
                 .map { it?.userId ?: "" }
                 .distinctUntilChanged()
                 .flatMapLatest { userId ->
+                    if (userId.isEmpty()) flowOf(emptySet()) else sessionRepository.nothingToSortAlbumIds(userId)
+                }.collect { albumIds ->
+                    _uiState.update { it.copy(nothingToSortAlbumIds = albumIds) }
+                }
+        }
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        viewModelScope.launch {
+            sessionManager.sessionConfig
+                .map { it?.userId ?: "" }
+                .distinctUntilChanged()
+                .flatMapLatest { userId ->
                     if (userId.isEmpty()) flowOf(Pair(emptyList(), DecisionCounts(0, 0)))
                     else combine(
                         swipeDecisionRepository.getSyncHistory(userId),

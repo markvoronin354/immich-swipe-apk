@@ -88,6 +88,18 @@ class HomeUiStateTest {
     }
 
     @Test
+    fun `an album with none of your photos is listed as completed not as not started`() {
+        val state = HomeUiState(
+            albums = listOf(album("mine", count = 10), album("theirs", count = 1)),
+            nothingToSortAlbumIds = setOf("theirs")
+        )
+        val groups = state.groupedAlbums
+
+        assertEquals(listOf("mine"), ids(groups.getValue(AlbumStatus.NOT_STARTED)))
+        assertEquals(listOf("theirs"), ids(groups.getValue(AlbumStatus.COMPLETED)))
+    }
+
+    @Test
     fun `an empty album with a treated count is completed not in progress`() {
         val state = HomeUiState(albums = listOf(album("empty", count = 0)), albumTreatedCounts = mapOf("empty" to 3))
         assertEquals(listOf("empty"), ids(state.groupedAlbums.getValue(AlbumStatus.COMPLETED)))

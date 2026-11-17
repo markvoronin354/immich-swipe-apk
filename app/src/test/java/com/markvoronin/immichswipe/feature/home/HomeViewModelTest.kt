@@ -126,6 +126,13 @@ class HomeViewModelTest {
         )
 
     @Test
+    fun `albums with nothing to sort are mirrored into the state`() {
+        every { sessionRepository.nothingToSortAlbumIds("u1") } returns flowOf(setOf("a2"))
+
+        assertEquals(setOf("a2"), createViewModel().uiState.value.nothingToSortAlbumIds)
+    }
+
+    @Test
     fun `settings are mirrored into the state`() {
         val state = createViewModel().uiState.value
 
