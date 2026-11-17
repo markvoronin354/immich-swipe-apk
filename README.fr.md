@@ -30,7 +30,7 @@ Ce projet est un fork basé sur le projet original [Minos2020/immich-swipe-andro
 - **⚙️ Actions et Gestes Personnalisables** : Personnalisez vos boutons d'action, les seuils de balayage, les retours vibratoires, l'avancement automatique et la lecture auto des vidéos.
 - **🔄 Support Multi-Comptes** : Changez d'utilisateur facilement ; vos décisions locales et votre progression sont sauvegardées séparément pour chaque compte.
 - **🗃️ Gestion de la Base de Données et Cache** : Exportez, importez ou videz votre base locale (format JSON) et gérez le cache d'images et de vidéos.
-- **🚦 Diagnostic de Connexion** : Indicateur de statut en temps réel, support HTTP et IP directes, serveurs derrière une autorité de certification privée (installez son certificat dans les réglages d'Android), et accès aux journaux (logs) intégrés.
+- **🚦 Diagnostic de Connexion** : Indicateur de statut en temps réel, support HTTP et IP directes, serveurs derrière une autorité de certification privée (installez son certificat dans les réglages d'Android) ou un proxy qui exige des en-têtes de requête personnalisés, et accès aux journaux (logs) intégrés.
 - **🎨 Interface Moderne** : Développée avec Jetpack Compose et Material Design 3, disponible en Français, Anglais et Espagnol.
 
 ## ⚙️ Configuration & Permissions de la Clé API

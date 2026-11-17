@@ -2,5 +2,5 @@
 - Create an album from the add-to-album sheet; recent albums come first.
 - Edit a photo's description and open the full-resolution view in the fullscreen viewer.
 - Photos that belong to other users in shared albums are skipped, so they no longer block syncing.
-- Servers behind a private certificate authority can connect.
+- Servers behind a private certificate authority or a header-checking proxy can connect.
 - A refused sync now points at your API key's permissions.

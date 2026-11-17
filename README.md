@@ -30,7 +30,7 @@ This project is a fork based on the original project at [Minos2020/immich-swipe-
 - **⚙️ Customizable Actions & Interactions**: Configure action buttons, swipe gestures, vibration feedback, auto-advance, and video autoplay.
 - **🔄 Multi-Account Support**: Switch between multiple Immich user accounts seamlessly with account-specific local progress.
 - **🗃️ Database & Cache Management**: Export, import, or clear your local database (JSON format) and manage image/video caches.
-- **🚦 Connection Diagnostics**: Real-time connection status indicator, HTTP/IP support, servers behind a private certificate authority (install its CA in Android's settings), and in-app log viewer.
+- **🚦 Connection Diagnostics**: Real-time connection status indicator, HTTP/IP support, servers behind a private certificate authority (install its CA in Android's settings) or a proxy that needs custom request headers, and in-app log viewer.
 - **🎨 Modern Interface**: Built with Jetpack Compose and Material Design 3, with English, French, and Spanish language support.
 
 ## ⚙️ Configuration & API Key Permissions
