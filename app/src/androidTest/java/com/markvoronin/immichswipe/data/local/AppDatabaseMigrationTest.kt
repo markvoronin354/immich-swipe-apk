@@ -4,6 +4,7 @@ import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -43,6 +44,32 @@ class AppDatabaseMigrationTest {
         db.query("SELECT decision FROM swipe_decisions WHERE assetId = 'a1'").use { cursor ->
             cursor.moveToFirst()
             assertEquals("KEEP", cursor.getString(0))
+        }
+    }
+
+    @Test
+    fun migrate13To14KeepsAccountsAndStartsWithoutHeaders() {
+        helper.createDatabase(testDbName, 13).apply {
+            execSQL(
+                "INSERT INTO user_accounts (userId, baseUrl, apiKey, userName, userEmail, avatarColor, lastActive) " +
+                    "VALUES ('u1', 'https://photos.example.com', 'enc1:abc', 'Ann', 'a@b.c', 'blue', 5)"
+            )
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(testDbName, 14, true, AppDatabase.MIGRATION_13_14)
+        db.query("SELECT baseUrl, apiKey, userName, lastActive, customHeaders FROM user_accounts WHERE userId = 'u1'").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("https://photos.example.com", cursor.getString(0))
+            assertEquals("enc1:abc", cursor.getString(1))
+            assertEquals("Ann", cursor.getString(2))
+            assertEquals(5L, cursor.getLong(3))
+            assertTrue(cursor.isNull(4))
+        }
+        // The new column accepts a value.
+        db.execSQL("UPDATE user_accounts SET customHeaders = 'enc1:xyz' WHERE userId = 'u1'")
+        db.query("SELECT customHeaders FROM user_accounts WHERE userId = 'u1'").use { cursor ->
+            cursor.moveToFirst()
+            assertEquals("enc1:xyz", cursor.getString(0))
         }
     }
 }

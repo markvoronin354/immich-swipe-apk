@@ -11,5 +11,7 @@ data class UserAccountEntity(
     val userName: String?,
     val userEmail: String,
     val avatarColor: String?,
-    val lastActive: Long = System.currentTimeMillis()
+    val lastActive: Long = System.currentTimeMillis(),
+    // Extra request headers as encrypted "Name: value" lines; null when the account has none.
+    val customHeaders: String? = null
 )
