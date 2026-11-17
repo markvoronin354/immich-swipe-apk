@@ -21,7 +21,7 @@
     <string name="login_error_forbidden">Accès refusé. Vérifiez vos permissions sur Immich.</string>
     <string name="login_error_not_found">URL incorrecte : Immich ne semble pas installé à cette adresse.</string>
     <string name="login_error_server">Erreur interne du serveur Immich (%1$d).</string>
-    <string name="login_error_ssl">Erreur SSL/HTTPS. Vérifiez votre certificat ou utilisez http (si supporté).</string>
+    <string name="login_error_ssl">Erreur SSL/HTTPS. Si votre serveur utilise une autorité de certification privée, installez son certificat dans les réglages d\'Android, ou utilisez http (si supporté).</string>
 
     <!-- Navigation -->
     <string name="nav_home">Accueil</string>

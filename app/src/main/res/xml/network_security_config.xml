@@ -5,12 +5,17 @@
         often reached by LAN address without TLS, and the network security config cannot express
         "private addresses only". The app enforces the policy itself: plain HTTP to a public host
         needs an explicit confirmation at login (see UrlPolicy).
+
+        User-installed CAs are trusted too, because self-hosted servers often sit behind a private
+        certificate authority that the user installs in Android's settings. Android apps ignore
+        those by default.
     -->
     <base-config
         cleartextTrafficPermitted="true"
         tools:ignore="InsecureBaseConfiguration">
         <trust-anchors>
             <certificates src="system" />
+            <certificates src="user" tools:ignore="AcceptsUserCertificates" />
         </trust-anchors>
     </base-config>
 </network-security-config>

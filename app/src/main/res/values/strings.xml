@@ -20,7 +20,7 @@
     <string name="login_error_forbidden">Access denied. Check your permissions on Immich.</string>
     <string name="login_error_not_found">Incorrect URL: Immich does not seem to be installed at this address.</string>
     <string name="login_error_server">Internal Immich server error (%1$d).</string>
-    <string name="login_error_ssl">SSL/HTTPS error. Check your certificate or use http (if supported).</string>
+    <string name="login_error_ssl">SSL/HTTPS error. If your server uses a private certificate authority, install its certificate in Android\'s settings, or use http (if supported).</string>
 
     <!-- Navigation -->
     <string name="nav_home">Home</string>
