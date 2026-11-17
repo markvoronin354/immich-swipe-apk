@@ -6,6 +6,7 @@ import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.SessionConfig
 import com.markvoronin.immichswipe.core.SessionManager
 import com.markvoronin.immichswipe.core.UrlPolicy
+import com.markvoronin.immichswipe.core.net.CustomHeaders
 import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
 import com.markvoronin.immichswipe.data.repository.AccountSaver
 import com.markvoronin.immichswipe.data.repository.CredentialChecker
@@ -61,6 +62,22 @@ class AuthViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(apiKey = value)
     }
 
+    fun onAddHeader() {
+        _uiState.value = _uiState.value.copy(headers = _uiState.value.headers + HeaderEntry())
+    }
+
+    fun onHeaderChange(index: Int, entry: HeaderEntry) {
+        val headers = _uiState.value.headers
+        if (index !in headers.indices) return
+        _uiState.value = _uiState.value.copy(headers = headers.toMutableList().also { it[index] = entry })
+    }
+
+    fun onRemoveHeader(index: Int) {
+        val headers = _uiState.value.headers
+        if (index !in headers.indices) return
+        _uiState.value = _uiState.value.copy(headers = headers.toMutableList().also { it.removeAt(index) })
+    }
+
     fun removeSavedServerUrl(url: String) {
         viewModelScope.launch {
             sessionRepository.removeSavedServerUrl(url)
@@ -85,6 +102,7 @@ class AuthViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             baseUrl = initialUrl,
             apiKey = "",
+            headers = emptyList(),
             isLoading = false,
             error = null,
             success = false
@@ -101,11 +119,16 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             val baseUrl = _uiState.value.baseUrl.trim()
             val apiKey = _uiState.value.apiKey.trim()
+            val headers = CustomHeaders.fromEntries(_uiState.value.headers.map { it.name to it.value })
 
             AppLogger.i("Auth", "Attempting connection to $baseUrl")
 
             if (baseUrl.isEmpty() || apiKey.isEmpty()) {
                 _uiState.value = _uiState.value.copy(error = AuthError.EmptyFields)
+                return@launch
+            }
+            if (headers == null) {
+                _uiState.value = _uiState.value.copy(error = AuthError.InvalidHeaders)
                 return@launch
             }
 
@@ -119,13 +142,13 @@ class AuthViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             try {
-                val user = authRepository.checkCredentials(baseUrl, apiKey)
+                val user = authRepository.checkCredentials(baseUrl, apiKey, headers)
                 AppLogger.i("Auth", "Valid credentials. User: ${user.name} (${user.id})")
 
-                val config = SessionConfig(baseUrl = baseUrl, apiKey = apiKey, userId = user.id)
+                val config = SessionConfig(baseUrl = baseUrl, apiKey = apiKey, userId = user.id, headers = headers)
                 sessionManager.initialize(config)
 
-                accountRepository.saveAccount(baseUrl, apiKey, user)
+                accountRepository.saveAccount(baseUrl, apiKey, user, headers)
                 sessionRepository.saveSession(baseUrl = baseUrl, token = apiKey, userId = user.id)
                 sessionRepository.saveRecentServerUrl(baseUrl)
 

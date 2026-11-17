@@ -1,5 +1,10 @@
 package com.markvoronin.immichswipe.feature.auth
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -26,8 +31,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -105,6 +114,7 @@ fun AuthScreen(
             AuthError.Forbidden -> stringResource(R.string.login_error_forbidden)
             AuthError.NotFound -> stringResource(R.string.login_error_not_found)
             AuthError.Ssl -> stringResource(R.string.login_error_ssl)
+            AuthError.InvalidHeaders -> stringResource(R.string.login_error_headers)
             is AuthError.Server -> stringResource(R.string.login_error_server, error.code)
             is AuthError.Unknown -> error.message ?: stringResource(R.string.login_error_unknown)
         }
@@ -115,7 +125,8 @@ fun AuthScreen(
         AuthError.EmptyFields -> state.baseUrl.isNotBlank()
         else -> false
     }
-    val urlHasError = state.error != null && !apiKeyHasError
+    val headersHaveError = state.error == AuthError.InvalidHeaders
+    val urlHasError = state.error != null && !apiKeyHasError && !headersHaveError
 
     val versionName = remember {
         try {
@@ -327,6 +338,113 @@ fun AuthScreen(
                     singleLine = true,
                     shape = fieldShape
                 )
+
+                var advancedExpanded by remember { mutableStateOf(false) }
+                var headerValuesVisible by remember { mutableStateOf(false) }
+                val advancedVisible = advancedExpanded || headersHaveError
+
+                TextButton(
+                    onClick = { advancedExpanded = !advancedExpanded },
+                    modifier = Modifier.align(Alignment.Start)
+                ) {
+                    Text(stringResource(R.string.login_advanced))
+                    Spacer(Modifier.width(4.dp))
+                    Icon(
+                        imageVector = if (advancedVisible) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                AnimatedVisibility(
+                    visible = advancedVisible,
+                    enter = expandVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) +
+                        fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()),
+                    exit = shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) +
+                        fadeOut(MaterialTheme.motionScheme.defaultEffectsSpec())
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.login_headers_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        state.headers.forEachIndexed { index, entry ->
+                            OutlinedTextField(
+                                value = entry.name,
+                                onValueChange = { viewModel.onHeaderChange(index, entry.copy(name = it)) },
+                                label = { Text(stringResource(R.string.login_header_name)) },
+                                trailingIcon = {
+                                    IconButton(onClick = { viewModel.onRemoveHeader(index) }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = stringResource(R.string.cd_remove_header),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                },
+                                isError = headersHaveError,
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Ascii,
+                                    imeAction = ImeAction.Next
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(fieldClipShape),
+                                singleLine = true,
+                                shape = fieldShape
+                            )
+                            OutlinedTextField(
+                                value = entry.value,
+                                onValueChange = { viewModel.onHeaderChange(index, entry.copy(value = it)) },
+                                label = { Text(stringResource(R.string.login_header_value)) },
+                                trailingIcon = {
+                                    IconButton(onClick = { headerValuesVisible = !headerValuesVisible }) {
+                                        Icon(
+                                            imageVector = if (headerValuesVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                            contentDescription = stringResource(R.string.cd_toggle_key_visibility),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                },
+                                isError = headersHaveError,
+                                visualTransformation = if (headerValuesVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Password,
+                                    imeAction = ImeAction.Next
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(fieldClipShape),
+                                singleLine = true,
+                                shape = fieldShape
+                            )
+                            Spacer(Modifier.height(8.dp))
+                        }
+                        if (headersHaveError) {
+                            Text(
+                                text = errorMessage.orEmpty(),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        TextButton(
+                            onClick = viewModel::onAddHeader,
+                            modifier = Modifier.align(Alignment.Start)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(stringResource(R.string.login_add_header))
+                        }
+                    }
+                }
 
                 Spacer(Modifier.height(4.dp))
 

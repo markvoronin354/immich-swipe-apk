@@ -21,6 +21,13 @@
     <string name="login_error_not_found">URL incorrecta: Immich no parece estar instalado en esta dirección.</string>
     <string name="login_error_server">Error interno del servidor Immich (%1$d).</string>
     <string name="login_error_ssl">Error SSL/HTTPS. Si su servidor usa una autoridad de certificación privada, instale su certificado en los ajustes de Android, o use http (si es compatible).</string>
+    <string name="login_error_headers">Una cabecera personalizada no es válida. Los nombres no pueden estar vacíos ni contener espacios, los valores necesitan caracteres visibles, y x-api-key la define la aplicación.</string>
+    <string name="login_advanced">Avanzado</string>
+    <string name="login_headers_hint">Cabeceras adicionales que se envían con cada solicitud a su servidor, por ejemplo para un proxy inverso o Cloudflare Access.</string>
+    <string name="login_header_name">Nombre de la cabecera</string>
+    <string name="login_header_value">Valor de la cabecera</string>
+    <string name="login_add_header">Añadir cabecera</string>
+    <string name="cd_remove_header">Quitar cabecera</string>
 
     <!-- Navegación -->
     <string name="nav_home">Inicio</string>

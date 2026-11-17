@@ -22,6 +22,13 @@
     <string name="login_error_not_found">URL incorrecte : Immich ne semble pas installé à cette adresse.</string>
     <string name="login_error_server">Erreur interne du serveur Immich (%1$d).</string>
     <string name="login_error_ssl">Erreur SSL/HTTPS. Si votre serveur utilise une autorité de certification privée, installez son certificat dans les réglages d\'Android, ou utilisez http (si supporté).</string>
+    <string name="login_error_headers">Un en-tête personnalisé n\'est pas valide. Les noms ne peuvent pas être vides ni contenir d\'espaces, les valeurs doivent contenir des caractères visibles, et x-api-key est défini par l\'application.</string>
+    <string name="login_advanced">Avancé</string>
+    <string name="login_headers_hint">En-têtes supplémentaires envoyés avec chaque requête vers votre serveur, par exemple pour un proxy inverse ou Cloudflare Access.</string>
+    <string name="login_header_name">Nom de l\'en-tête</string>
+    <string name="login_header_value">Valeur de l\'en-tête</string>
+    <string name="login_add_header">Ajouter un en-tête</string>
+    <string name="cd_remove_header">Supprimer l\'en-tête</string>
 
     <!-- Navigation -->
     <string name="nav_home">Accueil</string>

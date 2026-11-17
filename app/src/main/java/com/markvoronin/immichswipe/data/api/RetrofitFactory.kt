@@ -4,6 +4,7 @@ import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.ConnectionLevel
 import com.markvoronin.immichswipe.core.DiagStatus
 import com.markvoronin.immichswipe.core.SessionConfig
+import com.markvoronin.immichswipe.core.net.CustomHeadersInterceptor
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -86,6 +87,7 @@ object RetrofitFactory {
             .addInterceptor(apiKeyInterceptor)
             .addInterceptor(connectivityInterceptor)
             .addInterceptor(logging)
+            .addNetworkInterceptor(CustomHeadersInterceptor(config.baseUrl, config.headers))
             .build()
 
 

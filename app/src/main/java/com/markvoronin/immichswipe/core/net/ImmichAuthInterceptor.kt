@@ -11,8 +11,8 @@ import okhttp3.Response
  * pass the key around.
  *
  * Install it as a network interceptor: it then runs for every hop, redirects included, and re-decides
- * each time. The key is only attached when the request goes to the same origin (scheme, host and port)
- * as the account's server, so it can never be sent to a third party.
+ * each time. The key, and the account's custom headers, are only attached when the request goes to the
+ * same origin (scheme, host and port) as the account's server, so they can never be sent to a third party.
  *
  * By default the active session is used. A request that carries [ACCOUNT_HEADER] with a user id is
  * authenticated as that saved account instead, which is how avatars of other accounts load. That header
@@ -32,6 +32,7 @@ class ImmichAuthInterceptor(
         val builder = original.newBuilder().removeHeader(KEY_HEADER)
         if (session != null && isSameOrigin(original.url, session.baseUrl)) {
             builder.header(KEY_HEADER, session.apiKey)
+            session.headers.forEach { (name, value) -> builder.header(name, value) }
         }
         return chain.proceed(builder.build())
     }

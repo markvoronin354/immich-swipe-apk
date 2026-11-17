@@ -16,6 +16,10 @@ class ImmichAuthInterceptorTest {
     private val active = SessionConfig("https://photos.example.com", "ACTIVE-KEY", "user-a")
     private val other = SessionConfig("https://photos.example.com", "OTHER-KEY", "user-b")
     private val elsewhere = SessionConfig("https://other.example.org", "ELSEWHERE-KEY", "user-c")
+    private val behindProxy = SessionConfig(
+        "https://photos.example.com", "PROXY-KEY", "user-p",
+        headers = mapOf("CF-Access-Client-Id" to "abc", "CF-Access-Client-Secret" to "s3cret")
+    )
 
     /** Runs a request through the interceptor and returns the headers that would reach the network. */
     private fun send(
@@ -83,6 +87,47 @@ class ImmichAuthInterceptorTest {
             headers = mapOf(ImmichAuthInterceptor.ACCOUNT_HEADER to "user-c")
         )
         assertNull(req.header("x-api-key"))
+    }
+
+    @Test
+    fun `custom headers are added together with the key for the account's own server`() {
+        val req = send("https://photos.example.com/api/assets/1/thumbnail", session = behindProxy)
+
+        assertEquals("PROXY-KEY", req.header("x-api-key"))
+        assertEquals("abc", req.header("CF-Access-Client-Id"))
+        assertEquals("s3cret", req.header("CF-Access-Client-Secret"))
+    }
+
+    @Test
+    fun `custom headers are never sent to a different host`() {
+        val req = send("https://evil.example.net/steal", session = behindProxy)
+
+        assertNull(req.header("CF-Access-Client-Id"))
+        assertNull(req.header("CF-Access-Client-Secret"))
+    }
+
+    @Test
+    fun `a saved account's avatar request carries that account's own headers`() {
+        val req = send(
+            "https://photos.example.com/api/users/p/profile-image",
+            headers = mapOf(ImmichAuthInterceptor.ACCOUNT_HEADER to "user-p"),
+            accounts = mapOf("user-p" to behindProxy)
+        )
+
+        assertEquals("PROXY-KEY", req.header("x-api-key"))
+        assertEquals("abc", req.header("CF-Access-Client-Id"))
+    }
+
+    @Test
+    fun `the active account's headers are not given to another saved account's request`() {
+        val req = send(
+            "https://photos.example.com/api/users/b/profile-image",
+            headers = mapOf(ImmichAuthInterceptor.ACCOUNT_HEADER to "user-b"),
+            session = behindProxy
+        )
+
+        assertEquals("OTHER-KEY", req.header("x-api-key"))
+        assertNull(req.header("CF-Access-Client-Id"))
     }
 
     @Test

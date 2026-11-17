@@ -56,8 +56,9 @@ object VideoCache {
     }
 
     /**
-     * Cached, authenticated upstream for video. The API key is added per request by a resolver and only
-     * when the request goes to the active server, so callers never need to pass the key.
+     * Cached, authenticated upstream for video. The API key and the account's custom headers are added per
+     * request by a resolver and only when the request goes to the active server, so callers never need to
+     * pass them.
      */
     fun getCacheDataSourceFactory(context: Context): CacheDataSource.Factory {
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
@@ -70,7 +71,7 @@ object VideoCache {
             val session = MediaHttp.activeSession(appContext)
             val url = dataSpec.uri.toString().toHttpUrlOrNull()
             if (session != null && url != null && ImmichAuthInterceptor.isSameOrigin(url, session.baseUrl)) {
-                dataSpec.withAdditionalHeaders(mapOf(ImmichAuthInterceptor.KEY_HEADER to session.apiKey))
+                dataSpec.withAdditionalHeaders(mapOf(ImmichAuthInterceptor.KEY_HEADER to session.apiKey) + session.headers)
             } else {
                 dataSpec
             }

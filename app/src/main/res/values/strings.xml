@@ -21,6 +21,13 @@
     <string name="login_error_not_found">Incorrect URL: Immich does not seem to be installed at this address.</string>
     <string name="login_error_server">Internal Immich server error (%1$d).</string>
     <string name="login_error_ssl">SSL/HTTPS error. If your server uses a private certificate authority, install its certificate in Android\'s settings, or use http (if supported).</string>
+    <string name="login_error_headers">A custom header isn\'t valid. Names can\'t be empty or contain spaces, values need visible characters, and x-api-key is set by the app.</string>
+    <string name="login_advanced">Advanced</string>
+    <string name="login_headers_hint">Extra headers sent with every request to your server, for example for a reverse proxy or Cloudflare Access.</string>
+    <string name="login_header_name">Header name</string>
+    <string name="login_header_value">Header value</string>
+    <string name="login_add_header">Add header</string>
+    <string name="cd_remove_header">Remove header</string>
 
     <!-- Navigation -->
     <string name="nav_home">Home</string>

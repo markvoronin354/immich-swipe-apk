@@ -4,6 +4,8 @@ data class SessionConfig(
     val baseUrl: String,
     val apiKey: String,
     val userId: String = "",
+    // Extra headers for a proxy in front of the server; sent to this server only.
+    val headers: Map<String, String> = emptyMap(),
 )
 
 

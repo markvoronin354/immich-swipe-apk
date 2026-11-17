@@ -33,8 +33,10 @@ class AuthViewModelTest {
 
     private class FakeChecker(var failWith: Throwable? = null) : CredentialChecker {
         val checked = mutableListOf<Pair<String, String>>()
-        override suspend fun checkCredentials(baseUrl: String, apiKey: String): User {
+        val headersSent = mutableListOf<Map<String, String>>()
+        override suspend fun checkCredentials(baseUrl: String, apiKey: String, headers: Map<String, String>): User {
             checked += baseUrl to apiKey
+            headersSent += headers
             failWith?.let { throw it }
             return User(id = "u1", email = "a@b.c", name = "Ann")
         }
@@ -53,7 +55,11 @@ class AuthViewModelTest {
 
     private class FakeAccounts : AccountSaver {
         val saved = mutableListOf<Triple<String, String, String>>()
-        override suspend fun saveAccount(baseUrl: String, apiKey: String, user: User) { saved += Triple(baseUrl, apiKey, user.id) }
+        val savedHeaders = mutableListOf<Map<String, String>>()
+        override suspend fun saveAccount(baseUrl: String, apiKey: String, user: User, headers: Map<String, String>) {
+            saved += Triple(baseUrl, apiKey, user.id)
+            savedHeaders += headers
+        }
     }
 
     private val checker = FakeChecker()
@@ -100,6 +106,76 @@ class AuthViewModelTest {
         assertTrue(vm.uiState.value.success)
         assertFalse(vm.uiState.value.isLoading)
         assertNull(vm.uiState.value.error)
+    }
+
+    @Test
+    fun `custom headers are sent with the check and saved with the account`() {
+        enter("https://photos.example.com")
+        vm.onAddHeader()
+        vm.onHeaderChange(0, HeaderEntry(" CF-Access-Client-Id ", " abc "))
+        vm.onAddHeader()
+        vm.onHeaderChange(1, HeaderEntry("CF-Access-Client-Secret", "s3cret"))
+        vm.login()
+
+        val expected = mapOf("CF-Access-Client-Id" to "abc", "CF-Access-Client-Secret" to "s3cret")
+        assertEquals(listOf(expected), checker.headersSent)
+        assertEquals(listOf(expected), accounts.savedHeaders)
+        assertTrue(vm.uiState.value.success)
+    }
+
+    @Test
+    fun `a login without headers sends none and a blank row is ignored`() {
+        enter("https://photos.example.com")
+        vm.onAddHeader()
+        vm.login()
+
+        assertEquals(listOf(emptyMap<String, String>()), checker.headersSent)
+        assertTrue(vm.uiState.value.success)
+    }
+
+    @Test
+    fun `an invalid header reports an error and contacts nobody`() {
+        enter("https://photos.example.com")
+        vm.onAddHeader()
+        vm.onHeaderChange(0, HeaderEntry("bad name", "value"))
+        vm.login()
+
+        assertEquals(AuthError.InvalidHeaders, vm.uiState.value.error)
+        assertTrue(checker.checked.isEmpty())
+        assertTrue(accounts.saved.isEmpty())
+    }
+
+    @Test
+    fun `a header name the app sets itself is rejected`() {
+        enter("https://photos.example.com")
+        vm.onAddHeader()
+        vm.onHeaderChange(0, HeaderEntry("X-Api-Key", "other"))
+        vm.login()
+
+        assertEquals(AuthError.InvalidHeaders, vm.uiState.value.error)
+        assertTrue(checker.checked.isEmpty())
+    }
+
+    @Test
+    fun `header rows can be edited and removed`() {
+        vm.onAddHeader()
+        vm.onAddHeader()
+        vm.onHeaderChange(0, HeaderEntry("A", "1"))
+        vm.onHeaderChange(1, HeaderEntry("B", "2"))
+        vm.onHeaderChange(7, HeaderEntry("ignored", "x"))
+        vm.onRemoveHeader(0)
+        vm.onRemoveHeader(9)
+
+        assertEquals(listOf(HeaderEntry("B", "2")), vm.uiState.value.headers)
+    }
+
+    @Test
+    fun `adding another account starts without headers`() {
+        vm.onAddHeader()
+        vm.onHeaderChange(0, HeaderEntry("A", "1"))
+        vm.prepareForAddAccount()
+
+        assertTrue(vm.uiState.value.headers.isEmpty())
     }
 
     @Test

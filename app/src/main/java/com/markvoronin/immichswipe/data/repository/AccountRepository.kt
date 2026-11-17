@@ -1,6 +1,7 @@
 package com.markvoronin.immichswipe.data.repository
 
 import com.markvoronin.immichswipe.core.SecretStore
+import com.markvoronin.immichswipe.core.net.CustomHeaders
 import com.markvoronin.immichswipe.data.local.dao.UserAccountDao
 import com.markvoronin.immichswipe.data.local.entity.UserAccountEntity
 import com.markvoronin.immichswipe.domain.model.User
@@ -14,13 +15,14 @@ class AccountRepository @Inject constructor(private val userAccountDao: UserAcco
 
     private val secrets = SecretStore.default
 
-    // Callers always see the decrypted key; only the database row holds the encrypted form.
+    // Callers always see the decrypted key and headers; only the database row holds the encrypted form.
     val allAccounts: Flow<List<UserAccountEntity>> =
         userAccountDao.getAllAccounts().map { list -> list.map { it.decrypted() } }
 
-    private fun UserAccountEntity.decrypted() = copy(apiKey = secrets.decrypt(apiKey) ?: "")
+    private fun UserAccountEntity.decrypted() =
+        copy(apiKey = secrets.decrypt(apiKey) ?: "", customHeaders = customHeaders?.let(secrets::decrypt))
 
-    override suspend fun saveAccount(baseUrl: String, apiKey: String, user: User) {
+    override suspend fun saveAccount(baseUrl: String, apiKey: String, user: User, headers: Map<String, String>) {
         val entity = UserAccountEntity(
             userId = user.id,
             baseUrl = baseUrl,
@@ -28,7 +30,8 @@ class AccountRepository @Inject constructor(private val userAccountDao: UserAcco
             userName = user.name,
             userEmail = user.email,
             avatarColor = user.avatarColor,
-            lastActive = System.currentTimeMillis()
+            lastActive = System.currentTimeMillis(),
+            customHeaders = CustomHeaders.encode(headers)?.let(secrets::encrypt)
         )
         userAccountDao.insertAccount(entity)
     }

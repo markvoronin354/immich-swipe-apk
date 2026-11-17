@@ -9,13 +9,19 @@ sealed class AuthError {
     object Forbidden : AuthError()
     object NotFound : AuthError()
     object Ssl : AuthError()
+    object InvalidHeaders : AuthError()
     data class Server(val code: Int) : AuthError()
     data class Unknown(val message: String?) : AuthError()
 }
 
+/** One custom header row on the login screen. */
+data class HeaderEntry(val name: String = "", val value: String = "")
+
 data class AuthUiState(
     val baseUrl: String = "",
     val apiKey: String = "",
+    // Extra request headers for a proxy in front of the server.
+    val headers: List<HeaderEntry> = emptyList(),
     val isLoading: Boolean = false,
     val error: AuthError? = null,
     val success: Boolean = false,

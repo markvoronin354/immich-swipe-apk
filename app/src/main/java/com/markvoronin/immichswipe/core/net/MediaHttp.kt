@@ -35,7 +35,9 @@ class MediaHttpClient @Inject constructor(
 
     // Called on an OkHttp worker thread, so blocking on the (rare) database lookup is acceptable.
     private fun accountSession(userId: String): SessionConfig? = runBlocking {
-        accountRepository.getAccount(userId)?.let { SessionConfig(it.baseUrl, it.apiKey, it.userId) }
+        accountRepository.getAccount(userId)?.let {
+            SessionConfig(it.baseUrl, it.apiKey, it.userId, CustomHeaders.parse(it.customHeaders))
+        }
     }
 }
 

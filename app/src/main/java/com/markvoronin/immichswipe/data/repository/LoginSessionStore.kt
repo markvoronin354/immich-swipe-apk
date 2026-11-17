@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 /** Checks that a server URL and API key are valid and returns the user they belong to. */
 interface CredentialChecker {
-    suspend fun checkCredentials(baseUrl: String, apiKey: String): User
+    suspend fun checkCredentials(baseUrl: String, apiKey: String, headers: Map<String, String> = emptyMap()): User
 }
 
 /** The part of the saved session the login screen reads and writes. */
@@ -20,5 +20,5 @@ interface LoginSessionStore {
 
 /** Stores a logged-in account so it can be switched to later. */
 interface AccountSaver {
-    suspend fun saveAccount(baseUrl: String, apiKey: String, user: User)
+    suspend fun saveAccount(baseUrl: String, apiKey: String, user: User, headers: Map<String, String> = emptyMap())
 }

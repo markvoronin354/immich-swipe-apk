@@ -18,6 +18,7 @@ import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.core.SwipeBehavior
 import com.markvoronin.immichswipe.core.SwipeSettings
 import com.markvoronin.immichswipe.core.ToolbarButton
+import com.markvoronin.immichswipe.core.net.CustomHeaders
 import com.markvoronin.immichswipe.core.util.combine7
 import com.markvoronin.immichswipe.data.datastore.SessionDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -61,6 +62,10 @@ class SessionRepository @Inject constructor(
         } else {
             null
         }
+    }.map { config ->
+        // The account row holds the custom headers. Read it here, right after the session changes, instead of
+        // waiting for the accounts flow to catch up with a login that has just saved both.
+        config?.copy(headers = CustomHeaders.parse(accountRepository.getAccount(config.userId)?.customHeaders))
     }
 
 
