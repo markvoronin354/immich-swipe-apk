@@ -2,6 +2,7 @@ package com.markvoronin.immichswipe.data.api
 
 import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.domain.model.Asset
+import com.markvoronin.immichswipe.domain.model.ServerVersion
 import com.markvoronin.immichswipe.domain.model.User
 import retrofit2.Response
 import retrofit2.http.Body
@@ -16,6 +17,9 @@ interface ImmichApi {
 
     @GET("api/users/me")
     suspend fun getCurrentUser(): User
+
+    @GET("api/server/version")
+    suspend fun getServerVersion(): ServerVersion
 
     @GET("api/albums")
     suspend fun getAlbums(): List<Album>

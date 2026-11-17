@@ -11,6 +11,7 @@ import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
 import com.markvoronin.immichswipe.data.repository.AccountSaver
 import com.markvoronin.immichswipe.data.repository.CredentialChecker
 import com.markvoronin.immichswipe.data.repository.LoginSessionStore
+import com.markvoronin.immichswipe.domain.model.ServerVersion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -114,8 +115,15 @@ class AuthViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(showInsecureHttpWarning = false)
     }
 
+    fun dismissOutdatedServerWarning() {
+        _uiState.value = _uiState.value.copy(outdatedServerVersion = null)
+    }
 
-    fun login(allowInsecureHttp: Boolean = false) {
+    // The plain-HTTP check already ran, or was confirmed, before the server was first contacted.
+    fun continueWithOldServer() = login(allowInsecureHttp = true, acknowledgeOldServer = true)
+
+
+    fun login(allowInsecureHttp: Boolean = false, acknowledgeOldServer: Boolean = false) {
         viewModelScope.launch {
             val baseUrl = _uiState.value.baseUrl.trim()
             val apiKey = _uiState.value.apiKey.trim()
@@ -139,11 +147,19 @@ class AuthViewModel @Inject constructor(
             }
             _uiState.value = _uiState.value.copy(showInsecureHttpWarning = false)
 
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, outdatedServerVersion = null)
 
             try {
                 val user = authRepository.checkCredentials(baseUrl, apiKey, headers)
                 AppLogger.i("Auth", "Valid credentials. User: ${user.name} (${user.id})")
+
+                val version = authRepository.fetchServerVersion(baseUrl, apiKey, headers)
+                AppLogger.i("Auth", "Server version: ${version ?: "unknown"}")
+                if (version != null && version < ServerVersion.ROTATION_EDITS && !acknowledgeOldServer) {
+                    AppLogger.w("Auth", "Server $version is older than ${ServerVersion.ROTATION_EDITS}: photo rotations can't be saved to it")
+                    _uiState.value = _uiState.value.copy(isLoading = false, outdatedServerVersion = version)
+                    return@launch
+                }
 
                 val config = SessionConfig(baseUrl = baseUrl, apiKey = apiKey, userId = user.id, headers = headers)
                 sessionManager.initialize(config)

@@ -11,6 +11,9 @@
     <string name="login_insecure_http_title">Conexión sin cifrar</string>
     <string name="login_insecure_http_message">Este servidor está en Internet y su dirección empieza por http://. Tu clave de API se enviaría sin cifrar y cualquiera en la red podría leerla. Usa una dirección https:// si puedes.</string>
     <string name="login_insecure_http_confirm">Conectar de todos modos</string>
+    <string name="login_old_server_title">Servidor de Immich antiguo</string>
+    <string name="login_old_server_message">Este servidor usa Immich %1$s. Guardar la rotación de una foto en el servidor requiere la versión %2$s o posterior, así que las rotaciones que hagas aquí no se guardarán allí. Todo lo demás funciona.</string>
+    <string name="login_old_server_confirm">Continuar</string>
     <string name="login_error_unknown">Se ha producido un error desconocido</string>
     <string name="login_error_empty">La URL y la clave API son requeridas</string>
     <string name="login_error_dns">Servidor no encontrado. Verifique la URL o su DNS.</string>

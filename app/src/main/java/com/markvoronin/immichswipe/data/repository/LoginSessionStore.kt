@@ -1,12 +1,16 @@
 package com.markvoronin.immichswipe.data.repository
 
 import com.markvoronin.immichswipe.core.SessionConfig
+import com.markvoronin.immichswipe.domain.model.ServerVersion
 import com.markvoronin.immichswipe.domain.model.User
 import kotlinx.coroutines.flow.Flow
 
 /** Checks that a server URL and API key are valid and returns the user they belong to. */
 interface CredentialChecker {
     suspend fun checkCredentials(baseUrl: String, apiKey: String, headers: Map<String, String> = emptyMap()): User
+
+    /** The server's version, or null when it can't be read. Only cancellation is rethrown. */
+    suspend fun fetchServerVersion(baseUrl: String, apiKey: String, headers: Map<String, String> = emptyMap()): ServerVersion?
 }
 
 /** The part of the saved session the login screen reads and writes. */

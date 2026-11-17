@@ -85,6 +85,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.AppLogger
+import com.markvoronin.immichswipe.domain.model.ServerVersion
 import com.markvoronin.immichswipe.feature.settings.components.LogsDialog
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -490,6 +491,32 @@ fun AuthScreen(
                         },
                         dismissButton = {
                             TextButton(onClick = { viewModel.dismissInsecureHttpWarning() }) {
+                                Text(stringResource(R.string.common_cancel))
+                            }
+                        }
+                    )
+                }
+
+                state.outdatedServerVersion?.let { version ->
+                    androidx.compose.material3.AlertDialog(
+                        onDismissRequest = { viewModel.dismissOutdatedServerWarning() },
+                        title = { Text(stringResource(R.string.login_old_server_title)) },
+                        text = {
+                            Text(
+                                stringResource(
+                                    R.string.login_old_server_message,
+                                    version.toString(),
+                                    ServerVersion.ROTATION_EDITS.toString()
+                                )
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { viewModel.continueWithOldServer() }) {
+                                Text(stringResource(R.string.login_old_server_confirm))
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { viewModel.dismissOutdatedServerWarning() }) {
                                 Text(stringResource(R.string.common_cancel))
                             }
                         }

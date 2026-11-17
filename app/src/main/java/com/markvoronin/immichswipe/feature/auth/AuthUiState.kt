@@ -1,5 +1,7 @@
 package com.markvoronin.immichswipe.feature.auth
 
+import com.markvoronin.immichswipe.domain.model.ServerVersion
+
 sealed class AuthError {
     object EmptyFields : AuthError()
     object Dns : AuthError()
@@ -27,5 +29,7 @@ data class AuthUiState(
     val success: Boolean = false,
     val savedServerUrls: List<String> = emptyList(),
     // True while waiting for the user to confirm sending the API key over plain HTTP to a public host.
-    val showInsecureHttpWarning: Boolean = false
+    val showInsecureHttpWarning: Boolean = false,
+    // Set while waiting for the user to continue to a server too old to save photo rotations.
+    val outdatedServerVersion: ServerVersion? = null
 )

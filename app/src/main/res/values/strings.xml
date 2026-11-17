@@ -11,6 +11,9 @@
     <string name="login_insecure_http_title">Unencrypted connection</string>
     <string name="login_insecure_http_message">This server is on the public internet and its address starts with http://. Your API key would be sent without encryption and could be read by anyone on the network. Use an https:// address if you can.</string>
     <string name="login_insecure_http_confirm">Connect anyway</string>
+    <string name="login_old_server_title">Older Immich server</string>
+    <string name="login_old_server_message">This server runs Immich %1$s. Saving a photo\'s rotation to the server needs %2$s or newer, so rotations you make here won\'t be saved there. Everything else works.</string>
+    <string name="login_old_server_confirm">Continue</string>
     <string name="login_error_unknown">An unknown error occurred</string>
     <string name="login_error_empty">URL and API Key are required</string>
     <string name="login_error_dns">Server not found. Check the URL or your DNS.</string>

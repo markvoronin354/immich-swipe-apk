@@ -4,6 +4,7 @@ import com.markvoronin.immichswipe.core.SessionConfig
 import com.markvoronin.immichswipe.data.repository.AccountSaver
 import com.markvoronin.immichswipe.data.repository.CredentialChecker
 import com.markvoronin.immichswipe.data.repository.LoginSessionStore
+import com.markvoronin.immichswipe.domain.model.ServerVersion
 import com.markvoronin.immichswipe.domain.model.User
 import com.markvoronin.immichswipe.testutil.testSessionManager
 import kotlinx.coroutines.CancellationException
@@ -32,8 +33,10 @@ import javax.net.ssl.SSLHandshakeException
 class AuthViewModelTest {
 
     private class FakeChecker(var failWith: Throwable? = null) : CredentialChecker {
+        var version: ServerVersion? = null
         val checked = mutableListOf<Pair<String, String>>()
         val headersSent = mutableListOf<Map<String, String>>()
+        override suspend fun fetchServerVersion(baseUrl: String, apiKey: String, headers: Map<String, String>) = version
         override suspend fun checkCredentials(baseUrl: String, apiKey: String, headers: Map<String, String>): User {
             checked += baseUrl to apiKey
             headersSent += headers
@@ -215,6 +218,77 @@ class AuthViewModelTest {
         vm.login()
 
         assertFalse(vm.uiState.value.showInsecureHttpWarning)
+        assertTrue(vm.uiState.value.success)
+    }
+
+    @Test
+    fun `a server older than the rotation minimum pauses the login before anything is saved`() {
+        checker.version = ServerVersion(2, 4, 1)
+        enter("https://photos.example.com")
+        vm.login()
+
+        assertEquals(ServerVersion(2, 4, 1), vm.uiState.value.outdatedServerVersion)
+        assertFalse(vm.uiState.value.isLoading)
+        assertFalse(vm.uiState.value.success)
+        assertTrue(accounts.saved.isEmpty())
+        assertTrue(store.sessions.isEmpty())
+    }
+
+    @Test
+    fun `continuing with an old server finishes the login`() {
+        checker.version = ServerVersion(2, 4, 1)
+        enter("https://photos.example.com")
+        vm.login()
+        vm.continueWithOldServer()
+
+        assertNull(vm.uiState.value.outdatedServerVersion)
+        assertEquals(1, accounts.saved.size)
+        assertEquals(1, store.sessions.size)
+        assertTrue(vm.uiState.value.success)
+    }
+
+    @Test
+    fun `cancelling the old server warning clears it without logging in`() {
+        checker.version = ServerVersion(2, 4, 1)
+        enter("https://photos.example.com")
+        vm.login()
+        vm.dismissOutdatedServerWarning()
+
+        assertNull(vm.uiState.value.outdatedServerVersion)
+        assertTrue(accounts.saved.isEmpty())
+        assertFalse(vm.uiState.value.success)
+    }
+
+    @Test
+    fun `an old server behind a confirmed http address is not asked about http again`() {
+        checker.version = ServerVersion(2, 4, 1)
+        enter("http://203.0.113.10:2283")
+        vm.login()
+        vm.login(allowInsecureHttp = true)
+        vm.continueWithOldServer()
+
+        assertFalse(vm.uiState.value.showInsecureHttpWarning)
+        assertNull(vm.uiState.value.outdatedServerVersion)
+        assertTrue(vm.uiState.value.success)
+    }
+
+    @Test
+    fun `a server at the rotation minimum logs in without a warning`() {
+        checker.version = ServerVersion.ROTATION_EDITS
+        enter("https://photos.example.com")
+        vm.login()
+
+        assertNull(vm.uiState.value.outdatedServerVersion)
+        assertTrue(vm.uiState.value.success)
+    }
+
+    @Test
+    fun `a version that can't be read logs in without a warning`() {
+        checker.version = null
+        enter("https://photos.example.com")
+        vm.login()
+
+        assertNull(vm.uiState.value.outdatedServerVersion)
         assertTrue(vm.uiState.value.success)
     }
 

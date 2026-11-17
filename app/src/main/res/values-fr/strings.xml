@@ -12,6 +12,9 @@
     <string name="login_insecure_http_title">Connexion non chiffrée</string>
     <string name="login_insecure_http_message">Ce serveur est accessible depuis Internet et son adresse commence par http://. Votre clé API serait envoyée sans chiffrement et pourrait être lue par n\'importe qui sur le réseau. Utilisez une adresse https:// si possible.</string>
     <string name="login_insecure_http_confirm">Se connecter quand même</string>
+    <string name="login_old_server_title">Ancienne version d\'Immich</string>
+    <string name="login_old_server_message">Ce serveur utilise Immich %1$s. Enregistrer la rotation d\'une photo sur le serveur nécessite la version %2$s ou plus récente ; les rotations faites ici n\'y seront donc pas enregistrées. Tout le reste fonctionne.</string>
+    <string name="login_old_server_confirm">Continuer</string>
     <string name="login_error_unknown">Une erreur inconnue est survenue</string>
     <string name="login_error_empty">L\'URL et la clé API sont requises</string>
     <string name="login_error_dns">Serveur introuvable. Vérifiez l\'URL ou votre DNS.</string>
