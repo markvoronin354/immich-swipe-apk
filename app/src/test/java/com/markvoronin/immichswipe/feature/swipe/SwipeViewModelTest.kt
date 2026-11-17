@@ -22,6 +22,8 @@ import com.markvoronin.immichswipe.data.repository.LocalMediaRepository
 import com.markvoronin.immichswipe.data.repository.SessionRepository
 import com.markvoronin.immichswipe.data.repository.SwipeDecisionRepository
 import com.markvoronin.immichswipe.domain.model.Album
+import com.markvoronin.immichswipe.domain.model.AlbumMember
+import com.markvoronin.immichswipe.domain.model.AlbumUser
 import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.domain.model.ExifInfo
 import com.markvoronin.immichswipe.domain.usecase.ApplySwipeDecisionsUseCase
@@ -646,6 +648,25 @@ class SwipeViewModelTest {
 
         vm.dismissAddToAlbumDialog()
         assertFalse(vm.uiState.value.showAddToAlbumDialog)
+    }
+
+    @Test
+    fun `the add to album dialog hides albums shared with you as a viewer`() {
+        val mine = Album("r1", "Pets", assetCount = 3, albumThumbnailAssetId = null, ownerId = "u1", albumUsers = emptyList())
+        val editable = Album(
+            "r2", "Family", assetCount = 3, albumThumbnailAssetId = null,
+            ownerId = "other", albumUsers = listOf(AlbumUser(AlbumMember("u1"), "editor"))
+        )
+        val viewOnly = Album(
+            "r3", "Grandma", assetCount = 3, albumThumbnailAssetId = null,
+            ownerId = "other", albumUsers = listOf(AlbumUser(AlbumMember("u1"), "viewer"))
+        )
+        coEvery { albumRepository.getAlbumsRaw() } returns listOf(mine, editable, viewOnly)
+        val vm = openAlbum()
+
+        vm.openAddToAlbumDialog()
+
+        assertEquals(listOf(mine, editable), vm.uiState.value.albumsForAddToAlbum)
     }
 
     @Test

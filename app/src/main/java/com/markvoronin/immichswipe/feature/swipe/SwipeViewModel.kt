@@ -634,7 +634,9 @@ class SwipeViewModel @Inject constructor(
         _uiState.update { it.copy(showAddToAlbumDialog = true, isFetchingAlbumsForDialog = true) }
         viewModelScope.launch {
             try {
-                val albums = albumRepository.getAlbumsRaw().filter { !it.isVirtual }
+                val userId = sessionRepository.sessionConfig.first()?.userId.orEmpty()
+                // Albums shared with you as a viewer would reject the add.
+                val albums = albumRepository.getAlbumsRaw().filter { !it.isVirtual && it.canAddAssets(userId) }
                 val recentRank = sessionRepository.recentAlbumIds.first().withIndex().associate { it.value to it.index }
                 // Stable sort: albums never used keep the server's order below the recent ones.
                 val sorted = albums.sortedBy { recentRank[it.id] ?: Int.MAX_VALUE }

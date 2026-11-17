@@ -2,6 +2,7 @@ package com.markvoronin.immichswipe.data.repository
 
 import com.markvoronin.immichswipe.core.SessionManager
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.data.api.AlbumDetailResponse
 import com.markvoronin.immichswipe.data.api.ImmichApi
 import com.markvoronin.immichswipe.data.api.SearchAssetResult
 import com.markvoronin.immichswipe.data.api.SearchAssetsRequest
@@ -23,7 +24,69 @@ import org.junit.Test
 
 class AssetRepositorySyncTest {
 
-    private fun asset(id: String) = Asset(id = id, ownerId = "u", fileCreatedAt = "", type = "IMAGE")
+    private fun asset(id: String, ownerId: String = "u") =
+        Asset(id = id, ownerId = ownerId, fileCreatedAt = "", type = "IMAGE")
+
+    @Test
+    fun `a shared album skips assets owned by someone else and never caches them`() = runBlocking {
+        val db = linkedMapOf<String, AlbumAssetEntity>()
+        @Suppress("UNCHECKED_CAST")
+        val dao = fake<AlbumAssetDao> { name, args ->
+            when (name) {
+                "getAssetsChronologicalDesc" -> db.values.toList()
+                "getAssetCountForAlbum" -> db.size
+                "insertAlbumAssets" -> (args[0] as List<AlbumAssetEntity>).forEach { db[it.assetId] = it }
+                else -> Unit
+            }
+        }
+        val sessionManager = mockk<SessionManager> { every { getUserId() } returns "u" }
+        val api = fake<ImmichApi> { name, _ ->
+            when (name) {
+                "getAlbumDetail" -> AlbumDetailResponse(
+                    id = "shared", albumName = "Shared",
+                    assets = listOf(asset("mine"), asset("theirs", ownerId = "other"))
+                )
+                else -> Unit
+            }
+        }
+        val repo = AssetRepository(sessionManager, api, dao)
+
+        val batches = repo.getAssetsByAlbum("shared", userId = "u").toList()
+
+        assertEquals(listOf("mine"), batches.last().assets.map { it.id })
+        assertEquals(listOf("mine"), db.keys.toList())
+    }
+
+    @Test
+    fun `a search skips assets owned by someone else and leaves them out of the total`() = runBlocking {
+        val db = linkedMapOf<String, AlbumAssetEntity>()
+        @Suppress("UNCHECKED_CAST")
+        val dao = fake<AlbumAssetDao> { name, args ->
+            when (name) {
+                "getAssetsChronologicalDesc" -> db.values.toList()
+                "getAssetCountForAlbum" -> db.size
+                "insertAlbumAssets" -> (args[0] as List<AlbumAssetEntity>).forEach { db[it.assetId] = it }
+                else -> Unit
+            }
+        }
+        val sessionManager = mockk<SessionManager> { every { getUserId() } returns "u" }
+        val api = fake<ImmichApi> { name, _ ->
+            when (name) {
+                "getSearchStatistics" -> SearchStatisticsResponse(2)
+                "searchAssets" -> SearchResponse(
+                    SearchAssetResult(listOf(asset("mine"), asset("partner", ownerId = "other")), 2)
+                )
+                else -> Unit
+            }
+        }
+        val repo = AssetRepository(sessionManager, api, dao)
+
+        val batches = repo.getAssetsByAlbum(Album.VIRTUAL_ALL_ID, userId = "u").toList()
+
+        assertEquals(listOf("mine"), batches.last().assets.map { it.id })
+        assertEquals(1, batches.last().total)
+        assertEquals(listOf("mine"), db.keys.toList())
+    }
 
     @Test
     fun `assets removed locally while a sync is paging are not brought back by it`() = runBlocking {

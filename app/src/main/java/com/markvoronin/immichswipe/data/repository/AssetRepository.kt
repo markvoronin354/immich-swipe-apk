@@ -145,7 +145,9 @@ class AssetRepository(
         if (isRealAlbum) {
             try {
                 val albumDetail = api.getAlbumDetail(albumId)
-                val serverItems = albumDetail.assets.withoutRemoved()
+                val ownedItems = albumDetail.assets.ownedBy(userId)
+                logSkippedForeign(albumId, albumDetail.assets.size - ownedItems.size)
+                val serverItems = ownedItems.withoutRemoved()
                 val finalItems = applySort(serverItems, sortOrder, shuffleSeed)
 
                 withContext(Dispatchers.IO) {
@@ -221,13 +223,17 @@ class AssetRepository(
         }
 
         val totalInDb = albumAssetDao.getAssetCountForAlbum(albumId, userId)
-        val page1ServerItems = firstPageResp.assets.items.withoutRemoved()
+        val page1Owned = firstPageResp.assets.items.ownedBy(userId)
+        val foreignOnPage1 = firstPageResp.assets.items.size - page1Owned.size
+        logSkippedForeign(albumId, foreignOnPage1)
+        val page1ServerItems = page1Owned.withoutRemoved()
         val page1ServerIds = page1ServerItems.map { it.id }.toSet()
         val cachedIds = cachedEntities.map { it.assetId }.toSet()
 
         // Use the higher of the two totals if they differ. 
         // totalFromServer comes from the statistics endpoint which is more reliable for large libraries.
-        val effectiveTotal = maxOf(totalFromServer, firstPageResp.assets.total)
+        // The server counts other users' assets too, and those are skipped, so leave them out of the total.
+        val effectiveTotal = maxOf(totalFromServer, firstPageResp.assets.total) - foreignOnPage1
 
         // 3a. Single-page case: Server returned all assets in page 1
         if (firstPageResp.assets.nextPage == null) {
@@ -295,7 +301,7 @@ class AssetRepository(
             }
             try {
                 val resp = if (nextPage == "1") firstPageResp else api.searchAssets(baseRequest.copy(page = nextPage.toIntOrNull() ?: 1, size = 500))
-                val items = resp.assets.items.withoutRemoved()
+                val items = resp.assets.items.ownedBy(userId).withoutRemoved()
                 
                 if (items.isNotEmpty()) {
                     allServerFetchedIds.addAll(items.map { it.id })
@@ -397,6 +403,13 @@ class AssetRepository(
         }
         
         send(AssetBatch(mappedFinal, effectiveTotal, isLocalCache = false, isSyncing = false))
+    }
+
+    // Shared albums and partner libraries can hold other users' assets, which Immich won't let this user change.
+    private fun List<Asset>.ownedBy(userId: String) = filter { it.ownerId == userId }
+
+    private fun logSkippedForeign(albumId: String, count: Int) {
+        if (count > 0) AppLogger.i("AssetRepo", "Skipped $count assets owned by other users in $albumId")
     }
 
     fun applySort(allAssets: List<Asset>, sortOrder: SortOrder, shuffleSeed: Long?): List<Asset> {
