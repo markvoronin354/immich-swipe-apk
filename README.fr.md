@@ -22,7 +22,7 @@ Ce projet est un fork basé sur le projet original [Minos2020/immich-swipe-andro
 
 ## ✨ Fonctionnalités
 
-- **🚀 Pile de tri Rapide** : Swipez à droite pour garder, à gauche pour supprimer, ou vers le haut pour des actions personnalisées (Archiver, Favori, Verrouiller, Ajouter à un album). Les médias triés disparaissent de la timeline en temps réel.
+- **🚀 Pile de tri Rapide** : Swipez à droite pour garder et à gauche pour supprimer par défaut, et choisissez l'action de chacune des quatre directions (Garder, Supprimer, Archiver, Favori, Verrouiller). Archiver, Favori, Verrouiller et Ajouter à un album sont aussi dans la barre d'outils. Les médias triés disparaissent de la timeline en temps réel.
 - **👯 Recherche et Gestion des Doublons** : Détectez et gérez vos doublons photo avec comparaison côte à côte, prévisualisation zoomée, lecture vidéo et analyse des détails de format.
 - **📁 Collections (Albums Virtuels)** : Accédez à des groupes spéciaux comme **TOUS**, **Orphelins** (photos hors album), et **Doublons**.
 - **📊 Statistiques d'Utilisation** : Visualisez votre progression et le détail de vos actions de tri.
@@ -30,7 +30,7 @@ Ce projet est un fork basé sur le projet original [Minos2020/immich-swipe-andro
 - **⚙️ Actions et Gestes Personnalisables** : Personnalisez vos boutons d'action, les seuils de balayage, les retours vibratoires, l'avancement automatique et la lecture auto des vidéos.
 - **🔄 Support Multi-Comptes** : Changez d'utilisateur facilement ; vos décisions locales et votre progression sont sauvegardées séparément pour chaque compte.
 - **🗃️ Gestion de la Base de Données et Cache** : Exportez, importez ou videz votre base locale (format JSON) et gérez le cache d'images et de vidéos.
-- **🚦 Diagnostic de Connexion** : Indicateur de statut en temps réel, support HTTP et IP directes, et accès aux journaux (logs) intégrés.
+- **🚦 Diagnostic de Connexion** : Indicateur de statut en temps réel, support HTTP et IP directes, serveurs derrière une autorité de certification privée (installez son certificat dans les réglages d'Android), et accès aux journaux (logs) intégrés.
 - **🎨 Interface Moderne** : Développée avec Jetpack Compose et Material Design 3, disponible en Français, Anglais et Espagnol.
 
 ## ⚙️ Configuration & Permissions de la Clé API

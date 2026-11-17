@@ -22,7 +22,7 @@ This project is a fork based on the original project at [Minos2020/immich-swipe-
 
 ## ✨ Features
 
-- **🚀 Fast Sorting Stack**: Swipe right to keep, left to delete, or up for customizable actions (Archive, Favorite, Lock, Add to Album). Sorted assets disappear from the timeline in real-time.
+- **🚀 Fast Sorting Stack**: Swipe right to keep and left to delete by default, and choose what each of the four directions does (Keep, Delete, Archive, Favorite, Lock). Archive, Favorite, Lock and Add to Album are also on the toolbar. Sorted assets disappear from the timeline in real-time.
 - **👯 Duplicates Finder & Cleanup**: Discover and resolve duplicate photo clusters with side-by-side comparison, zoom preview, video playback, and format detail analysis.
 - **📁 Collections (Virtual Albums)**: Access special groups such as **ALL**, **Orphans** (photos not in any album), and **Duplicates**.
 - **📊 Usage Statistics**: Visualize your progress with statistics and decision breakdowns.
@@ -30,7 +30,7 @@ This project is a fork based on the original project at [Minos2020/immich-swipe-
 - **⚙️ Customizable Actions & Interactions**: Configure action buttons, swipe gestures, vibration feedback, auto-advance, and video autoplay.
 - **🔄 Multi-Account Support**: Switch between multiple Immich user accounts seamlessly with account-specific local progress.
 - **🗃️ Database & Cache Management**: Export, import, or clear your local database (JSON format) and manage image/video caches.
-- **🚦 Connection Diagnostics**: Real-time connection status indicator, HTTP/IP support, and in-app log viewer.
+- **🚦 Connection Diagnostics**: Real-time connection status indicator, HTTP/IP support, servers behind a private certificate authority (install its CA in Android's settings), and in-app log viewer.
 - **🎨 Modern Interface**: Built with Jetpack Compose and Material Design 3, with English, French, and Spanish language support.
 
 ## ⚙️ Configuration & API Key Permissions

@@ -5,7 +5,6 @@ Instead of browsing long galleries, media is presented one item at a time. Swipe
 Features:
 
 • <b>Fast swipe-based sorting interface</b> for photos and videos with several options (Keep, Delete, Archive, Lock, Favorites)
-• <b>Configurable "Skip" feature</b> to postpone decisions when you're unsure
 • <b>Virtual collections:</b> Sort your medias, not only per album
 • <b>Review mode:</b> Inspect all pending actions before synchronizing them with your Immich server
 • <b>Global usage statistics</b> showing your progress in cleaning your library
