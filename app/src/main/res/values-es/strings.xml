@@ -11,9 +11,10 @@
     <string name="login_insecure_http_title">Conexión sin cifrar</string>
     <string name="login_insecure_http_message">Este servidor está en Internet y su dirección empieza por http://. Tu clave de API se enviaría sin cifrar y cualquiera en la red podría leerla. Usa una dirección https:// si puedes.</string>
     <string name="login_insecure_http_confirm">Conectar de todos modos</string>
-    <string name="login_old_server_title">Servidor de Immich antiguo</string>
-    <string name="login_old_server_message">Este servidor usa Immich %1$s. Guardar la rotación de una foto en el servidor requiere la versión %2$s o posterior, así que las rotaciones que hagas aquí no se guardarán allí. Todo lo demás funciona.</string>
-    <string name="login_old_server_confirm">Continuar</string>
+    <string name="login_server_warnings_title">Antes de continuar</string>
+    <string name="login_old_server_message">Este servidor usa Immich %1$s. Guardar la rotación de una foto en el servidor requiere la versión %2$s o posterior, así que las rotaciones que hagas aquí no se guardarán allí.</string>
+    <string name="login_missing_permissions_message">A tu clave de API le faltan estos permisos: %1$s. Las funciones que los necesitan no funcionarán hasta que los añadas a la clave en Immich.</string>
+    <string name="login_server_warnings_confirm">Continuar</string>
     <string name="login_error_unknown">Se ha producido un error desconocido</string>
     <string name="login_error_empty">La URL y la clave API son requeridas</string>
     <string name="login_error_dns">Servidor no encontrado. Verifique la URL o su DNS.</string>
@@ -21,6 +22,7 @@
     <string name="login_error_refused">Conexión rechazada. ¿Está el servidor encendido y el puerto abierto?</string>
     <string name="login_error_auth">Clave API inválida o no autorizada.</string>
     <string name="login_error_forbidden">Acceso denegado. Verifique sus permisos en Immich.</string>
+    <string name="login_error_forbidden_missing">Acceso denegado. A su clave de API le faltan estos permisos: %1$s.</string>
     <string name="login_error_not_found">URL incorrecta: Immich no parece estar instalado en esta dirección.</string>
     <string name="login_error_server">Error interno del servidor Immich (%1$d).</string>
     <string name="login_error_ssl">Error SSL/HTTPS. Si su servidor usa una autoridad de certificación privada, instale su certificado en los ajustes de Android, o use http (si es compatible).</string>
@@ -41,6 +43,7 @@
     <string name="home_scroll_to_top">Ir al principio</string>
     <string name="home_no_results">Ningún álbum coincide con tu búsqueda</string>
     <string name="home_error_title">¡Vaya! Se ha producido un error</string>
+    <string name="home_error_missing_permissions">A tu clave de API le faltan estos permisos: %1$s. Añádelos a la clave en Immich y pulsa Reintentar.</string>
     <string name="home_retry_button">Reintentar</string>
     <string name="home_status_in_progress">En curso</string>
     <string name="home_status_not_started">Sin empezar</string>

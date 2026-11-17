@@ -8,7 +8,8 @@ sealed class AuthError {
     object Timeout : AuthError()
     object Refused : AuthError()
     object Auth : AuthError()
-    object Forbidden : AuthError()
+    // The permissions the API key lacks, when the server says; empty when unknown.
+    data class Forbidden(val missing: List<String> = emptyList()) : AuthError()
     object NotFound : AuthError()
     object Ssl : AuthError()
     object InvalidHeaders : AuthError()
@@ -31,5 +32,7 @@ data class AuthUiState(
     // True while waiting for the user to confirm sending the API key over plain HTTP to a public host.
     val showInsecureHttpWarning: Boolean = false,
     // Set while waiting for the user to continue to a server too old to save photo rotations.
-    val outdatedServerVersion: ServerVersion? = null
+    val outdatedServerVersion: ServerVersion? = null,
+    // Set while waiting for the user to continue with an API key that lacks permissions the app uses.
+    val missingPermissions: List<String> = emptyList()
 )

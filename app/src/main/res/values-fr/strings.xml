@@ -12,9 +12,10 @@
     <string name="login_insecure_http_title">Connexion non chiffrée</string>
     <string name="login_insecure_http_message">Ce serveur est accessible depuis Internet et son adresse commence par http://. Votre clé API serait envoyée sans chiffrement et pourrait être lue par n\'importe qui sur le réseau. Utilisez une adresse https:// si possible.</string>
     <string name="login_insecure_http_confirm">Se connecter quand même</string>
-    <string name="login_old_server_title">Ancienne version d\'Immich</string>
-    <string name="login_old_server_message">Ce serveur utilise Immich %1$s. Enregistrer la rotation d\'une photo sur le serveur nécessite la version %2$s ou plus récente ; les rotations faites ici n\'y seront donc pas enregistrées. Tout le reste fonctionne.</string>
-    <string name="login_old_server_confirm">Continuer</string>
+    <string name="login_server_warnings_title">Avant de continuer</string>
+    <string name="login_old_server_message">Ce serveur utilise Immich %1$s. Enregistrer la rotation d\'une photo sur le serveur nécessite la version %2$s ou plus récente ; les rotations faites ici n\'y seront donc pas enregistrées.</string>
+    <string name="login_missing_permissions_message">Il manque ces permissions à votre clé API : %1$s. Les fonctions qui en ont besoin ne marcheront pas tant que vous ne les aurez pas ajoutées à la clé dans Immich.</string>
+    <string name="login_server_warnings_confirm">Continuer</string>
     <string name="login_error_unknown">Une erreur inconnue est survenue</string>
     <string name="login_error_empty">L\'URL et la clé API sont requises</string>
     <string name="login_error_dns">Serveur introuvable. Vérifiez l\'URL ou votre DNS.</string>
@@ -22,6 +23,7 @@
     <string name="login_error_refused">Connexion refusée. Le serveur est-il allumé et le port ouvert ?</string>
     <string name="login_error_auth">Clé API invalide ou non autorisée.</string>
     <string name="login_error_forbidden">Accès refusé. Vérifiez vos permissions sur Immich.</string>
+    <string name="login_error_forbidden_missing">Accès refusé. Il manque ces permissions à votre clé API : %1$s.</string>
     <string name="login_error_not_found">URL incorrecte : Immich ne semble pas installé à cette adresse.</string>
     <string name="login_error_server">Erreur interne du serveur Immich (%1$d).</string>
     <string name="login_error_ssl">Erreur SSL/HTTPS. Si votre serveur utilise une autorité de certification privée, installez son certificat dans les réglages d\'Android, ou utilisez http (si supporté).</string>
@@ -42,6 +44,7 @@
     <string name="home_scroll_to_top">Retour en haut</string>
     <string name="home_no_results">Aucun album ne correspond à votre recherche</string>
     <string name="home_error_title">Oups ! Une erreur est survenue</string>
+    <string name="home_error_missing_permissions">Il manque ces permissions à votre clé API : %1$s. Ajoutez-les à la clé dans Immich, puis touchez Réessayer.</string>
     <string name="home_retry_button">Réessayer</string>
     <string name="home_status_in_progress">En cours</string>
     <string name="home_status_not_started">Pas commencé</string>

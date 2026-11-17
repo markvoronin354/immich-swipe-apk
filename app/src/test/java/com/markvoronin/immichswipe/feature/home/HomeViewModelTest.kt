@@ -17,6 +17,7 @@ import com.markvoronin.immichswipe.data.repository.SessionRepository
 import com.markvoronin.immichswipe.data.repository.SwipeDecisionRepository
 import com.markvoronin.immichswipe.data.repository.UserRepository
 import com.markvoronin.immichswipe.domain.model.Album
+import com.markvoronin.immichswipe.domain.model.ApiKeyPermissions
 import com.markvoronin.immichswipe.domain.model.User
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -31,6 +32,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -38,6 +40,8 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import retrofit2.HttpException
+import retrofit2.Response
 import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -184,6 +188,57 @@ class HomeViewModelTest {
 
         assertEquals("offline", state.error)
         assertFalse(state.isLoading)
+    }
+
+    private fun forbidden() = HttpException(Response.error<Unit>(403, "".toResponseBody()))
+
+    @Test
+    fun `a refused load names the permissions the key lacks`() {
+        coEvery { userRepository.getCurrentUser() } throws forbidden()
+        coEvery { albumRepository.getAlbumsRaw() } throws forbidden()
+        coEvery { userRepository.getApiKeyPermissions() } returns listOf("asset.read")
+        val state = createViewModel().uiState.value
+
+        assertEquals(ApiKeyPermissions.REQUIRED - "asset.read", state.missingPermissions)
+        assertFalse(state.isLoading)
+    }
+
+    @Test
+    fun `a refused load stays generic when the key's permissions can't be read`() {
+        coEvery { userRepository.getCurrentUser() } throws forbidden()
+        coEvery { albumRepository.getAlbumsRaw() } throws forbidden()
+        coEvery { userRepository.getApiKeyPermissions() } returns null
+        val state = createViewModel().uiState.value
+
+        assertTrue(state.missingPermissions.isEmpty())
+        assertTrue(state.error != null)
+    }
+
+    @Test
+    fun `a failure that is not a refusal does not look up the key's permissions`() {
+        coEvery { userRepository.getCurrentUser() } throws IOException("offline")
+        coEvery { albumRepository.getAlbumsRaw() } throws IOException("offline")
+        val state = createViewModel().uiState.value
+
+        assertTrue(state.missingPermissions.isEmpty())
+        coVerify(exactly = 0) { userRepository.getApiKeyPermissions() }
+    }
+
+    @Test
+    fun `a retry that succeeds clears the missing permissions`() {
+        coEvery { userRepository.getCurrentUser() } throws forbidden()
+        coEvery { albumRepository.getAlbumsRaw() } throws forbidden()
+        coEvery { userRepository.getApiKeyPermissions() } returns listOf("asset.read")
+        val vm = createViewModel()
+        assertTrue(vm.uiState.value.missingPermissions.isNotEmpty())
+
+        coEvery { userRepository.getCurrentUser() } returns user
+        coEvery { albumRepository.getAlbumsRaw() } returns rawAlbums
+        vm.loadUser()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.missingPermissions.isEmpty())
+        assertNull(vm.uiState.value.error)
     }
 
     @Test

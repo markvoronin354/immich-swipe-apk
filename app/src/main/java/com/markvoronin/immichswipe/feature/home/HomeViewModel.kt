@@ -14,6 +14,7 @@ import com.markvoronin.immichswipe.data.repository.SwipeDecisionRepository
 import com.markvoronin.immichswipe.data.repository.UserRepository
 import com.markvoronin.immichswipe.domain.model.AccountSummary
 import com.markvoronin.immichswipe.domain.model.Album
+import com.markvoronin.immichswipe.domain.model.ApiKeyPermissions
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -248,7 +249,8 @@ class HomeViewModel @Inject constructor(
                             orphansCount = orphansCountDeferred.await().getOrDefault(it.orphansCount),
                             duplicatesCount = duplicatesCountDeferred.await().getOrDefault(it.duplicatesCount),
                             isLoading = false,
-                            error = null
+                            error = null,
+                            missingPermissions = emptyList()
                         )
                     }
 
@@ -260,14 +262,23 @@ class HomeViewModel @Inject constructor(
             } catch (e: Exception) {
                 e.rethrowIfCancelled()
                 AppLogger.e("Home", "Error during initial loading", e)
+                val missing = missingPermissionsFor(e)
                 _uiState.update { 
                     it.copy(
                         error = e.message.orEmpty(), 
+                        missingPermissions = missing,
                         isLoading = false
                     )
                 }
             }
         }
+    }
+
+    // A 403 means the API key lacks a permission: name the missing ones instead of showing "HTTP 403".
+    private suspend fun missingPermissionsFor(e: Exception): List<String> {
+        if ((e as? retrofit2.HttpException)?.code() != 403) return emptyList()
+        val granted = userRepository.getApiKeyPermissions() ?: return emptyList()
+        return ApiKeyPermissions.missing(granted)
     }
 
     fun refreshAlbums() {
@@ -304,7 +315,7 @@ class HomeViewModel @Inject constructor(
                         delay((800 - duration).milliseconds)
                     }
 
-                    _uiState.update { it.copy(isRefreshing = false, error = null) }
+                    _uiState.update { it.copy(isRefreshing = false, error = null, missingPermissions = emptyList()) }
                 }
             } catch (e: Exception) {
                 e.rethrowIfCancelled()

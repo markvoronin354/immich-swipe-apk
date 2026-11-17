@@ -4,6 +4,7 @@ import com.markvoronin.immichswipe.core.SessionConfig
 import com.markvoronin.immichswipe.data.repository.AccountSaver
 import com.markvoronin.immichswipe.data.repository.CredentialChecker
 import com.markvoronin.immichswipe.data.repository.LoginSessionStore
+import com.markvoronin.immichswipe.domain.model.ApiKeyPermissions
 import com.markvoronin.immichswipe.domain.model.ServerVersion
 import com.markvoronin.immichswipe.domain.model.User
 import com.markvoronin.immichswipe.testutil.testSessionManager
@@ -34,9 +35,11 @@ class AuthViewModelTest {
 
     private class FakeChecker(var failWith: Throwable? = null) : CredentialChecker {
         var version: ServerVersion? = null
+        var permissions: List<String>? = null
         val checked = mutableListOf<Pair<String, String>>()
         val headersSent = mutableListOf<Map<String, String>>()
         override suspend fun fetchServerVersion(baseUrl: String, apiKey: String, headers: Map<String, String>) = version
+        override suspend fun fetchApiKeyPermissions(baseUrl: String, apiKey: String, headers: Map<String, String>) = permissions
         override suspend fun checkCredentials(baseUrl: String, apiKey: String, headers: Map<String, String>): User {
             checked += baseUrl to apiKey
             headersSent += headers
@@ -239,7 +242,7 @@ class AuthViewModelTest {
         checker.version = ServerVersion(2, 4, 1)
         enter("https://photos.example.com")
         vm.login()
-        vm.continueWithOldServer()
+        vm.continueDespiteWarnings()
 
         assertNull(vm.uiState.value.outdatedServerVersion)
         assertEquals(1, accounts.saved.size)
@@ -252,7 +255,7 @@ class AuthViewModelTest {
         checker.version = ServerVersion(2, 4, 1)
         enter("https://photos.example.com")
         vm.login()
-        vm.dismissOutdatedServerWarning()
+        vm.dismissServerWarnings()
 
         assertNull(vm.uiState.value.outdatedServerVersion)
         assertTrue(accounts.saved.isEmpty())
@@ -265,7 +268,7 @@ class AuthViewModelTest {
         enter("http://203.0.113.10:2283")
         vm.login()
         vm.login(allowInsecureHttp = true)
-        vm.continueWithOldServer()
+        vm.continueDespiteWarnings()
 
         assertFalse(vm.uiState.value.showInsecureHttpWarning)
         assertNull(vm.uiState.value.outdatedServerVersion)
@@ -293,6 +296,107 @@ class AuthViewModelTest {
     }
 
     @Test
+    fun `a key missing permissions pauses the login and lists them`() {
+        checker.permissions = listOf("asset.read", "user.read")
+        enter("https://photos.example.com")
+        vm.login()
+
+        val missing = ApiKeyPermissions.REQUIRED - setOf("asset.read", "user.read")
+        assertEquals(missing, vm.uiState.value.missingPermissions)
+        assertNull(vm.uiState.value.outdatedServerVersion)
+        assertFalse(vm.uiState.value.isLoading)
+        assertFalse(vm.uiState.value.success)
+        assertTrue(accounts.saved.isEmpty())
+        assertTrue(store.sessions.isEmpty())
+    }
+
+    @Test
+    fun `continuing with a key missing permissions finishes the login`() {
+        checker.permissions = listOf("asset.read", "user.read")
+        enter("https://photos.example.com")
+        vm.login()
+        vm.continueDespiteWarnings()
+
+        assertTrue(vm.uiState.value.missingPermissions.isEmpty())
+        assertEquals(1, accounts.saved.size)
+        assertTrue(vm.uiState.value.success)
+    }
+
+    @Test
+    fun `an old server and a key missing permissions share one pause`() {
+        checker.version = ServerVersion(2, 4, 1)
+        checker.permissions = listOf("asset.read")
+        enter("https://photos.example.com")
+        vm.login()
+
+        assertEquals(ServerVersion(2, 4, 1), vm.uiState.value.outdatedServerVersion)
+        assertEquals(ApiKeyPermissions.REQUIRED - "asset.read", vm.uiState.value.missingPermissions)
+
+        vm.continueDespiteWarnings()
+        assertTrue(vm.uiState.value.success)
+    }
+
+    @Test
+    fun `cancelling the warnings clears them without logging in`() {
+        checker.version = ServerVersion(2, 4, 1)
+        checker.permissions = listOf("asset.read")
+        enter("https://photos.example.com")
+        vm.login()
+        vm.dismissServerWarnings()
+
+        assertNull(vm.uiState.value.outdatedServerVersion)
+        assertTrue(vm.uiState.value.missingPermissions.isEmpty())
+        assertTrue(accounts.saved.isEmpty())
+    }
+
+    @Test
+    fun `a key with every permission, or with all, logs in without a warning`() {
+        checker.permissions = ApiKeyPermissions.REQUIRED
+        enter("https://photos.example.com")
+        vm.login()
+        assertTrue(vm.uiState.value.success)
+        assertTrue(vm.uiState.value.missingPermissions.isEmpty())
+
+        vm.resetState()
+        checker.permissions = listOf("all")
+        enter("https://photos.example.com")
+        vm.login()
+        assertTrue(vm.uiState.value.success)
+        assertTrue(vm.uiState.value.missingPermissions.isEmpty())
+    }
+
+    @Test
+    fun `permissions that can't be read log in without a warning`() {
+        checker.permissions = null
+        enter("https://photos.example.com")
+        vm.login()
+
+        assertTrue(vm.uiState.value.missingPermissions.isEmpty())
+        assertTrue(vm.uiState.value.success)
+    }
+
+    @Test
+    fun `a refused login names the permissions the key lacks`() {
+        checker.failWith = http(403)
+        checker.permissions = listOf("asset.read")
+        enter("https://photos.example.com")
+        vm.login()
+
+        assertEquals(AuthError.Forbidden(ApiKeyPermissions.REQUIRED - "asset.read"), vm.uiState.value.error)
+        assertTrue(accounts.saved.isEmpty())
+    }
+
+    @Test
+    fun `a refused login stays generic when the key's permissions can't be read`() {
+        checker.failWith = http(403)
+        checker.permissions = null
+        enter("https://photos.example.com")
+        vm.login()
+
+        assertEquals(AuthError.Forbidden(), vm.uiState.value.error)
+    }
+
+    @Test
     fun `connection failures map to the matching error`() {
         fun errorFor(failure: Throwable): AuthError? {
             checker.failWith = failure
@@ -306,7 +410,7 @@ class AuthViewModelTest {
         assertEquals(AuthError.Refused, errorFor(ConnectException()))
         assertEquals(AuthError.Ssl, errorFor(SSLHandshakeException("bad cert")))
         assertEquals(AuthError.Auth, errorFor(http(401)))
-        assertEquals(AuthError.Forbidden, errorFor(http(403)))
+        assertEquals(AuthError.Forbidden(), errorFor(http(403)))
         assertEquals(AuthError.NotFound, errorFor(http(404)))
         assertEquals(AuthError.Server(502), errorFor(http(502)))
         assertEquals(AuthError.Unknown("boom"), errorFor(IllegalStateException("boom")))

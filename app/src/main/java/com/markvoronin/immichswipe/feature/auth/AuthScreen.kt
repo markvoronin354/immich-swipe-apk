@@ -112,7 +112,11 @@ fun AuthScreen(
             AuthError.Timeout -> stringResource(R.string.login_error_timeout)
             AuthError.Refused -> stringResource(R.string.login_error_refused)
             AuthError.Auth -> stringResource(R.string.login_error_auth)
-            AuthError.Forbidden -> stringResource(R.string.login_error_forbidden)
+            is AuthError.Forbidden -> if (error.missing.isEmpty()) {
+                stringResource(R.string.login_error_forbidden)
+            } else {
+                stringResource(R.string.login_error_forbidden_missing, error.missing.joinToString(", "))
+            }
             AuthError.NotFound -> stringResource(R.string.login_error_not_found)
             AuthError.Ssl -> stringResource(R.string.login_error_ssl)
             AuthError.InvalidHeaders -> stringResource(R.string.login_error_headers)
@@ -122,7 +126,7 @@ fun AuthScreen(
     }
     // Key errors go under the API Key field; everything else is about reaching the server.
     val apiKeyHasError = when (state.error) {
-        AuthError.Auth, AuthError.Forbidden -> true
+        AuthError.Auth, is AuthError.Forbidden -> true
         AuthError.EmptyFields -> state.baseUrl.isNotBlank()
         else -> false
     }
@@ -497,26 +501,38 @@ fun AuthScreen(
                     )
                 }
 
-                state.outdatedServerVersion?.let { version ->
+                if (state.outdatedServerVersion != null || state.missingPermissions.isNotEmpty()) {
                     androidx.compose.material3.AlertDialog(
-                        onDismissRequest = { viewModel.dismissOutdatedServerWarning() },
-                        title = { Text(stringResource(R.string.login_old_server_title)) },
+                        onDismissRequest = { viewModel.dismissServerWarnings() },
+                        title = { Text(stringResource(R.string.login_server_warnings_title)) },
                         text = {
-                            Text(
-                                stringResource(
-                                    R.string.login_old_server_message,
-                                    version.toString(),
-                                    ServerVersion.ROTATION_EDITS.toString()
-                                )
-                            )
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                state.outdatedServerVersion?.let { version ->
+                                    Text(
+                                        stringResource(
+                                            R.string.login_old_server_message,
+                                            version.toString(),
+                                            ServerVersion.ROTATION_EDITS.toString()
+                                        )
+                                    )
+                                }
+                                if (state.missingPermissions.isNotEmpty()) {
+                                    Text(
+                                        stringResource(
+                                            R.string.login_missing_permissions_message,
+                                            state.missingPermissions.joinToString(", ")
+                                        )
+                                    )
+                                }
+                            }
                         },
                         confirmButton = {
-                            TextButton(onClick = { viewModel.continueWithOldServer() }) {
-                                Text(stringResource(R.string.login_old_server_confirm))
+                            TextButton(onClick = { viewModel.continueDespiteWarnings() }) {
+                                Text(stringResource(R.string.login_server_warnings_confirm))
                             }
                         },
                         dismissButton = {
-                            TextButton(onClick = { viewModel.dismissOutdatedServerWarning() }) {
+                            TextButton(onClick = { viewModel.dismissServerWarnings() }) {
                                 Text(stringResource(R.string.common_cancel))
                             }
                         }

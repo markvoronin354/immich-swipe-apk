@@ -28,4 +28,11 @@ class AuthRepository @Inject constructor() : CredentialChecker {
             .onFailure { AppLogger.w("Auth", "Could not read the server version: ${it.message}") }
             .getOrNull()
     }
+
+    override suspend fun fetchApiKeyPermissions(baseUrl: String, apiKey: String, headers: Map<String, String>): List<String>? {
+        val config = SessionConfig(baseUrl = baseUrl, apiKey = apiKey, headers = headers)
+        return runCatchingCancellable { RetrofitFactory.create(config).getCurrentApiKey().permissions }
+            .onFailure { AppLogger.w("Auth", "Could not read the API key's permissions: ${it.message}") }
+            .getOrNull()
+    }
 }

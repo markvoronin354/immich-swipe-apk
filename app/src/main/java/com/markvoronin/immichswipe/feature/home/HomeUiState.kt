@@ -22,6 +22,8 @@ data class HomeUiState(
     val currentTab: HomeTab = HomeTab.HOME,
     val selectedAlbum: Album? = null,
     val error: String? = null,
+    // When the error is a refusal (403): the permissions the API key lacks, if the server says.
+    val missingPermissions: List<String> = emptyList(),
     val playbackBehavior: PlaybackBehavior = PlaybackBehavior.PAUSE_OTHERS,
     val showProfilePopup: Boolean = false,
     val themeMode: AppTheme = AppTheme.SYSTEM,

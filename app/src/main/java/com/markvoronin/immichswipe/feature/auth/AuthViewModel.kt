@@ -11,6 +11,7 @@ import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
 import com.markvoronin.immichswipe.data.repository.AccountSaver
 import com.markvoronin.immichswipe.data.repository.CredentialChecker
 import com.markvoronin.immichswipe.data.repository.LoginSessionStore
+import com.markvoronin.immichswipe.domain.model.ApiKeyPermissions
 import com.markvoronin.immichswipe.domain.model.ServerVersion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -115,15 +116,23 @@ class AuthViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(showInsecureHttpWarning = false)
     }
 
-    fun dismissOutdatedServerWarning() {
-        _uiState.value = _uiState.value.copy(outdatedServerVersion = null)
+    fun dismissServerWarnings() {
+        _uiState.value = _uiState.value.copy(outdatedServerVersion = null, missingPermissions = emptyList())
     }
 
     // The plain-HTTP check already ran, or was confirmed, before the server was first contacted.
-    fun continueWithOldServer() = login(allowInsecureHttp = true, acknowledgeOldServer = true)
+    fun continueDespiteWarnings() = login(allowInsecureHttp = true, acknowledgeWarnings = true)
+
+    // Best effort: a server that doesn't say what the key can do counts as missing nothing.
+    private suspend fun missingPermissions(baseUrl: String, apiKey: String, headers: Map<String, String>): List<String> {
+        val granted = authRepository.fetchApiKeyPermissions(baseUrl, apiKey, headers) ?: return emptyList()
+        return ApiKeyPermissions.missing(granted).also {
+            if (it.isNotEmpty()) AppLogger.w("Auth", "API key lacks: ${it.joinToString()}")
+        }
+    }
 
 
-    fun login(allowInsecureHttp: Boolean = false, acknowledgeOldServer: Boolean = false) {
+    fun login(allowInsecureHttp: Boolean = false, acknowledgeWarnings: Boolean = false) {
         viewModelScope.launch {
             val baseUrl = _uiState.value.baseUrl.trim()
             val apiKey = _uiState.value.apiKey.trim()
@@ -147,7 +156,12 @@ class AuthViewModel @Inject constructor(
             }
             _uiState.value = _uiState.value.copy(showInsecureHttpWarning = false)
 
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, outdatedServerVersion = null)
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                error = null,
+                outdatedServerVersion = null,
+                missingPermissions = emptyList()
+            )
 
             try {
                 val user = authRepository.checkCredentials(baseUrl, apiKey, headers)
@@ -155,9 +169,18 @@ class AuthViewModel @Inject constructor(
 
                 val version = authRepository.fetchServerVersion(baseUrl, apiKey, headers)
                 AppLogger.i("Auth", "Server version: ${version ?: "unknown"}")
-                if (version != null && version < ServerVersion.ROTATION_EDITS && !acknowledgeOldServer) {
-                    AppLogger.w("Auth", "Server $version is older than ${ServerVersion.ROTATION_EDITS}: photo rotations can't be saved to it")
-                    _uiState.value = _uiState.value.copy(isLoading = false, outdatedServerVersion = version)
+                val oldVersion = version?.takeIf { it < ServerVersion.ROTATION_EDITS }
+                if (oldVersion != null) {
+                    AppLogger.w("Auth", "Server $oldVersion is older than ${ServerVersion.ROTATION_EDITS}: photo rotations can't be saved to it")
+                }
+                val missing = missingPermissions(baseUrl, apiKey, headers)
+                val hasWarnings = oldVersion != null || missing.isNotEmpty()
+                if (hasWarnings && !acknowledgeWarnings) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        outdatedServerVersion = oldVersion,
+                        missingPermissions = missing
+                    )
                     return@launch
                 }
 
@@ -179,7 +202,7 @@ class AuthViewModel @Inject constructor(
                     is retrofit2.HttpException -> {
                         when (e.code()) {
                             401 -> AuthError.Auth
-                            403 -> AuthError.Forbidden
+                            403 -> AuthError.Forbidden(missingPermissions(baseUrl, apiKey, headers))
                             404 -> AuthError.NotFound
                             else -> AuthError.Server(e.code())
                         }

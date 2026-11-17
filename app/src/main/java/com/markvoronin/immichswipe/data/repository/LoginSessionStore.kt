@@ -11,6 +11,9 @@ interface CredentialChecker {
 
     /** The server's version, or null when it can't be read. Only cancellation is rethrown. */
     suspend fun fetchServerVersion(baseUrl: String, apiKey: String, headers: Map<String, String> = emptyMap()): ServerVersion?
+
+    /** The permissions the API key was given, or null when the server doesn't say. Only cancellation is rethrown. */
+    suspend fun fetchApiKeyPermissions(baseUrl: String, apiKey: String, headers: Map<String, String> = emptyMap()): List<String>?
 }
 
 /** The part of the saved session the login screen reads and writes. */

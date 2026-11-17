@@ -270,7 +270,14 @@ fun HomeScreen(
                                             LoadingIndicator(modifier = Modifier.align(Alignment.Center))
                                         }
                                     } else if (uiState.error != null) {
-                                        ErrorView(error = uiState.error!!) { viewModel.loadUser() }
+                                        val missing = uiState.missingPermissions
+                                        ErrorView(
+                                            error = if (missing.isEmpty()) {
+                                                uiState.error!!
+                                            } else {
+                                                stringResource(R.string.home_error_missing_permissions, missing.joinToString(", "))
+                                            }
+                                        ) { viewModel.loadUser() }
                                     } else if (uiState.filteredAlbums.isEmpty() && uiState.searchQuery.isNotEmpty()) {
                                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                             Column(horizontalAlignment = Alignment.CenterHorizontally) {

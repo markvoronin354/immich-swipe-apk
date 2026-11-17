@@ -21,6 +21,9 @@ interface ImmichApi {
     @GET("api/server/version")
     suspend fun getServerVersion(): ServerVersion
 
+    @GET("api/api-keys/me")
+    suspend fun getCurrentApiKey(): ApiKeyResponse
+
     @GET("api/albums")
     suspend fun getAlbums(): List<Album>
 
@@ -97,6 +100,11 @@ enum class AssetEditAction {
 
 data class UpdateAssetRequest(
     val description: String
+)
+
+
+data class ApiKeyResponse(
+    val permissions: List<String>? = null
 )
 
 

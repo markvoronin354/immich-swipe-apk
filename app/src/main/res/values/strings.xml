@@ -11,9 +11,10 @@
     <string name="login_insecure_http_title">Unencrypted connection</string>
     <string name="login_insecure_http_message">This server is on the public internet and its address starts with http://. Your API key would be sent without encryption and could be read by anyone on the network. Use an https:// address if you can.</string>
     <string name="login_insecure_http_confirm">Connect anyway</string>
-    <string name="login_old_server_title">Older Immich server</string>
-    <string name="login_old_server_message">This server runs Immich %1$s. Saving a photo\'s rotation to the server needs %2$s or newer, so rotations you make here won\'t be saved there. Everything else works.</string>
-    <string name="login_old_server_confirm">Continue</string>
+    <string name="login_server_warnings_title">Before you continue</string>
+    <string name="login_old_server_message">This server runs Immich %1$s. Saving a photo\'s rotation to the server needs %2$s or newer, so rotations you make here won\'t be saved there.</string>
+    <string name="login_missing_permissions_message">Your API key is missing these permissions: %1$s. Features that need them won\'t work until you add them to the key in Immich.</string>
+    <string name="login_server_warnings_confirm">Continue</string>
     <string name="login_error_unknown">An unknown error occurred</string>
     <string name="login_error_empty">URL and API Key are required</string>
     <string name="login_error_dns">Server not found. Check the URL or your DNS.</string>
@@ -21,6 +22,7 @@
     <string name="login_error_refused">Connection refused. Is the server running and the port open?</string>
     <string name="login_error_auth">Invalid or unauthorized API Key.</string>
     <string name="login_error_forbidden">Access denied. Check your permissions on Immich.</string>
+    <string name="login_error_forbidden_missing">Access denied. Your API key is missing these permissions: %1$s.</string>
     <string name="login_error_not_found">Incorrect URL: Immich does not seem to be installed at this address.</string>
     <string name="login_error_server">Internal Immich server error (%1$d).</string>
     <string name="login_error_ssl">SSL/HTTPS error. If your server uses a private certificate authority, install its certificate in Android\'s settings, or use http (if supported).</string>
@@ -41,6 +43,7 @@
     <string name="home_scroll_to_top">Scroll to top</string>
     <string name="home_no_results">No albums match your search</string>
     <string name="home_error_title">Oops! An error occurred</string>
+    <string name="home_error_missing_permissions">Your API key is missing these permissions: %1$s. Add them to the key in Immich, then tap Retry.</string>
     <string name="home_retry_button">Retry</string>
     <string name="home_status_in_progress">In progress</string>
     <string name="home_status_not_started">Not started</string>
