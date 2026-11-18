@@ -801,7 +801,8 @@ fun FullscreenViewer(
                 )
             }
 
-            if (swipeDownUsesAction && (canUndo || swipeDownAction != SwipeAction.UNDO) && swipeY.value > abs(swipeX.value)) IndicatorBadge(
+            val swipeDownAvailable = canUndo || swipeDownAction != SwipeAction.UNDO
+            if (swipeDownUsesAction && swipeDownAvailable && swipeY.value > abs(swipeX.value)) IndicatorBadge(
                 stringResource(swipeDownAction.indicatorLabelRes),
                 swipeDownAction.indicatorColor(),
                 Alignment.TopCenter,

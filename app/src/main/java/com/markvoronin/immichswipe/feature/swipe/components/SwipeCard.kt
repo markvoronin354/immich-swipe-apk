@@ -926,7 +926,8 @@ fun SwipeCard(
                     val sizePillBottom = if (config.showSizeIndicator && !controlsHidden) 8.dp + with(density) { sizePillHeight.toDp() } else 0.dp
                     val badgeTop = maxOf(60.dp, sizePillBottom + 12.dp)
 
-                    if ((config.canUndo || config.swipeDownAction != SwipeAction.UNDO) && !isEnteringFromBelow && currentY > abs(currentX)) {
+                    val swipeDownAvailable = config.canUndo || config.swipeDownAction != SwipeAction.UNDO
+                    if (swipeDownAvailable && !isEnteringFromBelow && currentY > abs(currentX)) {
                         IndicatorBadge(
                             stringResource(config.swipeDownAction.indicatorLabelRes),
                             config.swipeDownAction.indicatorColor(),
