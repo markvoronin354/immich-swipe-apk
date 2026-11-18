@@ -925,7 +925,6 @@ fun SwipeCard(
                     // Each badge keeps its usual spot unless a pill, pushed in by a row of corner buttons, reaches it: then 12dp past the pill.
                     val sizePillBottom = if (config.showSizeIndicator && !controlsHidden) 8.dp + with(density) { sizePillHeight.toDp() } else 0.dp
                     val badgeTop = maxOf(60.dp, sizePillBottom + 12.dp)
-                    val badgeBottom = maxOf(72.dp, with(density) { timePillHeight.toDp() } + 12.dp)
 
                     if ((config.canUndo || config.swipeDownAction != SwipeAction.UNDO) && !isEnteringFromBelow && currentY > abs(currentX)) {
                         IndicatorBadge(
@@ -938,8 +937,8 @@ fun SwipeCard(
                         IndicatorBadge(
                             stringResource(config.swipeUpAction.indicatorLabelRes),
                             config.swipeUpAction.indicatorColor(),
-                            Alignment.BottomCenter,
-                            bottomPadding = badgeBottom
+                            Alignment.TopCenter,
+                            topPadding = badgeTop
                         ) { (-currentY / 200f).coerceIn(0f, 1f) * 0.9f }
                     } else if (currentX > 0f) {
                         IndicatorBadge(
