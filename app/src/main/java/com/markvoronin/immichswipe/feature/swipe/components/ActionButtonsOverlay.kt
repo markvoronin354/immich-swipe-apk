@@ -7,6 +7,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -47,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.ButtonStackOrientation
+import com.markvoronin.immichswipe.core.ButtonStackStyle
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichLauncher
 import com.markvoronin.immichswipe.core.ImmichOpenMode
@@ -211,7 +213,8 @@ fun ActionButtonsOverlay(
             }
 
             val horizontal = config.buttonStackOrientation == ButtonStackOrientation.HORIZONTAL
-            val buttonSize = fittingButtonSize(cornerButtons.mapValues { it.value.size }, horizontal, maxWidth, maxHeight)
+            val separate = config.buttonStackStyle == ButtonStackStyle.SEPARATE
+            val buttonSize = fittingButtonSize(cornerButtons.mapValues { it.value.size }, horizontal, maxWidth, maxHeight, separate)
 
             cornerButtons.forEach { (pos, buttons) ->
                 val alignment = when (pos) {
@@ -230,7 +233,7 @@ fun ActionButtonsOverlay(
                             .onSizeChanged { onCornerSizeChanged(pos, it) }
                             .padding(8.dp)
                     ) {
-                        val merged = buttons.size > 1
+                        val merged = buttons.size > 1 && !separate
                         CompositionLocalProvider(
                             LocalSwipeActionButtonSize provides buttonSize,
                             LocalSwipeActionButtonMerged provides merged
@@ -253,12 +256,13 @@ fun ActionButtonsOverlay(
                             } else {
                                 Modifier
                             }
+                            val gap = if (separate) ButtonGap else 0.dp
                             if (horizontal) {
-                                Row(modifier = pill) {
+                                Row(modifier = pill, horizontalArrangement = Arrangement.spacedBy(gap)) {
                                     buttons.forEach { button -> button() }
                                 }
                             } else {
-                                Column(modifier = pill) {
+                                Column(modifier = pill, verticalArrangement = Arrangement.spacedBy(gap)) {
                                     buttons.forEach { button -> button() }
                                 }
                             }
@@ -270,6 +274,7 @@ fun ActionButtonsOverlay(
     }
 }
 
+private val ButtonGap = 8.dp
 private val CornerInset = 8.dp
 private val MinButtonSize = 40.dp
 
@@ -282,16 +287,17 @@ private val CardEdges = listOf(
 )
 
 /**
- * The button size at which every edge's corner groups fit the card, which keeps its 8dp corner inset:
+ * The button size at which every edge's corner groups fit the card, which keeps its 8dp corner inset (and, when `separate`, the 8dp gap between buttons):
  * the full 48dp when they fit, otherwise shrunk alike, never below 40dp. `counts` is the number of buttons in each corner.
  */
-internal fun fittingButtonSize(counts: Map<IconPosition, Int>, horizontal: Boolean, width: Dp, height: Dp): Dp {
+internal fun fittingButtonSize(counts: Map<IconPosition, Int>, horizontal: Boolean, width: Dp, height: Dp, separate: Boolean = false): Dp {
     val fitting = CardEdges.minOf { (corners, isRow) ->
         val groups = corners.map { counts[it] ?: 0 }.filter { it > 0 }
         // A stack running along the edge needs all its buttons' length; one across it, a single button's.
         val alongEdge = isRow == horizontal
         val buttons = groups.sumOf { if (alongEdge) it else 1 }
-        val room = (if (isRow) width else height) - CornerInset * 2 * groups.size
+        val gaps = if (separate) groups.sumOf { if (alongEdge) it - 1 else 0 } else 0
+        val room = (if (isRow) width else height) - CornerInset * 2 * groups.size - ButtonGap * gaps
         if (buttons == 0) Float.MAX_VALUE else room.value / buttons
     }
     return fitting.dp.coerceIn(MinButtonSize, SwipeActionButtonSize)

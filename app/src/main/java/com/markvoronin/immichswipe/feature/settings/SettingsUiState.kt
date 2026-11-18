@@ -4,6 +4,7 @@ import com.markvoronin.immichswipe.core.AppPalette
 import com.markvoronin.immichswipe.core.PaletteStyle
 import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.ButtonStackOrientation
+import com.markvoronin.immichswipe.core.ButtonStackStyle
 import com.markvoronin.immichswipe.core.DoubleTapAction
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichOpenMode
@@ -43,6 +44,7 @@ data class SettingsUiState(
     val infoButtonPosition: IconPosition = IconPosition.BOTTOM_LEFT,
     val fullSizeButtonPosition: IconPosition = IconPosition.BOTTOM_RIGHT,
     val buttonStackOrientation: ButtonStackOrientation = ButtonStackOrientation.VERTICAL,
+    val buttonStackStyle: ButtonStackStyle = ButtonStackStyle.CONNECTED,
     val showFullscreenButton: Boolean = true,
     val showImmichButton: Boolean = false,
     val showRotationButton: Boolean = true,

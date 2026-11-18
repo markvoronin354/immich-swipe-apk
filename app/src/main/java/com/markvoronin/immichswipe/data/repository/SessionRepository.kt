@@ -6,6 +6,7 @@ import com.markvoronin.immichswipe.core.PaletteStyle
 import com.markvoronin.immichswipe.core.AppTheme
 import com.markvoronin.immichswipe.core.ButtonPositions
 import com.markvoronin.immichswipe.core.ButtonStackOrientation
+import com.markvoronin.immichswipe.core.ButtonStackStyle
 import com.markvoronin.immichswipe.core.ButtonVisibility
 import com.markvoronin.immichswipe.core.DoubleTapAction
 import com.markvoronin.immichswipe.core.IconPosition
@@ -154,6 +155,10 @@ class SessionRepository @Inject constructor(
         it?.let { try { ButtonStackOrientation.valueOf(it) } catch(_: Exception) { ButtonStackOrientation.VERTICAL } } ?: ButtonStackOrientation.VERTICAL
     }
 
+    val buttonStackStyle: Flow<ButtonStackStyle> = dataStore.getButtonStackStyle().map {
+        it?.let { try { ButtonStackStyle.valueOf(it) } catch(_: Exception) { ButtonStackStyle.CONNECTED } } ?: ButtonStackStyle.CONNECTED
+    }
+
     val showFullscreenButton: Flow<Boolean> = dataStore.isShowFullscreenIcon()
     val showImmichButton: Flow<Boolean> = dataStore.isShowImmichIcon()
     val showRotationButton: Flow<Boolean> = dataStore.isShowCardDisplayIcon()
@@ -295,6 +300,10 @@ class SessionRepository @Inject constructor(
 
     suspend fun saveButtonStackOrientation(orientation: ButtonStackOrientation) {
         dataStore.saveButtonStackOrientation(orientation.name)
+    }
+
+    suspend fun saveButtonStackStyle(style: ButtonStackStyle) {
+        dataStore.saveButtonStackStyle(style.name)
     }
 
     suspend fun resetActionButtons() { dataStore.resetActionButtons() }

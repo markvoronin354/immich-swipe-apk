@@ -51,6 +51,7 @@ data class SwipeUiState(
     val infoButtonPosition: IconPosition = IconPosition.BOTTOM_LEFT,
     val fullSizeButtonPosition: IconPosition = IconPosition.BOTTOM_RIGHT,
     val buttonStackOrientation: com.markvoronin.immichswipe.core.ButtonStackOrientation = com.markvoronin.immichswipe.core.ButtonStackOrientation.VERTICAL,
+    val buttonStackStyle: com.markvoronin.immichswipe.core.ButtonStackStyle = com.markvoronin.immichswipe.core.ButtonStackStyle.CONNECTED,
     val showFullscreenButton: Boolean = true,
     val showImmichButton: Boolean = false,
     val showRotationButton: Boolean = true,

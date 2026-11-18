@@ -27,6 +27,12 @@ enum class ButtonStackOrientation {
     HORIZONTAL
 }
 
+/** Whether buttons sharing a corner merge into one pill or stay separate circles. */
+enum class ButtonStackStyle {
+    CONNECTED,
+    SEPARATE
+}
+
 
 enum class DoubleTapAction {
     FULLSCREEN,

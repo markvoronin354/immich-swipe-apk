@@ -63,8 +63,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -73,6 +76,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.ButtonStackOrientation
+import com.markvoronin.immichswipe.core.ButtonStackStyle
 import com.markvoronin.immichswipe.core.IconPosition
 import com.markvoronin.immichswipe.core.ImmichOpenMode
 import com.markvoronin.immichswipe.feature.settings.SettingsUiState
@@ -148,9 +152,11 @@ fun ActionButtonsScreen(
         Column(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            StackOrientationPickerCard(
+            ButtonStackingCard(
                 orientation = uiState.buttonStackOrientation,
-                onOrientationSelected = { viewModel.setButtonStackOrientation(it) }
+                onOrientationSelected = { viewModel.setButtonStackOrientation(it) },
+                style = uiState.buttonStackStyle,
+                onStyleSelected = { viewModel.setButtonStackStyle(it) }
             )
 
             IconPositionPickerCard(
@@ -676,9 +682,11 @@ fun BetaBadge(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun StackOrientationPickerCard(
+fun ButtonStackingCard(
     orientation: ButtonStackOrientation,
-    onOrientationSelected: (ButtonStackOrientation) -> Unit
+    onOrientationSelected: (ButtonStackOrientation) -> Unit,
+    style: ButtonStackStyle,
+    onStyleSelected: (ButtonStackStyle) -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -734,29 +742,65 @@ fun StackOrientationPickerCard(
             )
             Spacer(Modifier.height(12.dp))
 
+            StackingSectionLabel(stringResource(R.string.settings_button_stacking_direction))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterHorizontally)
             ) {
-                StackOrientationButton(
+                StackToggleButton(
                     text = stringResource(R.string.settings_button_stacking_horizontal),
                     selected = orientation == ButtonStackOrientation.HORIZONTAL,
-                    isHorizontal = true,
+                    icon = { HorizontalCirclesIcon(tint = it) },
                     onClick = { onOrientationSelected(ButtonStackOrientation.HORIZONTAL) },
                     modifier = Modifier.weight(1f),
                     index = 0, count = 2
                 )
-                StackOrientationButton(
+                StackToggleButton(
                     text = stringResource(R.string.settings_button_stacking_vertical),
                     selected = orientation == ButtonStackOrientation.VERTICAL,
-                    isHorizontal = false,
+                    icon = { VerticalCirclesIcon(tint = it) },
                     onClick = { onOrientationSelected(ButtonStackOrientation.VERTICAL) },
+                    modifier = Modifier.weight(1f),
+                    index = 1, count = 2
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            StackingSectionLabel(stringResource(R.string.settings_button_style_label))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterHorizontally)
+            ) {
+                StackToggleButton(
+                    text = stringResource(R.string.settings_button_style_connected),
+                    selected = style == ButtonStackStyle.CONNECTED,
+                    icon = { ConnectedPillIcon(tint = it) },
+                    onClick = { onStyleSelected(ButtonStackStyle.CONNECTED) },
+                    modifier = Modifier.weight(1f),
+                    index = 0, count = 2
+                )
+                StackToggleButton(
+                    text = stringResource(R.string.settings_button_style_separate),
+                    selected = style == ButtonStackStyle.SEPARATE,
+                    icon = { SeparateCirclesIcon(tint = it) },
+                    onClick = { onStyleSelected(ButtonStackStyle.SEPARATE) },
                     modifier = Modifier.weight(1f),
                     index = 1, count = 2
                 )
             }
         }
     }
+}
+
+@Composable
+private fun StackingSectionLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+    )
 }
 
 @Composable
@@ -790,10 +834,49 @@ fun VerticalCirclesIcon(
 }
 
 @Composable
-fun StackOrientationButton(
+fun ConnectedPillIcon(
+    tint: Color,
+    modifier: Modifier = Modifier.size(18.dp)
+) {
+    Canvas(modifier = modifier) {
+        val stroke = size.minDimension * 0.1f
+        val height = size.height * 0.5f
+        val top = (size.height - height) / 2f
+        drawRoundRect(
+            color = tint,
+            topLeft = Offset(size.width * 0.06f, top),
+            size = Size(size.width * 0.88f, height),
+            cornerRadius = CornerRadius(height / 2f),
+            style = Stroke(width = stroke)
+        )
+        drawLine(
+            color = tint,
+            start = Offset(size.width / 2f, top),
+            end = Offset(size.width / 2f, top + height),
+            strokeWidth = stroke
+        )
+    }
+}
+
+@Composable
+fun SeparateCirclesIcon(
+    tint: Color,
+    modifier: Modifier = Modifier.size(18.dp)
+) {
+    Canvas(modifier = modifier) {
+        val radius = size.width * 0.19f
+        val cy = size.height / 2f
+        val stroke = Stroke(width = size.minDimension * 0.1f)
+        drawCircle(color = tint, radius = radius, center = Offset(size.width * 0.25f, cy), style = stroke)
+        drawCircle(color = tint, radius = radius, center = Offset(size.width * 0.75f, cy), style = stroke)
+    }
+}
+
+@Composable
+fun StackToggleButton(
     text: String,
     selected: Boolean,
-    isHorizontal: Boolean,
+    icon: @Composable (tint: Color) -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     index: Int = 0,
@@ -814,11 +897,7 @@ fun StackOrientationButton(
             exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()) + shrinkHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec(), shrinkTowards = Alignment.Start)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (isHorizontal) {
-                    HorizontalCirclesIcon(tint = tint)
-                } else {
-                    VerticalCirclesIcon(tint = tint)
-                }
+                icon(tint)
                 Spacer(Modifier.width(8.dp))
             }
         }

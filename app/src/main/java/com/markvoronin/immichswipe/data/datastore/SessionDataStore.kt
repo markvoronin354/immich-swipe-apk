@@ -38,6 +38,7 @@ class SessionDataStore(private val context: Context) {
         private val KEY_INFO_ICON_POS = stringPreferencesKey("info_icon_pos")
         private val KEY_FULL_SIZE_ICON_POS = stringPreferencesKey("full_size_icon_pos")
         private val KEY_BUTTON_STACK_ORIENTATION = stringPreferencesKey("button_stack_orientation")
+        private val KEY_BUTTON_STACK_STYLE = stringPreferencesKey("button_stack_style")
         private val KEY_SHOW_FULLSCREEN_ICON = booleanPreferencesKey("show_fullscreen_icon")
         private val KEY_SHOW_IMMICH_ICON = booleanPreferencesKey("show_immich_icon")
         private val KEY_SHOW_CARD_DISPLAY_ICON = booleanPreferencesKey("show_card_display_icon")
@@ -234,6 +235,12 @@ class SessionDataStore(private val context: Context) {
         context.dataStore.edit { it[KEY_BUTTON_STACK_ORIENTATION] = orientation }
     }
 
+    fun getButtonStackStyle(): Flow<String?> = context.dataStore.data.map { it[KEY_BUTTON_STACK_STYLE] }
+
+    suspend fun saveButtonStackStyle(style: String) {
+        context.dataStore.edit { it[KEY_BUTTON_STACK_STYLE] = style }
+    }
+
     /** Clears everything the Action Buttons screen edits so the flows fall back to their defaults. */
     suspend fun resetActionButtons() {
         context.dataStore.edit {
@@ -246,6 +253,7 @@ class SessionDataStore(private val context: Context) {
             it.remove(KEY_INFO_ICON_POS)
             it.remove(KEY_FULL_SIZE_ICON_POS)
             it.remove(KEY_BUTTON_STACK_ORIENTATION)
+            it.remove(KEY_BUTTON_STACK_STYLE)
             it.remove(KEY_SHOW_FULLSCREEN_ICON)
             it.remove(KEY_SHOW_IMMICH_ICON)
             it.remove(KEY_SHOW_CARD_DISPLAY_ICON)

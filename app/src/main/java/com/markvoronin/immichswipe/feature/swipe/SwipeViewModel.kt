@@ -151,6 +151,11 @@ class SwipeViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            sessionRepository.buttonStackStyle.collect { style ->
+                _uiState.update { it.copy(buttonStackStyle = style) }
+            }
+        }
+        viewModelScope.launch {
             sessionRepository.hasCompletedSwipeTutorial.collect { completed ->
                 _uiState.update { it.copy(hasCompletedSwipeTutorial = completed) }
             }

@@ -134,6 +134,7 @@ fun SwipeCardDeck(
                             infoButtonPosition = uiState.infoButtonPosition,
                             fullSizeButtonPosition = uiState.fullSizeButtonPosition,
                             buttonStackOrientation = uiState.buttonStackOrientation,
+                            buttonStackStyle = uiState.buttonStackStyle,
                             showFullscreenButton = uiState.showFullscreenButton,
                             showImmichButton = uiState.showImmichButton,
                             immichOpenMode = uiState.immichOpenMode,

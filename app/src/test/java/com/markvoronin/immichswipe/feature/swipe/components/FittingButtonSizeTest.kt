@@ -47,6 +47,15 @@ class FittingButtonSizeTest {
     }
 
     @Test
+    fun `separate buttons also need their 8dp gaps`() {
+        // 360 - 16 inset - 6 x 8 gaps = 296 for seven buttons; touching, the same row would still fit at 48dp.
+        assertEquals(296f / 7, fittingButtonSize(mapOf(TOP_LEFT to 7), true, 360.dp, 500.dp, separate = true).value, 0.01f)
+        assertEquals(48f, size(mapOf(TOP_LEFT to 7), horizontal = true, width = 360f, height = 500f), 0.01f)
+        // Across the edge there are no gaps to pay for.
+        assertEquals(48f, fittingButtonSize(mapOf(TOP_LEFT to 7), true, 500.dp, 100.dp, separate = true).value, 0.01f)
+    }
+
+    @Test
     fun `a row only needs the card's width and a column only its height`() {
         assertEquals(48f, size(mapOf(TOP_LEFT to 7), horizontal = true, width = 500f, height = 100f), 0.01f)
         assertEquals(48f, size(mapOf(TOP_LEFT to 7), horizontal = false, width = 100f, height = 500f), 0.01f)
