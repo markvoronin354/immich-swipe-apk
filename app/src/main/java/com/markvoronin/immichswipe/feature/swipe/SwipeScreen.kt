@@ -96,6 +96,7 @@ fun SwipeScreen(
     profileButton: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     userQuotaBytes: Long? = null,
+    isPaused: Boolean = false,
     onBack: () -> Unit = {}
 ) {
     val viewModel: SwipeViewModel = hiltViewModel(key = "$sessionKey-${album.id}")
@@ -274,6 +275,17 @@ fun SwipeScreen(
         }
     }
 
+    val currentIsPaused by rememberUpdatedState(isPaused)
+
+    // Silences the video while a dialog (e.g. add account) covers the screen, then resumes it.
+    LaunchedEffect(isPaused) {
+        if (isPaused) {
+            sharedPlayer.playWhenReady = false
+        } else if (currentAsset?.type == "VIDEO" && !currentIsTutorialShowing) {
+            sharedPlayer.playWhenReady = true
+        }
+    }
+
      LaunchedEffect(currentAsset?.id) {
         if (currentAsset?.type == "VIDEO") {
             // Do NOT stop/clear the player, as it forces the underlying surface to go blank
@@ -292,7 +304,7 @@ fun SwipeScreen(
             // Using setMediaSource with resetPosition=true is smoother than stop()+clear()
             sharedPlayer.setMediaSource(mediaSource, true)
             sharedPlayer.prepare()
-            sharedPlayer.playWhenReady = !currentIsTutorialShowing
+            sharedPlayer.playWhenReady = !currentIsTutorialShowing && !currentIsPaused
         } else {
             sharedPlayer.stop()
             sharedPlayer.clearMediaItems()
@@ -325,7 +337,7 @@ fun SwipeScreen(
                 wasPlayingBeforeAppPause = sharedPlayer.playWhenReady
                 sharedPlayer.playWhenReady = false
             } else if (event == Lifecycle.Event.ON_RESUME) {
-                if (currentType == "VIDEO" && wasPlayingBeforeAppPause) {
+                if (currentType == "VIDEO" && wasPlayingBeforeAppPause && !currentIsPaused) {
                     sharedPlayer.playWhenReady = true
                 }
             }

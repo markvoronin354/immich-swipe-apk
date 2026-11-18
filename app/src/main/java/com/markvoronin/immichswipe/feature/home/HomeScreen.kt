@@ -354,6 +354,7 @@ fun HomeScreen(
                                 sessionKey = sessionKey,
                                 profileButton = profileButton,
                                 userQuotaBytes = uiState.user?.quotaUsageInBytes,
+                                isPaused = uiState.isLoggingInToAnotherAccount,
                                 onBack = navigateBack
                             )
                         }
