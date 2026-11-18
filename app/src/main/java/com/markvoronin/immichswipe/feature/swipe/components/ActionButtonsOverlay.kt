@@ -7,7 +7,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.RotateRight
@@ -33,6 +33,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
@@ -226,13 +230,35 @@ fun ActionButtonsOverlay(
                             .onSizeChanged { onCornerSizeChanged(pos, it) }
                             .padding(8.dp)
                     ) {
-                        CompositionLocalProvider(LocalSwipeActionButtonSize provides buttonSize) {
+                        val merged = buttons.size > 1
+                        CompositionLocalProvider(
+                            LocalSwipeActionButtonSize provides buttonSize,
+                            LocalSwipeActionButtonMerged provides merged
+                        ) {
+                            // Several buttons in a corner touch edge to edge inside one pill.
+                            val pill = if (merged) {
+                                Modifier.glassCircle(backdrop).clip(CircleShape).drawBehind {
+                                    // A hairline at each seam, inset from the pill's edges; it takes no layout room.
+                                    val inset = buttonSize.toPx() / 4
+                                    for (i in 1 until buttons.size) {
+                                        val at = buttonSize.toPx() * i
+                                        drawLine(
+                                            color = Color.White.copy(alpha = 0.2f),
+                                            start = if (horizontal) Offset(at, inset) else Offset(inset, at),
+                                            end = if (horizontal) Offset(at, size.height - inset) else Offset(size.width - inset, at),
+                                            strokeWidth = 1.dp.toPx()
+                                        )
+                                    }
+                                }
+                            } else {
+                                Modifier
+                            }
                             if (horizontal) {
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(modifier = pill) {
                                     buttons.forEach { button -> button() }
                                 }
                             } else {
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Column(modifier = pill) {
                                     buttons.forEach { button -> button() }
                                 }
                             }
@@ -244,9 +270,8 @@ fun ActionButtonsOverlay(
     }
 }
 
-private val ButtonGap = 8.dp
 private val CornerInset = 8.dp
-private val MinButtonSize = 32.dp
+private val MinButtonSize = 40.dp
 
 // A corner pair per edge, and whether that edge is a row across the card.
 private val CardEdges = listOf(
@@ -257,8 +282,8 @@ private val CardEdges = listOf(
 )
 
 /**
- * The button size at which every edge's corner groups fit the card, which keeps its 8dp gap and 8dp corner inset:
- * the full 40dp when they fit, otherwise shrunk alike, never below 32dp. `counts` is the number of buttons in each corner.
+ * The button size at which every edge's corner groups fit the card, which keeps its 8dp corner inset:
+ * the full 48dp when they fit, otherwise shrunk alike, never below 40dp. `counts` is the number of buttons in each corner.
  */
 internal fun fittingButtonSize(counts: Map<IconPosition, Int>, horizontal: Boolean, width: Dp, height: Dp): Dp {
     val fitting = CardEdges.minOf { (corners, isRow) ->
@@ -266,8 +291,7 @@ internal fun fittingButtonSize(counts: Map<IconPosition, Int>, horizontal: Boole
         // A stack running along the edge needs all its buttons' length; one across it, a single button's.
         val alongEdge = isRow == horizontal
         val buttons = groups.sumOf { if (alongEdge) it else 1 }
-        val gaps = groups.sumOf { if (alongEdge) it - 1 else 0 }
-        val room = (if (isRow) width else height) - CornerInset * 2 * groups.size - ButtonGap * gaps
+        val room = (if (isRow) width else height) - CornerInset * 2 * groups.size
         if (buttons == 0) Float.MAX_VALUE else room.value / buttons
     }
     return fitting.dp.coerceIn(MinButtonSize, SwipeActionButtonSize)

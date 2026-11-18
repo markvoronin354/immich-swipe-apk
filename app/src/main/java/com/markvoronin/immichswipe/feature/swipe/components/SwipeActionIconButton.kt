@@ -12,16 +12,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
 
-/** A button's full size: a 24dp icon with 8dp around it. */
-internal val SwipeActionButtonSize = 40.dp
+/** A button's full size, the 48dp minimum touch target: a 28dp icon with 10dp around it. */
+internal val SwipeActionButtonSize = 48.dp
+
+/** The 24dp icons are drawn 28dp in a full-size button. */
+private const val IconScale = 28f / 24f
 
 /** The side of the card's round buttons; `ActionButtonsOverlay` shrinks it when a corner's buttons wouldn't fit. */
 internal val LocalSwipeActionButtonSize = compositionLocalOf<Dp> { SwipeActionButtonSize }
+
+/** True when the button sits in a pill with its neighbours, which draws the glass; the button then has none of its own. */
+internal val LocalSwipeActionButtonMerged = compositionLocalOf { false }
 
 @Composable
 fun SwipeActionIconButton(
@@ -33,12 +40,13 @@ fun SwipeActionIconButton(
     content: @Composable () -> Unit
 ) {
     val size = LocalSwipeActionButtonSize.current
+    val merged = LocalSwipeActionButtonMerged.current
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .size(size)
-            .glassCircle(backdrop)
-            .clip(CircleShape)
+            .then(if (merged) Modifier else Modifier.glassCircle(backdrop))
+            .clip(if (merged) RectangleShape else CircleShape)
             .combinedClickable(
                 enabled = enabled,
                 onClick = onClick,
@@ -49,7 +57,7 @@ fun SwipeActionIconButton(
             // The icon shrinks with the circle.
             Box(
                 modifier = Modifier.graphicsLayer {
-                    val scale = size / SwipeActionButtonSize
+                    val scale = size / SwipeActionButtonSize * IconScale
                     scaleX = scale
                     scaleY = scale
                 }
