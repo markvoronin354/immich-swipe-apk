@@ -243,11 +243,6 @@ class SettingsViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            sessionRepository.showTimeline.collect { show ->
-                _uiState.update { it.copy(showTimeline = show) }
-            }
-        }
-        viewModelScope.launch {
             sessionRepository.toolbarButtonOrder.collect { order ->
                 _uiState.update { it.copy(toolbarButtonOrder = order) }
             }
@@ -494,12 +489,6 @@ class SettingsViewModel @Inject constructor(
     fun setShowToolbarLabels(show: Boolean) {
         viewModelScope.launch {
             sessionRepository.saveShowToolbarLabels(show)
-        }
-    }
-
-    fun setShowTimeline(show: Boolean) {
-        viewModelScope.launch {
-            sessionRepository.saveShowTimeline(show)
         }
     }
 

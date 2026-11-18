@@ -34,7 +34,6 @@ import androidx.compose.material.icons.filled.SwipeLeft
 import androidx.compose.material.icons.filled.SwipeRight
 import androidx.compose.material.icons.filled.SwipeUp
 import androidx.compose.material.icons.filled.TouchApp
-import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
@@ -325,19 +324,6 @@ fun InteractionsScreen(
                     }
                 }
             }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        SettingsSection(
-            title = stringResource(R.string.settings_section_layout)
-        ) {
-            SettingsToggleItemSmall(
-                title = stringResource(R.string.settings_show_timeline_label),
-                checked = uiState.showTimeline,
-                onCheckedChange = { viewModel.setShowTimeline(it) },
-                icon = Icons.Default.ViewCarousel
-            )
         }
 
         Spacer(Modifier.height(16.dp))

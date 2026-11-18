@@ -278,7 +278,6 @@ class SessionDataStore(private val context: Context) {
             it.remove(KEY_TAP_TO_SWIPE)
             it.remove(KEY_DOUBLE_TAP_ENABLED)
             it.remove(KEY_DOUBLE_TAP_ACTION)
-            it.remove(KEY_SHOW_TIMELINE)
         }
     }
 

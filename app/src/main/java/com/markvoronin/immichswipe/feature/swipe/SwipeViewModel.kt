@@ -628,6 +628,7 @@ class SwipeViewModel @Inject constructor(
         toggleFavoriteFor(asset.id)
     }
     fun toggleSummary(visible: Boolean) { _uiState.update { it.copy(showSummary = visible) } }
+    fun toggleTimeline() { viewModelScope.launch { sessionRepository.saveShowTimeline(!_uiState.value.showTimeline) } }
     fun toggleFullscreen(visible: Boolean) { _uiState.update { it.copy(isFullscreenMode = visible) } }
     fun toggleResetConfirmation(visible: Boolean) { _uiState.update { it.copy(showResetConfirmation = visible) } }
     fun toggleFullResolution() { _uiState.update { it.copy(isFullResolution = !it.isFullResolution) } }
