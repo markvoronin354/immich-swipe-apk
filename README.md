@@ -61,9 +61,9 @@ To ensure proper functionality while adhering to the **Principle of Least Privil
 
 ## 📦 Installation
 
-|                                                                                                                       **Orion Store**                                                                                                                        |   **Direct Download**   |     **Play Store**     |     **F-Droid**     |
-|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------:|:----------------------:|:-------------------:|
-| [<img src="https://github.com/RookieEnough/Orion-Store/blob/main/assets/orion-badge.png?raw=true"  alt="Get it on Orion Store" height="50">](https://rookieenough.github.io/Orion-Data/redirect.html?id=immich-swipe-android) | Get the latest APK from the [Releases](https://github.com/markvoronin354/immich-swipe-android/releases) section   | Coming soon, hopefully | Coming soon |
+|                                                                                                                       **Orion Store**                                                                                                                        |   **Direct Download**   |     **Play Store**     |
+|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------:|:----------------------:|
+| [<img src="https://github.com/RookieEnough/Orion-Store/blob/main/assets/orion-badge.png?raw=true"  alt="Get it on Orion Store" height="50">](https://rookieenough.github.io/Orion-Data/redirect.html?id=immich-swipe-android) | [<img src="https://img.shields.io/badge/Direct%20Download-APK-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Download the latest APK" height="50">](https://github.com/markvoronin354/immich-swipe-android/releases) | [<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="75">](https://play.google.com/store/apps/details?id=com.markvoronin.immichswipe) |
 
 ## 🛠️ Build
 
