@@ -223,6 +223,7 @@
     <string name="add_to_album_no_albums">No albums found</string>
     <string name="add_to_album_success">Added to %1$s</string>
     <string name="add_to_album_error">Error adding to album: %1$s</string>
+    <string name="add_to_album_permission_error">Couldn\'t add to %1$s. Your API key is missing the %2$s permission.</string>
     <string name="add_to_album_items_count" tools:ignore="PluralsCandidate">%1$,d items</string>
     <string name="add_to_album_lock_folder">Locked folder</string>
     <string name="add_to_album_lock_success">Asset locked</string>
@@ -410,7 +411,7 @@
     <string name="login_api_key_tutorial_step1">1. Open your Immich Web Interface (creating keys is not supported in the mobile app).</string>
     <string name="login_api_key_tutorial_step2">2. Go to Account Settings > API Keys.</string>
     <string name="login_api_key_tutorial_step3">3. Click \"New API Key\" and name it \"Immich Swipe\".</string>
-    <string name="login_api_key_tutorial_step4">4. Under Permissions, select:\n• Asset (All)\n• album.read\n• album.update\n• albumAsset.create\n• duplicate.read\n• user.read\n• userProfileImage.read</string>
+    <string name="login_api_key_tutorial_step4">4. Under Permissions, select:\n• Asset (All)\n• album.read\n• album.update\n• albumAsset.create\n• duplicate.read\n• user.read\n• userProfileImage.read\n• album.create</string>
     <string name="login_api_key_tutorial_step5">5. Click Create, then copy and paste the key here.</string>
 
     <string name="duplicates_keep_all">Keep all</string>

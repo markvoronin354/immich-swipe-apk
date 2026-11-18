@@ -15,7 +15,8 @@ object ApiKeyPermissions {
         "albumAsset.create",
         "duplicate.read",
         "user.read",
-        "userProfileImage.read"
+        "userProfileImage.read",
+        "album.create"
     )
 
     /** What [REQUIRED] lists and [granted] lacks. A key created with all permissions lacks nothing. */

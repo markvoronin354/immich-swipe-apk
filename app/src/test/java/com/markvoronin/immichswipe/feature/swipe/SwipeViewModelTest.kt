@@ -52,6 +52,9 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import okhttp3.ResponseBody.Companion.toResponseBody
+import retrofit2.HttpException
+import retrofit2.Response
 import java.io.IOException
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -755,7 +758,7 @@ class SwipeViewModelTest {
         val vm = openAlbum()
         var result: Pair<Boolean, String>? = null
 
-        vm.addCurrentAssetToAlbum(target) { ok, name -> result = ok to name }
+        vm.addCurrentAssetToAlbum(target) { ok, name, _ -> result = ok to name }
 
         assertEquals(true to "Pets", result)
         coVerify { assetRepository.deleteAlbumAssets(Album.VIRTUAL_ORPHANS_ID, "u1", listOf("a1")) }
@@ -768,7 +771,7 @@ class SwipeViewModelTest {
         val vm = openAlbum()
         var result: Pair<Boolean, String>? = null
 
-        vm.addCurrentAssetToAlbum(target) { ok, name -> result = ok to name }
+        vm.addCurrentAssetToAlbum(target) { ok, name, _ -> result = ok to name }
 
         assertEquals(false to "Pets", result)
         coVerify(exactly = 0) { assetRepository.deleteAlbumAssets(any(), any(), any()) }
@@ -781,9 +784,48 @@ class SwipeViewModelTest {
         val vm = openAlbum()
         var result: Pair<Boolean, String>? = null
 
-        vm.addCurrentAssetToAlbum(target) { ok, name -> result = ok to name }
+        vm.addCurrentAssetToAlbum(target) { ok, name, _ -> result = ok to name }
 
         assertEquals(false to "Pets", result)
+    }
+
+    private fun refusedFor(permission: String) = HttpException(
+        Response.error<Unit>(403, """{"message":"Missing required permission: $permission"}""".toResponseBody())
+    )
+
+    @Test
+    fun `an album add refused for a permission names it`() {
+        val target = Album("r1", "Pets", assetCount = 3, albumThumbnailAssetId = null)
+        coEvery { albumRepository.addAssetToAlbum(any(), any()) } returns Result.failure(refusedFor("albumAsset.create"))
+        val vm = openAlbum()
+        var outcome: Pair<Boolean, String?>? = null
+
+        vm.addCurrentAssetToAlbum(target) { ok, _, missing -> outcome = ok to missing }
+
+        assertEquals(false to "albumAsset.create", outcome)
+    }
+
+    @Test
+    fun `a new album refused for a permission names it`() {
+        coEvery { albumRepository.createAlbum("Fresh", listOf("a1")) } returns Result.failure(refusedFor("album.create"))
+        val vm = openAlbum()
+        var outcome: Pair<Boolean, String?>? = null
+
+        vm.createAlbumWithCurrentAsset("Fresh") { ok, _, missing -> outcome = ok to missing }
+
+        assertEquals(false to "album.create", outcome)
+    }
+
+    @Test
+    fun `an album add that fails for another reason names no permission`() {
+        val target = Album("r1", "Pets", assetCount = 3, albumThumbnailAssetId = null)
+        coEvery { albumRepository.addAssetToAlbum(any(), any()) } returns Result.failure(IOException("offline"))
+        val vm = openAlbum()
+        var outcome: Pair<Boolean, String?>? = null
+
+        vm.addCurrentAssetToAlbum(target) { ok, _, missing -> outcome = ok to missing }
+
+        assertEquals(false to null, outcome)
     }
 
     @Test
@@ -792,7 +834,7 @@ class SwipeViewModelTest {
         coEvery { albumRepository.addAssetToAlbum("r1", "a1") } returns Result.success(Unit)
         val vm = openAlbum()
 
-        vm.addCurrentAssetToAlbum(target) { _, _ -> }
+        vm.addCurrentAssetToAlbum(target) { _, _, _ -> }
 
         coVerify { sessionRepository.addRecentAlbumId("r1") }
     }
@@ -803,7 +845,7 @@ class SwipeViewModelTest {
         coEvery { albumRepository.addAssetToAlbum(any(), any()) } returns Result.failure(IOException("403"))
         val vm = openAlbum()
 
-        vm.addCurrentAssetToAlbum(target) { _, _ -> }
+        vm.addCurrentAssetToAlbum(target) { _, _, _ -> }
 
         coVerify(exactly = 0) { sessionRepository.addRecentAlbumId(any()) }
     }
@@ -815,7 +857,7 @@ class SwipeViewModelTest {
         val vm = openAlbum()
         var result: Pair<Boolean, String>? = null
 
-        vm.createAlbumWithCurrentAsset("Fresh") { ok, name -> result = ok to name }
+        vm.createAlbumWithCurrentAsset("Fresh") { ok, name, _ -> result = ok to name }
 
         assertEquals(true to "Fresh", result)
         coVerify { sessionRepository.addRecentAlbumId("n1") }

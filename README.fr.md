@@ -55,6 +55,7 @@ Afin d'assurer le bon fonctionnement tout en respectant le **Principe de Moindre
 - `duplicate.read`
 - `user.read`
 - `userProfileImage.read`
+- `album.create`
 
 3. Sélectionnez un album ou une collection virtuelle et commencez à trier !
 

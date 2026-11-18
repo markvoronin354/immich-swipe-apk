@@ -217,6 +217,7 @@
     <string name="add_to_album_no_albums">No se encontraron álbumes</string>
     <string name="add_to_album_success">Añadido a %1$s</string>
     <string name="add_to_album_error">Error al añadir al álbum: %1$s</string>
+    <string name="add_to_album_permission_error">No se pudo añadir a %1$s. A tu clave de API le falta el permiso %2$s.</string>
     <string name="add_to_album_items_count">%1$,d elementos</string>
     <string name="add_to_album_lock_folder">Carpeta bloqueada</string>
     <string name="add_to_album_lock_success">Elemento bloqueado</string>
@@ -414,7 +415,7 @@
     <string name="login_api_key_tutorial_step1">1. Abre la interfaz web de Immich (no se puede en la app móvil).</string>
     <string name="login_api_key_tutorial_step2">2. Ve a Ajustes de la cuenta > Claves de API.</string>
     <string name="login_api_key_tutorial_step3">3. Haz clic en \"Nueva clave de API\" y nómbrala \"Immich Swipe\".</string>
-    <string name="login_api_key_tutorial_step4" tools:ignore="Typos">4. En Permisos, selecciona:\n• Asset (Todos)\n• album.read\n• album.update\n• albumAsset.create\n• duplicate.read\n• user.read\n• userProfileImage.read</string>
+    <string name="login_api_key_tutorial_step4" tools:ignore="Typos">4. En Permisos, selecciona:\n• Asset (Todos)\n• album.read\n• album.update\n• albumAsset.create\n• duplicate.read\n• user.read\n• userProfileImage.read\n• album.create</string>
     <string name="login_api_key_tutorial_step5">5. Haz clic en Crear, copia la clave y pégala aquí.</string>
 
     <string name="duplicates_keep_all">Conservar todo</string>

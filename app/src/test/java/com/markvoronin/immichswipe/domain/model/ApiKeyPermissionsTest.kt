@@ -29,9 +29,10 @@ class ApiKeyPermissionsTest {
     }
 
     @Test
-    fun `the list matches the 13 permissions in the README`() {
-        assertEquals(13, ApiKeyPermissions.REQUIRED.size)
+    fun `the list has no duplicates and includes the permission to create an album`() {
+        assertEquals(14, ApiKeyPermissions.REQUIRED.size)
         assertEquals(ApiKeyPermissions.REQUIRED.size, ApiKeyPermissions.REQUIRED.toSet().size)
+        assertTrue("album.create" in ApiKeyPermissions.REQUIRED)
     }
 
     @Test

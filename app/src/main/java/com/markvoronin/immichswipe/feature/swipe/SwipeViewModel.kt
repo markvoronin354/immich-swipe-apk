@@ -9,6 +9,7 @@ import com.markvoronin.immichswipe.core.SortOrder
 import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.core.SwipeSettings
 import com.markvoronin.immichswipe.core.util.rethrowIfCancelled
+import com.markvoronin.immichswipe.data.api.missingPermission
 import com.markvoronin.immichswipe.data.repository.AlbumRepository
 import com.markvoronin.immichswipe.data.repository.AssetBatch
 import com.markvoronin.immichswipe.data.repository.AssetRepository
@@ -686,32 +687,33 @@ class SwipeViewModel @Inject constructor(
         _uiState.update { it.copy(showAddToAlbumDialog = false) }
     }
 
-    fun addCurrentAssetToAlbum(targetAlbum: Album, onResult: (Boolean, String) -> Unit) {
+    // onResult gets the permission the API key lacks when the server refused the request for that.
+    fun addCurrentAssetToAlbum(targetAlbum: Album, onResult: (Boolean, String, String?) -> Unit) {
         val asset = _uiState.value.currentAsset ?: return
         viewModelScope.launch {
             try {
-                val success = albumRepository.addAssetToAlbum(targetAlbum.id, asset.id).isSuccess
-                if (success) onAssetAddedToAlbum(asset, targetAlbum.id)
-                onResult(success, targetAlbum.albumName)
+                val result = albumRepository.addAssetToAlbum(targetAlbum.id, asset.id)
+                if (result.isSuccess) onAssetAddedToAlbum(asset, targetAlbum.id)
+                onResult(result.isSuccess, targetAlbum.albumName, result.exceptionOrNull().missingPermission())
             } catch (e: Exception) {
                 e.rethrowIfCancelled()
                 AppLogger.e("SwipeViewModel", "Error adding asset to album ${targetAlbum.albumName}", e)
-                onResult(false, targetAlbum.albumName)
+                onResult(false, targetAlbum.albumName, null)
             }
         }
     }
 
-    fun createAlbumWithCurrentAsset(albumName: String, onResult: (Boolean, String) -> Unit) {
+    fun createAlbumWithCurrentAsset(albumName: String, onResult: (Boolean, String, String?) -> Unit) {
         val asset = _uiState.value.currentAsset ?: return
         viewModelScope.launch {
             try {
                 val created = albumRepository.createAlbum(albumName, listOf(asset.id))
                 created.getOrNull()?.let { onAssetAddedToAlbum(asset, it.id) }
-                onResult(created.isSuccess, albumName)
+                onResult(created.isSuccess, albumName, created.exceptionOrNull().missingPermission())
             } catch (e: Exception) {
                 e.rethrowIfCancelled()
                 AppLogger.e("SwipeViewModel", "Error creating album $albumName", e)
-                onResult(false, albumName)
+                onResult(false, albumName, null)
             }
         }
     }

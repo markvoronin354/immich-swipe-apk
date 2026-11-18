@@ -92,6 +92,14 @@ fun SwipeScreenDialogs(
     if (uiState.showAddToAlbumDialog) {
         val successTemplate = stringResource(R.string.add_to_album_success)
         val errorTemplate = stringResource(R.string.add_to_album_error)
+        val permissionErrorTemplate = stringResource(R.string.add_to_album_permission_error)
+        val resultMessage = { success: Boolean, albumName: String, missingPermission: String? ->
+            when {
+                success -> successTemplate.format(albumName)
+                missingPermission != null -> permissionErrorTemplate.format(albumName, missingPermission)
+                else -> errorTemplate.format(albumName)
+            }
+        }
         val lockSuccessMessage = stringResource(R.string.add_to_album_lock_success)
         val archiveSuccessMessage = stringResource(R.string.add_to_album_archive_success)
         val swipeActions = listOf(uiState.swipeLeftAction, uiState.swipeRightAction, uiState.swipeUpAction, uiState.swipeDownAction)
@@ -103,25 +111,15 @@ fun SwipeScreenDialogs(
             showArchiveButton = uiState.showArchiveButton || SwipeAction.ARCHIVE in swipeActions,
             baseUrl = uiState.baseUrl,
             onAlbumSelect = { targetAlbum ->
-                viewModel.addCurrentAssetToAlbum(targetAlbum) { success, albumName ->
+                viewModel.addCurrentAssetToAlbum(targetAlbum) { success, albumName, missingPermission ->
                     viewModel.dismissAddToAlbumDialog()
-                    val message = if (success) {
-                        successTemplate.format(albumName)
-                    } else {
-                        errorTemplate.format(albumName)
-                    }
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, resultMessage(success, albumName, missingPermission), Toast.LENGTH_SHORT).show()
                 }
             },
             onCreateAlbum = { newAlbumName ->
-                viewModel.createAlbumWithCurrentAsset(newAlbumName) { success, albumName ->
+                viewModel.createAlbumWithCurrentAsset(newAlbumName) { success, albumName, missingPermission ->
                     viewModel.dismissAddToAlbumDialog()
-                    val message = if (success) {
-                        successTemplate.format(albumName)
-                    } else {
-                        errorTemplate.format(albumName)
-                    }
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, resultMessage(success, albumName, missingPermission), Toast.LENGTH_SHORT).show()
                 }
             },
             onLockSelect = {

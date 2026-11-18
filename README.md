@@ -55,6 +55,7 @@ To ensure proper functionality while adhering to the **Principle of Least Privil
 - `duplicate.read`
 - `user.read`
 - `userProfileImage.read`
+- `album.create`
 
 3. Select an album or virtual collection and start sorting!
 
