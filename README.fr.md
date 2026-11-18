@@ -61,9 +61,9 @@ Afin d'assurer le bon fonctionnement tout en respectant le **Principe de Moindre
 
 ## 📦 Installation
 
-|                                                                                                                       **Orion Store**                                                                                                                        |   **Téléchargement Direct**   |      **Play Store**      |     **F-Droid**     |
-|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------:|:------------------------:|:-------------------:|
-| [<img src="https://github.com/RookieEnough/Orion-Store/blob/main/assets/graphics/orion-badge.png?raw=true"  alt="Get it on Orion Store" height="50">](https://rookieenough.github.io/Orion-Data/redirect.html?id=immich-swipe-android) | Récupérez le dernier APK dans la section [Releases](https://github.com/markvoronin354/immich-swipe-android/releases)   | Prochainement disponible | Prochainement disponible |
+|                                                                                                                       **Orion Store**                                                                                                                        |   **Téléchargement Direct**   |      **Play Store**      |
+|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------:|:------------------------:|
+| [<img src="https://github.com/RookieEnough/Orion-Store/blob/main/assets/orion-badge.png?raw=true"  alt="Get it on Orion Store" height="50">](https://rookieenough.github.io/Orion-Data/redirect.html?id=immich-swipe-android) | [<img src="https://img.shields.io/badge/T%C3%A9l%C3%A9chargement%20direct-APK-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Télécharger le dernier APK" height="50">](https://github.com/markvoronin354/immich-swipe-android/releases) | [<img src="https://play.google.com/intl/fr/badges/static/images/badges/fr_badge_web_generic.png" alt="Disponible sur Google Play" height="75">](https://play.google.com/store/apps/details?id=com.markvoronin.immichswipe) |
 
 ## 🛠️ Build
 
@@ -86,4 +86,4 @@ Bien que ce projet soit développé avec le plus grand soin et testé régulièr
 
 Il est important de notation que :
 - **Sécurité de la corbeille** : Immich Swipe ne vide jamais définitivement la corbeille de votre serveur Immich. Vos éléments supprimés sont envoyés vers la corbeille Immich et restent récupérables via l'interface officielle Immich pendant la durée de conservation configurée de la corbeille.
-- **Principe de moindre privilège** : Afin de minimiser les risques, il est vivement conseillé de ne configurer votre clé API qu'avec les permissions strictement nécessaires listées dans la section [Configuration & Permissions de la Clé API](#-configuration--permissions-de-la-clé-api).
+- **Principe de moindre privilège** : Afin de minimiser les risques, il est vivement conseillé de ne configurer votre clé API qu'avec les permissions strictement nécessaires listées dans la section [Configuration & Permissions de la Clé API](#%EF%B8%8F-configuration--permissions-de-la-clé-api).

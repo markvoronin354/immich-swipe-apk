@@ -86,4 +86,4 @@ While this project is developed with care and tested regularly, I cannot guarant
 
 Please keep in mind:
 - **Trash Safety**: Immich Swipe never permanently deletes files or empties the trash on your Immich server. Deleted items are sent to Immich Trash and remain recoverable through the official Immich web/app interface during your server's trash retention period.
-- **Principle of Least Privilege**: To minimize risks, configure your API key with only the strictly required permissions listed in [Configuration & API Key Permissions](#-configuration--api-key-permissions).
+- **Principle of Least Privilege**: To minimize risks, configure your API key with only the strictly required permissions listed in [Configuration & API Key Permissions](#%EF%B8%8F-configuration--api-key-permissions).
