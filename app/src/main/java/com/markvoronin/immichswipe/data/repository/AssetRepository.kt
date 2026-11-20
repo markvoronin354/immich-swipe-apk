@@ -79,6 +79,8 @@ class AssetRepository(
         fun List<Asset>.ownedByUser() = filter { asset ->
             (asset.ownerId == userId).also { if (!it) foreignIds += asset.id }
         }
+        // Hidden assets are the motion clips of live photos, which the photo already plays.
+        fun List<Asset>.withoutHidden() = filterNot { it.isHidden }
         fun skippedForeign(): Set<String> {
             if (foreignIds.isNotEmpty()) AppLogger.i("AssetRepo", "Skipped ${foreignIds.size} assets owned by other users in $albumId")
             return foreignIds.toSet()
@@ -112,7 +114,8 @@ class AssetRepository(
                         imageWidth = entity.imageWidth,
                         imageHeight = entity.imageHeight
                     ),
-                    rotation = entity.rotation
+                    rotation = entity.rotation,
+                    livePhotoVideoId = entity.livePhotoVideoId
                 )
             }
         }
@@ -157,7 +160,7 @@ class AssetRepository(
         if (isRealAlbum) {
             try {
                 val albumDetail = api.getAlbumDetail(albumId)
-                val serverItems = albumDetail.assets.ownedByUser().withoutRemoved()
+                val serverItems = albumDetail.assets.ownedByUser().withoutHidden().withoutRemoved()
                 val finalItems = applySort(serverItems, sortOrder, shuffleSeed)
 
                 withContext(Dispatchers.IO) {
@@ -175,7 +178,8 @@ class AssetRepository(
                                     fileSizeInBytes = asset.exifInfo?.fileSizeInBytes,
                                     imageWidth = asset.exifInfo?.imageWidth,
                                     imageHeight = asset.exifInfo?.imageHeight,
-                                    rotation = asset.rotation
+                                    rotation = asset.rotation,
+                                    livePhotoVideoId = asset.livePhotoVideoId
                                 )
                             })
                         }
@@ -234,14 +238,15 @@ class AssetRepository(
 
         val totalInDb = albumAssetDao.getAssetCountForAlbum(albumId, userId)
         val foreignOnPage1 = firstPageResp.assets.items.count { it.ownerId != userId }
-        val page1ServerItems = firstPageResp.assets.items.ownedByUser().withoutRemoved()
+        val hiddenOnPage1 = firstPageResp.assets.items.count { it.ownerId == userId && it.isHidden }
+        val page1ServerItems = firstPageResp.assets.items.ownedByUser().withoutHidden().withoutRemoved()
         val page1ServerIds = page1ServerItems.map { it.id }.toSet()
         val cachedIds = cachedEntities.map { it.assetId }.toSet()
 
         // Use the higher of the two totals if they differ. 
         // totalFromServer comes from the statistics endpoint which is more reliable for large libraries.
         // The server counts other users' assets too, and those are skipped, so leave them out of the total.
-        val effectiveTotal = maxOf(totalFromServer, firstPageResp.assets.total) - foreignOnPage1
+        val effectiveTotal = maxOf(totalFromServer, firstPageResp.assets.total) - foreignOnPage1 - hiddenOnPage1
 
         // 3a. Single-page case: Server returned all assets in page 1
         if (firstPageResp.assets.nextPage == null) {
@@ -268,7 +273,8 @@ class AssetRepository(
                                 originalFileName = asset.originalFileName,
                                 fileSizeInBytes = asset.exifInfo?.fileSizeInBytes,
                                 imageWidth = asset.exifInfo?.imageWidth,
-                                imageHeight = asset.exifInfo?.imageHeight
+                                imageHeight = asset.exifInfo?.imageHeight,
+                                livePhotoVideoId = asset.livePhotoVideoId
                             )
                         })
                     }
@@ -309,7 +315,7 @@ class AssetRepository(
             }
             try {
                 val resp = if (nextPage == "1") firstPageResp else api.searchAssets(baseRequest.copy(page = nextPage.toIntOrNull() ?: 1, size = 500))
-                val items = resp.assets.items.ownedByUser().withoutRemoved()
+                val items = resp.assets.items.ownedByUser().withoutHidden().withoutRemoved()
                 
                 if (items.isNotEmpty()) {
                     allServerFetchedIds.addAll(items.map { it.id })
@@ -331,7 +337,8 @@ class AssetRepository(
                                         originalFileName = asset.originalFileName,
                                         fileSizeInBytes = asset.exifInfo?.fileSizeInBytes,
                                         imageWidth = asset.exifInfo?.imageWidth,
-                                        imageHeight = asset.exifInfo?.imageHeight
+                                        imageHeight = asset.exifInfo?.imageHeight,
+                                        livePhotoVideoId = asset.livePhotoVideoId
                                     )
                                 })
                             }
@@ -405,7 +412,8 @@ class AssetRepository(
                         imageWidth = entity.imageWidth,
                         imageHeight = entity.imageHeight
                     ),
-                    rotation = entity.rotation
+                    rotation = entity.rotation,
+                    livePhotoVideoId = entity.livePhotoVideoId
                 )
             }
         }

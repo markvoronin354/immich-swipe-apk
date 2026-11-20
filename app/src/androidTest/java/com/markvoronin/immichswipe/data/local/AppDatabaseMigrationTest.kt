@@ -72,4 +72,27 @@ class AppDatabaseMigrationTest {
             assertEquals("enc1:xyz", cursor.getString(0))
         }
     }
+
+    @Test
+    fun migrate14To15ClearsTheAssetCacheButKeepsDecisions() {
+        helper.createDatabase(testDbName, 14).apply {
+            execSQL("INSERT INTO album_assets (albumId, assetId, userId) VALUES ('album', 'a1', 'u1')")
+            execSQL(
+                "INSERT INTO swipe_decisions (assetId, albumId, userId, decision, createdAt, isSynced, wasSyncedSkip) " +
+                    "VALUES ('a1', 'album', 'u1', 'KEEP', 1, 0, 0)"
+            )
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(testDbName, 15, true, AppDatabase.MIGRATION_14_15)
+        db.query("SELECT COUNT(*) FROM album_assets").use { cursor ->
+            cursor.moveToFirst()
+            assertEquals(0, cursor.getInt(0))
+        }
+        db.query("SELECT decision FROM swipe_decisions WHERE assetId = 'a1'").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("KEEP", cursor.getString(0))
+        }
+        // The new column accepts a value.
+        db.execSQL("INSERT INTO album_assets (albumId, assetId, userId, livePhotoVideoId) VALUES ('album', 'a2', 'u1', 'clip')")
+    }
 }

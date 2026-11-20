@@ -91,6 +91,44 @@ class AssetRepositorySyncTest {
     }
 
     @Test
+    fun `a live photo's hidden motion clip is skipped and never cached`() = runBlocking {
+        val db = linkedMapOf<String, AlbumAssetEntity>()
+        @Suppress("UNCHECKED_CAST")
+        val dao = fake<AlbumAssetDao> { name, args ->
+            when (name) {
+                "getAssetsChronologicalDesc" -> db.values.toList()
+                "getAssetCountForAlbum" -> db.size
+                "insertAlbumAssets" -> (args[0] as List<AlbumAssetEntity>).forEach { db[it.assetId] = it }
+                else -> Unit
+            }
+        }
+        val sessionManager = mockk<SessionManager> { every { getUserId() } returns "u" }
+        val api = fake<ImmichApi> { name, _ ->
+            when (name) {
+                "getSearchStatistics" -> SearchStatisticsResponse(2)
+                "searchAssets" -> SearchResponse(
+                    SearchAssetResult(
+                        listOf(
+                            asset("photo").copy(livePhotoVideoId = "clip"),
+                            asset("clip").copy(type = "VIDEO", visibility = "hidden")
+                        ),
+                        2
+                    )
+                )
+                else -> Unit
+            }
+        }
+        val repo = AssetRepository(sessionManager, api, dao)
+
+        val batches = repo.getAssetsByAlbum(Album.VIRTUAL_ALL_ID, userId = "u").toList()
+
+        assertEquals(listOf("photo"), batches.last().assets.map { it.id })
+        assertEquals("clip", batches.last().assets.single().livePhotoVideoId)
+        assertEquals(1, batches.last().total)
+        assertEquals(listOf("photo"), db.keys.toList())
+    }
+
+    @Test
     fun `assets removed locally while a sync is paging are not brought back by it`() = runBlocking {
         // The local cache already holds a1; the server has a1 on page 1 and a2, a3 on page 2.
         val db = linkedMapOf("a1" to AlbumAssetEntity(Album.VIRTUAL_ALL_ID, "a1", "u"))

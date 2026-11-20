@@ -19,7 +19,11 @@ data class Asset(
     val fileExtension: String? = null,
     val exifInfo: ExifInfo? = null,
     val rotation: Int = 0,
-    val isEdited: Boolean = false
+    val isEdited: Boolean = false,
+    // Id of the motion clip asset when this photo is a live/motion photo.
+    val livePhotoVideoId: String? = null,
+    // archive, timeline, hidden or locked; a live photo's motion clip is its own hidden asset.
+    val visibility: String? = null
 ) {
     val effectiveDate: String
         get() = exifInfo?.dateTimeOriginal?.takeIf { it.isNotBlank() } ?: fileCreatedAt
@@ -30,6 +34,12 @@ data class Asset(
 
     val isVideo: Boolean
         get() = type.equals("VIDEO", ignoreCase = true)
+
+    val isHidden: Boolean
+        get() = visibility.equals("hidden", ignoreCase = true)
+
+    val isLivePhoto: Boolean
+        get() = !isVideo && !livePhotoVideoId.isNullOrEmpty()
 }
 
 data class ExifInfo(

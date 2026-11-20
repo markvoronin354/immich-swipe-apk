@@ -265,6 +265,7 @@
     <string name="swipe_asset_error">Error loading asset</string>
     <string name="swipe_asset_error_sub">Incompatible format or server error</string>
     <string name="swipe_video_error">Error playing video</string>
+    <string name="swipe_live_photo" translatable="false">LIVE</string>
 
     <!-- Size units -->
     <string name="size_unit_tb">%1$s TB</string>

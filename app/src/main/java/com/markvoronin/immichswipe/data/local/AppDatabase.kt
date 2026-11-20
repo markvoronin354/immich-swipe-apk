@@ -18,7 +18,7 @@ import com.markvoronin.immichswipe.data.local.entity.UserAccountEntity
 
 @Database(
     entities = [SwipeDecisionEntity::class, SyncHistoryEntity::class, AlbumAssetEntity::class, UserAccountEntity::class],
-    version = 14,
+    version = 15,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -27,6 +27,15 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun userAccountDao(): UserAccountDao
 
     companion object {
+        internal val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                AppLogger.i("Database", "Executing Migration 14 -> 15 (Adding livePhotoVideoId to album_assets)")
+                db.execSQL("ALTER TABLE album_assets ADD COLUMN livePhotoVideoId TEXT")
+                // The cache is rebuilt from the server; old rows lack the live-photo link and are only re-fetched when missing.
+                db.execSQL("DELETE FROM album_assets")
+            }
+        }
+
         internal val MIGRATION_13_14 = object : Migration(13, 14) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 AppLogger.i("Database", "Executing Migration 13 -> 14 (Adding customHeaders to user_accounts)")
@@ -218,7 +227,7 @@ abstract class AppDatabase : RoomDatabase() {
                                 AppDatabase::class.java,
                                 "immich_swipe_database"
                             )
-                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14)
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
                     // No destructive fallback: a missing migration must fail loudly instead of silently wiping the
                     // user's sorting progress (a downgrade would otherwise do exactly that). This application id
                     // first shipped with database version 10, so migrations 2 to 9 are only kept for history.

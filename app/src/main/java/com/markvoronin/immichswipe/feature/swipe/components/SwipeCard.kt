@@ -3,6 +3,7 @@ package com.markvoronin.immichswipe.feature.swipe.components
 
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -204,6 +205,7 @@ fun SwipeCard(
     }
     var showMuteIndicator by remember { mutableStateOf(value = false) }
     var isFullSizeLoaded by remember(asset.id, config.isFullSize) { mutableStateOf(value = false) }
+    var isLivePhotoPlaying by remember(asset.id) { mutableStateOf(value = false) }
 
     LaunchedEffect(showMuteIndicator) {
         if (showMuteIndicator) {
@@ -755,6 +757,25 @@ fun SwipeCard(
                                 AssetErrorView()
                             }
                         )
+
+                        if (asset.isLivePhoto && !isNext) {
+                            androidx.compose.animation.AnimatedVisibility(
+                                visible = isLivePhotoPlaying && !isFullscreenOpen,
+                                enter = EnterTransition.None,
+                                exit = fadeOut(MaterialTheme.motionScheme.defaultEffectsSpec())
+                            ) {
+                                LivePhotoSurface(
+                                    videoId = asset.livePhotoVideoId.orEmpty(),
+                                    baseUrl = baseUrl,
+                                    isMuted = isMuted,
+                                    onFinished = { isLivePhotoPlaying = false },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .graphicsLayer { rotationZ = animatedRotation }
+                                        .rotateLayout(config.rotationAngle)
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -786,6 +807,25 @@ fun SwipeCard(
                                 .clearOfCornerButtons(topStartButtons, topEndButtons, fromTop = true)
                         ) {
                             GlassPill(formatSize(asset.exifInfo?.fileSizeInBytes ?: 0L), glassBackdrop)
+                        }
+                    }
+                }
+
+                if (asset.isLivePhoto && !isNext) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = 8.dp),
+                        verticalArrangement = Arrangement.Bottom,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        AnimatedVisibility(
+                            visible = !controlsHidden,
+                            enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
+                            exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
+                            modifier = Modifier.clearOfCornerButtons(bottomStartButtons, bottomEndButtons, fromTop = false)
+                        ) {
+                            LivePhotoPill(glassBackdrop, onClick = { isLivePhotoPlaying = !isLivePhotoPlaying })
                         }
                     }
                 }
