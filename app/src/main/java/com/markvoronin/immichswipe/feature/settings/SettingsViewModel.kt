@@ -381,6 +381,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun resetSwipeActions() {
+        viewModelScope.launch {
+            sessionRepository.resetSwipeActions()
+        }
+    }
+
     fun setImmichButtonPosition(pos: IconPosition) {
         viewModelScope.launch {
             sessionRepository.saveImmichButtonPosition(pos)
@@ -765,6 +771,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setShowInteractionsDialog(show: Boolean) {
         _uiState.value = _uiState.value.copy(showInteractionsDialog = show)
+    }
+
+    fun setShowSwipeActionsDialog(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showSwipeActionsDialog = show)
     }
 
     fun setShowCustomPaletteEditor(show: Boolean) {

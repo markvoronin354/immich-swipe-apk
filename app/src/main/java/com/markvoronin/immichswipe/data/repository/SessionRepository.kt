@@ -308,6 +308,7 @@ class SessionRepository @Inject constructor(
 
     suspend fun resetActionButtons() { dataStore.resetActionButtons() }
     suspend fun resetInteractions() { dataStore.resetInteractions() }
+    suspend fun resetSwipeActions() { dataStore.resetSwipeActions() }
 
     suspend fun saveShowFullscreenButton(show: Boolean) { dataStore.saveShowFullscreenIcon(show) }
     suspend fun saveShowImmichButton(show: Boolean) { dataStore.saveShowImmichIcon(show) }

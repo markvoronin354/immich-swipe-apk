@@ -29,10 +29,6 @@ import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.RestartAlt
-import androidx.compose.material.icons.filled.SwipeDown
-import androidx.compose.material.icons.filled.SwipeLeft
-import androidx.compose.material.icons.filled.SwipeRight
-import androidx.compose.material.icons.filled.SwipeUp
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -54,18 +50,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.DoubleTapAction
-import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.feature.settings.SettingsUiState
 import com.markvoronin.immichswipe.feature.settings.SettingsViewModel
 import com.markvoronin.immichswipe.feature.swipe.components.SwipeActionBarLayout
-import com.markvoronin.immichswipe.feature.swipe.utils.icon
-import com.markvoronin.immichswipe.feature.swipe.utils.labelRes
 
 @Composable
 fun InteractionsScreen(
@@ -217,60 +209,6 @@ fun InteractionsScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        SettingsSection(title = stringResource(R.string.settings_section_swipe_actions)) {
-            Column {
-                SwipeActionItem(
-                    title = stringResource(R.string.settings_swipe_left_label),
-                    icon = Icons.Default.SwipeLeft,
-                    actions = SideSwipeActions,
-                    selected = uiState.swipeLeftAction,
-                    onSelect = viewModel::setSwipeLeftAction
-                )
-
-                SettingsItemGap()
-
-                SwipeActionItem(
-                    title = stringResource(R.string.settings_swipe_right_label),
-                    icon = Icons.Default.SwipeRight,
-                    actions = SideSwipeActions,
-                    selected = uiState.swipeRightAction,
-                    onSelect = viewModel::setSwipeRightAction
-                )
-
-                SettingsItemGap()
-
-                SwipeActionItem(
-                    title = stringResource(R.string.settings_swipe_up_label),
-                    icon = Icons.Default.SwipeUp,
-                    actions = SwipeUpActions,
-                    selected = uiState.swipeUpAction,
-                    onSelect = viewModel::setSwipeUpAction
-                )
-
-                SettingsItemGap()
-
-                SwipeActionItem(
-                    title = stringResource(R.string.settings_swipe_down_label),
-                    icon = Icons.Default.SwipeDown,
-                    actions = SwipeDownActions,
-                    selected = uiState.swipeDownAction,
-                    onSelect = viewModel::setSwipeDownAction
-                )
-
-                SettingsItemGap()
-
-                SettingsToggleItemSmall(
-                    title = stringResource(R.string.settings_fullscreen_swipe_down_label),
-                    checked = uiState.fullscreenSwipeDownUsesAction,
-                    onCheckedChange = { viewModel.setFullscreenSwipeDownUsesAction(it) },
-                    icon = Icons.Default.Fullscreen,
-                    description = stringResource(R.string.settings_fullscreen_swipe_down_desc)
-                )
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
         SettingsSection(
             title = stringResource(R.string.settings_section_actions)
         ) {
@@ -379,67 +317,4 @@ private fun ResetInteractionsDialog(onConfirm: () -> Unit, onDismiss: () -> Unit
             }
         }
     )
-}
-
-// Undo and Details are left out: they only make sense for a swipe down and a swipe up.
-private val SideSwipeActions = listOf(
-    SwipeAction.KEEP, SwipeAction.DELETE, SwipeAction.FAVORITE, SwipeAction.ARCHIVE, SwipeAction.LOCK
-)
-
-// The same top row as the sides, with Undo between Archive and Lock below it.
-private val SwipeDownActions = listOf(
-    SwipeAction.KEEP, SwipeAction.DELETE, SwipeAction.FAVORITE, SwipeAction.ARCHIVE, SwipeAction.UNDO, SwipeAction.LOCK
-)
-
-// Likewise, with Details in Undo's place.
-private val SwipeUpActions = listOf(
-    SwipeAction.KEEP, SwipeAction.DELETE, SwipeAction.FAVORITE, SwipeAction.ARCHIVE, SwipeAction.DETAILS, SwipeAction.LOCK
-)
-
-@Composable
-private fun SwipeActionItem(
-    title: String,
-    icon: ImageVector,
-    actions: List<SwipeAction>,
-    selected: SwipeAction,
-    onSelect: (SwipeAction) -> Unit,
-) {
-    SettingsExpandableItem(
-        title = title,
-        subtitle = stringResource(selected.labelRes),
-        icon = icon
-    ) {
-        // Rows of three: more labels don't fit one row on a phone.
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(3.dp)
-        ) {
-            actions.chunked(3).forEach { SwipeActionRow(it, selected, onSelect) }
-        }
-    }
-}
-
-@Composable
-private fun SwipeActionRow(
-    actions: List<SwipeAction>,
-    selected: SwipeAction,
-    onSelect: (SwipeAction) -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(3.dp)
-    ) {
-        actions.forEachIndexed { index, action ->
-            ThemeModeButton(
-                text = stringResource(action.labelRes),
-                icon = action.icon,
-                selected = selected == action,
-                onClick = { onSelect(action) },
-                modifier = Modifier.weight(1f),
-                index = index, count = actions.size
-            )
-        }
-    }
 }

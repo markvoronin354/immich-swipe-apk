@@ -56,6 +56,7 @@ import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.PhonelinkErase
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.SettingsSuggest
+import androidx.compose.material.icons.filled.SwipeLeft
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material3.AlertDialog
@@ -99,6 +100,7 @@ import com.markvoronin.immichswipe.feature.settings.components.ClearCacheDialog
 import com.markvoronin.immichswipe.feature.settings.components.CustomReminderDialog
 import com.markvoronin.immichswipe.feature.settings.components.DatabaseActionDialog
 import com.markvoronin.immichswipe.feature.settings.components.InteractionsScreen
+import com.markvoronin.immichswipe.feature.settings.components.SwipeActionsScreen
 import com.markvoronin.immichswipe.feature.settings.components.LogsScreen
 import com.markvoronin.immichswipe.feature.settings.components.CustomPaletteScreen
 import com.markvoronin.immichswipe.feature.settings.components.PaletteSelector
@@ -112,7 +114,7 @@ import com.markvoronin.immichswipe.feature.settings.components.ThemeModeButton
 import com.markvoronin.immichswipe.feature.settings.components.verticalFadingEdges
 
 enum class SettingsSubMenu {
-    NONE, INTERACTIONS, ACTION_BUTTONS, CUSTOM_PALETTE, LOGS
+    NONE, INTERACTIONS, SWIPE_ACTIONS, ACTION_BUTTONS, CUSTOM_PALETTE, LOGS
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -186,6 +188,7 @@ fun SettingsScreen(
 
     val activeSubMenu = when {
         uiState.showInteractionsDialog -> SettingsSubMenu.INTERACTIONS
+        uiState.showSwipeActionsDialog -> SettingsSubMenu.SWIPE_ACTIONS
         uiState.showActionButtonsDialog -> SettingsSubMenu.ACTION_BUTTONS
         uiState.showCustomPaletteEditor -> SettingsSubMenu.CUSTOM_PALETTE
         uiState.showLogsDialog -> SettingsSubMenu.LOGS
@@ -212,6 +215,17 @@ fun SettingsScreen(
                     uiState = uiState,
                     viewModel = viewModel,
                     onBack = { viewModel.setShowInteractionsDialog(false) },
+                    modifier = modifier
+                )
+            }
+            SettingsSubMenu.SWIPE_ACTIONS -> SettingsPage(
+                title = stringResource(R.string.settings_section_swipe_actions),
+                onBack = { viewModel.setShowSwipeActionsDialog(false) }
+            ) {
+                SwipeActionsScreen(
+                    uiState = uiState,
+                    viewModel = viewModel,
+                    onBack = { viewModel.setShowSwipeActionsDialog(false) },
                     modifier = modifier
                 )
             }
@@ -324,6 +338,15 @@ fun SettingsScreen(
                     subtitle = stringResource(R.string.settings_interactions_desc),
                     icon = Icons.Default.TouchApp,
                     onClick = { viewModel.setShowInteractionsDialog(true) }
+                )
+
+                SettingsItemGap()
+
+                SettingsClickableItem(
+                    title = stringResource(R.string.settings_section_swipe_actions),
+                    subtitle = stringResource(R.string.settings_swipe_actions_desc),
+                    icon = Icons.Default.SwipeLeft,
+                    onClick = { viewModel.setShowSwipeActionsDialog(true) }
                 )
 
                 SettingsItemGap()

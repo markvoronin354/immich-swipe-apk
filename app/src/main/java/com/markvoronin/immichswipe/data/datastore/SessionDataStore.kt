@@ -278,14 +278,20 @@ class SessionDataStore(private val context: Context) {
             it.remove(KEY_SHOW_FAVORITE)
             it.remove(KEY_AUTO_NEXT_ON_FAV)
             it.remove(KEY_TOOLBAR_BUTTON_ORDER)
+            it.remove(KEY_TAP_TO_SWIPE)
+            it.remove(KEY_DOUBLE_TAP_ENABLED)
+            it.remove(KEY_DOUBLE_TAP_ACTION)
+        }
+    }
+
+    /** Clears everything the Swipe actions screen edits so the flows fall back to their defaults. */
+    suspend fun resetSwipeActions() {
+        context.dataStore.edit {
             it.remove(KEY_SWIPE_LEFT_ACTION)
             it.remove(KEY_SWIPE_RIGHT_ACTION)
             it.remove(KEY_SWIPE_DOWN_ACTION)
             it.remove(KEY_SWIPE_UP_ACTION)
             it.remove(KEY_FULLSCREEN_SWIPE_DOWN_USES_ACTION)
-            it.remove(KEY_TAP_TO_SWIPE)
-            it.remove(KEY_DOUBLE_TAP_ENABLED)
-            it.remove(KEY_DOUBLE_TAP_ACTION)
         }
     }
 

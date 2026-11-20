@@ -221,6 +221,13 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `resetting the swipe actions clears them through the session repository`() {
+        createViewModel().resetSwipeActions()
+
+        coVerify { sessionRepository.resetSwipeActions() }
+    }
+
+    @Test
     fun `turning reminders on schedules them with the current interval`() {
         reminderInterval.value = ReminderInterval.CUSTOM
         reminderMin.value = 2L

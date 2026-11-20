@@ -77,6 +77,7 @@ data class SettingsUiState(
     val fullscreenSwipeDownUsesAction: Boolean = false,
     val showActionButtonsDialog: Boolean = false,
     val showInteractionsDialog: Boolean = false,
+    val showSwipeActionsDialog: Boolean = false,
     val showCustomPaletteEditor: Boolean = false,
     val showClearCacheConfirmation: Boolean = false,
     val reminderEnabled: Boolean = false,
