@@ -5,8 +5,12 @@ import android.view.LayoutInflater
 import androidx.annotation.OptIn
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -15,12 +19,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
@@ -111,14 +119,26 @@ fun LivePhotoSurface(
     )
 }
 
-/** The "LIVE" pill on a live photo's card; a tap plays the motion clip, or stops it while it plays. */
+/**
+ * The "LIVE" pill on a live photo, on the card and in fullscreen; a tap plays the motion clip, or stops it while it plays.
+ * As tall as the video time pill (32dp) and wider than the size pill, so it is easy to hit.
+ */
 @Composable
 fun LivePhotoPill(backdrop: Backdrop, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    GlassPill(
-        text = stringResource(R.string.swipe_live_photo),
-        backdrop = backdrop,
+    Box(
         modifier = modifier
             .clip(CircleShape)
+            .glassSurface(backdrop, CircleShape, 12.dp)
             .clickable(role = Role.Button, onClick = onClick)
-    )
+            .defaultMinSize(minWidth = 72.dp, minHeight = 32.dp)
+            .padding(horizontal = 16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = stringResource(R.string.swipe_live_photo),
+            color = Color.White,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold
+        )
+    }
 }

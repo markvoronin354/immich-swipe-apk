@@ -6,6 +6,7 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -24,7 +25,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.gestures.GestureCancellationException
 import androidx.compose.foundation.gestures.PressGestureScope
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -102,20 +105,30 @@ import kotlin.time.Duration.Companion.milliseconds
 /** Keeps the KEEP/DELETE badge below the top bar, which spans 40dp to 104dp from the top. */
 private val FullscreenBadgeTopPadding = 110.dp
 
-/** A photo's file size, centred above the bottom toolbar; a video shows it in its own controls. */
+/** A photo's file size and, for a live photo, its LIVE pill, centred above the bottom toolbar; a video shows its size in its own controls. */
 @Composable
-private fun PhotoSizePill(visible: Boolean, sizeInBytes: Long, isLandscape: Boolean, backdrop: Backdrop, modifier: Modifier = Modifier) {
+private fun PhotoPills(
+    visible: Boolean,
+    sizeInBytes: Long?,
+    onLiveClick: (() -> Unit)?,
+    isLandscape: Boolean,
+    backdrop: Backdrop,
+    modifier: Modifier = Modifier
+) {
     AnimatedVisibility(
         visible = visible,
         enter = fadeIn(MaterialTheme.motionScheme.slowEffectsSpec()),
         exit = fadeOut(MaterialTheme.motionScheme.slowEffectsSpec()),
         modifier = modifier
     ) {
-        GlassPill(
-            text = formatSize(sizeInBytes),
-            backdrop = backdrop,
-            modifier = Modifier.padding(bottom = previewToolbarBottom(isLandscape) + PreviewToolbarHeight + PreviewToolbarGap)
-        )
+        Column(
+            modifier = Modifier.padding(bottom = previewToolbarBottom(isLandscape) + PreviewToolbarHeight + PreviewToolbarGap),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (onLiveClick != null) LivePhotoPill(backdrop, onClick = onLiveClick)
+            if (sizeInBytes != null) GlassPill(text = formatSize(sizeInBytes), backdrop = backdrop)
+        }
     }
 }
 
@@ -269,6 +282,7 @@ fun FullscreenViewer(
 
     var controlsVisible by remember { mutableStateOf(true) }
     var infoAsset by remember { mutableStateOf<Asset?>(null) }
+    var isLivePhotoPlaying by remember(asset.id) { mutableStateOf(false) }
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     
@@ -515,10 +529,11 @@ fun FullscreenViewer(
 
                     ViewerScrim(visible = controlsVisible && !isHoldingByPress && !wasHoldDetected)
 
-                    if (showSizeIndicator && nextAsset.type != "VIDEO") {
-                        PhotoSizePill(
+                    if ((showSizeIndicator || nextAsset.isLivePhoto) && nextAsset.type != "VIDEO") {
+                        PhotoPills(
                             visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
-                            sizeInBytes = nextAsset.exifInfo?.fileSizeInBytes ?: 0L,
+                            sizeInBytes = if (showSizeIndicator) nextAsset.exifInfo?.fileSizeInBytes ?: 0L else null,
+                            onLiveClick = if (nextAsset.isLivePhoto) ({}) else null,
                             isLandscape = isLandscape,
                             backdrop = nextMediaBackdrop,
                             modifier = Modifier.align(Alignment.BottomCenter)
@@ -776,6 +791,25 @@ fun FullscreenViewer(
                         }
                     )
                     }
+
+                    if (asset.isLivePhoto) {
+                        AnimatedVisibility(
+                            visible = isLivePhotoPlaying,
+                            enter = EnterTransition.None,
+                            exit = fadeOut(MaterialTheme.motionScheme.defaultEffectsSpec())
+                        ) {
+                            LivePhotoSurface(
+                                videoId = asset.livePhotoVideoId.orEmpty(),
+                                baseUrl = baseUrlClean,
+                                isMuted = isMuted,
+                                onFinished = { isLivePhotoPlaying = false },
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer { rotationZ = animatedRotation }
+                                    .rotateLayout(rotation)
+                            )
+                        }
+                    }
                 }
 
                 ViewerScrim(visible = finalControlsVisible && !isClosing)
@@ -791,10 +825,11 @@ fun FullscreenViewer(
                 )
             }
 
-            if (showSizeIndicator && asset.type != "VIDEO") {
-                PhotoSizePill(
+            if ((showSizeIndicator || asset.isLivePhoto) && asset.type != "VIDEO") {
+                PhotoPills(
                     visible = controlsVisible && !isHoldingByPress && !wasHoldDetected,
-                    sizeInBytes = asset.exifInfo?.fileSizeInBytes ?: 0L,
+                    sizeInBytes = if (showSizeIndicator) asset.exifInfo?.fileSizeInBytes ?: 0L else null,
+                    onLiveClick = if (asset.isLivePhoto) ({ isLivePhotoPlaying = !isLivePhotoPlaying }) else null,
                     isLandscape = isLandscape,
                     backdrop = mediaBackdrop,
                     modifier = Modifier.align(Alignment.BottomCenter)
