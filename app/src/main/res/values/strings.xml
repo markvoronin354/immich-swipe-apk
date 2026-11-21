@@ -227,6 +227,13 @@
     <string name="swipe_details">Details</string>
     <string name="swipe_label_favorite">Favorite</string>
     <string name="swipe_label_album">Album</string>
+    <string name="swipe_label_rating">Rating</string>
+    <string name="swipe_rating_upper">RATING</string>
+    <string name="rating_dialog_title">Rate this photo</string>
+    <string name="rating_star_description">%1$d of 5 stars</string>
+    <string name="rating_success">Rated %1$d of 5 stars</string>
+    <string name="rating_error">Couldn\'t set the rating</string>
+    <string name="rating_permission_error">Couldn\'t set the rating. Your API key is missing the %1$s permission.</string>
     <string name="swipe_label_sort">Sort</string>
     <string name="add_to_album_title">Add to album</string>
     <string name="add_to_album_search_placeholder">Search an album…</string>

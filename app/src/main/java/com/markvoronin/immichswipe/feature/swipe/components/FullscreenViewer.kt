@@ -227,9 +227,9 @@ fun FullscreenViewer(
                     launch { swipeX.animateTo(0f, motionScheme.fastSpatialSpec()) }
                     swipeY.animateTo(0f, motionScheme.fastSpatialSpec())
                 }
-            } else if (currentSwipeDown == SwipeAction.ALBUM) {
-                // The viewer stays open: the picker opens over the photo.
-                currentOnSwipe(SwipeAction.ALBUM)
+            } else if (currentSwipeDown.isDropTarget) {
+                // The viewer stays open: the album picker or rating dialog opens over the photo.
+                currentOnSwipe(currentSwipeDown)
                 launch { swipeX.animateTo(0f, motionScheme.fastSpatialSpec()) }
                 swipeY.animateTo(0f, motionScheme.fastSpatialSpec())
             } else {
@@ -484,7 +484,7 @@ fun FullscreenViewer(
         ) {
             if (nextAsset != null) {
                 // A pull that swipes, rather than closes or undoes, brings the next photo up like a sideways swipe does.
-                val swipePull = if (swipeDownUsesAction && swipeDownAction != SwipeAction.UNDO && swipeDownAction != SwipeAction.ALBUM) {
+                val swipePull = if (swipeDownUsesAction && swipeDownAction != SwipeAction.UNDO && !swipeDownAction.isDropTarget) {
                     max(abs(swipeX.value), swipeY.value)
                 } else {
                     abs(swipeX.value)

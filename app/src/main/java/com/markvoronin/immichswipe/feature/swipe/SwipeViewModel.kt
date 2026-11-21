@@ -546,6 +546,7 @@ class SwipeViewModel @Inject constructor(
             // The details panel lives in the card, which opens it itself.
             SwipeAction.DETAILS -> Unit
             SwipeAction.ALBUM -> openAddToAlbumDialog()
+            SwipeAction.RATING -> _uiState.update { it.copy(showRatingDialog = true) }
             SwipeAction.FAVORITE -> {
                 val state = _uiState.value
                 val asset = state.currentAsset ?: return
@@ -699,6 +700,25 @@ class SwipeViewModel @Inject constructor(
         _uiState.update { it.copy(showAddToAlbumDialog = false) }
     }
 
+    fun dismissRatingDialog() {
+        _uiState.update { it.copy(showRatingDialog = false) }
+    }
+
+    // onResult gets the permission the API key lacks when the server refused the request for that.
+    fun rateCurrentAsset(rating: Int, onResult: (Boolean, Int, String?) -> Unit) {
+        val asset = _uiState.value.currentAsset ?: return
+        viewModelScope.launch {
+            try {
+                assetRepository.updateAssets(listOf(asset.id), rating = rating)
+                mirrorRating(asset.id, rating)
+                onResult(true, rating, null)
+            } catch (e: Exception) {
+                e.rethrowIfCancelled()
+                onResult(false, rating, e.missingPermission())
+            }
+        }
+    }
+
     // onResult gets the permission the API key lacks when the server refused the request for that.
     fun addCurrentAssetToAlbum(targetAlbum: Album, onResult: (Boolean, String, String?) -> Unit) {
         val asset = _uiState.value.currentAsset ?: return
@@ -712,6 +732,23 @@ class SwipeViewModel @Inject constructor(
                 AppLogger.e("SwipeViewModel", "Error adding asset to album ${targetAlbum.albumName}", e)
                 onResult(false, targetAlbum.albumName, null)
             }
+        }
+    }
+
+    /** Puts the new rating into the deck's copy of the asset, so the details panel shows it without a reload. */
+    private fun mirrorRating(assetId: String, rating: Int) {
+        fun Asset.withRating() = copy(exifInfo = (exifInfo ?: ExifInfo()).copy(rating = rating))
+        val masterIndex = masterWorkPile.indexOfFirst { it.id == assetId }
+        if (masterIndex != -1) {
+            masterWorkPile = masterWorkPile.toMutableList().also { it[masterIndex] = it[masterIndex].withRating() }
+        }
+        _uiState.update { state ->
+            val index = state.assets.indexOfFirst { it.id == assetId }
+            if (index == -1) state.copy(masterWorkPile = masterWorkPile)
+            else state.copy(
+                assets = state.assets.toMutableList().also { it[index] = it[index].withRating() },
+                masterWorkPile = masterWorkPile
+            )
         }
     }
 

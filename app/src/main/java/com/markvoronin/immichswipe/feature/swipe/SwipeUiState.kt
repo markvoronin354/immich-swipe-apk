@@ -78,6 +78,7 @@ data class SwipeUiState(
     val showTimeline: Boolean = true,
     val toolbarButtonOrder: List<ToolbarButton> = ToolbarButton.entries,
     val showAddToAlbumDialog: Boolean = false,
+    val showRatingDialog: Boolean = false,
     val albumsForAddToAlbum: List<Album> = emptyList(),
     val isFetchingAlbumsForDialog: Boolean = false,
     // Bumped each time an asset is added to an album, so the toolbar's album tile can confirm it.

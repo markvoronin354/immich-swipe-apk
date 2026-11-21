@@ -62,6 +62,7 @@ fun SwipeCardDeck(
     var controlsHidden by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     val albumResultMessage = rememberAddToAlbumMessage()
+    val ratingResultMessage = rememberRatingMessage()
 
     Box(
         modifier = modifier,
@@ -186,6 +187,11 @@ fun SwipeCardDeck(
                             onToggleFullSize = { viewModel.toggleFullResolution() },
                             loadAlbumNames = { viewModel.loadAlbumNames(it) },
                             saveDescription = { id, text -> viewModel.saveDescription(id, text) },
+                            onRate = { rating ->
+                                viewModel.rateCurrentAsset(rating) { success, stars, missingPermission ->
+                                    Toast.makeText(context, ratingResultMessage(success, stars, missingPermission), Toast.LENGTH_SHORT).show()
+                                }
+                            },
                             onSwipeOffsetChanged = { offset ->
                                 if (!isNextCard) {
                                     topCardOffsetX = offset
@@ -196,16 +202,28 @@ fun SwipeCardDeck(
                                 if (pointer == null) {
                                     albumDrop.end()
                                 } else {
-                                    if (!albumDrop.isActive) viewModel.loadAlbumsForAddToAlbum()
+                                    // Read now: a card's gesture handler outlives the state this lambda was built with.
+                                    val isRating = viewModel.uiState.value.swipeDownAction == SwipeAction.RATING
+                                    if (!albumDrop.isActive && !isRating) viewModel.loadAlbumsForAddToAlbum()
                                     albumDrop.move(pointer)
                                 }
                             },
                             onAlbumDrop = {
                                 val target = albumDrop.hoveredId
                                 albumDrop.end()
-                                // Read now: a card's gesture handler outlives the state this lambda was built with.
-                                val album = viewModel.uiState.value.albumsForAddToAlbum.firstOrNull { it.id == target }
+                                val state = viewModel.uiState.value
+                                val album = state.albumsForAddToAlbum.firstOrNull { it.id == target }
+                                val rating = target?.toIntOrNull()
                                 when {
+                                    state.swipeDownAction == SwipeAction.RATING -> {
+                                        if (rating != null) {
+                                            viewModel.rateCurrentAsset(rating) { success, stars, missingPermission ->
+                                                Toast.makeText(context, ratingResultMessage(success, stars, missingPermission), Toast.LENGTH_SHORT).show()
+                                            }
+                                            viewModel.performSwipeAction(SwipeAction.KEEP)
+                                        }
+                                        rating != null
+                                    }
                                     target == AlbumDropMoreId -> {
                                         viewModel.openAddToAlbumDialog()
                                         false

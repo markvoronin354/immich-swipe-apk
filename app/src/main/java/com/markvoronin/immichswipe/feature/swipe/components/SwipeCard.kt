@@ -192,7 +192,7 @@ fun SwipeCard(
     val currentSwipeRight by rememberUpdatedState(config.swipeRightAction)
     val currentSwipeUp by rememberUpdatedState(config.swipeUpAction)
     val currentSwipeDown by rememberUpdatedState(config.swipeDownAction)
-    // Pulled far enough down with Album on swipe down, the card shrinks to a thumbnail to drop on an album.
+    // Pulled far enough down with Album or Rating on swipe down, the card shrinks to a thumbnail to drop on an album or a star.
     var isDropMode by remember(asset.id) { mutableStateOf(false) }
     // Where on the card the finger took hold of it, which the thumbnail keeps under the finger.
     var dropAnchor by remember(asset.id) { mutableStateOf(Offset.Zero) }
@@ -307,7 +307,7 @@ fun SwipeCard(
             snapshotFlow {
                 // A card pulled down to swipe, not to undo, or up to swipe, not to show details, moves the cards around
                 // it like a sideways swipe does.
-                val pulledDown = currentSwipeDown != SwipeAction.UNDO && currentSwipeDown != SwipeAction.ALBUM && !isEnteringFromBelow && offsetY.value > abs(offsetX.value)
+                val pulledDown = currentSwipeDown != SwipeAction.UNDO && !currentSwipeDown.isDropTarget && !isEnteringFromBelow && offsetY.value > abs(offsetX.value)
                 val pulledUp = currentSwipeUp != SwipeAction.DETAILS && -offsetY.value > abs(offsetX.value)
                 if (pulledDown || pulledUp) offsetY.value else offsetX.value
             }.collect { offset ->
@@ -441,7 +441,7 @@ fun SwipeCard(
                                     val isPullDown = currentY > abs(currentX) && (currentY > 250 || isFlickDown)
                                     val isFlickUp = velocityY < -1000f
                                     val isPullUp = currentSwipeUp != SwipeAction.DETAILS && -currentY > abs(currentX) && (currentY < -250 || isFlickUp)
-                                    if (isDropMode || (isPullDown && currentSwipeDown == SwipeAction.ALBUM)) {
+                                    if (isDropMode || (isPullDown && currentSwipeDown.isDropTarget)) {
                                         val dropped = isDropMode && actions.onAlbumDrop()
                                         isDropMode = false
                                         if (dropped) {
@@ -614,7 +614,7 @@ fun SwipeCard(
                                     }
                                 }
                             } else {
-                                if (dragDirection == 1 && currentSwipeDown == SwipeAction.ALBUM) {
+                                if (dragDirection == 1 && currentSwipeDown.isDropTarget) {
                                     // Down past the threshold the strip rises; back above the lower one it goes away again.
                                     if (!isDropMode && totalDY > 120f && totalDY > accumulatedDX) {
                                         isDropMode = true
@@ -944,6 +944,7 @@ fun SwipeCard(
                                 showAlbums = config.showAlbums,
                                 backdrop = glassBackdrop,
                                 onSaveDescription = { actions.saveDescription(asset.id, it) },
+                                onRate = actions.onRate,
                                 onClose = {
                                     scope.launch {
                                         offsetX.animateTo(

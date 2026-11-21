@@ -40,6 +40,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.markvoronin.immichswipe.R
+import com.markvoronin.immichswipe.core.SwipeAction
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -181,16 +182,25 @@ fun SwipeScreenContent(
                 }
             }
 
-            AlbumDropStrip(
-                state = albumDrop,
-                albums = uiState.albumsForAddToAlbum,
-                baseUrl = uiState.baseUrl,
-                showMore = !uiState.showAddToAlbumButton,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .navigationBarsPadding()
-                    .padding(bottom = 16.dp)
-            )
+            val stripModifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(bottom = 16.dp)
+            if (uiState.swipeDownAction == SwipeAction.RATING) {
+                RatingDropStrip(
+                    state = albumDrop,
+                    currentRating = uiState.currentAsset?.exifInfo?.rating?.takeIf { it in 1..5 } ?: 0,
+                    modifier = stripModifier
+                )
+            } else {
+                AlbumDropStrip(
+                    state = albumDrop,
+                    albums = uiState.albumsForAddToAlbum,
+                    baseUrl = uiState.baseUrl,
+                    showMore = !uiState.showAddToAlbumButton,
+                    modifier = stripModifier
+                )
+            }
         }
     }
 }

@@ -44,6 +44,7 @@ enum class DoubleTapAction {
  * UNDO only makes sense for a swipe down, which is what undoes by default.
  * DETAILS only makes sense for a swipe up, which is what opens the metadata panel by default.
  * ALBUM only makes sense for a swipe down: it opens the album picker and the card stays put.
+ * RATING only makes sense for a swipe down too: the card is dropped on one of five stars, or the rating dialog opens.
  */
 enum class SwipeAction {
     KEEP,
@@ -53,7 +54,11 @@ enum class SwipeAction {
     FAVORITE,
     UNDO,
     DETAILS,
-    ALBUM
+    ALBUM,
+    RATING;
+
+    /** Whether pulling the card down shrinks it to be dropped on a strip of targets, rather than swiping it away. */
+    val isDropTarget: Boolean get() = this == ALBUM || this == RATING
 }
 
 /** The reorderable middle buttons of the swipe toolbar, in their default order. */

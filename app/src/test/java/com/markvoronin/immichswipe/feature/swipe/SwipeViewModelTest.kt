@@ -454,6 +454,62 @@ class SwipeViewModelTest {
     }
 
     @Test
+    fun `the rating swipe action opens the rating dialog and leaves the deck alone`() {
+        val vm = openAlbum()
+
+        vm.performSwipeAction(SwipeAction.RATING)
+
+        assertTrue(vm.uiState.value.showRatingDialog)
+        assertTrue(vm.decisions().isEmpty())
+        assertEquals(0, vm.uiState.value.currentIndex)
+
+        vm.dismissRatingDialog()
+
+        assertFalse(vm.uiState.value.showRatingDialog)
+    }
+
+    @Test
+    fun `rating the current asset sends the stars to the server`() {
+        val vm = openAlbum()
+        var result: Pair<Boolean, Int>? = null
+
+        vm.rateCurrentAsset(4) { ok, stars, _ -> result = ok to stars }
+
+        assertEquals(true to 4, result)
+        coVerify { assetRepository.updateAssets(listOf("a1"), null, null, 4) }
+    }
+
+    @Test
+    fun `a rating shows up on the asset once it is saved`() {
+        val vm = openAlbum()
+
+        vm.rateCurrentAsset(5) { _, _, _ -> }
+
+        assertEquals(5, vm.uiState.value.assets.first { it.id == "a1" }.exifInfo?.rating)
+    }
+
+    @Test
+    fun `a rejected rating leaves the asset as it was`() {
+        coEvery { assetRepository.updateAssets(any(), any(), any(), any()) } throws IOException("offline")
+        val vm = openAlbum()
+
+        vm.rateCurrentAsset(5) { _, _, _ -> }
+
+        assertEquals(null, vm.uiState.value.assets.first { it.id == "a1" }.exifInfo?.rating)
+    }
+
+    @Test
+    fun `a rejected rating reports failure`() {
+        coEvery { assetRepository.updateAssets(any(), any(), any(), any()) } throws IOException("offline")
+        val vm = openAlbum()
+        var result: Pair<Boolean, Int>? = null
+
+        vm.rateCurrentAsset(2) { ok, stars, _ -> result = ok to stars }
+
+        assertEquals(false to 2, result)
+    }
+
+    @Test
     fun `the favorite swipe action favorites the current asset and keeps it`() {
         val vm = openAlbum()
 

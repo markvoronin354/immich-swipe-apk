@@ -241,6 +241,13 @@
     <string name="swipe_details">Detalles</string>
     <string name="swipe_label_favorite">Favorito</string>
     <string name="swipe_label_album">Álbum</string>
+    <string name="swipe_label_rating">Valoración</string>
+    <string name="swipe_rating_upper">VALORAR</string>
+    <string name="rating_dialog_title">Valorar esta foto</string>
+    <string name="rating_star_description">%1$d de 5 estrellas</string>
+    <string name="rating_success">Valorada con %1$d de 5 estrellas</string>
+    <string name="rating_error">No se pudo guardar la valoración</string>
+    <string name="rating_permission_error">No se pudo guardar la valoración. A tu clave de API le falta el permiso %1$s.</string>
     <string name="swipe_label_sort">Ordenar</string>
     <string name="swipe_summary_title">Resumen de ordenación</string>
     <string name="swipe_sync_success">¡Sincronizado!</string>

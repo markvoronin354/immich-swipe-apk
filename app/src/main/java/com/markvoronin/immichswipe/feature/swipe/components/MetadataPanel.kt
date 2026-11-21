@@ -3,9 +3,11 @@ package com.markvoronin.immichswipe.feature.swipe.components
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,12 +24,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.outlined.AspectRatio
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Collections
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -64,6 +69,9 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -90,6 +98,7 @@ fun MetadataPanel(
     backdrop: Backdrop,
     onClose: () -> Unit,
     onSaveDescription: suspend (String) -> Boolean = { false },
+    onRate: ((Int) -> Unit)? = null,
     onDrag: (Float) -> Unit = {},
     onDragEnd: (Float) -> Unit = {},
     panelProgress: Float = 0f,
@@ -197,7 +206,7 @@ fun MetadataPanel(
                 description = asset.exifInfo?.description?.takeIf { it.isNotBlank() },
                 onClick = { isEditingDescription = true }
             )
-            AssetMetadataRows(asset = asset, albumNames = albumNames, showAlbums = showAlbums)
+            AssetMetadataRows(asset = asset, albumNames = albumNames, showAlbums = showAlbums, onRate = onRate)
         }
     }
 
@@ -210,9 +219,18 @@ fun MetadataPanel(
     }
 }
 
-/** The detail rows of [MetadataPanel], shared with the duplicates info dialog, which also lists the file name. */
+/**
+ * The detail rows of [MetadataPanel], shared with the duplicates info dialog, which also lists the file name.
+ * With [onRate] the rating row is always there and its stars can be tapped; without it, it only shows a rating.
+ */
 @Composable
-internal fun AssetMetadataRows(asset: Asset, albumNames: List<String>?, showFileName: Boolean = false, showAlbums: Boolean = true) {
+internal fun AssetMetadataRows(
+    asset: Asset,
+    albumNames: List<String>?,
+    showFileName: Boolean = false,
+    showAlbums: Boolean = true,
+    onRate: ((Int) -> Unit)? = null
+) {
     if (showFileName) {
         MetadataRow(
             Icons.Outlined.Description,
@@ -237,6 +255,13 @@ internal fun AssetMetadataRows(asset: Asset, albumNames: List<String>?, showFile
         val camera = cameraLabel(exif.make, exif.model)
         if (camera.isNotEmpty()) {
             MetadataRow(Icons.Outlined.PhotoCamera, stringResource(R.string.swipe_metadata_camera), camera)
+        }
+        // A plain if, not ?.let: this block's value decides whether the loading rows below show, and null would mean they do.
+        val stars = exif.rating?.takeIf { it in 1..5 } ?: 0
+        if (stars > 0 || onRate != null) {
+            MetadataRowLayout(Icons.Outlined.StarOutline, stringResource(R.string.swipe_label_rating), showDivider = true) {
+                StarRating(stars, Modifier.weight(1f), onRate)
+            }
         }
     } ?: run {
         MetadataRow(Icons.Outlined.Storage, stringResource(R.string.swipe_metadata_size), stringResource(R.string.swipe_loading))
@@ -275,6 +300,14 @@ private fun cameraLabel(make: String?, model: String?): String {
 
 @Composable
 fun MetadataRow(icon: ImageVector, label: String, value: String, showDivider: Boolean = true) {
+    MetadataRowLayout(icon, label, showDivider) {
+        Text(text = value, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
+    }
+}
+
+/** [value] fills the rest of the row after the label. */
+@Composable
+private fun MetadataRowLayout(icon: ImageVector, label: String, showDivider: Boolean, value: @Composable RowScope.() -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(imageVector = icon, contentDescription = null, tint = LocalContentColor.current.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(14.dp))
@@ -285,7 +318,35 @@ fun MetadataRow(icon: ImageVector, label: String, value: String, showDivider: Bo
             Row(modifier = Modifier.heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(text = label, style = MaterialTheme.typography.bodyMedium, color = LocalContentColor.current.copy(alpha = 0.7f))
                 Spacer(Modifier.width(12.dp))
-                Text(text = value, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
+                value()
+            }
+        }
+    }
+}
+
+/** Five stars, the first [stars] of them filled. With [onRate], each is a button that sets that many stars. */
+@Composable
+private fun StarRating(stars: Int, modifier: Modifier = Modifier, onRate: ((Int) -> Unit)? = null) {
+    val description = stringResource(R.string.rating_star_description, stars)
+    Row(
+        modifier = if (onRate == null) modifier.clearAndSetSemantics { contentDescription = description } else modifier,
+        horizontalArrangement = Arrangement.End
+    ) {
+        for (star in 1..5) {
+            val starDescription = stringResource(R.string.rating_star_description, star)
+            Box(
+                contentAlignment = Alignment.Center,
+                // The icons are small, so each tap target is wider and as tall as the row.
+                modifier = if (onRate == null) Modifier else Modifier
+                    .size(width = 28.dp, height = 40.dp)
+                    .clickable(role = Role.Button) { onRate(star) }
+            ) {
+                Icon(
+                    imageVector = if (star <= stars) Icons.Default.Star else Icons.Default.StarBorder,
+                    contentDescription = starDescription.takeIf { onRate != null },
+                    tint = LocalContentColor.current.copy(alpha = if (star <= stars) 1f else 0.4f),
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
     }

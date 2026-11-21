@@ -57,6 +57,8 @@ data class SwipeCardActions(
     val onToggleFullSize: () -> Unit = {},
     val loadAlbumNames: suspend (String) -> List<String> = { emptyList() },
     val saveDescription: suspend (String, String) -> Boolean = { _, _ -> false },
+    // Sets the star rating of the current asset, from the details panel.
+    val onRate: (Int) -> Unit = {},
     val onSwipeOffsetChanged: (Float) -> Unit = {},
     // The finger's place on the card while it is dragged over the album strip; null once the drag leaves the strip.
     val onAlbumDrag: (Offset?) -> Unit = {},

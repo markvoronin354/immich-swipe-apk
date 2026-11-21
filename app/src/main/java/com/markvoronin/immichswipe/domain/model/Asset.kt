@@ -54,7 +54,9 @@ data class ExifInfo(
     val imageHeight: Int? = null,
     val make: String? = null,
     val model: String? = null,
-    val description: String? = null
+    val description: String? = null,
+    // 1 to 5 stars; null when unrated, and -1 on servers that mark rejects.
+    val rating: Int? = null
 ) {
     // exifImageWidth/Height are pre-orientation; EXIF orientations 5-8 (and ±90) display rotated, so swap them.
     val displayAspectRatio: Float

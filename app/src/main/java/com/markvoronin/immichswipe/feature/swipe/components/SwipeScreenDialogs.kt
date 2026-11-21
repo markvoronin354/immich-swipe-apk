@@ -89,6 +89,19 @@ fun SwipeScreenDialogs(
         )
     }
 
+    if (uiState.showRatingDialog) {
+        val resultMessage = rememberRatingMessage()
+        RatingDialog(
+            onRate = { rating ->
+                viewModel.rateCurrentAsset(rating) { success, stars, missingPermission ->
+                    viewModel.dismissRatingDialog()
+                    Toast.makeText(context, resultMessage(success, stars, missingPermission), Toast.LENGTH_SHORT).show()
+                }
+            },
+            onDismiss = { viewModel.dismissRatingDialog() }
+        )
+    }
+
     if (uiState.showAddToAlbumDialog) {
         val resultMessage = rememberAddToAlbumMessage()
         val lockSuccessMessage = stringResource(R.string.add_to_album_lock_success)

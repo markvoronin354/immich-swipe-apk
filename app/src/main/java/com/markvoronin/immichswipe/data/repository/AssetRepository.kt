@@ -548,17 +548,19 @@ class AssetRepository(
     suspend fun updateAssets(
         assetIds: List<String>,
         isFavorite: Boolean? = null,
-        visibility: String? = null
+        visibility: String? = null,
+        rating: Int? = null
     ) {
         if (assetIds.isNotEmpty()) {
-            AppLogger.i("AssetRepo", "Updating ${assetIds.size} assets on Immich server (isFavorite=$isFavorite, visibility=$visibility)...")
+            AppLogger.i("AssetRepo", "Updating ${assetIds.size} assets on Immich server (isFavorite=$isFavorite, visibility=$visibility, rating=$rating)...")
             try {
                 assetIds.chunked(500).forEach { chunk ->
                     api.updateAssets(
                         UpdateAssetsRequest(
                             ids = chunk,
                             isFavorite = isFavorite,
-                            visibility = visibility
+                            visibility = visibility,
+                            rating = rating
                         )
                     )
                 }

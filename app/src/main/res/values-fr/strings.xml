@@ -242,6 +242,13 @@
     <string name="swipe_details">Détails</string>
     <string name="swipe_label_favorite">Favori</string>
     <string name="swipe_label_album">Album</string>
+    <string name="swipe_label_rating">Note</string>
+    <string name="swipe_rating_upper">NOTE</string>
+    <string name="rating_dialog_title">Noter cette photo</string>
+    <string name="rating_star_description">%1$d étoiles sur 5</string>
+    <string name="rating_success">Noté %1$d étoiles sur 5</string>
+    <string name="rating_error">Impossible de définir la note</string>
+    <string name="rating_permission_error">Impossible de définir la note. Il manque la permission %1$s à votre clé API.</string>
     <string name="swipe_label_sort">Trier</string>
     <string name="swipe_summary_title">Résumé du tri</string>
     <string name="swipe_sync_success">Synchronisé !</string>

@@ -112,7 +112,8 @@ data class UpdateAssetsRequest(
     val ids: List<String>,
     val isFavorite: Boolean? = null,
     val visibility: String? = null, // archive, timeline, hidden, locked
-    val rotation: Int? = null
+    val rotation: Int? = null,
+    val rating: Int? = null // 1 to 5 stars
 )
 
 
