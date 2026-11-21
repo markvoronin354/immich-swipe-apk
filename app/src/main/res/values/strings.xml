@@ -216,6 +216,8 @@
     <string name="swipe_archive_upper">ARCHIVE</string>
     <string name="swipe_locked_upper">LOCK</string>
     <string name="swipe_favorite_upper">FAVORITE</string>
+    <string name="swipe_album_upper">ALBUM</string>
+    <string name="swipe_album_more">More</string>
     <string name="swipe_remaining_left">%1$,d left</string>
     <string name="swipe_favorite">Favorites</string>
     <string name="swipe_archive">Archive</string>

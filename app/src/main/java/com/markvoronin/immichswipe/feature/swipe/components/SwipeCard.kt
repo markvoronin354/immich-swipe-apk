@@ -36,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MotionScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -105,7 +106,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.time.Duration.Companion.milliseconds
+
+// How small a card shrinks to while it is dropped on the album or rating strip.
+private const val DropScale = 0.4f
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -150,7 +156,7 @@ fun SwipeCard(
     var albumNames by remember(asset.id) { mutableStateOf<List<String>?>(null) }
     val isMetadataOpen by remember { derivedStateOf { panelProgress.value > 0f } }
     LaunchedEffect(asset.id, isMetadataOpen) {
-        if (isMetadataOpen && !isNext && albumNames == null) {
+        if (isMetadataOpen && !isNext && config.showAlbums && albumNames == null) {
             albumNames = actions.loadAlbumNames(asset.id)
         }
     }
@@ -186,6 +192,18 @@ fun SwipeCard(
     val currentSwipeRight by rememberUpdatedState(config.swipeRightAction)
     val currentSwipeUp by rememberUpdatedState(config.swipeUpAction)
     val currentSwipeDown by rememberUpdatedState(config.swipeDownAction)
+    // Pulled far enough down with Album on swipe down, the card shrinks to a thumbnail to drop on an album.
+    var isDropMode by remember(asset.id) { mutableStateOf(false) }
+    // Where on the card the finger took hold of it, which the thumbnail keeps under the finger.
+    var dropAnchor by remember(asset.id) { mutableStateOf(Offset.Zero) }
+    val dropScale by animateFloatAsState(
+        targetValue = if (isDropMode) DropScale else 1f,
+        animationSpec = motionScheme.fastSpatialSpec(),
+        label = "DropScale"
+    )
+    DisposableEffect(asset.id) {
+        onDispose { if (isDropMode) actions.onAlbumDrag(null) }
+    }
     // Far enough that a card pulled down or up leaves the window, wherever the card sits in it.
     val currentWindowHeight by rememberUpdatedState(LocalWindowInfo.current.containerSize.height.toFloat())
     var ignoreNextTap by remember(asset.id) { mutableStateOf(value = false) }
@@ -289,7 +307,7 @@ fun SwipeCard(
             snapshotFlow {
                 // A card pulled down to swipe, not to undo, or up to swipe, not to show details, moves the cards around
                 // it like a sideways swipe does.
-                val pulledDown = currentSwipeDown != SwipeAction.UNDO && !isEnteringFromBelow && offsetY.value > abs(offsetX.value)
+                val pulledDown = currentSwipeDown != SwipeAction.UNDO && currentSwipeDown != SwipeAction.ALBUM && !isEnteringFromBelow && offsetY.value > abs(offsetX.value)
                 val pulledUp = currentSwipeUp != SwipeAction.DETAILS && -offsetY.value > abs(offsetX.value)
                 if (pulledDown || pulledUp) offsetY.value else offsetX.value
             }.collect { offset ->
@@ -423,7 +441,16 @@ fun SwipeCard(
                                     val isPullDown = currentY > abs(currentX) && (currentY > 250 || isFlickDown)
                                     val isFlickUp = velocityY < -1000f
                                     val isPullUp = currentSwipeUp != SwipeAction.DETAILS && -currentY > abs(currentX) && (currentY < -250 || isFlickUp)
-                                    if (isPullDown && currentSwipeDown != SwipeAction.UNDO) {
+                                    if (isDropMode || (isPullDown && currentSwipeDown == SwipeAction.ALBUM)) {
+                                        val dropped = isDropMode && actions.onAlbumDrop()
+                                        isDropMode = false
+                                        if (dropped) {
+                                            offsetY.animateTo(currentWindowHeight, tween(150))
+                                        } else {
+                                            launch { offsetY.animateTo(0f, motionScheme.fastSpatialSpec()) }
+                                            offsetX.animateTo(0f, motionScheme.fastSpatialSpec())
+                                        }
+                                    } else if (isPullDown && currentSwipeDown != SwipeAction.UNDO) {
                                         offsetY.animateTo(currentWindowHeight, tween(150))
                                         actions.onSwipe(currentSwipeDown)
                                     } else if (currentCanUndo && isPullDown) {
@@ -488,6 +515,10 @@ fun SwipeCard(
                             }
                         },
                         onDragCancel = {
+                            if (isDropMode) {
+                                isDropMode = false
+                                actions.onAlbumDrag(null)
+                            }
                             scope.launch {
                                 launch { panelStretch.animateTo(0f, motionScheme.fastSpatialSpec()) }
                                 if (currentIsHolding) {
@@ -583,6 +614,17 @@ fun SwipeCard(
                                     }
                                 }
                             } else {
+                                if (dragDirection == 1 && currentSwipeDown == SwipeAction.ALBUM) {
+                                    // Down past the threshold the strip rises; back above the lower one it goes away again.
+                                    if (!isDropMode && totalDY > 120f && totalDY > accumulatedDX) {
+                                        isDropMode = true
+                                        dropAnchor = startTouchPos
+                                    } else if (isDropMode && totalDY < 60f) {
+                                        isDropMode = false
+                                        actions.onAlbumDrag(null)
+                                    }
+                                    if (isDropMode) actions.onAlbumDrag(change.position)
+                                }
                                 scope.launch {
                                     if (dragDirection == 1) {
                                         offsetX.snapTo(totalDX)
@@ -608,12 +650,28 @@ fun SwipeCard(
                     )
                 }
                 .graphicsLayer {
-                    scaleX = animatedScale
-                    scaleY = animatedScale
+                    val scale = animatedScale * dropScale
+                    scaleX = scale
+                    scaleY = scale
                     if (!isNext) {
-                        translationX = offsetX.value
-                        translationY = offsetY.value
-                        rotationZ = offsetX.value / 40f
+                        val dx = offsetX.value
+                        val dy = offsetY.value
+                        val angle = dx / 40f
+                        rotationZ = angle
+                        translationX = dx
+                        translationY = dy
+                        // Shrinking about the center and tilting would carry the grabbed point away from the finger, which
+                        // is at the anchor plus the drag. Moving the card by the gap, as it shrinks, keeps the thumbnail under it.
+                        val shrunk = ((1f - dropScale) / (1f - DropScale)).coerceIn(0f, 1f)
+                        if (shrunk > 0f) {
+                            val radians = Math.toRadians(angle.toDouble())
+                            val fromCenterX = dropAnchor.x - size.width / 2
+                            val fromCenterY = dropAnchor.y - size.height / 2
+                            val gapX = fromCenterX - scale * (fromCenterX * cos(radians) - fromCenterY * sin(radians)).toFloat()
+                            val gapY = fromCenterY - scale * (fromCenterX * sin(radians) + fromCenterY * cos(radians)).toFloat()
+                            translationX = dx + shrunk * gapX
+                            translationY = dy + shrunk * gapY
+                        }
                     }
                 },
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
@@ -883,6 +941,7 @@ fun SwipeCard(
                             MetadataPanel(
                                 asset = asset,
                                 albumNames = albumNames,
+                                showAlbums = config.showAlbums,
                                 backdrop = glassBackdrop,
                                 onSaveDescription = { actions.saveDescription(asset.id, it) },
                                 onClose = {

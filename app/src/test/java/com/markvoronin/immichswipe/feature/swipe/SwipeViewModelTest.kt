@@ -443,6 +443,17 @@ class SwipeViewModelTest {
     }
 
     @Test
+    fun `the album swipe action opens the album picker and leaves the deck alone`() {
+        val vm = openAlbum()
+
+        vm.performSwipeAction(SwipeAction.ALBUM)
+
+        assertTrue(vm.uiState.value.showAddToAlbumDialog)
+        assertTrue(vm.decisions().isEmpty())
+        assertEquals(0, vm.uiState.value.currentIndex)
+    }
+
+    @Test
     fun `the favorite swipe action favorites the current asset and keeps it`() {
         val vm = openAlbum()
 

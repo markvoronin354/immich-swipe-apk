@@ -1,5 +1,6 @@
 package com.markvoronin.immichswipe.feature.swipe.models
 
+import androidx.compose.ui.geometry.Offset
 import com.markvoronin.immichswipe.core.ButtonStackOrientation
 import com.markvoronin.immichswipe.core.ButtonStackStyle
 import com.markvoronin.immichswipe.core.IconPosition
@@ -39,7 +40,9 @@ data class SwipeCardConfig(
     val canUndo: Boolean = false,
     val showSizeIndicator: Boolean = false,
     val rotationAngle: Int = 0,
-    val isFullSize: Boolean = false
+    val isFullSize: Boolean = false,
+    // Off in Orphans, where no photo is in an album, so the details panel has nothing to list.
+    val showAlbums: Boolean = true
 )
 
 data class SwipeCardActions(
@@ -54,5 +57,9 @@ data class SwipeCardActions(
     val onToggleFullSize: () -> Unit = {},
     val loadAlbumNames: suspend (String) -> List<String> = { emptyList() },
     val saveDescription: suspend (String, String) -> Boolean = { _, _ -> false },
-    val onSwipeOffsetChanged: (Float) -> Unit = {}
+    val onSwipeOffsetChanged: (Float) -> Unit = {},
+    // The finger's place on the card while it is dragged over the album strip; null once the drag leaves the strip.
+    val onAlbumDrag: (Offset?) -> Unit = {},
+    // True when the card was released over an album, and so is gone.
+    val onAlbumDrop: () -> Boolean = { false }
 )

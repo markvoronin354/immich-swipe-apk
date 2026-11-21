@@ -545,6 +545,7 @@ class SwipeViewModel @Inject constructor(
             SwipeAction.UNDO -> undo()
             // The details panel lives in the card, which opens it itself.
             SwipeAction.DETAILS -> Unit
+            SwipeAction.ALBUM -> openAddToAlbumDialog()
             SwipeAction.FAVORITE -> {
                 val state = _uiState.value
                 val asset = state.currentAsset ?: return
@@ -671,7 +672,12 @@ class SwipeViewModel @Inject constructor(
     }
 
     fun openAddToAlbumDialog() {
-        _uiState.update { it.copy(showAddToAlbumDialog = true, isFetchingAlbumsForDialog = true) }
+        _uiState.update { it.copy(showAddToAlbumDialog = true) }
+        loadAlbumsForAddToAlbum()
+    }
+
+    fun loadAlbumsForAddToAlbum() {
+        _uiState.update { it.copy(isFetchingAlbumsForDialog = true) }
         viewModelScope.launch {
             try {
                 val userId = sessionRepository.sessionConfig.first()?.userId.orEmpty()

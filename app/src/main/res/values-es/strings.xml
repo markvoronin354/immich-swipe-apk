@@ -217,6 +217,8 @@
     <string name="swipe_archive_upper">ARCHIVAR</string>
     <string name="swipe_locked_upper">BLOQUEAR</string>
     <string name="swipe_favorite_upper">FAVORITO</string>
+    <string name="swipe_album_upper">ÁLBUM</string>
+    <string name="swipe_album_more">Más</string>
     <string name="swipe_remaining_left">%1$,d restantes</string>
     <string name="swipe_favorite">Favoritos</string>
     <string name="swipe_archive">Archivar</string>

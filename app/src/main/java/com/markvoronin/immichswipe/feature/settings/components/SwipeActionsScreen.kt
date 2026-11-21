@@ -194,9 +194,10 @@ private val SideSwipeActions = listOf(
     SwipeAction.KEEP, SwipeAction.DELETE, SwipeAction.FAVORITE, SwipeAction.ARCHIVE, SwipeAction.LOCK
 )
 
-// The same top row as the sides, with Undo between Archive and Lock below it.
+// The same top row as the sides, with Undo between Archive and Lock below it, and Album after Lock.
 private val SwipeDownActions = listOf(
-    SwipeAction.KEEP, SwipeAction.DELETE, SwipeAction.FAVORITE, SwipeAction.ARCHIVE, SwipeAction.UNDO, SwipeAction.LOCK
+    SwipeAction.KEEP, SwipeAction.DELETE, SwipeAction.FAVORITE, SwipeAction.ARCHIVE, SwipeAction.UNDO, SwipeAction.LOCK,
+    SwipeAction.ALBUM
 )
 
 // Likewise, with Details in Undo's place.

@@ -227,6 +227,11 @@ fun FullscreenViewer(
                     launch { swipeX.animateTo(0f, motionScheme.fastSpatialSpec()) }
                     swipeY.animateTo(0f, motionScheme.fastSpatialSpec())
                 }
+            } else if (currentSwipeDown == SwipeAction.ALBUM) {
+                // The viewer stays open: the picker opens over the photo.
+                currentOnSwipe(SwipeAction.ALBUM)
+                launch { swipeX.animateTo(0f, motionScheme.fastSpatialSpec()) }
+                swipeY.animateTo(0f, motionScheme.fastSpatialSpec())
             } else {
                 launch { swipeX.animateTo(0f, tween(180)) }
                 swipeY.animateTo(currentWindowHeight, tween(180))
@@ -479,7 +484,7 @@ fun FullscreenViewer(
         ) {
             if (nextAsset != null) {
                 // A pull that swipes, rather than closes or undoes, brings the next photo up like a sideways swipe does.
-                val swipePull = if (swipeDownUsesAction && swipeDownAction != SwipeAction.UNDO) {
+                val swipePull = if (swipeDownUsesAction && swipeDownAction != SwipeAction.UNDO && swipeDownAction != SwipeAction.ALBUM) {
                     max(abs(swipeX.value), swipeY.value)
                 } else {
                     abs(swipeX.value)

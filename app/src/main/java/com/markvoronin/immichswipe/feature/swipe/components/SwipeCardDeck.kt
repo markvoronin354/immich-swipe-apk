@@ -1,5 +1,6 @@
 package com.markvoronin.immichswipe.feature.swipe.components
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,7 +37,9 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.exoplayer.ExoPlayer
 import com.markvoronin.immichswipe.R
 import com.markvoronin.immichswipe.core.DoubleTapAction
+import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.core.SortOrder
+import com.markvoronin.immichswipe.domain.model.Album
 import com.markvoronin.immichswipe.feature.common.SolidShapeLoadingIndicator
 import com.markvoronin.immichswipe.feature.common.WavyLoadingBar
 import com.markvoronin.immichswipe.feature.home.components.ErrorView
@@ -50,11 +54,14 @@ fun SwipeCardDeck(
     uiState: SwipeUiState,
     viewModel: SwipeViewModel,
     sharedPlayer: ExoPlayer,
+    albumDrop: AlbumDropState,
     modifier: Modifier = Modifier,
     onTopCardSwipeOffsetChanged: (Float) -> Unit = {}
 ) {
     // Shared by every card, so controls hidden by a long press stay hidden on the cards that follow.
     var controlsHidden by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    val albumResultMessage = rememberAddToAlbumMessage()
 
     Box(
         modifier = modifier,
@@ -153,7 +160,8 @@ fun SwipeCardDeck(
                             canUndo = !isBulk && uiState.history.isNotEmpty(),
                             showSizeIndicator = (uiState.sortOrder == SortOrder.SIZE_DESC) || (uiState.sortOrder == SortOrder.SIZE_ASC),
                             rotationAngle = uiState.getRotation(asset.id),
-                            isFullSize = uiState.isFullResolution && !isNextCard && asset.supportsFullResolution
+                            isFullSize = uiState.isFullResolution && !isNextCard && asset.supportsFullResolution,
+                            showAlbums = uiState.albumId != Album.VIRTUAL_ORPHANS_ID
                         ),
                         actions = SwipeCardActions(
                             onSwipe = { viewModel.performSwipeAction(it) },
@@ -182,6 +190,34 @@ fun SwipeCardDeck(
                                 if (!isNextCard) {
                                     topCardOffsetX = offset
                                     onTopCardSwipeOffsetChanged(offset)
+                                }
+                            },
+                            onAlbumDrag = { pointer ->
+                                if (pointer == null) {
+                                    albumDrop.end()
+                                } else {
+                                    if (!albumDrop.isActive) viewModel.loadAlbumsForAddToAlbum()
+                                    albumDrop.move(pointer)
+                                }
+                            },
+                            onAlbumDrop = {
+                                val target = albumDrop.hoveredId
+                                albumDrop.end()
+                                // Read now: a card's gesture handler outlives the state this lambda was built with.
+                                val album = viewModel.uiState.value.albumsForAddToAlbum.firstOrNull { it.id == target }
+                                when {
+                                    target == AlbumDropMoreId -> {
+                                        viewModel.openAddToAlbumDialog()
+                                        false
+                                    }
+                                    album == null -> false
+                                    else -> {
+                                        viewModel.addCurrentAssetToAlbum(album) { success, albumName, missingPermission ->
+                                            Toast.makeText(context, albumResultMessage(success, albumName, missingPermission), Toast.LENGTH_SHORT).show()
+                                        }
+                                        viewModel.performSwipeAction(SwipeAction.KEEP)
+                                        true
+                                    }
                                 }
                             }
                         )

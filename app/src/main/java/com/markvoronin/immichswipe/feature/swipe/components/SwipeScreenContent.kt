@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,6 +63,7 @@ fun SwipeScreenContent(
     onCardBoundsChanged: (Rect) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val albumDrop = remember { AlbumDropState() }
     ProvideTutorialController(tutorialController) {
         Box(modifier = modifier.fillMaxSize()) {
             Column(
@@ -138,13 +140,17 @@ fun SwipeScreenContent(
                     uiState = uiState,
                     viewModel = viewModel,
                     sharedPlayer = sharedPlayer,
+                    albumDrop = albumDrop,
                     onTopCardSwipeOffsetChanged = onTopCardSwipeOffsetChanged,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                         // The top card fills the deck, so these are its bounds at rest.
-                        .onGloballyPositioned { onCardBoundsChanged(Rect(it.positionOnScreen(), it.size.toSize())) }
+                        .onGloballyPositioned {
+                            albumDrop.deckOrigin = it.positionOnScreen()
+                            onCardBoundsChanged(Rect(it.positionOnScreen(), it.size.toSize()))
+                        }
                         .tutorialTarget("swipe_deck", tutorialController)
                         .zIndex(1f)
                 )
@@ -174,6 +180,17 @@ fun SwipeScreenContent(
                     Spacer(Modifier.height(30.dp))
                 }
             }
+
+            AlbumDropStrip(
+                state = albumDrop,
+                albums = uiState.albumsForAddToAlbum,
+                baseUrl = uiState.baseUrl,
+                showMore = !uiState.showAddToAlbumButton,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(bottom = 16.dp)
+            )
         }
     }
 }

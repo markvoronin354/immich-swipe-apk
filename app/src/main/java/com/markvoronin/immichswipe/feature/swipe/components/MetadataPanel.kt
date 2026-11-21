@@ -86,6 +86,7 @@ import kotlinx.coroutines.launch
 fun MetadataPanel(
     asset: Asset,
     albumNames: List<String>?,
+    showAlbums: Boolean = true,
     backdrop: Backdrop,
     onClose: () -> Unit,
     onSaveDescription: suspend (String) -> Boolean = { false },
@@ -196,7 +197,7 @@ fun MetadataPanel(
                 description = asset.exifInfo?.description?.takeIf { it.isNotBlank() },
                 onClick = { isEditingDescription = true }
             )
-            AssetMetadataRows(asset = asset, albumNames = albumNames)
+            AssetMetadataRows(asset = asset, albumNames = albumNames, showAlbums = showAlbums)
         }
     }
 
@@ -211,7 +212,7 @@ fun MetadataPanel(
 
 /** The detail rows of [MetadataPanel], shared with the duplicates info dialog, which also lists the file name. */
 @Composable
-internal fun AssetMetadataRows(asset: Asset, albumNames: List<String>?, showFileName: Boolean = false) {
+internal fun AssetMetadataRows(asset: Asset, albumNames: List<String>?, showFileName: Boolean = false, showAlbums: Boolean = true) {
     if (showFileName) {
         MetadataRow(
             Icons.Outlined.Description,
@@ -241,12 +242,14 @@ internal fun AssetMetadataRows(asset: Asset, albumNames: List<String>?, showFile
         MetadataRow(Icons.Outlined.Storage, stringResource(R.string.swipe_metadata_size), stringResource(R.string.swipe_loading))
         MetadataRow(Icons.Outlined.AspectRatio, stringResource(R.string.swipe_metadata_resolution), stringResource(R.string.swipe_loading))
     }
-    val albumsLabel = when {
-        albumNames == null -> stringResource(R.string.swipe_loading)
-        albumNames.isEmpty() -> stringResource(R.string.swipe_metadata_no_albums)
-        else -> albumNames.joinToString(", ")
+    if (showAlbums) {
+        val albumsLabel = when {
+            albumNames == null -> stringResource(R.string.swipe_loading)
+            albumNames.isEmpty() -> stringResource(R.string.swipe_metadata_no_albums)
+            else -> albumNames.joinToString(", ")
+        }
+        MetadataRow(Icons.Outlined.Collections, stringResource(R.string.swipe_metadata_albums), albumsLabel)
     }
-    MetadataRow(Icons.Outlined.Collections, stringResource(R.string.swipe_metadata_albums), albumsLabel)
 }
 
 private val CompanyWords = Regex("""(?<!\w)(Co\.?,?\s*Ltd\.?|Corporation|Corp\.?|Company|Inc\.?|Ltd\.?|Imaging)(?!\w)""", RegexOption.IGNORE_CASE)

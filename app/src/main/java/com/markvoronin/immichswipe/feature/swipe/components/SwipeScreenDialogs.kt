@@ -90,16 +90,7 @@ fun SwipeScreenDialogs(
     }
 
     if (uiState.showAddToAlbumDialog) {
-        val successTemplate = stringResource(R.string.add_to_album_success)
-        val errorTemplate = stringResource(R.string.add_to_album_error)
-        val permissionErrorTemplate = stringResource(R.string.add_to_album_permission_error)
-        val resultMessage = { success: Boolean, albumName: String, missingPermission: String? ->
-            when {
-                success -> successTemplate.format(albumName)
-                missingPermission != null -> permissionErrorTemplate.format(albumName, missingPermission)
-                else -> errorTemplate.format(albumName)
-            }
-        }
+        val resultMessage = rememberAddToAlbumMessage()
         val lockSuccessMessage = stringResource(R.string.add_to_album_lock_success)
         val archiveSuccessMessage = stringResource(R.string.add_to_album_archive_success)
         val swipeActions = listOf(uiState.swipeLeftAction, uiState.swipeRightAction, uiState.swipeUpAction, uiState.swipeDownAction)
