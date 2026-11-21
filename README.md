@@ -33,6 +33,40 @@ This project is a fork based on the original project at [Minos2020/immich-swipe-
 - **🚦 Connection Diagnostics**: Real-time connection status indicator, HTTP/IP support, servers behind a private certificate authority (install its CA in Android's settings) or a proxy that needs custom request headers, and in-app log viewer.
 - **🎨 Modern Interface**: Built with Jetpack Compose and Material Design 3, with English, French, and Spanish language support.
 
+## 🔀 What's different from the original
+
+This fork has diverged a lot from [Minos2020/immich-swipe-android](https://github.com/Minos2020/immich-swipe-android) since it branched off in August 2026. The main differences:
+
+**Swiping & sorting**
+- Choose what each swipe direction does (Keep, Delete, Archive, Favorite, Lock, Add to Album), plus a drag-to-album strip, in their own settings sub menu.
+- Add-to-album picker with recently used albums first, new album creation, and Archive/Lock shortcuts.
+- Star ratings, editable descriptions, camera info, and the albums an asset belongs to in the metadata panel.
+- Live/motion photos and GIFs.
+- Full-resolution viewing, pinch-to-zoom up to 10x, and a restyled fullscreen viewer.
+- Reorderable toolbar with a live preview, configurable double-tap action.
+
+**Duplicates**
+- AI-powered "Best Shot" analyzer, batch keep/delete all, multi-select, an "undecided only" filter, and pinch-to-peek.
+- Redesigned screen and fullscreen preview with next/previous navigation.
+
+**Accounts & connectivity**
+- Switch between saved accounts from the profile popup instead of signing out and back in.
+- API keys are encrypted with the Android Keystore.
+- Per-account custom request headers, support for user-installed certificate authorities, and retry with exponential backoff.
+- Clear messages naming the API key permissions that are missing, and a warning when the server is too old to save rotations.
+- Server storage usage, an "Include external archives" toggle, and a choice between web or app for "Open in Immich".
+
+**Design**
+- Material 3 Expressive throughout: motion scheme, morphing loading indicators, shared-element transitions, and edge-to-edge.
+- Color palette picker with a custom palette editor.
+
+**Extras**
+- First-run tutorial, cleanup reminder notifications, toggleable asset timeline, and shipped baseline profiles.
+
+**Removed**
+- **SKIP.** The original could set a photo aside via a "SKIP" album created on your Immich server. It added a lot of sync complexity and kept hard photos in the pile instead of shrinking it, so it was removed.
+- The default card display mode setting.
+
 ## ⚙️ Configuration & API Key Permissions
 
 1. Enter your Immich server URL or IP address with port (e.g., `https://immich.your-domain.com` or `http://10.0.0.10:2283`).
