@@ -78,6 +78,7 @@ import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.markvoronin.immichswipe.R
+import com.markvoronin.immichswipe.applyDefaultOrientation
 import com.markvoronin.immichswipe.core.AppLogger
 import com.markvoronin.immichswipe.core.SwipeAction
 import com.markvoronin.immichswipe.domain.model.Asset
@@ -331,8 +332,7 @@ fun FullscreenViewer(
         @SuppressLint("SourceLockedOrientationActivity")
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
         onDispose {
-            @SuppressLint("SourceLockedOrientationActivity")
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            activity?.applyDefaultOrientation()
         }
     }
 

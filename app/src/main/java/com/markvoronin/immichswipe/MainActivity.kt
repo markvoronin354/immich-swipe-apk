@@ -1,6 +1,9 @@
 package com.markvoronin.immichswipe
 
+import android.app.Activity
 import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -27,15 +30,28 @@ import com.markvoronin.immichswipe.ui.theme.ImmichSwipeTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
+/** Phones stay in portrait; tablets and unfolded foldables (smallest width 600dp+) follow the system. */
+fun Activity.applyDefaultOrientation() {
+    requestedOrientation = if (resources.configuration.smallestScreenWidthDp < 600) {
+        ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    } else {
+        ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+    }
+}
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var sessionManager: SessionManager
 
+    private var smallestWidthDp = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppLogger.i("MainActivity", "Application started")
+        applyDefaultOrientation()
+        smallestWidthDp = resources.configuration.smallestScreenWidthDp
 
         setContent {
             val appViewModel: AppViewModel = hiltViewModel()
@@ -104,6 +120,16 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    // The manifest handles configChanges, so a fold or unfold arrives here instead of recreating the activity.
+    // Rotations arrive too, and must not reset the lock the fullscreen viewer lifts.
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (newConfig.smallestScreenWidthDp != smallestWidthDp) {
+            smallestWidthDp = newConfig.smallestScreenWidthDp
+            applyDefaultOrientation()
         }
     }
 
