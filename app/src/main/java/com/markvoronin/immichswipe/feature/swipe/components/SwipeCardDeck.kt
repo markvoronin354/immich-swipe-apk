@@ -171,7 +171,13 @@ fun SwipeCardDeck(
                                 heldNextIndex = nextUnprocessedIndex
                                 viewModel.undo()
                             },
-                            onRotateAsset = { viewModel.rotateCurrentAsset() },
+                            onRotateAsset = {
+                                if (asset.isEdited) {
+                                    Toast.makeText(context, R.string.swipe_rotate_edited_warning, Toast.LENGTH_LONG).show()
+                                } else {
+                                    viewModel.rotateCurrentAsset()
+                                }
+                            },
                             onDoubleTap = {
                                 if (uiState.doubleTapEnabled) {
                                     when (uiState.doubleTapAction) {

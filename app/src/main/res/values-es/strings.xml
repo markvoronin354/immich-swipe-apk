@@ -208,6 +208,7 @@
     <string name="settings_include_archived_label">Incluir archivados externos</string>
     <string name="settings_include_archived_desc">Mostrar y ordenar las fotos ya archivadas en Immich (fuera de Immich Swipe)</string>
     <string name="swipe_rotate_asset">Rotar recurso 90°</string>
+    <string name="swipe_rotate_edited_warning">Esta foto ya se editó en Immich, así que no se puede rotar aquí</string>
 
     <!-- Pantalla de swipe -->
     <string name="swipe_keep">Conservar</string>

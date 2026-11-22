@@ -63,6 +63,7 @@ import com.markvoronin.immichswipe.domain.model.Asset
 import com.markvoronin.immichswipe.feature.swipe.SwipeDecision
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialGreen
 import com.markvoronin.immichswipe.feature.swipe.utils.MaterialRed
+import com.markvoronin.immichswipe.feature.swipe.utils.rememberContinuousRotation
 import com.markvoronin.immichswipe.feature.swipe.utils.rotateLayout
 import kotlin.math.abs
 
@@ -198,7 +199,7 @@ private fun AssetTimelineItem(
 ) {
     val context = LocalContext.current
     val animatedRotation by animateFloatAsState(
-        targetValue = rotation.toFloat(),
+        targetValue = rememberContinuousRotation(rotation),
         animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
         label = "TimelineRotation"
     )

@@ -58,6 +58,7 @@ import com.markvoronin.immichswipe.feature.common.VolumeIcon
 import com.markvoronin.immichswipe.feature.common.bounce
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardActions
 import com.markvoronin.immichswipe.feature.swipe.models.SwipeCardConfig
+import com.markvoronin.immichswipe.feature.swipe.utils.rememberContinuousRotation
 import com.markvoronin.immichswipe.feature.swipe.utils.supportsFullResolution
 import kotlinx.coroutines.launch
 
@@ -105,7 +106,7 @@ fun ActionButtonsOverlay(
                     buttons.add {
                         // Turns with the photo, using the same spring as the photo's own rotation.
                         val rotation by animateFloatAsState(
-                            targetValue = config.rotationAngle.toFloat(),
+                            targetValue = rememberContinuousRotation(config.rotationAngle),
                             animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
                             label = "RotateButton"
                         )

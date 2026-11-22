@@ -100,6 +100,7 @@ import com.markvoronin.immichswipe.feature.swipe.utils.formatSize
 import com.markvoronin.immichswipe.feature.swipe.utils.fullResolutionRequest
 import com.markvoronin.immichswipe.feature.swipe.utils.indicatorColor
 import com.markvoronin.immichswipe.feature.swipe.utils.indicatorLabelRes
+import com.markvoronin.immichswipe.feature.swipe.utils.rememberContinuousRotation
 import com.markvoronin.immichswipe.feature.swipe.utils.rotateLayout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -677,7 +678,7 @@ fun SwipeCard(
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             shape = RoundedCornerShape(28.dp)
         ) {
-            val animatedRotation by animateFloatAsState(targetValue = config.rotationAngle.toFloat(), animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(), label = "rotationZ")
+            val animatedRotation by animateFloatAsState(targetValue = rememberContinuousRotation(config.rotationAngle), animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(), label = "rotationZ")
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -770,7 +771,7 @@ fun SwipeCard(
                         )
                     }
                 } else {
-                    val photoRequest = remember(asset.id, baseUrl, asset.isGif, config.isFullSize, asset.exifInfo?.orientation) {
+                    val photoRequest = remember(asset.id, baseUrl, asset.isGif, config.isFullSize, asset.exifInfo?.orientation, asset.isEdited) {
                         if (config.isFullSize) {
                             fullResolutionRequest(context, baseUrl, asset)
                         } else {

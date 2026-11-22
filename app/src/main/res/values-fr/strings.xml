@@ -209,6 +209,7 @@
     <string name="settings_include_archived_label">Inclure les archives externes</string>
     <string name="settings_include_archived_desc">Afficher et trier les photos déjà archivées dans Immich (hors de Immich Swipe)</string>
     <string name="swipe_rotate_asset">Pivoter le média à 90°</string>
+    <string name="swipe_rotate_edited_warning">Cette photo a déjà été modifiée dans Immich ; elle ne peut pas être pivotée ici</string>
 
     <!-- Écran Swipe -->
     <string name="swipe_keep">Garder</string>

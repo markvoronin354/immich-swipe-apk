@@ -763,7 +763,7 @@ fun FullscreenViewer(
                         animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(), label = "FullscreenRotation"
                     )
 
-                    val photoRequest = remember(asset.id, baseUrlClean, asset.isGif, isFullSize, asset.exifInfo?.orientation) {
+                    val photoRequest = remember(asset.id, baseUrlClean, asset.isGif, isFullSize, asset.exifInfo?.orientation, asset.isEdited) {
                         if (isFullSize) {
                             fullResolutionRequest(context, baseUrlClean, asset)
                         } else {

@@ -207,6 +207,7 @@
     <string name="settings_include_archived_label">Include external archives</string>
     <string name="settings_include_archived_desc">View and sort photos that have been archived in Immich (outside of Immich Swipe)</string>
     <string name="swipe_rotate_asset">Rotate asset 90° clockwise</string>
+    <string name="swipe_rotate_edited_warning">This photo was already edited in Immich, so it can\'t be rotated here</string>
 
     <!-- Swipe Screen -->
     <string name="swipe_keep">Keep</string>

@@ -3,6 +3,8 @@ package com.markvoronin.immichswipe.feature.swipe.utils
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,6 +25,22 @@ fun Context.findActivity(): Activity? = when (this) {
 fun IconPosition.toHorizontalAlignment(): Alignment.Horizontal = when (this) {
     IconPosition.TOP_LEFT, IconPosition.BOTTOM_LEFT -> Alignment.Start
     else -> Alignment.End
+}
+
+private class ContinuousRotation(var angle: Int) {
+    var target = angle.toFloat()
+}
+
+/** Animation target for a 0/90/180/270 [angle] that keeps turning clockwise when 270 wraps to 0. */
+@Composable
+fun rememberContinuousRotation(angle: Int): Float {
+    val state = remember { ContinuousRotation(angle) }
+    if (angle != state.angle) {
+        val delta = angle - state.angle
+        state.target += if (delta == -270) 90 else delta
+        state.angle = angle
+    }
+    return state.target
 }
 
 fun Modifier.rotateLayout(rotation: Int) = layout { measurable, constraints ->
