@@ -61,10 +61,10 @@ fun fullResolutionRequest(context: Context, baseUrl: String, asset: Asset): Imag
     val longSide = maxOf(asset.exifInfo?.imageWidth ?: 0, asset.exifInfo?.imageHeight ?: 0)
     val rotation = asset.rawOrientationTransformation()
     return ImageRequest.Builder(context)
-        // An edited asset's plain original is the untouched file, so ask for the edited one like the preview does.
-        .data("$baseUrl/api/assets/${asset.id}/original${if (asset.isEdited) "?edited=true" else ""}")
+        // The plain original is the untouched file, so ask for the edited one like the preview does.
+        .data("$baseUrl/api/assets/${asset.id}/original?edited=true")
         // An explicit key ignores transformations, so keep an unrotated decode from being reused once the orientation is known.
-        .memoryCacheKey("${asset.id}-original${if (asset.isEdited) "-edited" else ""}${rotation?.let { "-${it.cacheKey}" } ?: ""}")
+        .memoryCacheKey("${asset.id}-original${rotation?.let { "-${it.cacheKey}" } ?: ""}")
         .placeholderMemoryCacheKey("${asset.id}-preview")
         .size(if (longSide > 0) minOf(FULL_RESOLUTION_MAX_SIDE, longSide) else FULL_RESOLUTION_MAX_SIDE)
         .allowHardware(true)

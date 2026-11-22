@@ -496,7 +496,7 @@ fun FullscreenViewer(
                 val nextPhotoRequest = remember(nextAsset.id, baseUrlClean, nextAsset.isGif) {
                     ImageRequest.Builder(context)
                         .data(
-                            if (nextAsset.isGif) "$baseUrlClean/api/assets/${nextAsset.id}/original"
+                            if (nextAsset.isGif) "$baseUrlClean/api/assets/${nextAsset.id}/original?edited=true"
                             else "$baseUrlClean/api/assets/${nextAsset.id}/thumbnail?format=WEBP&size=preview&edited=true"
                         )
                         .memoryCacheKey("${nextAsset.id}-preview")
@@ -763,13 +763,13 @@ fun FullscreenViewer(
                         animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(), label = "FullscreenRotation"
                     )
 
-                    val photoRequest = remember(asset.id, baseUrlClean, asset.isGif, isFullSize, asset.exifInfo?.orientation, asset.isEdited) {
+                    val photoRequest = remember(asset.id, baseUrlClean, asset.isGif, isFullSize, asset.exifInfo?.orientation) {
                         if (isFullSize) {
                             fullResolutionRequest(context, baseUrlClean, asset)
                         } else {
                             ImageRequest.Builder(context)
                                 .data(
-                                    if (asset.isGif) "$baseUrlClean/api/assets/${asset.id}/original"
+                                    if (asset.isGif) "$baseUrlClean/api/assets/${asset.id}/original?edited=true"
                                     else "$baseUrlClean/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview&edited=true"
                                 )
                                 .memoryCacheKey("${asset.id}-preview")

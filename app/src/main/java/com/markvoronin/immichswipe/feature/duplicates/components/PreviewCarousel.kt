@@ -217,7 +217,7 @@ internal fun PreviewCarousel(
                 val thumbRequest = remember(asset.id, baseUrl, asset.isGif) {
                     ImageRequest.Builder(context)
                         .data(
-                            if (asset.isGif) "$baseUrl/api/assets/${asset.id}/original"
+                            if (asset.isGif) "$baseUrl/api/assets/${asset.id}/original?edited=true"
                             else "$baseUrl/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview"
                         )
                         .crossfade(false)

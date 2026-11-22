@@ -161,7 +161,7 @@ fun DuplicateAssetItem(
                 val imageRequest = remember(asset.id, baseUrlClean, asset.isGif) {
                     ImageRequest.Builder(context)
                         .data(
-                            if (asset.isGif) "$baseUrlClean/api/assets/${asset.id}/original"
+                            if (asset.isGif) "$baseUrlClean/api/assets/${asset.id}/original?edited=true"
                             else "$baseUrlClean/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview"
                         )
                         .crossfade(true)

@@ -771,13 +771,13 @@ fun SwipeCard(
                         )
                     }
                 } else {
-                    val photoRequest = remember(asset.id, baseUrl, asset.isGif, config.isFullSize, asset.exifInfo?.orientation, asset.isEdited) {
+                    val photoRequest = remember(asset.id, baseUrl, asset.isGif, config.isFullSize, asset.exifInfo?.orientation) {
                         if (config.isFullSize) {
                             fullResolutionRequest(context, baseUrl, asset)
                         } else {
                             ImageRequest.Builder(context)
                                 .data(
-                                    if (asset.isGif) "$baseUrl/api/assets/${asset.id}/original"
+                                    if (asset.isGif) "$baseUrl/api/assets/${asset.id}/original?edited=true"
                                     else "$baseUrl/api/assets/${asset.id}/thumbnail?format=WEBP&size=preview&edited=true"
                                 )
                                 .memoryCacheKey("${asset.id}-preview")

@@ -648,7 +648,7 @@ fun SummaryFullscreenPreviewDialog(
                             remember(pageAsset.id, baseUrlClean, pageAsset.isGif) {
                                 ImageRequest.Builder(context)
                                     .data(
-                                        if (pageAsset.isGif) "$baseUrlClean/api/assets/${pageAsset.id}/original"
+                                        if (pageAsset.isGif) "$baseUrlClean/api/assets/${pageAsset.id}/original?edited=true"
                                         else "$baseUrlClean/api/assets/${pageAsset.id}/thumbnail?format=WEBP&size=preview"
                                     )
                                     .crossfade(true)

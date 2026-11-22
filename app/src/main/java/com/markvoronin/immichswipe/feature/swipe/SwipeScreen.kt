@@ -215,7 +215,7 @@ fun SwipeScreen(
                     )
                 }
                 // Preload the image, or the video's thumbnail, to Coil RAM Cache
-                val imageUrl = if (nextAsset.isGif) "$baseUrl/api/assets/${nextAsset.id}/original"
+                val imageUrl = if (nextAsset.isGif) "$baseUrl/api/assets/${nextAsset.id}/original?edited=true"
                 else "$baseUrl/api/assets/${nextAsset.id}/thumbnail?format=WEBP&size=preview&edited=true"
                 val request = ImageRequest.Builder(localCtx)
                     .data(imageUrl)
@@ -425,7 +425,7 @@ fun SwipeScreen(
                 // The API key is sent as a header on every request, never in the URL, so it cannot
                 // end up in server, proxy or browser logs.
                 val urlsToTry = listOf(
-                    "$baseUrl/api/assets/${asset.id}/original",
+                    "$baseUrl/api/assets/${asset.id}/original?edited=true",
                     "$baseUrl/api/asset/file/${asset.id}"
                 )
 
@@ -515,7 +515,7 @@ fun SwipeScreen(
                 // The API key is sent as a header on every request, never in the URL, so it cannot
                 // end up in server, proxy or browser logs.
                 val urlsToTry = listOf(
-                    "$baseUrl/api/assets/${asset.id}/original",
+                    "$baseUrl/api/assets/${asset.id}/original?edited=true",
                     "$baseUrl/api/asset/file/${asset.id}"
                 )
 

@@ -105,7 +105,7 @@ fun InstagramZoomOverlay(
             val imageRequest = remember(zoomData.asset.id, baseUrlClean, zoomData.asset.isGif) {
                 ImageRequest.Builder(context)
                     .data(
-                        if (zoomData.asset.isGif) "$baseUrlClean/api/assets/${zoomData.asset.id}/original"
+                        if (zoomData.asset.isGif) "$baseUrlClean/api/assets/${zoomData.asset.id}/original?edited=true"
                         else "$baseUrlClean/api/assets/${zoomData.asset.id}/thumbnail?format=WEBP&size=preview"
                     )
                     .crossfade(false)

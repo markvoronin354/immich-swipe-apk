@@ -591,7 +591,7 @@ fun FullScreenPreviewModal(
                                 }
                                 val imageRequest = remember(currentAsset.id, baseUrlClean) {
                                     ImageRequest.Builder(context)
-                                        .data("$baseUrlClean/api/assets/${currentAsset.id}/original")
+                                        .data("$baseUrlClean/api/assets/${currentAsset.id}/original?edited=true")
                                         .size(coil3.size.Size.ORIGINAL)
                                         .crossfade(false)
                                         .build()

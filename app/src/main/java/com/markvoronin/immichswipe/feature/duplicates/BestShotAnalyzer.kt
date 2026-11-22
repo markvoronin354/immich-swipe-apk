@@ -246,7 +246,7 @@ class BestShotAnalyzer @Inject constructor(
 
     private suspend fun fetchOriginalBitmap(asset: Asset, baseUrl: String): Bitmap? =
         ImageRequest.Builder(context)
-            .data("${baseUrl.removeSuffix("/")}/api/assets/${asset.id}/original")
+            .data("${baseUrl.removeSuffix("/")}/api/assets/${asset.id}/original?edited=true")
             // Coil also scales up to fit, so never ask for more than the original has.
             .size(minOf(DEEP_MAX_SIDE, asset.longSidePx() ?: DEEP_MAX_SIDE))
             .allowHardware(false)
