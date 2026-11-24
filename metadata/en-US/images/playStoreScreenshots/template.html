@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<!--
+  Play Store screenshot template, 1080x1920.
+  Query params: img (path to a raw screenshot), title (lines split by "|"), layout ("top" = headline above the
+  phone, "bottom" = headline below it), bg (optional hex without #).
+  Render (macOS, needs --allow-file-access-from-files for the SF Rounded font), then strip alpha for Play:
+    "Google Chrome" --headless=new --hide-scrollbars --allow-file-access-from-files --force-device-scale-factor=1 \
+      --window-size=1080,1920 --virtual-time-budget=3000 --screenshot=out.png \
+      "file://$PWD/template.html?img=raw/swipe_delete.jpg&layout=top&title=Swipe%20Left|to%20Delete"
+    ffmpeg -i out.png -pix_fmt rgb24 01_swipe_delete.png
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: "Headline";
+    src: url("file:///System/Library/Fonts/SFNSRounded.ttf");
+    font-weight: 100 1000;
+  }
+  :root {
+    --bg: #00A8EE;
+    --rim: #5DCBFF;
+    --screen-w: 708px;
+    --screen-h: 1534px;
+    --bezel: 20px;
+    --rim-w: 6px;
+  }
+  html, body { margin: 0; padding: 0; }
+  body {
+    width: 1080px;
+    height: 1920px;
+    overflow: hidden;
+    position: relative;
+    background: var(--bg);
+  }
+  .title {
+    position: absolute;
+    left: 60px;
+    right: 60px;
+    margin: 0;
+    text-align: center;
+    color: #FFFFFF;
+    font-family: "Headline", "Arial Rounded MT Bold", system-ui, sans-serif;
+    font-weight: 800;
+    font-size: 96px;
+    line-height: 1.12;
+    letter-spacing: -0.5px;
+  }
+  .phone {
+    position: absolute;
+    left: calc((1080px - var(--screen-w)) / 2 - var(--bezel) - var(--rim-w));
+    width: calc(var(--screen-w) + 2 * (var(--bezel) + var(--rim-w)));
+    height: calc(var(--screen-h) + 2 * (var(--bezel) + var(--rim-w)));
+    border-radius: 92px;
+    background: var(--rim);
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.28), inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+  }
+  .bezel {
+    position: absolute;
+    inset: var(--rim-w);
+    border-radius: 86px;
+    background: #0B0F11;
+  }
+  .screen {
+    position: absolute;
+    inset: var(--bezel);
+    border-radius: 66px;
+    overflow: hidden;
+    background: #F8F9FD;
+  }
+  .screen img { display: block; width: 100%; height: 100%; }
+  .camera {
+    position: absolute;
+    top: 26px;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    margin-left: -15px;
+    border-radius: 50%;
+    background: #0B0F11;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.25);
+  }
+  .button {
+    position: absolute;
+    right: -7px;
+    width: 9px;
+    border-radius: 0 6px 6px 0;
+    background: var(--rim);
+  }
+  .power { top: 340px; height: 100px; }
+  .volume { top: 490px; height: 190px; }
+
+  body.top .title { top: 118px; }
+  body.top .phone { top: 404px; }
+  body.bottom .title { bottom: 118px; }
+  body.bottom .phone { top: -101px; }
+</style>
+</head>
+<body>
+  <h1 class="title" id="title"></h1>
+  <div class="phone">
+    <div class="button power"></div>
+    <div class="button volume"></div>
+    <div class="bezel">
+      <div class="screen">
+        <img id="shot" alt="">
+        <div class="camera"></div>
+      </div>
+    </div>
+  </div>
+<script>
+  const params = new URLSearchParams(location.search);
+  document.body.className = params.get("layout") || "top";
+  if (params.get("bg")) document.documentElement.style.setProperty("--bg", "#" + params.get("bg"));
+  const title = document.getElementById("title");
+  (params.get("title") || "").split("|").forEach((line, i) => {
+    if (i > 0) title.appendChild(document.createElement("br"));
+    title.appendChild(document.createTextNode(line));
+  });
+  document.getElementById("shot").src = params.get("img");
+</script>
+</body>
+</html>
