@@ -1,0 +1,6 @@
+- Live photos: play the motion clip from a LIVE pill on the card.
+- Rate photos: drop the card on one of five stars, or tap the stars in the details panel.
+- New Album swipe-down action: drag the card onto an album strip.
+- Swipe actions have their own settings sub menu.
+- Rotating a photo already edited in Immich now warns, and edited originals load in full resolution.
+- Phones stay in portrait outside the fullscreen viewer.
